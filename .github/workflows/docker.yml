@@ -1,10 +1,18 @@
 name: Docker
 
+# Só confere que a imagem de produção (nginx) continua construindo. Roda em push para main
+# (e manualmente), não em PR: o deploy é pelo Vercel, a imagem não é usada em PR e gastava minutos da cota.
 on:
   push:
-    branches: [main, staging, develop]
-  pull_request:
-    branches: [main, staging, develop]
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - nginx.conf
+      - package.json
+      - yarn.lock
+      - src/**
+  workflow_dispatch:
 
 jobs:
   build:
