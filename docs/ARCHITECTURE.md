@@ -25,7 +25,7 @@ src/
 │   └── pages/InicioPage.tsx          # provisório até o módulo auth existir
 │
 ├── api/                              # fronteira com o back
-│   ├── http-client.ts                # mutator do Orval: base URL, bearer, 401, ErroApi
+│   ├── http-client.ts                # mutator do Orval: base URL /api, cookie de sessão, 401, ApiError
 │   ├── query-client.ts               # QueryClient com defaults (retry, staleTime)
 │   └── generated/                    # Orval. Versionado. Ninguém edita à mão.
 │       ├── model/                    # todos os DTOs
@@ -129,7 +129,7 @@ export { SeletorPessoa } from "./components/SeletorPessoa"; // usado por turmas 
 
 **i18n.** Um namespace por módulo, registrado com `registerModuleLocales("pessoas", { "pt-BR": ptBR, "en-US": enUS })` no `index.ts` do módulo. Nos componentes, `useTranslation("pessoas")`.
 
-**Sessão expirada.** `http-client.ts` dispara `window` event `tedi:unauthorized` ao receber 401. O módulo `auth` escuta e encerra a sessão. `api/` nunca importa `modules/`.
+**Sessão expirada.** `http-client.ts` envia todas as requisições com `credentials: "include"` para que o browser inclua o cookie httpOnly de sessão. Ao receber 401, dispara `window` event `tedi:unauthorized`. O módulo `auth` escuta e encerra a sessão. `api/` nunca importa `modules/`.
 
 ## 4. Regras de fronteira (`.dependency-cruiser.cjs`, roda no CI)
 

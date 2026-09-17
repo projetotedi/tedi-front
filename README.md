@@ -18,7 +18,7 @@ docker compose up -d && cp .env.example .env && yarn install && yarn migration:r
 
 A API fica em `http://localhost:3000` e já aceita o front local no CORS.
 
-Sem vontade de subir o back? Aponte `VITE_API_URL` para a API no ar, `https://tedi-back.onrender.com`. O CORS dela não aceita `localhost`, então isso serve só para ver a tela, não para chamar a API.
+Sem vontade de subir o back? Com `VITE_API_URL=/api` (padrão), o proxy do Vite em dev não tem para onde repassar. Para apontar direto ao Render fora do proxy, altere `.env` para `VITE_API_URL=https://tedi-back.onrender.com` — mas o CORS do Render não aceita `localhost`, então isso serve só para ver a tela, não para chamar a API.
 
 ### 2. Subir o front
 
@@ -26,10 +26,12 @@ Sem vontade de subir o back? Aponte `VITE_API_URL` para a API no ar, `https://te
 git clone https://github.com/projetotedi/tedi-front.git
 cd tedi-front
 
-cp .env.example .env        # VITE_API_URL=http://localhost:3000
+cp .env.example .env        # VITE_API_URL=/api
 yarn install
 yarn dev                    # http://localhost:5173, com hot reload
 ```
+
+Com `VITE_API_URL=/api` e o back em `http://localhost:3000`, o Vite faz proxy de `/api/*` para `localhost:3000` (sem o prefixo). Para verificar: `fetch("/api/health")` no console do navegador em `localhost:5173` deve retornar `{"status":"ok"}` sem erros de CORS.
 
 ### 3. Gerar o cliente da API (quando o contrato mudar)
 
@@ -65,9 +67,11 @@ Antes de abrir PR: `yarn lint && yarn format:check && yarn typecheck && yarn dep
 
 ## Variáveis de ambiente
 
-| Variável       | Local                   | Produção (Vercel)                |
-| -------------- | ----------------------- | -------------------------------- |
-| `VITE_API_URL` | `http://localhost:3000` | `https://tedi-back.onrender.com` |
+| Variável       | Local  | Produção (Vercel) | Preview (Vercel) |
+| -------------- | ------ | ----------------- | ---------------- |
+| `VITE_API_URL` | `/api` | `/api`            | `/api`           |
+
+Com `/api`, o proxy do Vite (dev) e o rewrite do Vercel (prod/preview) encaminham as chamadas ao back sem expor a URL real. O cookie de sessão httpOnly funciona como mesma origem.
 
 É resolvida no build: mudou a URL, é preciso reiniciar o `yarn dev` ou fazer redeploy.
 
