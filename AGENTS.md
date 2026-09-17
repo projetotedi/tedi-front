@@ -76,7 +76,7 @@ Use Yarn.
 
 - Não commitar `.env`. Usar `.env.example` como referência (`VITE_API_URL`).
 - Deploy: Vercel, configurado em `vercel.json` (SPA rewrite, headers, cache). `VITE_API_URL` é definida no painel do Vercel por ambiente e resolvida no build. Passo a passo em `docs/DEPLOY.md`.
-- O token de sessão fica em `localStorage` sob `tedi.token`, lido apenas por `src/api/http-client.ts`.
+- A sessão é mantida por cookie httpOnly emitido pelo back. `src/api/http-client.ts` envia `credentials: "include"` em todo request; não há token em `localStorage`.
 - Para rodar contra a API local: `tedi-back` em `http://localhost:3000` (ver README daquele repositório).
 
 ## Skills e agentes do repositório

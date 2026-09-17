@@ -7,16 +7,26 @@ Front no **Vercel** (plano Hobby, gratuito), com deploy automático da `main` e 
 1. Criar conta em https://vercel.com (login com GitHub) e autorizar a organização `projetotedi`.
 2. **Add New → Project** → importar `projetotedi/tedi-front`. O Vercel detecta Vite e lê o `vercel.json` da raiz (build, saída, rewrite para SPA, headers de segurança e cache).
 3. Em **Environment Variables**, criar `VITE_API_URL`:
-   - **Production:** `https://tedi-back.onrender.com` (URL do serviço no Render, sem barra no fim).
-   - **Preview:** a mesma URL. Previews de PR usam a API de produção, o que é aceitável enquanto o ambiente é de testes.
+   - **Production:** `/api`
+   - **Preview:** `/api`
+   - O rewrite do `vercel.json` repassa `/api/:path*` → `https://tedi-back.onrender.com/:path*`. O front nunca conhece a URL real da API; o cookie httpOnly funciona como mesma origem.
 4. **Deploy**. A URL de produção fica `https://tedi-front.vercel.app` (ou o nome que o Vercel atribuir).
-5. Copiar essa URL para `CORS_ORIGINS` no Render, junto com `https://*.vercel.app` para os previews.
+5. Copiar essa URL para `CORS_ORIGINS` no Render, junto com `https://*.vercel.app` para os previews. CORS só é necessário para Swagger/curl direto no Render; o tráfego do front passa pelo Vercel.
+
+### Rewrites do `vercel.json`
+
+O arquivo `vercel.json` contém dois rewrites, nesta ordem obrigatória:
+
+1. `/api/:path*` → `https://tedi-back.onrender.com/:path*` — proxy da API.
+2. `/(.*)` → `/index.html` — fallback SPA.
+
+A ordem importa: o `/api/` precisa aparecer **antes** do fallback SPA, senão toda rota `/api/*` seria servida como `index.html`.
 
 ## 2. Como o ambiente se comporta
 
 - **Push em `main`** → deploy de produção.
-- **PR aberto** → deploy de preview com URL própria, comentado no PR. Como o CORS da API aceita `*.vercel.app`, o preview conversa com a API real.
-- `VITE_API_URL` é resolvido **no build**. Mudou a URL da API? Alterar a variável no Vercel e fazer **Redeploy**.
+- **PR aberto** → deploy de preview com URL própria, comentado no PR. O rewrite `/api/*` → Render funciona igual em preview; o cookie de sessão é enviado como mesma origem.
+- `VITE_API_URL` é resolvido **no build**. Mudou a URL do back? Alterar a URL de destino no `vercel.json` (não a variável, que permanece `/api`) e fazer **Redeploy**.
 - A API no plano free do Render hiberna após 15 min sem uso. O primeiro request pode levar até um minuto. Vale o front mostrar um estado de "conectando" em vez de erro nesse cenário.
 
 ## 3. Alternativa: Cloudflare Pages
