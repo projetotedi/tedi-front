@@ -47,7 +47,10 @@ module.exports = {
   ],
   options: {
     doNotFollow: { path: "node_modules" },
-    exclude: { path: ["^src/api/generated/", "\\.test\\.tsx?$"] },
+    // "/__tests__/" (em vez de só "\.test\.tsx?$") para que helpers de teste sem sufixo
+    // .test (handlers.ts, test-utils.tsx) também fiquem de fora das fronteiras: eles não
+    // são órfãos nem participam das regras entre módulos, só servem aos próprios testes.
+    exclude: { path: ["^src/api/generated/", "/__tests__/"] },
     tsPreCompilationDeps: true,
     tsConfig: { fileName: "tsconfig.json" },
     enhancedResolveOptions: {

@@ -1,0 +1,17 @@
+{
+  "session": {
+    "loading": "Loading your session...",
+    "expired": "Your session has expired. Please sign in again."
+  },
+  "signOut": {
+    "label": "Sign out"
+  },
+  "forbidden": {
+    "title": "You do not have access to this area",
+    "description": "If you need access to this page, contact the coordination team.",
+    "backHome": "Back to home"
+  },
+  "login": {
+    "title": "Sign in"
+  }
+}

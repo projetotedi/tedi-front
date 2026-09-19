@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
+import { authRoutes, AuthProvider, RequireRole } from "@modules/auth";
+
 import { AppLayout } from "./layouts/AppLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
 import { InicioPage } from "./pages/InicioPage";
@@ -15,22 +17,34 @@ import { InicioPage } from "./pages/InicioPage";
  *   children: [...pessoasRoutes, ...turmasRoutes, ...]
  *
  * Rotas públicas (login, formulário de pré-inscrição) ficam sob PublicLayout;
- * o restante sob AppLayout, que exigirá sessão quando o módulo auth existir.
+ * o restante sob AppLayout, atrás de RequireRole (só exige sessão ativa; cada
+ * rota que precisar de um perfil mínimo usa `<RequireRole minRole={...}>` por dentro).
+ *
+ * AuthProvider entra como rota-layout raiz (e não em app/providers.tsx) porque precisa de
+ * useNavigate/useLocation, que só existem dentro do RouterProvider.
  */
 export const router = createBrowserRouter([
   {
-    element: <PublicLayout />,
+    element: <AuthProvider />,
     children: [
-      // ...authRoutes (login) entram aqui
-    ],
-  },
-  {
-    element: <AppLayout />,
-    children: [
-      { index: true, element: <InicioPage /> },
-      // ...pessoasRoutes, ...turmasRoutes, ...aulasRoutes, ...alocacoesRoutes,
-      // ...presencasRoutes, ...horasRoutes, ...importacaoRoutes, ...relatoriosRoutes, ...auditoriaRoutes
-      { path: "*", element: <Navigate to="/" replace /> },
+      {
+        element: <PublicLayout />,
+        children: [...authRoutes],
+      },
+      {
+        element: <RequireRole />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <InicioPage /> },
+              // ...pessoasRoutes, ...turmasRoutes, ...aulasRoutes, ...alocacoesRoutes,
+              // ...presencasRoutes, ...horasRoutes, ...importacaoRoutes, ...relatoriosRoutes, ...auditoriaRoutes
+              { path: "*", element: <Navigate to="/" replace /> },
+            ],
+          },
+        ],
+      },
     ],
   },
 ]);
