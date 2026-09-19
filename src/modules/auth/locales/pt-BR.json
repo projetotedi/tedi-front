@@ -12,6 +12,34 @@
     "backHome": "Voltar para o início"
   },
   "login": {
-    "title": "Entrar"
+    "title": "Entrar",
+    "brand": "TEDI",
+    "ra": {
+      "label": "Matrícula (RA)",
+      "placeholder": "Digite sua matrícula"
+    },
+    "password": {
+      "label": "Senha",
+      "placeholder": "Digite sua senha",
+      "hint": "Mínimo de 8 caracteres",
+      "show": "Mostrar senha",
+      "hide": "Ocultar senha"
+    },
+    "submit": "Entrar",
+    "submitting": "Entrando…",
+    "forgotPassword": "Esqueceu a senha? Fale com a coordenação",
+    "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
+    "footer": "TEDI · Sistema de Gestão do Projeto de Extensão",
+    "errors": {
+      "invalidCredentials": "Matrícula ou senha incorretos",
+      "accessDisabled": "Seu acesso está inativo, fale com a coordenação",
+      "tooManyAttempts": "Muitas tentativas, aguarde alguns minutos",
+      "network": "Não foi possível conectar",
+      "unknown": "Não foi possível entrar. Tente novamente."
+    },
+    "validation": {
+      "raRequired": "Informe sua matrícula",
+      "passwordMin": "A senha deve ter no mínimo 8 caracteres"
+    }
   }
 }

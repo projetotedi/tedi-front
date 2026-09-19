@@ -12,6 +12,34 @@
     "backHome": "Back to home"
   },
   "login": {
-    "title": "Sign in"
+    "title": "Sign in",
+    "brand": "TEDI",
+    "ra": {
+      "label": "Registration number (RA)",
+      "placeholder": "Enter your registration number"
+    },
+    "password": {
+      "label": "Password",
+      "placeholder": "Enter your password",
+      "hint": "At least 8 characters",
+      "show": "Show password",
+      "hide": "Hide password"
+    },
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "forgotPassword": "Forgot your password? Contact the coordination team",
+    "slowNotice": "Connecting to the server, this may take up to a minute",
+    "footer": "TEDI · Extension Project Management System",
+    "errors": {
+      "invalidCredentials": "Incorrect registration number or password",
+      "accessDisabled": "Your access is inactive, contact the coordination team",
+      "tooManyAttempts": "Too many attempts, please wait a few minutes",
+      "network": "Could not connect",
+      "unknown": "Could not sign in. Please try again."
+    },
+    "validation": {
+      "raRequired": "Enter your registration number",
+      "passwordMin": "The password must have at least 8 characters"
+    }
   }
 }
