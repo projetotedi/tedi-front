@@ -25,17 +25,22 @@ export function LoginPage() {
 
   const reason = new URLSearchParams(location.search).get("reason");
 
+  // O fundo azul cobre a janela toda (fixed) porque só o login o usa: o PublicLayout também serve
+  // à pré-inscrição e não deve herdá-lo. `min-h-full` + overflow deixam o cartão rolar em telas
+  // baixas ou com zoom sem cortar o topo.
   return (
-    <div className="flex w-full flex-col items-center gap-6">
-      <div className="flex w-full max-w-110 flex-col gap-5 rounded-3xl bg-surface p-8 shadow-surface">
-        {/* GUS-84: aguardando o SVG do logo com o designer; wordmark provisório em texto. */}
-        <p className="text-center text-5xl font-black tracking-tight">{t("login.brand")}</p>
-        {/* O design não mostra título: fica só para leitores de tela e para o título da página. */}
-        <h1 className="sr-only">{t("login.title")}</h1>
-        {reason === "expired" && <Alert variant="error">{t("session.expired")}</Alert>}
-        <LoginForm />
+    <div className="fixed inset-0 overflow-y-auto bg-tedi-sky text-tedi-sky-foreground">
+      <div className="flex min-h-full flex-col items-center justify-center gap-6 p-4">
+        <div className="flex w-full max-w-110 flex-col gap-5 rounded-3xl bg-surface p-8 text-foreground shadow-surface">
+          {/* GUS-84: aguardando o SVG do logo com o designer; wordmark provisório em texto. */}
+          <p className="text-center text-5xl font-black tracking-tight">{t("login.brand")}</p>
+          {/* O design não mostra título: fica só para leitores de tela e para o título da página. */}
+          <h1 className="sr-only">{t("login.title")}</h1>
+          {reason === "expired" && <Alert variant="error">{t("session.expired")}</Alert>}
+          <LoginForm />
+        </div>
+        <p className="text-center text-sm">{t("login.footer")}</p>
       </div>
-      <p className="text-center text-sm">{t("login.footer")}</p>
     </div>
   );
 }
