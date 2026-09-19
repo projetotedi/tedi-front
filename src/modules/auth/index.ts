@@ -10,5 +10,8 @@ import ptBR from "./locales/pt-BR.json";
 registerModuleLocales("auth", { "pt-BR": ptBR, "en-US": enUS });
 
 export { AuthProvider } from "./AuthProvider";
+export { RequireRole } from "./components/RequireRole";
 export { useAuth } from "./hooks/useAuth";
+export { ForbiddenPage } from "./pages/ForbiddenPage";
 export type { AuthContextValue, AuthStatus } from "./auth-context";
+export type { RequireRoleProps } from "./components/RequireRole";
