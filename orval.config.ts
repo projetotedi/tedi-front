@@ -27,10 +27,19 @@ export default defineConfig({
           path: "./src/api/http-client.ts",
           name: "httpClient",
         },
+        // useQuery/useMutation ficam no padrão do Orval (GET => useQuery, demais verbos =>
+        // useMutation): não forçar `useQuery: true` aqui, senão POST/PUT/DELETE também viram
+        // query hooks (sem mutateAsync) em vez de mutation hooks.
         query: {
-          useQuery: true,
           useInfinite: false,
           signal: true,
+        },
+        // O mutator (`httpClient`) devolve o corpo já parseado (T) e lança ApiError em
+        // respostas não-2xx — não o envelope { data, status, headers } que é o padrão do
+        // Orval para o client "fetch". Sem isso, os tipos gerados (ex.: MeResponse) não
+        // batem com o que o mutator realmente devolve em runtime.
+        fetch: {
+          includeHttpResponseReturnType: false,
         },
       },
     },
