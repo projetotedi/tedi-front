@@ -43,6 +43,8 @@ Um agente por repositório tocado. Card que mexe nos dois repos (raro; a `plan-f
 
 Depois da revisão, a skill separa os achados: `bloqueante` e `importante` voltam para o `tedi-dev` em **uma** rodada de correção (prompt com a lista de achados e a instrução "corrija só isto, commite, rode a qualidade de novo"); `menor` fica registrado no relatório para o usuário decidir no CRIT. Uma segunda rodada de revisão só se houve correção bloqueante, e só sobre o diff novo.
 
+**Card com tela (front)**, para os três agentes: acrescente `## Design` ao prompt com o caminho de `.agents/artifacts/design-GUS-<n>.md` (resumo) e de `.agents/artifacts/design-GUS-<n>.tsx` (código de referência). Eles leem os arquivos; nenhum deles chama o Figma. O dev registra "Divergências do design" e "Estados não desenhados" no relatório; o revisor confere as duas coisas (item g da revisão).
+
 ## Falhas
 
 - Agente encerrou sem relatório ou com testes vermelhos: mostre o que veio, não avance para a etapa seguinte e pergunte ao usuário como seguir (tentar de novo com mais contexto, ou assumir manualmente).
