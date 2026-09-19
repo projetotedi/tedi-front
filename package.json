@@ -48,6 +48,7 @@
     "@vitest/coverage-v8": "^5.0.0",
     "dependency-cruiser": "^18.2.0",
     "jsdom": "^26",
+    "msw": "^2",
     "orval": "^8.31.0",
     "oxfmt": "^0.66.0",
     "oxlint": "^1.80.0",
