@@ -1,7 +1,6 @@
 // API pública do módulo auth (equivalente ao `exports` do @Module do back).
-// Construído incrementalmente: cada passo da implementação acrescenta o que já existe;
-// o contrato final (documentado em docs/ARCHITECTURE.md) fecha com RequireRole,
-// SignOutButton, ForbiddenPage e authRoutes.
+// Contrato documentado em docs/ARCHITECTURE.md — não mudar a assinatura sem avaliar
+// impacto na Equipe B (GUS-84/85/86/87 consomem isto diretamente).
 import { registerModuleLocales } from "@shared/i18n";
 
 import enUS from "./locales/en-US.json";
