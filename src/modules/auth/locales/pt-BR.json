@@ -1,0 +1,17 @@
+{
+  "session": {
+    "loading": "Carregando sua sessão...",
+    "expired": "Sua sessão expirou. Entre novamente."
+  },
+  "signOut": {
+    "label": "Sair"
+  },
+  "forbidden": {
+    "title": "Você não tem acesso a esta área",
+    "description": "Se você precisa acessar esta página, fale com a coordenação.",
+    "backHome": "Voltar para o início"
+  },
+  "login": {
+    "title": "Entrar"
+  }
+}
