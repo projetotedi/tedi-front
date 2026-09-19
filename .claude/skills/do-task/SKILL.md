@@ -1,7 +1,7 @@
 ---
 name: do-task
 description: Executa uma issue do Linear do projeto TEDI de ponta a ponta na esteira do time: checa conectores, lê o card e o plano de produto anexado no Linear, cria a branch com o identificador GUS-nn, planeja com um agente (Opus 5 high ou Fable 5.1 low), implementa com agentes Sonnet 5 em esforço máximo, revisa com Opus 5 medium, abre o CRIT para a revisão manual do usuário e, se ele quiser, abre o PR para develop com assignee e labels. Use quando o usuário colar o link de uma issue do Linear e pedir para fazer, implementar, executar, "pegar", "tocar" ou "puxar" a task, ou disser "do-task"; também quando disser "implementa a GUS-74".
-argument-hint: "[link ou identificador da issue, ex.: GUS-74]"
+argument-hint: "[link ou identificador da issue, ex.: GUS-74] [link do frame do Figma, se a tarefa tiver tela]"
 disable-model-invocation: false
 ---
 
@@ -21,6 +21,7 @@ Rode `node .claude/skills/do-task/scripts/check-connectors.mjs` e confirme que a
 
 - Falta o `crit`: pergunte se pode instalar (`references/crit.md`); é instalação de software, não instale sem sim. Sem CRIT a esteira ainda roda, mas a etapa 6 vira revisão do diff no chat; diga isso.
 - Falta credencial do GitHub ou Linear: pare e explique o que o usuário precisa fazer. Sem isso não há PR nem card.
+- Card `Frontend` com tela e sem o conector do Figma (`get_design_context` fora da lista de ferramentas): avise e ofereça ativar. Sem ele, a etapa 2 usa o PNG do frame (`references/figma.md`).
 - Tudo verde: uma linha de confirmação e siga.
 
 ## Etapa 1 — Qual task
@@ -33,6 +34,7 @@ Se veio argumento (`$ARGUMENTS`), use-o. Se não, pergunte: "Qual issue? Cole o 
 2. `list_documents` (`query: "TEDI"`) → `get_document` do **"Plano de Produto — TEDI"** anexado ao projeto. Localize o épico da milestone e a feature, os requisitos RF/RN citados no card e o objetivo O1..O5 que a feature serve.
 3. Leia o memory.md da feature (caminho na primeira linha da issue) e `AGENTS.md` + `docs/ARCHITECTURE.md` do repositório alvo.
 4. Bloqueadoras não concluídas ou issue já `In Progress` com outra pessoa: avise e pergunte se segue.
+5. Card do `tedi-front` com tela: leia o design conforme `references/figma.md` (o link do frame vem do pedido do usuário, junto com a issue, porque o card não guarda; card com tela e sem link no pedido: pergunte o link do frame ou um PNG) e grave `.agents/artifacts/design-GUS-<n>.md`. Só a skill chama o Figma; os agentes recebem o resumo.
 
 Escreva para o usuário um **Contexto** de 5 a 8 linhas: para que fim esta task existe no escopo total (objetivo, épico, quem usa), o que ela destrava, o que ela assume das anteriores, e os sinais de alerta do card. Isso vai no prompt do planejador e, depois, no PR.
 
@@ -51,7 +53,7 @@ Ao receber o plano:
 
 1. Grave em `.agents/artifacts/plan-GUS-<n>.md` no repositório.
 2. **Confira o mapa card → plano**: todo critério de aceite e todo caso de teste do card precisa estar na tabela do plano com um passo e um teste. Faltou algum: devolva ao mesmo agente (SendMessage) a lista do que faltou; não complete você.
-3. Mostre ao usuário o plano (objetivo, passos resumidos, contrato, riscos) e pergunte: aprova, ajusta ou refaz. Nada é implementado sem aprovação explícita do plano. Ajustes viram nova versão do arquivo.
+3. Mostre ao usuário o plano (objetivo, passos resumidos, contrato, riscos) e pergunte: aprova, ajusta ou refaz. Se houver design, mostre junto os conflitos com o `AGENTS.md` e os estados não desenhados. Nada é implementado sem aprovação explícita do plano. Ajustes viram nova versão do arquivo.
 
 ## Etapa 4 — Implementação
 
@@ -88,6 +90,7 @@ Com não: deixe a branch local com os commits, diga o nome dela e o comando para
 - Não sobrescrever o esforço dos agentes por conveniência: os arquivos em `.claude/agents/tedi-*.md` deste repositório são a fonte.
 - Não editar código pela própria skill enquanto um `tedi-dev` está rodando no mesmo repositório.
 - Não fazer push antes da etapa 7.
+- Não deixar os agentes chamarem o Figma: só a skill lê o design, uma vez por frame.
 - Não inventar que o usuário terminou a revisão no CRIT.
 - Não mudar título, descrição, estimativa ou milestone da issue: isso é da `create-task`.
 
@@ -96,5 +99,6 @@ Com não: deixe a branch local com os commits, diga o nome dela e o comando para
 - `references/agentes.md` — papéis, modelos, esforços, conteúdo do prompt de cada agente, tratamento de falhas.
 - `references/linear.md` — como ler a issue e o documento do projeto, o que escrever de volta.
 - `references/github.md` — branch, título, corpo pelo template de cada repo, labels, assignee, script.
+- `references/figma.md` — leitura do design pelo MCP do Figma, resumo, conflitos com o `AGENTS.md`, alternativa com PNG.
 - `references/crit.md` — instalação, abertura, espera, leitura dos comentários.
 - `scripts/check-connectors.mjs` — etapa 0. `scripts/github-pr.mjs` — etapa 7.
