@@ -15,6 +15,7 @@ setupAuthTestServer();
 
 const RA = "202400001";
 const PASSWORD = "senha-segura-1";
+const SLOW_NOTICE = "Conectando ao servidor, isso pode levar até um minuto";
 
 // O LoginPage só existe em /login, como no router real. O harness padrão monta o elemento numa
 // rota "*", em que ele continuaria montado depois do redirecionamento e redirecionaria de novo.
@@ -358,17 +359,46 @@ describe("LoginPage form", () => {
 
     await fillAndSubmit(user);
     await screen.findByRole("button", { name: "Entrando…" });
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    // A região `status` é fixa: sem aviso ela existe, só não tem o texto.
+    const region = screen.getByRole("status");
+    expect(region).not.toHaveTextContent(SLOW_NOTICE);
 
     act(() => {
       vi.advanceTimersByTime(SLOW_NOTICE_DELAY_MS);
     });
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Conectando ao servidor, isso pode levar até um minuto",
-    );
+    await waitFor(() => expect(region).toHaveTextContent(SLOW_NOTICE));
+    // O texto entrou na região que já estava no DOM, e não numa região nova.
+    expect(screen.getByRole("status")).toBe(region);
+
+    // Resposta de sucesso: a página redireciona e o formulário (com a região) sai junto.
+    deferred.resolve();
+    await waitFor(() => expect(screen.queryByText(SLOW_NOTICE)).not.toBeInTheDocument());
+  });
+
+  it("has the polite status region in the DOM, empty, before the 3s notice", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const deferred = createDeferred();
+    server.use(meHandler({ user: null }), loginHandler({ delay: deferred.promise }));
+    await renderLoginPage("/login");
+
+    // Leitores de tela só anunciam mudanças em regiões vivas que já estavam no DOM: ela precisa
+    // existir desde o primeiro render, muito antes de o aviso chegar.
+    const region = screen.getByRole("status");
+    expect(region).toBeEmptyDOMElement();
+    expect(region).toHaveAttribute("aria-live", "polite");
+
+    await fillAndSubmit(user);
+    await screen.findByRole("button", { name: "Entrando…" });
+    act(() => {
+      vi.advanceTimersByTime(SLOW_NOTICE_DELAY_MS / 3);
+    });
+    // Enviando, ainda dentro dos 3 s: continua o mesmo elemento, vazio.
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toBeEmptyDOMElement();
 
     deferred.resolve();
-    await waitFor(() => expect(screen.queryByRole("status")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Destino do redirecionamento")).toBeVisible());
   });
 
   it("hides the slow-connection notice when the response is an error", async () => {
@@ -389,27 +419,37 @@ describe("LoginPage form", () => {
     act(() => {
       vi.advanceTimersByTime(SLOW_NOTICE_DELAY_MS);
     });
-    await screen.findByRole("status");
+    const region = screen.getByRole("status");
+    await waitFor(() => expect(region).toHaveTextContent(SLOW_NOTICE));
 
     deferred.resolve();
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Matrícula ou senha incorretos");
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    // Com o formulário ainda montado, a região continua no DOM: só perde o texto.
+    expect(screen.getByRole("status")).toBe(region);
+    await waitFor(() => expect(region).toBeEmptyDOMElement());
+    expect(screen.queryByText(SLOW_NOTICE)).not.toBeInTheDocument();
   });
 
   it("does not show the slow-connection notice when the response is fast", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    server.use(meHandler({ user: null }), loginHandler());
+    // Resposta rápida com erro: o formulário segue montado e dá para provar que a região existe
+    // sem o texto (num sucesso a página redireciona e a região sai do DOM junto com ela).
+    server.use(
+      meHandler({ user: null }),
+      loginHandler({ error: { statusCode: 401, error: "INVALID_CREDENTIALS" } }),
+    );
     await renderLoginPage("/login");
 
     await fillAndSubmit(user);
-    await waitFor(() => expect(screen.getByText("Destino do redirecionamento")).toBeVisible());
+    expect(await screen.findByRole("alert")).toHaveTextContent("Matrícula ou senha incorretos");
     act(() => {
       vi.advanceTimersByTime(SLOW_NOTICE_DELAY_MS * 2);
     });
 
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).not.toHaveTextContent(SLOW_NOTICE);
+    expect(screen.queryByText(SLOW_NOTICE)).not.toBeInTheDocument();
   });
 
   it("toggles password visibility", async () => {

@@ -114,6 +114,9 @@ export function LoginForm(): ReactElement {
       {/* Texto puro, sem link: a redefinição self-service é a GUS-88 (decisão 15). */}
       <p className="text-base text-foreground">{t("login.forgotPassword")}</p>
 
+      {/* Região viva do aviso de conexão lenta: o Alert info fica sempre montado (vazio) e só o
+          texto entra e sai. Não trocar por renderização condicional do Alert: leitores de tela
+          não anunciam uma região que nasce já preenchida. */}
       <Alert variant="info">{showSlowNotice ? t("login.slowNotice") : null}</Alert>
       <Alert variant="error" id={errorId}>
         {errorKey ? t(`login.errors.${errorKey}`) : null}

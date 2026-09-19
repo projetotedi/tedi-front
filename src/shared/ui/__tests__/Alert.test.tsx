@@ -37,10 +37,55 @@ describe("Alert", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("renders nothing for an empty info notice either", () => {
-    const { container } = render(<Alert variant="info" />);
+  // Região viva: leitores de tela só anunciam mudanças em regiões que já estavam no DOM. Por isso
+  // o info mantém a região `status` montada e vazia, ao contrário do error (que some sem conteúdo).
+  it.each([
+    ["omitted", undefined],
+    ["null", null],
+    ["false", false],
+    ["an empty string", ""],
+  ])(
+    "keeps an empty polite status region mounted when the info content is %s",
+    (_label, children) => {
+      render(<Alert variant="info">{children}</Alert>);
 
-    expect(container).toBeEmptyDOMElement();
+      const region = screen.getByRole("status");
+      expect(region).toBeEmptyDOMElement();
+      expect(region).toHaveAttribute("aria-live", "polite");
+    },
+  );
+
+  it("fills and empties the very same status region instead of remounting it", () => {
+    const { rerender } = render(<Alert variant="info" />);
+    const region = screen.getByRole("status");
+
+    rerender(<Alert variant="info">Conectando ao servidor</Alert>);
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toHaveTextContent("Conectando ao servidor");
+
+    rerender(<Alert variant="info">{null}</Alert>);
+    expect(screen.getByRole("status")).toBe(region);
+    expect(region).toBeEmptyDOMElement();
+  });
+
+  it("does not nest a second live region inside the info notice", () => {
+    render(<Alert variant="info">Conectando ao servidor</Alert>);
+
+    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS nem
+  // mede layout. `empty:sr-only` tira a região vazia do fluxo (sem espaço nem gap num pai flex)
+  // sem `display: none`, que a removeria da árvore de acessibilidade. Medido no Chrome.
+  it("takes the empty region out of the flow without hiding it from assistive technology", () => {
+    render(<Alert variant="info" />);
+
+    const region = screen.getByRole("status");
+    expect(region).toHaveClass("empty:sr-only");
+    expect(region.className).not.toContain("hidden");
+    expect(region).not.toHaveAttribute("hidden");
+    expect(region).not.toHaveAttribute("aria-hidden");
   });
 
   it("passes the id through", () => {
@@ -51,6 +96,18 @@ describe("Alert", () => {
     );
 
     expect(screen.getByRole("alert")).toHaveAttribute("id", "login-error");
+  });
+
+  it("puts the id of an info notice on its status region, filled or not", () => {
+    const { rerender } = render(<Alert variant="info" id="login-notice" />);
+    expect(screen.getByRole("status")).toHaveAttribute("id", "login-notice");
+
+    rerender(
+      <Alert variant="info" id="login-notice">
+        Conectando ao servidor
+      </Alert>,
+    );
+    expect(screen.getByRole("status")).toHaveAttribute("id", "login-notice");
   });
 
   it("hides the decorative icon and keeps only the message as the accessible name", () => {
