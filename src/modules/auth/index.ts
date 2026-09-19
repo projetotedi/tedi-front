@@ -11,6 +11,7 @@ registerModuleLocales("auth", { "pt-BR": ptBR, "en-US": enUS });
 
 export { AuthProvider } from "./AuthProvider";
 export { RequireRole } from "./components/RequireRole";
+export { SignOutButton } from "./components/SignOutButton";
 export { useAuth } from "./hooks/useAuth";
 export { ForbiddenPage } from "./pages/ForbiddenPage";
 export { authRoutes } from "./routes";
