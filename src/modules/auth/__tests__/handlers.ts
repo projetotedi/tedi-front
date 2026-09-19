@@ -1,10 +1,11 @@
 import { http, HttpResponse } from "msw";
 
-import type { MeResponseDto } from "@api/generated/model";
+import type { LoginDto, MeResponseDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 /**
- * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/logout).
+ * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/login,
+ * POST /auth/logout).
  * Path com curinga de prefixo (ver http.get abaixo) porque http-client.ts prefixa a URL
  * com VITE_API_URL em runtime — o teste não precisa saber qual é o prefixo.
  */
@@ -42,5 +43,40 @@ export function logoutHandler(onCall?: () => void) {
   return http.post("*/auth/logout", () => {
     onCall?.();
     return new HttpResponse(null, { status: 204 });
+  });
+}
+
+interface LoginHandlerOptions {
+  /** Corpo da resposta 200 (mesmo shape de GET /auth/me). Padrão: buildMeUser(). */
+  user?: MeResponseDto;
+  /** Responde com o ApiErrorDto indicado (401 INVALID_CREDENTIALS, 401 ACCESS_DISABLED, 429...). */
+  error?: { statusCode: number; error: string; message?: string };
+  /** Falha de rede (fetch rejeita com TypeError), sem resposta HTTP. */
+  networkError?: boolean;
+  /** Aguardada depois de registrar a chamada e antes de responder (teste de hibernação). */
+  delay?: Promise<void>;
+  /** Chamada assim que o POST chega, com o corpo recebido (contador de chamadas, assert do payload). */
+  onCall?: (body: LoginDto) => void;
+}
+
+export function loginHandler({
+  user = buildMeUser(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: LoginHandlerOptions = {}) {
+  return http.post("*/auth/login", async ({ request }) => {
+    onCall?.((await request.json()) as LoginDto);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) {
+      return HttpResponse.json(
+        { statusCode: error.statusCode, error: error.error, message: error.message ?? error.error },
+        { status: error.statusCode },
+      );
+    }
+    return HttpResponse.json(user);
   });
 }
