@@ -28,16 +28,33 @@ export function buildLoginPath(location: LocationLike, reason?: SessionEndReason
 
 /**
  * Lê e valida `returnTo` de `location.search`. Devolve "/" quando ausente,
- * externo (`//evil.com`, `http://...`) ou inválido.
+ * externo (`//evil.com`, `http://...`, `/\evil.com`, `/%09/evil.com`) ou
+ * inválido.
+ *
+ * Primeiro exige um caminho relativo simples (`/algo`, não `//algo`), o que
+ * já barra alvos sem barra inicial e os protocol-relative óbvios. Depois
+ * resolve com o parser de URL do próprio browser e compara a origem: alvos
+ * como `/\evil.com` (barra invertida) ou `/%09/evil.com` (tab decodificado
+ * pelo `URLSearchParams`) continuam começando com uma única barra, mas o
+ * parser da WHATWG (o mesmo que o browser usa ao navegar de verdade) os
+ * resolve para `http://evil.com` — só o parse pega esse caso, checar
+ * prefixo não é suficiente.
  */
 export function readReturnTo(search: string): string {
   const params = new URLSearchParams(search);
   const returnTo = params.get("returnTo");
 
   if (!returnTo) return "/";
-  // "/rota" é seguro; "//evil.com" e "https://evil.com" (ou qualquer esquema) não são —
-  // devem começar com uma única barra para ficar dentro do próprio app.
   if (!returnTo.startsWith("/") || returnTo.startsWith("//")) return "/";
 
-  return returnTo;
+  let url: URL;
+  try {
+    url = new URL(returnTo, window.location.origin);
+  } catch {
+    return "/";
+  }
+
+  if (url.origin !== window.location.origin) return "/";
+
+  return `${url.pathname}${url.search}${url.hash}`;
 }

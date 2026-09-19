@@ -58,4 +58,14 @@ describe("readReturnTo", () => {
   it("rejects a target that does not start with a single slash", () => {
     expect(readReturnTo(`?returnTo=${encodeURIComponent("evil.com")}`)).toBe("/");
   });
+
+  it("rejects a backslash target that the URL parser resolves to another origin (/\\evil.com)", () => {
+    expect(readReturnTo(`?returnTo=${encodeURIComponent("/\\evil.com")}`)).toBe("/");
+  });
+
+  it("rejects a tab-obfuscated target that the URL parser resolves to another origin (/%09/evil.com)", () => {
+    // "/\t/evil.com" decodes from the query string as "/%09/evil.com"; the URL
+    // parser strips the tab, turning it into "//evil.com" (another origin).
+    expect(readReturnTo(`?returnTo=${encodeURIComponent("/\t/evil.com")}`)).toBe("/");
+  });
 });
