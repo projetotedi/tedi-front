@@ -163,7 +163,10 @@ describe("LoginPage form", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Matrícula ou senha incorretos");
     expect(raField()).not.toHaveAttribute("aria-invalid", "true");
     expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
+    // O 401 do login também dispara tedi:unauthorized, mas o AuthProvider o ignora sem sessão:
+    // a URL não pode ganhar ?reason=expired nem sair de /login.
     expect(router.state.location.pathname).toBe("/login");
+    expect(router.state.location.search).toBe("");
   });
 
   it("shows the disabled-access message", async () => {
