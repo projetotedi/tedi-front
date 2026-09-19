@@ -14,6 +14,12 @@ describe("Button", () => {
     expect(screen.getByRole("button", { name: "Salvar" })).toHaveClass("min-h-11");
   });
 
+  it("keeps the 16px base font", () => {
+    render(<Button>Salvar</Button>);
+
+    expect(screen.getByRole("button", { name: "Salvar" })).toHaveClass("text-base");
+  });
+
   it("keeps a 44px touch target on icon-only buttons", () => {
     render(
       <Button isIconOnly aria-label="Mostrar">

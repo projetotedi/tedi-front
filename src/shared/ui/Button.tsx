@@ -11,8 +11,9 @@ export type ButtonProps = Omit<HeroButtonProps, "className" | "isPending"> & {
 };
 
 /**
- * Botão do TEDI sobre o HeroUI. Alvo de toque de 44px (público idoso): `min-h-11` sempre e
- * `min-w-11` quando só há ícone. Largura total com `fullWidth` (vem do HeroUI).
+ * Botão do TEDI sobre o HeroUI. Público idoso: alvo de toque de 44px (`min-h-11` sempre e
+ * `min-w-11` quando só há ícone) e fonte base de 16px (o HeroUI usa 14px). Largura total com
+ * `fullWidth` (vem do HeroUI).
  */
 export function Button({
   className = "",
@@ -21,18 +22,19 @@ export function Button({
   children,
   ...props
 }: ButtonProps) {
-  const sizing = isIconOnly ? "min-h-11 min-w-11" : "min-h-11";
-  // O estado pendente do HeroUI usa `aria-disabled`, que aplica o esmaecimento de desabilitado.
-  // Enquanto carrega o botão precisa continuar legível (texto branco sobre azul, 4,5:1).
-  const loading = isLoading ? "opacity-100" : "";
+  const classes = [
+    "min-h-11 text-base",
+    isIconOnly ? "min-w-11" : "",
+    // O estado pendente do HeroUI usa `aria-disabled`, que aplica o esmaecimento de desabilitado.
+    // Enquanto carrega o botão precisa continuar legível (texto branco sobre azul, 4,5:1).
+    isLoading ? "opacity-100" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
-    <HeroButton
-      {...props}
-      isIconOnly={isIconOnly}
-      isPending={isLoading}
-      className={`${sizing} ${loading} ${className}`.trim()}
-    >
+    <HeroButton {...props} isIconOnly={isIconOnly} isPending={isLoading} className={classes}>
       {(renderProps) => (
         <>
           {isLoading && <Spinner aria-hidden="true" size="sm" color="current" />}
