@@ -72,7 +72,9 @@ describe("useAuth", () => {
 
     window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
-    expect(router.state.location.search).toBe("?returnTo=%2Fpeople&reason=expired");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+      expect(router.state.location.search).toBe("?returnTo=%2Fpeople&reason=expired");
+    });
   });
 });

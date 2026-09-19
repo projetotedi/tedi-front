@@ -61,8 +61,10 @@ describe("anonymous", () => {
     server.use(meHandler({ user: null }));
     const { router } = await renderProtected(Role.director, "/people");
 
-    await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
-    expect(router.state.location.search).toBe("?returnTo=%2Fpeople");
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+      expect(router.state.location.search).toBe("?returnTo=%2Fpeople");
+    });
   });
 });
 
