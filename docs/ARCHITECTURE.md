@@ -81,10 +81,12 @@ O que **não** existe dentro do módulo: `services/`, `types/`, `api/`. Tudo iss
 
 ```tsx
 // modules/pessoas/routes.tsx
+import { Role } from "@shared/lib/role";
+
 export const pessoasRoutes: RouteObject[] = [
   {
     path: "pessoas",
-    element: <RequireRole perfis={["DIRETOR", "COORDENADORA"]} />,
+    element: <RequireRole minRole={Role.director} />,
     children: [
       { index: true, lazy: () => import("./pages/PessoasListPage") },
       { path: "alunos/novo", lazy: () => import("./pages/AlunoFormPage") },
@@ -129,7 +131,28 @@ export { SeletorPessoa } from "./components/SeletorPessoa"; // usado por turmas 
 
 **i18n.** Um namespace por módulo, registrado com `registerModuleLocales("pessoas", { "pt-BR": ptBR, "en-US": enUS })` no `index.ts` do módulo. Nos componentes, `useTranslation("pessoas")`.
 
-**Sessão expirada.** `http-client.ts` envia todas as requisições com `credentials: "include"` para que o browser inclua o cookie httpOnly de sessão. Ao receber 401, dispara `window` event `tedi:unauthorized`. O módulo `auth` escuta e encerra a sessão. `api/` nunca importa `modules/`.
+**Sessão.** `http-client.ts` envia todas as requisições com `credentials: "include"` para que o browser inclua o cookie httpOnly de sessão. Ao receber 401, dispara o evento de `window` `tedi:unauthorized` (`api/` nunca importa `modules/`, então a constante é duplicada de propósito em `shared/lib/session-events.ts`, com um teste garantindo que as duas não divirjam).
+
+O módulo `@modules/auth` (GUS-83) é o dono da sessão no front e expõe:
+
+```ts
+type AuthStatus = "loading" | "authenticated" | "anonymous";
+interface AuthContextValue {
+  status: AuthStatus;
+  user: MeResponseDto | null;
+  signOut: () => Promise<void>;
+}
+
+function AuthProvider(props: { children?: ReactNode }): ReactElement; // sem children, renderiza <Outlet />
+function useAuth(): AuthContextValue;
+function RequireRole(props: { minRole?: Role; children?: ReactNode }): ReactElement;
+function SignOutButton(): ReactElement | null;
+const authRoutes: RouteObject[]; // rotas públicas do módulo (hoje: "login")
+```
+
+`AuthProvider` carrega a sessão com `GET /auth/me` uma única vez (`staleTime: Infinity`) e entra como rota-layout raiz de `app/router.tsx` — não em `app/providers.tsx`, porque precisa de `useNavigate`/`useLocation`, que só existem dentro do `RouterProvider`. `RequireRole` protege uma rota (ou subárvore) pela hierarquia de perfil: sem sessão vai para `/login?returnTo=<rota>`; com perfil insuficiente renderiza uma página de "sem acesso" no lugar, sem deslogar e sem trocar a URL. Ouve `tedi:unauthorized` e, se já havia sessão autenticada, limpa o cache e redireciona para `/login?returnTo=...&reason=expired`; o 401 inicial de `/auth/me` é tratado como anônimo, não como expiração.
+
+`shared/lib/role.ts` reexporta o enum `Role` gerado pelo Orval e expõe `roleSatisfies(userRole, minRole)`, espelhando a hierarquia do `RolesGuard` do back: `member < director < coordinator < superadmin`.
 
 ## 4. Regras de fronteira (`.dependency-cruiser.cjs`, roda no CI)
 
@@ -156,7 +179,7 @@ tedi-back                                       tedi-front
                                                6. CI: typecheck quebra se alguma tela usa campo que sumiu
 ```
 
-Manualmente: copiar `docs/openapi.json` da API para `openapi/openapi.json` e rodar `yarn generate`. Enquanto a API não publica o contrato, `openapi/` fica vazio e `yarn generate` não roda.
+Manualmente: copiar `docs/openapi.json` da API para `openapi/openapi.json` e rodar `yarn generate`.
 
 Configuração em `orval.config.ts`: `mode: "tags-split"` (um arquivo por tag = um por módulo do back), `client: "react-query"`, `httpClient: "fetch"` com mutator `src/api/http-client.ts`, e um segundo output `client: "zod"`.
 
@@ -185,9 +208,9 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 
 ## 8. Próximos passos previstos
 
-1. Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.
-2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto.
-3. Módulo `auth`: login, sessão, `RequireRole`, menu por perfil no `AppLayout`; remover `app/pages/InicioPage.tsx`.
+1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
+2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Só `Button` existe por enquanto (GUS-83, para o botão sair).
+3. Módulo `auth`: **parcialmente entregue em GUS-83** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout). Faltam: formulário de login real (GUS-84), aceite de convite (GUS-85), menu por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86), telas de Acessos (GUS-87/88).
 4. Módulo `pessoas` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.
 6. Resolver `VITE_API_URL` em build time: build por ambiente no pipeline ou config em runtime pelo nginx.
