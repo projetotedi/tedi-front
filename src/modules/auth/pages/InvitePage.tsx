@@ -41,7 +41,10 @@ export function InvitePage(): ReactElement {
   // o token está na chave da query e não deve sobreviver à saída da página. Nunca é reconsultado
   // sozinho (`staleTime: Infinity`): depois do aceite o link passa a ser inválido, e um segundo `GET`
   // trocaria o cadastro concluído pela tela de link inválido.
-  const invite = useGetInvite(token, {
+  // `encodeURIComponent`: o hook gerado monta o caminho por interpolação, sem codificar, e um token
+  // com `/`, `?` ou `#` (link adulterado ou truncado) mudaria o caminho do GET. Um token válido
+  // (base64url) não muda.
+  const invite = useGetInvite(encodeURIComponent(token), {
     query: { enabled: token.length > 0, retry: false, staleTime: Infinity, gcTime: 0 },
   });
   const showSlowNotice = useSlowRequestNotice(invite.isPending && token.length > 0);

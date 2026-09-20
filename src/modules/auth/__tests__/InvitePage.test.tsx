@@ -389,6 +389,24 @@ describe("InvitePage with a link that does not work", () => {
     expect(container.querySelectorAll("input, form")).toHaveLength(0);
   });
 
+  // O hook gerado monta o caminho por interpolação, sem codificar: um link adulterado ou truncado
+  // não pode mudar o caminho do GET (ex.: virar /auth/invites/abc/def, ou levar uma query junto).
+  it("sends a token with special characters as one path segment", async () => {
+    const strange = "abc/def?x=1#y";
+    const tokens: string[] = [];
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler({
+        error: { statusCode: 400, error: "INVALID_INVITE" },
+        onCall: (token) => tokens.push(token),
+      }),
+    );
+    await renderInvitePage(`/invite?token=${encodeURIComponent(strange)}`);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(INVALID_INVITE_TITLE);
+    expect(tokens).toEqual([strange]);
+  });
+
   it("leads to /login from the invalid-link screen", async () => {
     const user = userEvent.setup();
     server.use(
