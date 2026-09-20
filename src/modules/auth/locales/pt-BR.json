@@ -71,7 +71,7 @@
     "step2": {
       "subtitle": "Último passo: crie a senha que você vai usar para entrar no TEDI.",
       "title": "Crie sua senha",
-      "summary": "  ·  RA {{ra}} — é com este RA e a senha abaixo que você entra no sistema."
+      "summary": "  ·  RA {{ra}} — é com este RA e a senha abaixo que você entra no sistema."
     },
     "fields": {
       "name": {

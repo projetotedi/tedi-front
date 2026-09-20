@@ -27,6 +27,7 @@ const EMAIL = "lucas@instituicao.edu.br";
 const PASSWORD = "senha-segura-1";
 const SLOW_NOTICE = "Conectando ao servidor, isso pode levar até um minuto";
 const INVALID_INVITE_TITLE = "Este link não é mais válido";
+const NO_BREAK_SPACE = String.fromCharCode(160);
 
 const PASSWORD_RESET_INVITE = buildInvite({ type: InviteType.password_reset, role: null });
 
@@ -623,14 +624,16 @@ describe("InvitePage step 2", () => {
 
     await goToStepTwo(user);
 
-    expect(
-      screen.getByText(
-        (_content, element) =>
-          element?.tagName === "P" &&
-          element.textContent?.replace(/\s+/g, " ") ===
-            `${NAME} · RA ${RA} — é com este RA e a senha abaixo que você entra no sistema.`,
-      ),
-    ).toBeVisible();
+    const summary = screen.getByText(
+      (_content, element) =>
+        element?.tagName === "P" && element.textContent?.includes(NAME) === true,
+    );
+    expect(summary).toHaveTextContent(
+      `${NAME} · RA ${RA} — é com este RA e a senha abaixo que você entra no sistema.`,
+    );
+    // O "RA" e o número não se separam numa quebra de linha no celular: o espaço entre eles é um
+    // espaço sem quebra, que já vem assim do texto traduzido.
+    expect(summary.textContent).toContain(`RA${NO_BREAK_SPACE}${RA}`);
     expect(
       screen.getByText("Último passo: crie a senha que você vai usar para entrar no TEDI."),
     ).toBeVisible();

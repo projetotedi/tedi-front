@@ -71,7 +71,7 @@
     "step2": {
       "subtitle": "Last step: create the password you will use to sign in to TEDI.",
       "title": "Create your password",
-      "summary": "  ·  RA {{ra}} — this RA and the password below are how you sign in to the system."
+      "summary": "  ·  RA {{ra}} — this RA and the password below are how you sign in to the system."
     },
     "fields": {
       "name": {
