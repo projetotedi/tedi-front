@@ -1,5 +1,6 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -231,6 +232,47 @@ describe("LoginPage form", () => {
     await fillAndSubmit(user);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível conectar");
+  });
+
+  // O Render hiberna e, ao acordar, o proxy costuma devolver 502, 503 ou 504: para a pessoa é o
+  // mesmo que não conseguir conectar, e a tela reage como nos outros erros.
+  it("shows the network message when the gateway answers 503", async () => {
+    const user = userEvent.setup();
+    server.use(
+      meHandler({ user: null }),
+      loginHandler({ error: { statusCode: 503, error: "SERVICE_UNAVAILABLE" } }),
+    );
+    const { router } = await renderLoginPage("/login");
+
+    await fillAndSubmit(user);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível conectar");
+    await waitFor(() => expect(raField()).toHaveFocus());
+    expect(raField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(router.state.location.pathname).toBe("/login");
+  });
+
+  it("shows the network message when the proxy answers 502 with an HTML page", async () => {
+    const user = userEvent.setup();
+    // O proxy não devolve o ApiErrorDto: o corpo é HTML ou texto, sem `error` nem `message`.
+    server.use(
+      meHandler({ user: null }),
+      http.post(
+        "*/auth/login",
+        () =>
+          new HttpResponse("<html><body>502 Bad Gateway</body></html>", {
+            status: 502,
+            headers: { "Content-Type": "text/html" },
+          }),
+      ),
+    );
+    await renderLoginPage("/login");
+
+    await fillAndSubmit(user);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível conectar");
+    await waitFor(() => expect(raField()).toHaveFocus());
   });
 
   it("shows a fallback message on an unexpected server error", async () => {

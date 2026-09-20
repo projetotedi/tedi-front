@@ -37,6 +37,35 @@ describe("toLoginErrorKey", () => {
     expect(toLoginErrorKey(new TypeError("Failed to fetch"))).toBe("network");
   });
 
+  // O Render hiberna e, ao acordar, o proxy costuma devolver 502, 503 ou 504.
+  it.each([502, 503, 504])("maps a %i gateway error to network", (statusCode) => {
+    expect(toLoginErrorKey(apiError(statusCode))).toBe("network");
+  });
+
+  it("maps a gateway error to network even when its error field is not a code of the login", () => {
+    // Proxy e Nest devolvem o nome do status ("Bad Gateway"), que não é um código da tela.
+    expect(toLoginErrorKey(apiError(502, "Bad Gateway"))).toBe("network");
+    expect(toLoginErrorKey(apiError(503, "SERVICE_UNAVAILABLE"))).toBe("network");
+    expect(toLoginErrorKey(apiError(504, "GATEWAY_TIMEOUT"))).toBe("network");
+  });
+
+  it.each([
+    ["INVALID_CREDENTIALS", "invalidCredentials"],
+    ["ACCESS_DISABLED", "accessDisabled"],
+    ["TOO_MANY_ATTEMPTS", "tooManyAttempts"],
+  ])("keeps the known code %s even when the status is a gateway error", (code, expected) => {
+    for (const statusCode of [502, 503, 504]) {
+      expect(toLoginErrorKey(apiError(statusCode, code))).toBe(expected);
+    }
+  });
+
+  it.each([500, 501, 505])(
+    "keeps a %i as unknown: the API answered, it is not a connection failure",
+    (statusCode) => {
+      expect(toLoginErrorKey(apiError(statusCode))).toBe("unknown");
+    },
+  );
+
   it.each([
     ["a server error", apiError(500, "Internal Server Error")],
     ["a validation error", apiError(400, "Bad Request")],
