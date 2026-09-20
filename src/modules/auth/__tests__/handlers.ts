@@ -1,11 +1,17 @@
 import { http, HttpResponse } from "msw";
 
-import type { LoginDto, MeResponseDto } from "@api/generated/model";
+import {
+  InviteType,
+  type AcceptInviteDto,
+  type InviteResponseDto,
+  type LoginDto,
+  type MeResponseDto,
+} from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 /**
  * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/login,
- * POST /auth/logout).
+ * POST /auth/logout, GET /auth/invites/:token, POST /auth/invites/accept).
  * Path com curinga de prefixo (ver http.get abaixo) porque http-client.ts prefixa a URL
  * com VITE_API_URL em runtime — o teste não precisa saber qual é o prefixo.
  */
@@ -78,5 +84,77 @@ export function loginHandler({
       );
     }
     return HttpResponse.json(user);
+  });
+}
+
+interface ApiErrorOptions {
+  statusCode: number;
+  /** Código do ApiErrorDto (ex.: INVALID_INVITE, RA_ALREADY_IN_USE). */
+  error: string;
+  message?: string;
+}
+
+function apiErrorResponse({ statusCode, error, message }: ApiErrorOptions) {
+  return HttpResponse.json(
+    { statusCode, error, message: message ?? error },
+    { status: statusCode },
+  );
+}
+
+export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteResponseDto {
+  return {
+    type: InviteType.access,
+    role: Role.member,
+    expiresAt: "2026-09-22T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+interface GetInviteHandlerOptions {
+  /** Corpo da resposta 200. Padrão: convite de acesso para o perfil de membro. */
+  invite?: InviteResponseDto;
+  /** Responde com o ApiErrorDto indicado (ex.: 400 INVALID_INVITE). */
+  error?: ApiErrorOptions;
+  /** Chamada assim que o GET chega, com o token da URL (contador de chamadas, assert do token). */
+  onCall?: (token: string) => void;
+}
+
+export function getInviteHandler({
+  invite = buildInvite(),
+  error,
+  onCall,
+}: GetInviteHandlerOptions = {}) {
+  return http.get("*/auth/invites/:token", ({ params }) => {
+    onCall?.(String(params.token));
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(invite);
+  });
+}
+
+interface AcceptInviteHandlerOptions {
+  /** Responde com o ApiErrorDto indicado (400 INVALID_INVITE, 409 RA_ALREADY_IN_USE...). */
+  error?: ApiErrorOptions;
+  /** Falha de rede (fetch rejeita com TypeError), sem resposta HTTP. */
+  networkError?: boolean;
+  /** Aguardada depois de registrar a chamada e antes de responder (envio duplo, conexão lenta). */
+  delay?: Promise<void>;
+  /** Chamada assim que o POST chega, com o corpo recebido (contador de chamadas, assert do payload). */
+  onCall?: (body: AcceptInviteDto) => void;
+}
+
+/** O aceite responde 204 sem corpo. */
+export function acceptInviteHandler({
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: AcceptInviteHandlerOptions = {}) {
+  return http.post("*/auth/invites/accept", async ({ request }) => {
+    onCall?.((await request.json()) as AcceptInviteDto);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return new HttpResponse(null, { status: 204 });
   });
 }
