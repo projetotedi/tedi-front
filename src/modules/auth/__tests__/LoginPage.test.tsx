@@ -17,11 +17,12 @@ setupAuthTestServer();
 const RA = "202400001";
 const PASSWORD = "senha-segura-1";
 const SLOW_NOTICE = "Conectando ao servidor, isso pode levar até um minuto";
+const SESSION_LOADING = "Carregando sua sessão...";
 
 // O LoginPage só existe em /login, como no router real. O harness padrão monta o elemento numa
 // rota "*", em que ele continuaria montado depois do redirecionamento e redirecionaria de novo.
-function renderLoginPage(route: string) {
-  return renderWithProviders(
+async function renderLoginPage(route: string, { waitForSession = true } = {}) {
+  const view = await renderWithProviders(
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -30,6 +31,10 @@ function renderLoginPage(route: string) {
     </AuthProvider>,
     { route },
   );
+  if (waitForSession) {
+    await waitFor(() => expect(screen.queryByText(SESSION_LOADING)).not.toBeInTheDocument());
+  }
+  return view;
 }
 
 function createDeferred() {
@@ -74,6 +79,24 @@ describe("LoginPage", () => {
 
     await screen.findByRole("heading", { name: "Entrar" });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("shows a loading skeleton instead of the form while the session loads", async () => {
+    const session = createDeferred();
+    server.use(
+      http.get("*/auth/me", async () => {
+        await session.promise;
+        return HttpResponse.json({ statusCode: 401, message: "Unauthorized" }, { status: 401 });
+      }),
+    );
+    await renderLoginPage("/login", { waitForSession: false });
+
+    expect(await screen.findByRole("status")).toHaveTextContent(SESSION_LOADING);
+    expect(screen.queryByLabelText("Matrícula (RA)")).not.toBeInTheDocument();
+
+    session.resolve();
+    expect(await screen.findByLabelText("Matrícula (RA)")).toBeInTheDocument();
+    expect(screen.queryByText(SESSION_LOADING)).not.toBeInTheDocument();
   });
 
   it("redirects to returnTo when the session becomes authenticated", async () => {

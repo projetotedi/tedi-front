@@ -5,6 +5,7 @@ import { useDocumentTitle } from "@shared/hooks/useDocumentTitle";
 import { Alert } from "@shared/ui";
 
 import { LoginForm } from "../components/LoginForm";
+import { LoginFormSkeleton } from "../components/LoginFormSkeleton";
 import { useAuth } from "../hooks/useAuth";
 import { readReturnTo } from "../lib/return-to";
 
@@ -31,7 +32,7 @@ export function LoginPage() {
           {/* O design não mostra título: fica só para leitores de tela e para o título da página. */}
           <h1 className="sr-only">{t("login.title")}</h1>
           {reason === "expired" && <Alert variant="error">{t("session.expired")}</Alert>}
-          <LoginForm />
+          {status === "loading" ? <LoginFormSkeleton /> : <LoginForm />}
         </div>
         <p className="text-center text-sm">{t("login.footer")}</p>
       </div>
