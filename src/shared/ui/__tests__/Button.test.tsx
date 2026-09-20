@@ -5,9 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import { Button } from "../Button";
 
 describe("Button", () => {
-  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS
-  // (getBoundingClientRect devolve 0), então o alvo de 44px só é verificável pela classe
-  // min-h-11 do Tailwind (2.75rem). A medida real é conferida no navegador.
   it("keeps the 44px touch target", () => {
     render(<Button>Salvar</Button>);
 

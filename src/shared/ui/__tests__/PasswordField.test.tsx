@@ -107,7 +107,6 @@ describe("PasswordField", () => {
     expect(screen.getByRole("button", { name: "Mostrar senha" })).toBeDisabled();
   });
 
-  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS.
   it("keeps a 44px touch target on the toggle", () => {
     render(<Harness />);
 

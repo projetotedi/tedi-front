@@ -11,11 +11,7 @@ import { useSlowRequestNotice } from "../hooks/useSlowRequestNotice";
 import { toLoginErrorKey } from "../lib/login-error";
 import { loginFormSchema, type LoginFormValues } from "../schemas/login-form.schema";
 
-/**
- * Formulário de RA e senha. Não navega: o `POST /auth/login` devolve o mesmo `MeResponseDto` de
- * `GET /auth/me`, então o sucesso só preenche o cache da sessão; o `AuthProvider` passa a
- * "authenticated" e o `LoginPage` redireciona para o `returnTo` (ou `/`).
- */
+/** Não navega: o sucesso só preenche o cache da sessão e a `LoginPage` redireciona quando ela fica autenticada. */
 export function LoginForm(): ReactElement {
   const { t } = useTranslation("auth");
   const queryClient = useQueryClient();
@@ -111,15 +107,9 @@ export function LoginForm(): ReactElement {
         )}
       />
 
-      {/* Texto puro, sem link e sem ação (a redefinição self-service é a GUS-88). Segue o Figma,
-          por decisão do usuário, no lugar do "Fale com a coordenação" do card/decisão 15: azul do
-          token de acento e alinhado à direita, mas sem sublinhado, cursor de link nem hover, para
-          não parecer clicável. Não trocar por <a> ou <button>: não há para onde levar. */}
       <p className="text-right text-base text-accent">{t("login.forgotPassword")}</p>
 
-      {/* Região viva do aviso de conexão lenta: o Alert info fica sempre montado (vazio) e só o
-          texto entra e sai. Não trocar por renderização condicional do Alert: leitores de tela
-          não anunciam uma região que nasce já preenchida. */}
+      {/* Sempre montado: leitores de tela não anunciam região viva que nasce preenchida. */}
       <Alert variant="info">{showSlowNotice ? t("login.slowNotice") : null}</Alert>
       <Alert variant="error" id={errorId}>
         {errorKey ? t(`login.errors.${errorKey}`) : null}

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { toLoginErrorKey } from "../lib/login-error";
 
-// Formato do ApiError emitido por api/http-client.ts (módulo não pode importá-lo).
 function apiError(statusCode: number, error?: string) {
   return Object.assign(new Error("api error"), { statusCode, error });
 }
@@ -37,13 +36,11 @@ describe("toLoginErrorKey", () => {
     expect(toLoginErrorKey(new TypeError("Failed to fetch"))).toBe("network");
   });
 
-  // O Render hiberna e, ao acordar, o proxy costuma devolver 502, 503 ou 504.
   it.each([502, 503, 504])("maps a %i gateway error to network", (statusCode) => {
     expect(toLoginErrorKey(apiError(statusCode))).toBe("network");
   });
 
   it("maps a gateway error to network even when its error field is not a code of the login", () => {
-    // Proxy e Nest devolvem o nome do status ("Bad Gateway"), que não é um código da tela.
     expect(toLoginErrorKey(apiError(502, "Bad Gateway"))).toBe("network");
     expect(toLoginErrorKey(apiError(503, "SERVICE_UNAVAILABLE"))).toBe("network");
     expect(toLoginErrorKey(apiError(504, "GATEWAY_TIMEOUT"))).toBe("network");

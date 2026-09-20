@@ -2,37 +2,23 @@ import { Description, FieldError, Input, Label, TextField as HeroTextField } fro
 import type { ReactNode, Ref } from "react";
 
 export interface TextFieldProps {
-  /** Rótulo sempre visível: o placeholder nunca substitui o rótulo (público idoso). */
   label: string;
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
   name?: string;
   placeholder?: string;
-  /** Texto de apoio sob o campo. Some enquanto houver `errorMessage`. */
   description?: string;
-  /** Marca o campo como inválido (`aria-invalid`) e mostra a mensagem, ligada ao input. */
   errorMessage?: string;
   isDisabled?: boolean;
   isRequired?: boolean;
   type?: "text" | "password";
   autoComplete?: string;
-  /** Liga ao input um texto externo ao campo (ex.: o aviso de erro geral do formulário). */
   "aria-describedby"?: string;
   inputRef?: Ref<HTMLInputElement>;
-  /** Conteúdo dentro do campo, à direita (ex.: botão de mostrar/ocultar senha). */
   endContent?: ReactNode;
 }
 
-/**
- * Campo de texto do TEDI sobre o TextField do HeroUI (React Aria): `<label>` real ligado ao
- * input, `aria-describedby` para o texto de apoio e a mensagem de erro, `aria-invalid` quando
- * há erro. Fonte de 16px e alvo de 44px (`text-base`, `min-h-11`); o foco visível (anel de
- * 2px) e o estado inválido vêm do HeroUI.
- *
- * `validationBehavior="aria"`: a validação é do formulário (react-hook-form + zod); o campo só
- * reflete o resultado, sem `required`/`setCustomValidity` nativos.
- */
 export function TextField({
   label,
   value,
