@@ -15,7 +15,8 @@ export interface TextFieldProps {
   errorMessage?: string;
   isDisabled?: boolean;
   isRequired?: boolean;
-  type?: "text" | "password";
+  /** `email` abre o teclado com "@" no celular; a validação continua sendo do formulário. */
+  type?: "text" | "password" | "email";
   autoComplete?: string;
   /** Liga ao input um texto externo ao campo (ex.: o aviso de erro geral do formulário). */
   "aria-describedby"?: string;

@@ -109,6 +109,14 @@ describe("TextField", () => {
     expect(input).toHaveAttribute("autocomplete", "current-password");
   });
 
+  it("renders an email input so mobile keyboards offer the at sign", () => {
+    render(<Harness type="email" autoComplete="email" />);
+
+    const input = screen.getByLabelText("Matrícula (RA)");
+    expect(input).toHaveAttribute("type", "email");
+    expect(input).toHaveAttribute("autocomplete", "email");
+  });
+
   it("forwards the input ref", () => {
     const inputRef = createRef<HTMLInputElement>();
     render(<Harness inputRef={inputRef} />);
