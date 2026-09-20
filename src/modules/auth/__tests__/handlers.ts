@@ -115,6 +115,10 @@ interface GetInviteHandlerOptions {
   invite?: InviteResponseDto;
   /** Responde com o ApiErrorDto indicado (ex.: 400 INVALID_INVITE). */
   error?: ApiErrorOptions;
+  /** Falha de rede (fetch rejeita com TypeError), sem resposta HTTP. */
+  networkError?: boolean;
+  /** Aguardada depois de registrar a chamada e antes de responder (estado de carregamento). */
+  delay?: Promise<void>;
   /** Chamada assim que o GET chega, com o token da URL (contador de chamadas, assert do token). */
   onCall?: (token: string) => void;
 }
@@ -122,10 +126,15 @@ interface GetInviteHandlerOptions {
 export function getInviteHandler({
   invite = buildInvite(),
   error,
+  networkError = false,
+  delay,
   onCall,
 }: GetInviteHandlerOptions = {}) {
-  return http.get("*/auth/invites/:token", ({ params }) => {
+  return http.get("*/auth/invites/:token", async ({ params }) => {
     onCall?.(String(params.token));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
     return HttpResponse.json(invite);
   });
