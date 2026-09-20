@@ -106,13 +106,36 @@ describe("LoginPage form", () => {
     expect(passwordField()).toHaveClass("min-h-11", "text-base");
   });
 
-  it("shows the password hint and the forgot-password text without a link", async () => {
+  it("shows the password hint", async () => {
     server.use(meHandler({ user: null }));
     await renderLoginPage("/login");
 
     expect(passwordField()).toHaveAccessibleDescription("Mínimo de 8 caracteres");
-    expect(screen.getByText("Esqueceu a senha? Fale com a coordenação")).toBeInTheDocument();
+  });
+
+  it("shows the forgot-password text as plain text, not as a link or a button", async () => {
+    server.use(meHandler({ user: null }));
+    await renderLoginPage("/login");
+
+    const text = screen.getByText("Esqueceu a senha?");
+    expect(text.tagName).toBe("P");
+    expect(text).not.toHaveAttribute("role");
+    expect(text).not.toHaveAttribute("tabindex");
+    expect(text.closest("a, button")).toBeNull();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /esqueceu/i })).not.toBeInTheDocument();
+  });
+
+  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS. O
+  // Figma pede o texto azul (token de acento) e à direita, mas sem link nem ação: nada de
+  // sublinhado, cursor de link ou hover, para não parecer clicável. Medido no Chrome.
+  it("styles the forgot-password text blue and right-aligned without making it look clickable", async () => {
+    server.use(meHandler({ user: null }));
+    await renderLoginPage("/login");
+
+    const text = screen.getByText("Esqueceu a senha?");
+    expect(text).toHaveClass("text-accent", "text-right", "text-base");
+    expect(text.className).not.toMatch(/underline|cursor-|hover:|focus/);
   });
 
   it("signs in and navigates to /", async () => {

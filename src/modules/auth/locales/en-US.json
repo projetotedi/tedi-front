@@ -27,7 +27,7 @@
     },
     "submit": "Sign in",
     "submitting": "Signing in…",
-    "forgotPassword": "Forgot your password? Contact the coordination team",
+    "forgotPassword": "Forgot your password?",
     "slowNotice": "Connecting to the server, this may take up to a minute",
     "footer": "TEDI · Extension Project Management System",
     "errors": {

@@ -27,7 +27,7 @@
     },
     "submit": "Entrar",
     "submitting": "Entrando…",
-    "forgotPassword": "Esqueceu a senha? Fale com a coordenação",
+    "forgotPassword": "Esqueceu a senha?",
     "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
     "footer": "TEDI · Sistema de Gestão do Projeto de Extensão",
     "errors": {
