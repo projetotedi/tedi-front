@@ -11,9 +11,12 @@
     "description": "If you need access to this page, contact the coordination team.",
     "backHome": "Back to home"
   },
+  "publicScreen": {
+    "brand": "TEDI",
+    "footer": "TEDI · Extension Project Management System"
+  },
   "login": {
     "title": "Sign in",
-    "brand": "TEDI",
     "ra": {
       "label": "Registration number (RA)",
       "placeholder": "Enter your registration number"
@@ -29,7 +32,6 @@
     "submitting": "Signing in…",
     "forgotPassword": "Forgot your password?",
     "slowNotice": "Connecting to the server, this may take up to a minute",
-    "footer": "TEDI · Extension Project Management System",
     "errors": {
       "invalidCredentials": "Incorrect registration number or password",
       "accessDisabled": "Your access is inactive, contact the coordination team",

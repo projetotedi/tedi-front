@@ -11,9 +11,12 @@
     "description": "Se você precisa acessar esta página, fale com a coordenação.",
     "backHome": "Voltar para o início"
   },
+  "publicScreen": {
+    "brand": "TEDI",
+    "footer": "TEDI · Sistema de Gestão do Projeto de Extensão"
+  },
   "login": {
     "title": "Entrar",
-    "brand": "TEDI",
     "ra": {
       "label": "Matrícula (RA)",
       "placeholder": "Digite sua matrícula"
@@ -29,7 +32,6 @@
     "submitting": "Entrando…",
     "forgotPassword": "Esqueceu a senha?",
     "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
-    "footer": "TEDI · Sistema de Gestão do Projeto de Extensão",
     "errors": {
       "invalidCredentials": "Matrícula ou senha incorretos",
       "accessDisabled": "Seu acesso está inativo, fale com a coordenação",
