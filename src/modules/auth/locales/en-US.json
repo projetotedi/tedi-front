@@ -43,5 +43,108 @@
       "raRequired": "Enter your registration number",
       "passwordMin": "The password must have at least 8 characters"
     }
+  },
+  "invite": {
+    "title": "Member registration",
+    "loading": "Loading the invitation…",
+    "badge": {
+      "withRole": "You have been invited as {{role}}",
+      "generic": "You have been invited to TEDI"
+    },
+    "roles": {
+      "member": "Member",
+      "director": "Director",
+      "coordinator": "Coordinator"
+    },
+    "steps": {
+      "personal": "Your details",
+      "password": "Create your password",
+      "completed": "completed"
+    },
+    "stepLabel": "Step {{current}} of {{total}}",
+    "stepStatus": "Step {{current}} of {{total}}: {{name}}",
+    "step1": {
+      "subtitle": "Fill in your details to create your TEDI access.",
+      "personalTitle": "Personal details",
+      "academicTitle": "Academic details"
+    },
+    "step2": {
+      "subtitle": "Last step: create the password you will use to sign in to TEDI.",
+      "title": "Create your password",
+      "summary": "  ·  RA {{ra}} — this RA and the password below are how you sign in to the system."
+    },
+    "fields": {
+      "name": {
+        "label": "Full name"
+      },
+      "ra": {
+        "label": "RA",
+        "hint": "You will sign in to the system with this RA."
+      },
+      "email": {
+        "label": "Institutional email"
+      },
+      "password": {
+        "label": "Password",
+        "hint": "At least 8 characters.",
+        "show": "Show password",
+        "hide": "Hide password"
+      },
+      "passwordConfirmation": {
+        "label": "Confirm password",
+        "hint": "Type the same password again.",
+        "show": "Show password confirmation",
+        "hide": "Hide password confirmation"
+      }
+    },
+    "requiredHint": "* Required fields",
+    "actions": {
+      "next": "Continue",
+      "back": "Back",
+      "submit": "Submit registration",
+      "submitting": "Sending…",
+      "goToLogin": "Go to sign in",
+      "retry": "Try again"
+    },
+    "success": {
+      "title": "Registration complete!",
+      "description": "You can now sign in with your RA ({{ra}}) and the password you just created."
+    },
+    "invalid": {
+      "title": "This link is no longer valid",
+      "description": "The registration link is valid for 48 hours and can only be used once. It may have expired, already been used or been cancelled. Ask the coordination team for a new one."
+    },
+    "slowNotice": "Connecting to the server, this may take up to a minute",
+    "errors": {
+      "raInUse": "This RA is already in use",
+      "emailInUse": "This email is already in use",
+      "network": "Could not connect",
+      "unknown": "Could not send your registration. Please try again."
+    },
+    "validation": {
+      "nameRequired": "Enter your full name",
+      "nameMax": "The name must have at most 200 characters",
+      "raRequired": "Enter your RA",
+      "emailInvalid": "Enter a valid email",
+      "passwordMin": "The password must have at least 8 characters",
+      "passwordMismatch": "The passwords do not match"
+    },
+    "loadError": {
+      "title": "Could not load the invitation",
+      "description": "We could not reach the server right now. Check your connection and try again. Your link is still valid."
+    }
+  },
+  "resetPassword": {
+    "title": "Create a new password",
+    "subtitle": "Choose the password you will use to sign in to TEDI.",
+    "submit": "Save new password",
+    "success": {
+      "title": "Password changed!",
+      "description": "You can now sign in with your new password."
+    },
+    "errors": {
+      "network": "Could not connect",
+      "unknown": "Could not save the new password. Please try again."
+    }
   }
 }
