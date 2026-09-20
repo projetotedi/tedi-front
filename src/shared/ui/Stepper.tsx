@@ -1,23 +1,10 @@
 export interface StepperProps {
-  /** Nome de cada etapa, na ordem em que aparecem. */
   steps: string[];
-  /** Etapa atual, contada a partir de 1. As anteriores aparecem como concluídas. */
   current: number;
-  /** Nome acessível da lista: onde a pessoa está (ex.: "Etapa 2 de 2"). */
   label: string;
-  /** Texto só para leitores de tela ao lado de cada etapa concluída (ex.: "concluída"). */
   completedLabel: string;
 }
 
-/**
- * Indicador de etapas de um formulário em passos. É uma lista ordenada (`<ol>`) com o nome
- * acessível `label`; a etapa atual leva `aria-current="step"` e as concluídas ganham o texto
- * `completedLabel` só para leitores de tela. Os círculos e os conectores são decorativos
- * (`aria-hidden`): quem lê o número e o estado é o texto ao lado.
- *
- * Fonte de 16px nos nomes e nos números. Os conectores somem em telas estreitas (abaixo do
- * breakpoint `sm`), onde as etapas ficam lado a lado sem eles em vez de quebrar linha.
- */
 export function Stepper({ steps, current, label, completedLabel }: StepperProps) {
   return (
     <ol aria-label={label} className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">

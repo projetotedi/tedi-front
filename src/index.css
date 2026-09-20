@@ -18,21 +18,13 @@
   /* Texto sobre o fundo acima (rodapé): 6,4:1. */
   --color-tedi-sky-foreground: #1e3a4c;
 
-  /*
-   * Tela de aceite do convite (Figma, valores exatos: todos passam de 4,5:1 como desenhados).
-   * Ícone do cartão de sucesso: 4,8:1. Ícone do cartão de aviso: 6,4:1.
-   */
   --color-tedi-success: #dbf5e3;
   --color-tedi-success-foreground: #1c7842;
   --color-tedi-warning: #fef3c7;
   --color-tedi-warning-foreground: #92400e;
-  /* Etiqueta "Você foi convidado como ...": 5,5:1. */
   --color-tedi-badge: #dbeafe;
   --color-tedi-badge-foreground: #1d4ed8;
-  /*
-   * Fundo da faixa de resumo do passo 2. O texto dela é o `foreground` (14,5:1); o `text-muted`
-   * do tema (4,8:1 no branco) cai para 4,4:1 sobre este fundo, então não vai texto muted nela.
-   */
+  /* Faixa de resumo do passo 2: sobre este fundo o `text-muted` do tema cai para 4,4:1. */
   --color-tedi-summary: #eff4fc;
 }
 

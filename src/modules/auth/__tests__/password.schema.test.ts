@@ -20,7 +20,6 @@ const VALID_ACCESS_VALUES = {
 
 type Schema = typeof acceptInviteFormSchema | typeof newPasswordFormSchema;
 
-/** Mensagens agrupadas pelo campo que recebe o erro (o primeiro item do `path`). */
 function messagesFor(schema: Schema, values: unknown): Record<string, string[]> {
   const result = schema.safeParse(values);
   if (result.success) return {};

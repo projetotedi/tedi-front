@@ -20,13 +20,9 @@ import { acceptInviteFormSchema, type AcceptInviteFormValues } from "../schemas/
 import { PasswordFields } from "./PasswordFields";
 
 export interface AcceptInviteFormProps {
-  /** Token da URL. Só vai para o corpo do envio: nunca para log, estado global ou armazenamento. */
   token: string;
-  /** Perfil que o convite concede (vem de `GET /auth/invites/:token`). */
   role: Role | null;
-  /** Cadastro concluído. Recebe o RA digitado, para a tela de sucesso. */
   onAccepted: (ra: string) => void;
-  /** O back respondeu `INVALID_INVITE`: o link foi usado, expirou ou foi revogado no meio do caminho. */
   onInvalidInvite: () => void;
 }
 
@@ -34,16 +30,10 @@ type Step = 1 | 2;
 
 const TOTAL_STEPS = 2;
 
-/**
- * Título de passo: recebe o foco quando o passo muda (`tabIndex=-1`, só por programa). O anel é o
- * mesmo azul de acento dos campos e dos botões, e não o do navegador (escuro e esticado na largura
- * toda); `w-fit` cola o anel ao texto.
- */
 const STEP_HEADING_CLASS =
   "w-fit rounded-md text-base font-semibold text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus";
 const STEP_ONE_FIELDS = ["name", "ra", "email"] as const;
 
-/** Perfis que um convite de acesso concede. `superadmin` é invisível na interface. */
 const ROLE_LABEL_KEYS = {
   [Role.member]: "invite.roles.member",
   [Role.director]: "invite.roles.director",
@@ -54,18 +44,6 @@ function roleLabelKey(role: Role | null) {
   return role === null || role === Role.superadmin ? null : ROLE_LABEL_KEYS[role];
 }
 
-/**
- * Cadastro pelo link de convite (`type=access`), em dois passos: "Seus dados" (nome, RA e e-mail) e
- * "Crie sua senha". Um único formulário cobre os dois passos: os valores do passo 1 continuam no
- * formulário enquanto o passo 2 está na tela, e "Voltar" não perde nada. O passo vive em estado, e
- * não na URL.
- *
- * "Continuar" valida só os campos do passo 1; o envio valida tudo. Enter no passo 1 faz o mesmo que
- * "Continuar" e nunca envia. Ao trocar de passo o foco vai para o título do novo passo e uma região
- * `status` anuncia "Etapa 2 de 2: ...".
- *
- * 409 de RA ou de e-mail voltam ao passo 1 com o erro no campo e o foco nele; o formulário fica aberto.
- */
 export function AcceptInviteForm({
   token,
   role,
@@ -76,7 +54,6 @@ export function AcceptInviteForm({
   const errorId = useId();
 
   const [step, setStep] = useState<Step>(1);
-  // A região `status` só anuncia depois da primeira troca de passo (o passo 1 já está na tela).
   const [hasChangedStep, setHasChangedStep] = useState(false);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
   const previousStepRef = useRef<Step>(step);
@@ -100,24 +77,18 @@ export function AcceptInviteForm({
   const conflictField = errorKey ? toAcceptFieldError(errorKey) : null;
   const generalErrorKey = errorKey === "network" || errorKey === "unknown" ? errorKey : null;
 
-  // Foco no título do novo passo. Compara com o passo anterior (e não com "primeira execução") para
-  // não roubar o foco na montagem, nem quando o StrictMode executa o efeito duas vezes.
   useEffect(() => {
     if (previousStepRef.current === step) return;
     previousStepRef.current = step;
     stepHeadingRef.current?.focus();
   }, [step]);
 
-  // Depois de um 409, o foco vai para o campo em conflito. Precisa ser aqui, e não no onError da
-  // mutação: o onError roda antes de o React reabilitar os campos e antes de o passo 1 voltar à
-  // tela, e um input desabilitado ou desmontado não recebe foco. Declarado depois do efeito acima
-  // para vencer o foco no título quando o passo volta a 1 no mesmo render.
+  // Em efeito porque o onError roda antes de reabilitar os campos e remontar o passo 1, e input
+  // desabilitado ou desmontado não recebe foco. Depois do efeito do título: o último foco vence.
   useEffect(() => {
     if (step === 1 && conflictField) setFocus(conflictField);
   }, [step, conflictField, setFocus]);
 
-  // Erro geral (rede ou desconhecido): os campos foram travados durante o envio, o que tira o foco
-  // de quem apertou Enter num deles; ele volta ao primeiro campo do passo 2.
   useEffect(() => {
     if (generalErrorKey) setFocus("password");
   }, [generalErrorKey, setFocus]);
@@ -130,7 +101,6 @@ export function AcceptInviteForm({
   async function goToPasswordStep() {
     const isStepValid = await trigger(STEP_ONE_FIELDS, { shouldFocus: true });
     if (!isStepValid) return;
-    // Um erro do envio anterior não pode reaparecer (nem roubar o foco) ao voltar ao passo 2.
     acceptance.reset();
     changeStep(2);
   }
@@ -179,8 +149,7 @@ export function AcceptInviteForm({
       />
       <div aria-hidden="true" className="h-px bg-separator" />
 
-      {/* Região viva sempre montada (vazia até a primeira troca de passo): leitores de tela só
-          anunciam mudanças em regiões que já estavam no DOM. */}
+      {/* Sempre montada: leitores de tela só anunciam mudanças em regiões já presentes no DOM. */}
       <p role="status" aria-live="polite" className="sr-only">
         {hasChangedStep
           ? t("invite.stepStatus", {
@@ -192,9 +161,8 @@ export function AcceptInviteForm({
       </p>
 
       <form onSubmit={onSubmit} noValidate aria-busy={isBusy} className="flex flex-col gap-5">
-        {/* `key` em cada passo: a troca remonta a subárvore inteira. Sem isto o React reaproveitaria
-            nós do DOM entre os passos, e um clique repetido em "Continuar" cairia no botão de
-            "Enviar cadastro" que ocupa o mesmo lugar. */}
+        {/* `key` por passo: sem remontar, o React reaproveita os nós do DOM e um clique repetido em
+            "Continuar" cairia no "Enviar cadastro", que ocupa o mesmo lugar. */}
         {step === 1 ? (
           <Fragment key="step-1">
             <div className="flex flex-col gap-4">
@@ -250,9 +218,6 @@ export function AcceptInviteForm({
               />
             </div>
 
-            {/* Região viva do aviso de conexão lenta: o Alert info fica sempre montado (vazio) e só
-                o texto entra e sai. Não trocar por renderização condicional do Alert: leitores de
-                tela não anunciam uma região que nasce já preenchida. */}
             <Alert variant="info">{showSlowNotice ? t("invite.slowNotice") : null}</Alert>
             <Alert variant="error" id={errorId}>
               {generalErrorKey ? t(`invite.errors.${generalErrorKey}`) : null}
@@ -287,7 +252,6 @@ interface StepOneFieldProps {
   isDisabled: boolean;
 }
 
-/** Um dos campos do passo 1, ligado ao formulário pelo contexto. */
 function StepOneField({
   name,
   label,
@@ -309,9 +273,6 @@ function StepOneField({
           description={description}
           name={field.name}
           value={field.value}
-          // Com o campo em erro, revalida a cada digitação: o erro some assim que o valor passa.
-          // Sem isto, um erro de "Continuar" (ou o 409 do RA) ficaria na tela até o próximo
-          // "Continuar", porque o formulário só revalida sozinho depois de um envio completo.
           onChange={(value) => {
             field.onChange(value);
             if (fieldState.error) void trigger(name);

@@ -8,26 +8,15 @@ import type { NewPasswordFormValues } from "../schemas/password.schema";
 
 export interface PasswordFieldsProps {
   isDisabled: boolean;
-  /** Liga ao primeiro campo um texto externo (o aviso de erro geral do formulário). */
   describedBy?: string;
 }
 
-/**
- * Senha e confirmação, lado a lado a partir do breakpoint `sm`. Serve ao passo 2 do aceite de
- * acesso e à redefinição de senha, que compartilham estes dois campos, os rótulos e as dicas.
- *
- * Lê o formulário pelo contexto (`FormProvider` de quem usa): os dois formulários têm outros
- * campos além destes e não dá para tipar um `control` que serve a ambos sem um cast. Só toca em
- * `password` e `passwordConfirmation`, que existem nos dois.
- */
 export function PasswordFields({ isDisabled, describedBy }: PasswordFieldsProps): ReactElement {
   const { t } = useTranslation("auth");
   const { control } = useFormContext<NewPasswordFormValues>();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
-      {/* `deps`: ao mudar a senha, revalida a confirmação, senão o erro "as senhas não são iguais"
-          ficaria na tela depois de a senha ser corrigida. */}
       <Controller
         name="password"
         control={control}

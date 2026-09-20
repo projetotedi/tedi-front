@@ -1,26 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 
 export interface StatusCardProps {
-  /** `success`: ícone verde com "✓". `warning`: ícone âmbar com "!". */
   variant: "success" | "warning";
   title: string;
   description: ReactNode;
-  /** Ação abaixo do texto (em geral um `Button` de largura total). */
   children?: ReactNode;
-  /**
-   * Anuncia o título e a descrição na hora (`role="alert"`), para o que a pessoa precisa saber
-   * já (ex.: link inválido). A ação em `children` fica fora da região anunciada.
-   */
   isAlert?: boolean;
-  /**
-   * Nível do título: 1 quando o cartão é a tela inteira (não há outro título na página) e 2, o
-   * padrão, dentro de uma página que já tem o seu.
-   */
   headingLevel?: 1 | 2;
-  /**
-   * Leva o foco ao título ao montar. Para telas que substituem o conteúdo depois de uma ação da
-   * pessoa (ex.: o cadastro concluído): o botão que ela usou sai do DOM e o foco se perderia.
-   */
   autoFocus?: boolean;
 }
 
@@ -29,11 +15,6 @@ const VARIANTS = {
   warning: { glyph: "!", className: "bg-tedi-warning text-tedi-warning-foreground" },
 } as const;
 
-/**
- * Cartão de status de uma tela inteira: ícone redondo, título, descrição e uma ação. O ícone é um
- * glifo de texto decorativo (`aria-hidden`); o significado vem do título e da descrição. Fonte de
- * 16px na descrição.
- */
 export function StatusCard({
   variant,
   title,

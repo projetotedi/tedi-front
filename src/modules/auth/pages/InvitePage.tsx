@@ -13,37 +13,22 @@ import { PublicScreen } from "../components/PublicScreen";
 import { useSlowRequestNotice } from "../hooks/useSlowRequestNotice";
 import { toInviteErrorKey } from "../lib/invite-error";
 
-/** Como a página terminou: cadastro ou nova senha concluídos, ou o link deixou de valer no envio. */
 type Outcome = { kind: "accepted"; ra: string } | { kind: "passwordChanged" } | { kind: "invalid" };
 
-/** Cartão largo do formulário e cartão estreito das telas de status (medidas do Figma: 800 e 480). */
 const FORM_CARD_WIDTH = "max-w-200";
 const STATUS_CARD_WIDTH = "max-w-120";
 
-/**
- * Tela pública do link de convite, `/invite?token=...` (e `/reset-password?token=...`, que é o que o
- * back gera para a redefinição de senha). A página decide o que mostrar pelo `type` que
- * `GET /auth/invites/:token` devolve: cadastro em dois passos (`access`) ou só a nova senha
- * (`password_reset`).
- *
- * O token vem só da URL e vai só para o `GET` e para o corpo do `POST`: não entra em estado global,
- * log, armazenamento nem título da página. Quem já está autenticado não é redirecionado, porque pode
- * estar abrindo o link de outra pessoa num computador compartilhado (o endpoint é público).
- */
+/** Quem já está logado não é redirecionado: pode estar abrindo o link de outra pessoa. */
 export function InvitePage(): ReactElement {
   const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  // O token só vai ao GET e ao corpo do POST: nunca a log, estado global, armazenamento ou título.
   const token = searchParams.get("token") ?? "";
   const [outcome, setOutcome] = useState<Outcome | null>(null);
 
-  // `retry: false`: o back responde 400 a um link que não vale, e isso não muda ao repetir. `gcTime: 0`:
-  // o token está na chave da query e não deve sobreviver à saída da página. Nunca é reconsultado
-  // sozinho (`staleTime: Infinity`): depois do aceite o link passa a ser inválido, e um segundo `GET`
-  // trocaria o cadastro concluído pela tela de link inválido.
-  // `encodeURIComponent`: o hook gerado monta o caminho por interpolação, sem codificar, e um token
-  // com `/`, `?` ou `#` (link adulterado ou truncado) mudaria o caminho do GET. Um token válido
-  // (base64url) não muda.
+  // `encodeURIComponent`: o hook gerado interpola o token no caminho sem codificar.
+  // `gcTime: 0`: o token está na chave da query e não deve sobreviver à saída da página.
   const invite = useGetInvite(encodeURIComponent(token), {
     query: { enabled: token.length > 0, retry: false, staleTime: Infinity, gcTime: 0 },
   });
@@ -54,8 +39,6 @@ export function InvitePage(): ReactElement {
   );
 
   function goToLogin() {
-    // `replace`: o endereço do convite não serve mais (o link é de uso único) e não deve ficar no
-    // histórico, ao alcance do "voltar".
     navigate("/login", { replace: true });
   }
 
@@ -105,8 +88,6 @@ export function InvitePage(): ReactElement {
     );
   }
 
-  // Sem resposta do back (sem internet, ou o Render ainda acordando): o link pode estar bom, e o
-  // convite é de uso único, então não dá para dizer que ele não vale.
   if (invite.isError) {
     return (
       <PublicScreen cardWidthClassName={STATUS_CARD_WIDTH}>
@@ -129,7 +110,6 @@ export function InvitePage(): ReactElement {
     return (
       <PublicScreen cardWidthClassName={FORM_CARD_WIDTH}>
         <h1 className="sr-only">{t("invite.title")}</h1>
-        {/* Região viva: o texto troca dentro dela quando a espera passa dos 3 s (Render acordando). */}
         <Alert variant="info">
           {showSlowNotice ? t("invite.slowNotice") : t("invite.loading")}
         </Alert>

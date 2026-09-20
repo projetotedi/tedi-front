@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import { toAcceptFieldError, toInviteErrorKey } from "../lib/invite-error";
 
-// Formato do ApiError emitido por api/http-client.ts (módulo não pode importá-lo).
 function apiError(statusCode: number, error?: string) {
   return Object.assign(new Error("api error"), { statusCode, error });
 }
@@ -24,13 +23,11 @@ describe("toInviteErrorKey", () => {
     expect(toInviteErrorKey(new TypeError("Failed to fetch"))).toBe("network");
   });
 
-  // O Render hiberna e, ao acordar, o proxy costuma devolver 502, 503 ou 504.
   it.each([502, 503, 504])("maps a %i gateway error to network", (statusCode) => {
     expect(toInviteErrorKey(apiError(statusCode))).toBe("network");
   });
 
   it("maps a gateway error to network even when its error field is not a code of the invite", () => {
-    // Proxy e Nest devolvem o nome do status ("Bad Gateway"), que não é um código da tela.
     expect(toInviteErrorKey(apiError(502, "Bad Gateway"))).toBe("network");
     expect(toInviteErrorKey(apiError(503, "SERVICE_UNAVAILABLE"))).toBe("network");
     expect(toInviteErrorKey(apiError(504, "GATEWAY_TIMEOUT"))).toBe("network");
@@ -64,7 +61,6 @@ describe("toInviteErrorKey", () => {
   });
 
   it("maps a 502 answered with an HTML page (no error code) to network", () => {
-    // O proxy não devolve o ApiErrorDto: o corpo é HTML ou texto, sem `error` nem `message`.
     const proxyError = Object.assign(new Error("Bad Gateway"), { statusCode: 502 });
 
     expect(toInviteErrorKey(proxyError)).toBe("network");

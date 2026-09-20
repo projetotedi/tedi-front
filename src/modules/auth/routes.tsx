@@ -11,7 +11,6 @@ import { LoginPage } from "./pages/LoginPage";
 export const authRoutes: RouteObject[] = [
   { path: "login", element: <LoginPage /> },
   { path: "invite", element: <InvitePage /> },
-  // O back gera o link de redefinição de senha como /reset-password?token=... (invites.service.ts),
-  // e o de cadastro como /invite?token=.... É a mesma página: ela decide pelo `type` que a API devolve.
+  // O back gera /invite?token=... (cadastro) e /reset-password?token=... (senha): mesma página.
   { path: "reset-password", element: <InvitePage /> },
 ];

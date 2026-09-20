@@ -31,8 +31,6 @@ const NO_BREAK_SPACE = String.fromCharCode(160);
 
 const PASSWORD_RESET_INVITE = buildInvite({ type: InviteType.password_reset, role: null });
 
-// O InvitePage só existe em /invite e /reset-password, como no router real. O harness padrão monta
-// o elemento numa rota "*"; o "*" daqui é o destino do botão "Ir para o login".
 function renderInvitePage(route: string) {
   return renderWithProviders(
     <AuthProvider>
@@ -63,10 +61,7 @@ const confirmationField = () => screen.getByLabelText("Confirmar senha");
 const continueButton = () => screen.getByRole("button", { name: "Continuar" });
 const submitButton = () => screen.getByRole("button", { name: "Enviar cadastro" });
 
-/**
- * Abre o link de cadastro e espera o formulário aparecer (passo 1). Espera o primeiro campo, e não o
- * título: a tela de carregamento também tem um título "Cadastro de membro", só para leitores de tela.
- */
+// Espera o primeiro campo, e não o título: o título já existe (sr-only) na tela de carregamento.
 async function openAccessInvite(route = `/invite?token=${TOKEN}`) {
   const view = await renderInvitePage(route);
   await screen.findByLabelText("Nome completo");
@@ -93,7 +88,6 @@ async function fillPasswords(user: UserEvent, password = PASSWORD, confirmation 
   await user.type(confirmationField(), confirmation);
 }
 
-/** Preenche os dois passos e envia. */
 async function completeRegistration(user: UserEvent) {
   await goToStepTwo(user);
   await fillPasswords(user);
@@ -125,7 +119,6 @@ describe("InvitePage with an access invite", () => {
     expect(screen.getByText("* Campos obrigatórios")).toBeVisible();
     expect(continueButton()).toBeVisible();
     expect(screen.getByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
-    // Só o passo 1: a senha ainda não foi pedida e nada foi enviado.
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Voltar" })).not.toBeInTheDocument();
     expect(tokens).toEqual([TOKEN]);
@@ -136,7 +129,6 @@ describe("InvitePage with an access invite", () => {
     [Role.director, "Você foi convidado como Diretor"],
     [Role.coordinator, "Você foi convidado como Coordenadora"],
     [null, "Você foi convidado para o TEDI"],
-    // O back recusa superadmin em convite, mas o tipo gerado o permite: nunca vira um nome na tela.
     [Role.superadmin, "Você foi convidado para o TEDI"],
   ])("names the granted role %s in the invite label", async (role, label) => {
     server.use(meHandler({ user: null }), getInviteHandler({ invite: buildInvite({ role }) }));
@@ -163,10 +155,8 @@ describe("InvitePage with an access invite", () => {
         `Agora você já pode entrar com o seu RA (${RA}) e a senha que acabou de criar.`,
       ),
     ).toBeVisible();
-    // A tela nova substitui o formulário: o foco vai para o título, e não se perde com o botão que saiu.
     await waitFor(() => expect(title).toHaveFocus());
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
-    // O corpo é exatamente o DTO: token da URL e os quatro campos, sem a confirmação da senha.
     expect(accepted).toStrictEqual([
       { token: TOKEN, name: NAME, ra: RA, email: EMAIL, password: PASSWORD },
     ]);
@@ -176,7 +166,6 @@ describe("InvitePage with an access invite", () => {
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
     expect(screen.getByText("Destino do redirecionamento")).toBeInTheDocument();
-    // O endereço do convite (de uso único) não fica no histórico, ao alcance do "voltar".
     expect(router.state.historyAction).toBe("REPLACE");
   });
 
@@ -200,7 +189,6 @@ describe("InvitePage with an access invite", () => {
     expect(accepted).toStrictEqual([
       { token: TOKEN, name: NAME, ra: RA, email: EMAIL, password: PASSWORD },
     ]);
-    // A tela de sucesso mostra o RA aparado, o mesmo que foi enviado.
     expect(
       screen.getByText(
         `Agora você já pode entrar com o seu RA (${RA}) e a senha que acabou de criar.`,
@@ -224,7 +212,6 @@ describe("InvitePage with an access invite", () => {
     );
     const { router } = await openAccessInvite();
 
-    // Quem está logado pode estar abrindo o link de outra pessoa num computador compartilhado.
     await waitFor(() => expect(meCalls).toBeGreaterThan(0));
     await waitFor(() => expect(screen.getByText("Você foi convidado como Membro")).toBeVisible());
     expect(router.state.location.pathname).toBe("/invite");
@@ -257,7 +244,6 @@ describe("InvitePage with a password_reset invite", () => {
     expect(passwordField()).toBeVisible();
     expect(confirmationField()).toBeVisible();
     expect(screen.getByRole("button", { name: "Salvar nova senha" })).toBeVisible();
-    // Nada do cadastro: nem nome, RA ou e-mail, nem etapas, nem a etiqueta do perfil.
     expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("RA")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("E-mail institucional")).not.toBeInTheDocument();
@@ -283,7 +269,6 @@ describe("InvitePage with a password_reset invite", () => {
 
     const title = await screen.findByRole("heading", { level: 1, name: "Senha alterada!" });
     await waitFor(() => expect(title).toHaveFocus());
-    // Só as duas chaves: nome, RA ou e-mail vazios virariam 400 no back, e a confirmação não vai.
     expect(accepted).toStrictEqual([{ token: TOKEN, password: PASSWORD }]);
 
     await user.click(screen.getByRole("button", { name: "Ir para o login" }));
@@ -336,7 +321,6 @@ describe("InvitePage with a password_reset invite", () => {
     server.use(
       meHandler({ user: null }),
       getInviteHandler({ invite: PASSWORD_RESET_INVITE }),
-      // Um 409 de RA ou de e-mail não existe neste ramo: se vier, não tem campo para apontar.
       acceptInviteHandler({ error: { statusCode: 409, error: "RA_ALREADY_IN_USE" } }),
     );
     await renderInvitePage(`/invite?token=${TOKEN}`);
@@ -384,13 +368,10 @@ describe("InvitePage with a link that does not work", () => {
     expect(alert).toHaveTextContent("Peça um novo à coordenação.");
     expect(screen.getByRole("heading", { level: 1, name: INVALID_INVITE_TITLE })).toBeVisible();
     expect(screen.getByRole("button", { name: "Ir para o login" })).toBeVisible();
-    // Nenhum campo, nem formulário.
     expect(screen.queryAllByRole("textbox")).toHaveLength(0);
     expect(container.querySelectorAll("input, form")).toHaveLength(0);
   });
 
-  // O hook gerado monta o caminho por interpolação, sem codificar: um link adulterado ou truncado
-  // não pode mudar o caminho do GET (ex.: virar /auth/invites/abc/def, ou levar uma query junto).
   it("sends a token with special characters as one path segment", async () => {
     const strange = "abc/def?x=1#y";
     const tokens: string[] = [];
@@ -451,15 +432,12 @@ describe("InvitePage with a link that does not work", () => {
 
     await completeRegistration(user);
 
-    // O link foi usado ou expirou enquanto a pessoa preenchia: a tela inteira dá lugar ao aviso.
     expect(await screen.findByRole("alert")).toHaveTextContent(INVALID_INVITE_TITLE);
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
     expect(screen.queryAllByRole("textbox")).toHaveLength(0);
   });
 
-  // Sem resposta do back (o Render acordando, ou sem internet) o link pode estar bom: dizer que ele
-  // não vale faria a pessoa pedir outro convite à toa, e o de uso único já seria desperdiçado.
   it.each([
     ["the network fails", { networkError: true }],
     ["the gateway answers 503", { error: { statusCode: 503, error: "SERVICE_UNAVAILABLE" } }],
@@ -486,7 +464,6 @@ describe("InvitePage with a link that does not work", () => {
     await screen.findByText("Não foi possível carregar o convite");
     expect(calls).toBe(1);
 
-    // O servidor voltou: o mesmo link, sem recarregar a página.
     server.use(getInviteHandler({ onCall: () => (calls += 1) }));
     await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
 
@@ -551,7 +528,6 @@ describe("InvitePage step 1", () => {
     expect(nameField()).toHaveAccessibleDescription("Informe o seu nome completo");
     expect(raField()).toHaveAttribute("aria-invalid", "true");
     expect(emailField()).toHaveAttribute("aria-invalid", "true");
-    // O foco vai para o primeiro campo com erro, e o passo 2 não abre.
     await waitFor(() => expect(nameField()).toHaveFocus());
     expect(screen.getByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
@@ -600,7 +576,6 @@ describe("InvitePage step 1", () => {
 
     await waitFor(() => expect(nameField()).not.toHaveAttribute("aria-invalid", "true"));
     expect(screen.queryByText("Informe o seu nome completo")).not.toBeInTheDocument();
-    // Os campos que ainda estão errados continuam apontados.
     expect(raField()).toHaveAttribute("aria-invalid", "true");
     expect(emailField()).toHaveAttribute("aria-invalid", "true");
   });
@@ -649,8 +624,6 @@ describe("InvitePage step 2", () => {
     expect(summary).toHaveTextContent(
       `${NAME} · RA ${RA} — é com este RA e a senha abaixo que você entra no sistema.`,
     );
-    // O "RA" e o número não se separam numa quebra de linha no celular: o espaço entre eles é um
-    // espaço sem quebra, que já vem assim do texto traduzido.
     expect(summary.textContent).toContain(`RA${NO_BREAK_SPACE}${RA}`);
     expect(
       screen.getByText("Último passo: crie a senha que você vai usar para entrar no TEDI."),
@@ -661,7 +634,6 @@ describe("InvitePage step 2", () => {
     expect(confirmationField()).toBeRequired();
     expect(screen.getByRole("button", { name: "Voltar" })).toBeVisible();
     expect(submitButton()).toBeVisible();
-    // O passo 1 saiu da tela: só o resumo o representa.
     expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
   });
 
@@ -703,7 +675,6 @@ describe("InvitePage step 2", () => {
     await user.click(submitButton());
 
     expect(await screen.findByText("As senhas não são iguais")).toBeInTheDocument();
-    // O erro fica na confirmação, o campo que a pessoa precisa redigitar.
     expect(confirmationField()).toHaveAttribute("aria-invalid", "true");
     expect(confirmationField()).toHaveAccessibleDescription("As senhas não são iguais");
     expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
@@ -720,7 +691,6 @@ describe("InvitePage step 2", () => {
     await user.click(submitButton());
     await screen.findByText("As senhas não são iguais");
 
-    // Corrige a senha (e não a confirmação): o erro da confirmação não pode ficar para trás.
     await user.clear(passwordField());
     await user.type(passwordField(), "12345679");
 
@@ -771,7 +741,6 @@ describe("InvitePage going between the steps", () => {
 
     await user.click(continueButton());
 
-    // Ida e volta não perde nem a senha já digitada.
     await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
     expect(passwordField()).toHaveValue(PASSWORD);
     expect(confirmationField()).toHaveValue(PASSWORD);
@@ -782,7 +751,6 @@ describe("InvitePage going between the steps", () => {
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
 
-    // No passo 1 a região já está no DOM, vazia e educada: só assim o anúncio seguinte é lido.
     const announcement = screen.getByRole("status");
     expect(announcement).toBeEmptyDOMElement();
     expect(announcement).toHaveAttribute("aria-live", "polite");
@@ -820,7 +788,6 @@ describe("InvitePage errors from the API", () => {
 
     await completeRegistration(user);
 
-    // Volta ao passo 1 com o erro no campo e o foco nele, sem perder nada do que foi digitado.
     await waitFor(() => expect(raField()).toHaveAttribute("aria-invalid", "true"));
     expect(raField()).toHaveAccessibleDescription("Este RA já está em uso");
     await waitFor(() => expect(raField()).toHaveFocus());
@@ -830,11 +797,9 @@ describe("InvitePage errors from the API", () => {
     expect(nameField()).not.toHaveAttribute("aria-invalid", "true");
     expect(emailField()).not.toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
-    // O formulário continua aberto: nem sucesso, nem tela de link inválido, nem alerta geral.
     expect(screen.queryByRole("heading", { name: "Cadastro concluído!" })).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/invite");
-    // Os campos voltaram a aceitar digitação.
     expect(raField()).toBeEnabled();
   });
 
@@ -877,7 +842,6 @@ describe("InvitePage errors from the API", () => {
     server.use(acceptInviteHandler({ onCall: (body) => accepted.push(body) }));
     await user.click(continueButton());
     await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
-    // Nenhum erro do envio anterior volta ao passo 2.
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     await user.click(submitButton());
 
@@ -898,7 +862,6 @@ describe("InvitePage errors from the API", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Não foi possível conectar");
-    // Continua no passo 2, com os campos livres, o foco na senha e o aviso ligado a ela.
     await waitFor(() => expect(passwordField()).toHaveFocus());
     expect(passwordField()).toBeEnabled();
     expect(passwordField()).toHaveValue(PASSWORD);
@@ -1018,7 +981,6 @@ describe("InvitePage while sending", () => {
     );
     const { container } = await openAccessInvite();
     await goToStepTwo(user);
-    // A região do aviso (a `div`; a `p` é o anúncio de troca de passo) já está no DOM, vazia.
     const region = container.querySelector<HTMLElement>("div[role='status']");
     expect(region).toBeEmptyDOMElement();
 
@@ -1030,7 +992,6 @@ describe("InvitePage while sending", () => {
     });
 
     await waitFor(() => expect(region).toHaveTextContent(SLOW_NOTICE));
-    // O texto entrou na região que já estava no DOM, e não numa região nova.
     expect(container.querySelector("div[role='status']")).toBe(region);
 
     deferred.resolve();
@@ -1043,9 +1004,8 @@ describe("InvitePage while sending", () => {
 });
 
 describe("InvitePage accessibility", () => {
-  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS (o
-  // getBoundingClientRect devolve 0), então alvo de 44px e fonte de 16px só são verificáveis pelas
-  // classes do Tailwind. A medida real é conferida no navegador.
+  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS, então
+  // alvo de 44px e fonte de 16px só são verificáveis pelas classes do Tailwind.
   it("renders 44px targets and 16px text", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
@@ -1136,7 +1096,6 @@ describe("InvitePage accessibility", () => {
     expect(passwordField()).toHaveFocus();
     await user.keyboard(PASSWORD);
     await user.tab();
-    // O botão do olho fica entre a senha e a confirmação.
     expect(screen.getByRole("button", { name: "Mostrar senha" })).toHaveFocus();
     await user.tab();
     expect(confirmationField()).toHaveFocus();

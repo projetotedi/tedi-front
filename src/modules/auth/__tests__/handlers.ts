@@ -89,7 +89,6 @@ export function loginHandler({
 
 interface ApiErrorOptions {
   statusCode: number;
-  /** Código do ApiErrorDto (ex.: INVALID_INVITE, RA_ALREADY_IN_USE). */
   error: string;
   message?: string;
 }
@@ -111,15 +110,10 @@ export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteR
 }
 
 interface GetInviteHandlerOptions {
-  /** Corpo da resposta 200. Padrão: convite de acesso para o perfil de membro. */
   invite?: InviteResponseDto;
-  /** Responde com o ApiErrorDto indicado (ex.: 400 INVALID_INVITE). */
   error?: ApiErrorOptions;
-  /** Falha de rede (fetch rejeita com TypeError), sem resposta HTTP. */
   networkError?: boolean;
-  /** Aguardada depois de registrar a chamada e antes de responder (estado de carregamento). */
   delay?: Promise<void>;
-  /** Chamada assim que o GET chega, com o token da URL (contador de chamadas, assert do token). */
   onCall?: (token: string) => void;
 }
 
@@ -141,17 +135,12 @@ export function getInviteHandler({
 }
 
 interface AcceptInviteHandlerOptions {
-  /** Responde com o ApiErrorDto indicado (400 INVALID_INVITE, 409 RA_ALREADY_IN_USE...). */
   error?: ApiErrorOptions;
-  /** Falha de rede (fetch rejeita com TypeError), sem resposta HTTP. */
   networkError?: boolean;
-  /** Aguardada depois de registrar a chamada e antes de responder (envio duplo, conexão lenta). */
   delay?: Promise<void>;
-  /** Chamada assim que o POST chega, com o corpo recebido (contador de chamadas, assert do payload). */
   onCall?: (body: AcceptInviteDto) => void;
 }
 
-/** O aceite responde 204 sem corpo. */
 export function acceptInviteHandler({
   error,
   networkError = false,

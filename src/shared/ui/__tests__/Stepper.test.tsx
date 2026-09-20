@@ -74,7 +74,6 @@ describe("Stepper", () => {
     const { container } = renderStepper(1);
 
     const decorative = container.querySelectorAll("[aria-hidden='true']");
-    // Um círculo por etapa e um conector entre as duas.
     expect(decorative).toHaveLength(3);
     for (const element of decorative) {
       expect(within(element as HTMLElement).queryAllByRole("button")).toHaveLength(0);
@@ -90,7 +89,7 @@ describe("Stepper", () => {
   });
 
   // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS, então
-  // a fonte de 16px só é verificável pela classe do Tailwind. A medida real é conferida no navegador.
+  // a fonte de 16px só é verificável pela classe do Tailwind.
   it("keeps the 16px base font on the step names", () => {
     renderStepper(1);
 
