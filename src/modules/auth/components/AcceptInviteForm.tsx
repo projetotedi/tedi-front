@@ -33,6 +33,14 @@ export interface AcceptInviteFormProps {
 type Step = 1 | 2;
 
 const TOTAL_STEPS = 2;
+
+/**
+ * Título de passo: recebe o foco quando o passo muda (`tabIndex=-1`, só por programa). O anel é o
+ * mesmo azul de acento dos campos e dos botões, e não o do navegador (escuro e esticado na largura
+ * toda); `w-fit` cola o anel ao texto.
+ */
+const STEP_HEADING_CLASS =
+  "w-fit rounded-md text-base font-semibold text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus";
 const STEP_ONE_FIELDS = ["name", "ra", "email"] as const;
 
 /** Perfis que um convite de acesso concede. `superadmin` é invisível na interface. */
@@ -190,11 +198,7 @@ export function AcceptInviteForm({
         {step === 1 ? (
           <Fragment key="step-1">
             <div className="flex flex-col gap-4">
-              <h2
-                ref={stepHeadingRef}
-                tabIndex={-1}
-                className="text-base font-semibold text-foreground"
-              >
+              <h2 ref={stepHeadingRef} tabIndex={-1} className={STEP_HEADING_CLASS}>
                 {t("invite.step1.personalTitle")}
               </h2>
               <StepOneField
@@ -233,11 +237,7 @@ export function AcceptInviteForm({
         ) : (
           <Fragment key="step-2">
             <div className="flex flex-col gap-4">
-              <h2
-                ref={stepHeadingRef}
-                tabIndex={-1}
-                className="text-base font-semibold text-foreground"
-              >
+              <h2 ref={stepHeadingRef} tabIndex={-1} className={STEP_HEADING_CLASS}>
                 {t("invite.step2.title")}
               </h2>
               <p className="rounded-xl bg-tedi-summary px-4 py-3 text-base whitespace-pre-wrap text-foreground">

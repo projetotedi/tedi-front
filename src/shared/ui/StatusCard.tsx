@@ -63,7 +63,7 @@ export function StatusCard({
         <Heading
           ref={titleRef}
           tabIndex={autoFocus ? -1 : undefined}
-          className="text-[22px] leading-7 font-semibold text-foreground"
+          className="rounded-md text-[22px] leading-7 font-semibold text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus"
         >
           {title}
         </Heading>
