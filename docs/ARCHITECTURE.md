@@ -38,7 +38,7 @@ src/
 │   └── <modulo>/                     # ver template abaixo
 │
 └── shared/                           # genérico, sem domínio
-    ├── ui/                           # Button, Input, Select, Dialog, Toast, FormField (acessíveis)
+    ├── ui/                           # Button, TextField, PasswordField, Alert, Select, Dialog, Toast (acessíveis)
     ├── components/                   # PageTitle, DataTable, EmptyState, ConfirmDialog
     ├── hooks/                        # useDocumentTitle, useDebounce...
     ├── i18n/                         # init do i18next + registerModuleLocales + locales/common
@@ -209,8 +209,8 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 ## 8. Próximos passos previstos
 
 1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
-2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Só `Button` existe por enquanto (GUS-83, para o botão sair).
-3. Módulo `auth`: **parcialmente entregue em GUS-83** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout). Faltam: formulário de login real (GUS-84), aceite de convite (GUS-85), menu por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86), telas de Acessos (GUS-87/88).
+2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField`, `PasswordField` e `Alert` (GUS-84). Os tokens do TEDI (`bg-tedi-sky` e ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro.
+3. Módulo `auth`: **parcialmente entregue em GUS-83 e GUS-84** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84). Faltam: aceite de convite (GUS-85), menu por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86), telas de Acessos (GUS-87/88).
 4. Módulo `pessoas` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.
 6. Resolver `VITE_API_URL` em build time: build por ambiente no pipeline ou config em runtime pelo nginx.

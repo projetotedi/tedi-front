@@ -1,8 +1,36 @@
-import { Button as HeroButton, type ButtonProps as HeroButtonProps } from "@heroui/react";
+import { Button as HeroButton, Spinner, type ButtonProps as HeroButtonProps } from "@heroui/react";
 
-export type ButtonProps = Omit<HeroButtonProps, "className"> & { className?: string };
+export type ButtonProps = Omit<HeroButtonProps, "className" | "isPending"> & {
+  className?: string;
+  isLoading?: boolean;
+};
 
-/** Botão do TEDI: alvo de toque de 44px (acessibilidade para público idoso) sobre o HeroUI. */
-export function Button({ className = "", ...props }: ButtonProps) {
-  return <HeroButton {...props} className={`min-h-11 ${className}`} />;
+export function Button({
+  className = "",
+  isLoading = false,
+  isIconOnly,
+  children,
+  ...props
+}: ButtonProps) {
+  const classes = [
+    "min-h-11 text-base",
+    isIconOnly ? "min-w-11" : "",
+    // O estado pendente do HeroUI usa `aria-disabled`, que aplica o esmaecimento de desabilitado.
+    // Enquanto carrega o botão precisa continuar legível (texto branco sobre azul, 4,5:1).
+    isLoading ? "opacity-100" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <HeroButton {...props} isIconOnly={isIconOnly} isPending={isLoading} className={classes}>
+      {(renderProps) => (
+        <>
+          {isLoading && <Spinner aria-hidden="true" size="sm" color="current" />}
+          {typeof children === "function" ? children(renderProps) : children}
+        </>
+      )}
+    </HeroButton>
+  );
 }

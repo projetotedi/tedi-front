@@ -1,2 +1,23 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+
+@theme {
+  --color-tedi-sky: #8ec6e6;
+  --color-tedi-sky-foreground: #1e3a4c;
+}
+
+:root {
+  /* O azul do design (#0485f7) dá 3,6:1 com texto claro; #0466d9 dá 5,2:1. O hover escurece (o do HeroUI clareia). */
+  --accent: #0466d9;
+  --accent-hover: color-mix(in oklab, var(--accent) 90%, black 10%);
+
+  /* O #ff383c do HeroUI dá 3,6:1 como texto de erro; #c62828 dá 5,6:1. */
+  --danger: #c62828;
+
+  /* Campo branco sobre cartão branco não se distingue sem borda: #7c7c86 dá 4,1:1 (mínimo 3:1). */
+  --field-border-width: 1px;
+  --field-border: #7c7c86;
+
+  /* Com 0,7 o texto desabilitado mantém 6,5:1 (o padrão 0,5 cairia para 3,4:1). */
+  --disabled-opacity: 0.7;
+}
