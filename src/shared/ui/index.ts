@@ -4,6 +4,8 @@ export { Button } from "./Button";
 export type { ButtonProps } from "./Button";
 export { PasswordField } from "./PasswordField";
 export type { PasswordFieldProps } from "./PasswordField";
+export { Skeleton } from "./Skeleton";
+export type { SkeletonProps } from "./Skeleton";
 export { StatusCard } from "./StatusCard";
 export type { StatusCardProps } from "./StatusCard";
 export { Stepper } from "./Stepper";

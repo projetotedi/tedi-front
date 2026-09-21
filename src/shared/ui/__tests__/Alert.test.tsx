@@ -37,8 +37,6 @@ describe("Alert", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  // Região viva: leitores de tela só anunciam mudanças em regiões que já estavam no DOM. Por isso
-  // o info mantém a região `status` montada e vazia, ao contrário do error (que some sem conteúdo).
   it.each([
     ["omitted", undefined],
     ["null", null],
@@ -75,9 +73,6 @@ describe("Alert", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS nem
-  // mede layout. `empty:sr-only` tira a região vazia do fluxo (sem espaço nem gap num pai flex)
-  // sem `display: none`, que a removeria da árvore de acessibilidade. Medido no Chrome.
   it("takes the empty region out of the flow without hiding it from assistive technology", () => {
     render(<Alert variant="info" />);
 

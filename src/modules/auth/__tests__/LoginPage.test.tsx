@@ -17,11 +17,12 @@ setupAuthTestServer();
 const RA = "202400001";
 const PASSWORD = "senha-segura-1";
 const SLOW_NOTICE = "Conectando ao servidor, isso pode levar até um minuto";
+const SESSION_LOADING = "Carregando sua sessão...";
 
 // O LoginPage só existe em /login, como no router real. O harness padrão monta o elemento numa
 // rota "*", em que ele continuaria montado depois do redirecionamento e redirecionaria de novo.
-function renderLoginPage(route: string) {
-  return renderWithProviders(
+async function renderLoginPage(route: string, { waitForSession = true } = {}) {
+  const view = await renderWithProviders(
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -30,6 +31,10 @@ function renderLoginPage(route: string) {
     </AuthProvider>,
     { route },
   );
+  if (waitForSession) {
+    await waitFor(() => expect(screen.queryByText(SESSION_LOADING)).not.toBeInTheDocument());
+  }
+  return view;
 }
 
 function createDeferred() {
@@ -76,6 +81,24 @@ describe("LoginPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("shows a loading skeleton instead of the form while the session loads", async () => {
+    const session = createDeferred();
+    server.use(
+      http.get("*/auth/me", async () => {
+        await session.promise;
+        return HttpResponse.json({ statusCode: 401, message: "Unauthorized" }, { status: 401 });
+      }),
+    );
+    await renderLoginPage("/login", { waitForSession: false });
+
+    expect(await screen.findByRole("status")).toHaveTextContent(SESSION_LOADING);
+    expect(screen.queryByLabelText("Matrícula (RA)")).not.toBeInTheDocument();
+
+    session.resolve();
+    expect(await screen.findByLabelText("Matrícula (RA)")).toBeInTheDocument();
+    expect(screen.queryByText(SESSION_LOADING)).not.toBeInTheDocument();
+  });
+
   it("redirects to returnTo when the session becomes authenticated", async () => {
     server.use(meHandler({ user: buildMeUser() }));
     const { router } = await renderLoginPage("/login?returnTo=%2Fpeople");
@@ -100,8 +123,6 @@ describe("LoginPage form", () => {
     expect(passwordField()).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Entrar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Mostrar senha" })).toBeInTheDocument();
-    // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS,
-    // então a altura de 44px só é verificável pela classe min-h-11 (2.75rem) do Tailwind.
     expect(screen.getByRole("button", { name: "Entrar" })).toHaveClass("min-h-11");
     expect(raField()).toHaveClass("min-h-11", "text-base");
     expect(passwordField()).toHaveClass("min-h-11", "text-base");
@@ -127,9 +148,6 @@ describe("LoginPage form", () => {
     expect(screen.queryByRole("button", { name: /esqueceu/i })).not.toBeInTheDocument();
   });
 
-  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS. O
-  // Figma pede o texto azul (token de acento) e à direita, mas sem link nem ação: nada de
-  // sublinhado, cursor de link ou hover, para não parecer clicável. Medido no Chrome.
   it("styles the forgot-password text blue and right-aligned without making it look clickable", async () => {
     server.use(meHandler({ user: null }));
     await renderLoginPage("/login");
@@ -171,7 +189,6 @@ describe("LoginPage form", () => {
     await fillAndSubmit(user);
     await waitFor(() => expect(router.state.location.pathname).toBe("/"));
 
-    // replace: o "voltar" do navegador não leva de volta ao formulário de login.
     expect(router.state.historyAction).toBe("REPLACE");
   });
 
@@ -188,8 +205,6 @@ describe("LoginPage form", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Matrícula ou senha incorretos");
     expect(raField()).not.toHaveAttribute("aria-invalid", "true");
     expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
-    // O 401 do login também dispara tedi:unauthorized, mas o AuthProvider o ignora sem sessão:
-    // a URL não pode ganhar ?reason=expired nem sair de /login.
     expect(router.state.location.pathname).toBe("/login");
     expect(router.state.location.search).toBe("");
   });
@@ -234,8 +249,6 @@ describe("LoginPage form", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível conectar");
   });
 
-  // O Render hiberna e, ao acordar, o proxy costuma devolver 502, 503 ou 504: para a pessoa é o
-  // mesmo que não conseguir conectar, e a tela reage como nos outros erros.
   it("shows the network message when the gateway answers 503", async () => {
     const user = userEvent.setup();
     server.use(
@@ -255,7 +268,6 @@ describe("LoginPage form", () => {
 
   it("shows the network message when the proxy answers 502 with an HTML page", async () => {
     const user = userEvent.setup();
-    // O proxy não devolve o ApiErrorDto: o corpo é HTML ou texto, sem `error` nem `message`.
     server.use(
       meHandler({ user: null }),
       http.post(
@@ -317,8 +329,6 @@ describe("LoginPage form", () => {
     await renderLoginPage("/login");
 
     await fillAndSubmit(user);
-    // Com os campos já desabilitados no DOM (API lenta), um foco dado antes de reabilitá-los
-    // seria ignorado pelo navegador: o foco só pode voltar depois do erro renderizado.
     await screen.findByRole("button", { name: "Entrando…" });
     expect(raField()).toBeDisabled();
     expect(raField()).not.toHaveFocus();
@@ -424,7 +434,6 @@ describe("LoginPage form", () => {
 
     await fillAndSubmit(user);
     await screen.findByRole("button", { name: "Entrando…" });
-    // A região `status` é fixa: sem aviso ela existe, só não tem o texto.
     const region = screen.getByRole("status");
     expect(region).not.toHaveTextContent(SLOW_NOTICE);
 
@@ -432,10 +441,8 @@ describe("LoginPage form", () => {
       vi.advanceTimersByTime(SLOW_NOTICE_DELAY_MS);
     });
     await waitFor(() => expect(region).toHaveTextContent(SLOW_NOTICE));
-    // O texto entrou na região que já estava no DOM, e não numa região nova.
     expect(screen.getByRole("status")).toBe(region);
 
-    // Resposta de sucesso: a página redireciona e o formulário (com a região) sai junto.
     deferred.resolve();
     await waitFor(() => expect(screen.queryByText(SLOW_NOTICE)).not.toBeInTheDocument());
   });
@@ -447,8 +454,6 @@ describe("LoginPage form", () => {
     server.use(meHandler({ user: null }), loginHandler({ delay: deferred.promise }));
     await renderLoginPage("/login");
 
-    // Leitores de tela só anunciam mudanças em regiões vivas que já estavam no DOM: ela precisa
-    // existir desde o primeiro render, muito antes de o aviso chegar.
     const region = screen.getByRole("status");
     expect(region).toBeEmptyDOMElement();
     expect(region).toHaveAttribute("aria-live", "polite");
@@ -458,7 +463,6 @@ describe("LoginPage form", () => {
     act(() => {
       vi.advanceTimersByTime(SLOW_NOTICE_DELAY_MS / 3);
     });
-    // Enviando, ainda dentro dos 3 s: continua o mesmo elemento, vazio.
     expect(screen.getByRole("status")).toBe(region);
     expect(region).toBeEmptyDOMElement();
 
@@ -490,7 +494,6 @@ describe("LoginPage form", () => {
     deferred.resolve();
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Matrícula ou senha incorretos");
-    // Com o formulário ainda montado, a região continua no DOM: só perde o texto.
     expect(screen.getByRole("status")).toBe(region);
     await waitFor(() => expect(region).toBeEmptyDOMElement());
     expect(screen.queryByText(SLOW_NOTICE)).not.toBeInTheDocument();
@@ -499,8 +502,6 @@ describe("LoginPage form", () => {
   it("does not show the slow-connection notice when the response is fast", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    // Resposta rápida com erro: o formulário segue montado e dá para provar que a região existe
-    // sem o texto (num sucesso a página redireciona e a região sai do DOM junto com ela).
     server.use(
       meHandler({ user: null }),
       loginHandler({ error: { statusCode: 401, error: "INVALID_CREDENTIALS" } }),

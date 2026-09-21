@@ -5,14 +5,11 @@ import { useDocumentTitle } from "@shared/hooks/useDocumentTitle";
 import { Alert } from "@shared/ui";
 
 import { LoginForm } from "../components/LoginForm";
+import { LoginFormSkeleton } from "../components/LoginFormSkeleton";
 import { PublicScreen } from "../components/PublicScreen";
 import { useAuth } from "../hooks/useAuth";
 import { readReturnTo } from "../lib/return-to";
 
-/**
- * Tela de login: cartão com o formulário de RA e senha, mensagem de sessão expirada e
- * redirecionamento para o `returnTo` (ou `/`) assim que a sessão fica válida.
- */
 export function LoginPage() {
   const { status } = useAuth();
   const { t } = useTranslation("auth");
@@ -31,7 +28,7 @@ export function LoginPage() {
       {/* O design não mostra título: fica só para leitores de tela e para o título da página. */}
       <h1 className="sr-only">{t("login.title")}</h1>
       {reason === "expired" && <Alert variant="error">{t("session.expired")}</Alert>}
-      <LoginForm />
+      {status === "loading" ? <LoginFormSkeleton /> : <LoginForm />}
     </PublicScreen>
   );
 }

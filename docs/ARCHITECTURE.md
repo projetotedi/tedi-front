@@ -38,7 +38,7 @@ src/
 │   └── <modulo>/                     # ver template abaixo
 │
 └── shared/                           # genérico, sem domínio
-    ├── ui/                           # Button, TextField, PasswordField, Alert, Stepper, StatusCard, Select, Dialog, Toast (acessíveis)
+    ├── ui/                           # Button, TextField, PasswordField, Alert, Skeleton, Stepper, StatusCard, Select, Dialog, Toast (acessíveis)
     ├── components/                   # PageTitle, DataTable, EmptyState, ConfirmDialog
     ├── hooks/                        # useDocumentTitle, useDebounce...
     ├── i18n/                         # init do i18next + registerModuleLocales + locales/common
@@ -209,7 +209,7 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 ## 8. Próximos passos previstos
 
 1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
-2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85), `PasswordField` e `Alert` (GUS-84), e `Stepper` e `StatusCard` (GUS-85). Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge` e `tedi-summary`, e ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro.
+2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85), `PasswordField`, `Alert` e `Skeleton` (GUS-84), e `Stepper` e `StatusCard` (GUS-85). Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge` e `tedi-summary`, e ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro.
 3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84 e GUS-85** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em dois passos) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. Faltam: menu por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86), telas de Acessos (GUS-87/88).
 4. Módulo `pessoas` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.

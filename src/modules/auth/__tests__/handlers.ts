@@ -53,15 +53,10 @@ export function logoutHandler(onCall?: () => void) {
 }
 
 interface LoginHandlerOptions {
-  /** Corpo da resposta 200 (mesmo shape de GET /auth/me). Padrão: buildMeUser(). */
   user?: MeResponseDto;
-  /** Responde com o ApiErrorDto indicado (401 INVALID_CREDENTIALS, 401 ACCESS_DISABLED, 429...). */
   error?: { statusCode: number; error: string; message?: string };
-  /** Falha de rede (fetch rejeita com TypeError), sem resposta HTTP. */
   networkError?: boolean;
-  /** Aguardada depois de registrar a chamada e antes de responder (teste de hibernação). */
   delay?: Promise<void>;
-  /** Chamada assim que o POST chega, com o corpo recebido (contador de chamadas, assert do payload). */
   onCall?: (body: LoginDto) => void;
 }
 

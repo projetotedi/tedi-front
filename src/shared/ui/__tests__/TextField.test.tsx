@@ -130,8 +130,6 @@ describe("TextField", () => {
     expect(screen.getByRole("button", { name: "Ação" })).toBeInTheDocument();
   });
 
-  // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS,
-  // então alvo de 44px e fonte de 16px só são verificáveis pelas classes do Tailwind.
   it("keeps the 44px touch target and the 16px font", () => {
     render(<Harness />);
 
