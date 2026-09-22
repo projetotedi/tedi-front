@@ -362,9 +362,7 @@ describe("InvitePage with a link that does not work", () => {
 
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(INVALID_INVITE_TITLE);
-    expect(alert).toHaveTextContent(
-      "O link de cadastro vale por 48 horas e só pode ser usado uma vez.",
-    );
+    expect(alert).toHaveTextContent("O link vale por 48 horas e só pode ser usado uma vez.");
     expect(alert).toHaveTextContent("Peça um novo à coordenação.");
     expect(screen.getByRole("heading", { level: 1, name: INVALID_INVITE_TITLE })).toBeVisible();
     expect(screen.getByRole("button", { name: "Ir para o login" })).toBeVisible();
@@ -470,6 +468,25 @@ describe("InvitePage with a link that does not work", () => {
     expect(await screen.findByText("Você foi convidado como Membro")).toBeVisible();
     expect(nameField()).toBeVisible();
     expect(calls).toBe(2);
+  });
+
+  it("shows the loading screen again while it re-fetches the invite after an error", async () => {
+    const user = userEvent.setup();
+    const deferred = createDeferred();
+    server.use(meHandler({ user: null }), getInviteHandler({ networkError: true }));
+    await renderInvitePage(`/invite?token=${TOKEN}`);
+    await screen.findByText("Não foi possível carregar o convite");
+
+    server.use(getInviteHandler({ delay: deferred.promise }));
+    await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
+
+    // O React Query volta a `pending` durante o refetch de uma query que tinha dado erro: a tela
+    // reaproveita o mesmo aviso "Carregando o convite…" do primeiro carregamento.
+    expect(await screen.findByText("Carregando o convite…")).toBeVisible();
+    expect(screen.queryByText("Não foi possível carregar o convite")).not.toBeInTheDocument();
+
+    deferred.resolve();
+    expect(await screen.findByText("Você foi convidado como Membro")).toBeVisible();
   });
 });
 
@@ -1050,7 +1067,7 @@ describe("InvitePage accessibility", () => {
       "min-h-11",
       "text-base",
     );
-    expect(screen.getByText(/O link de cadastro vale por 48 horas/)).toHaveClass("text-base");
+    expect(screen.getByText(/O link vale por 48 horas/)).toHaveClass("text-base");
   });
 
   it("renders the success screen with a 44px button and 16px text", async () => {

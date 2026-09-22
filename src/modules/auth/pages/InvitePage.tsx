@@ -17,6 +17,8 @@ type Outcome = { kind: "accepted"; ra: string } | { kind: "passwordChanged" } | 
 
 const FORM_CARD_WIDTH = "max-w-200";
 const STATUS_CARD_WIDTH = "max-w-120";
+/** Mesmo TTL do back (`invites.service.ts`, `INVITE_TTL_MS`, decisão 33). */
+const INVITE_VALIDITY_HOURS = 48;
 
 /** Quem já está logado não é redirecionado: pode estar abrindo o link de outra pessoa. */
 export function InvitePage(): ReactElement {
@@ -77,8 +79,9 @@ export function InvitePage(): ReactElement {
           variant="warning"
           headingLevel={1}
           isAlert
+          autoFocus
           title={t("invite.invalid.title")}
-          description={t("invite.invalid.description")}
+          description={t("invite.invalid.description", { hours: INVITE_VALIDITY_HOURS })}
         >
           <Button fullWidth variant="secondary" onPress={goToLogin}>
             {t("invite.actions.goToLogin")}
@@ -95,6 +98,7 @@ export function InvitePage(): ReactElement {
           variant="warning"
           headingLevel={1}
           isAlert
+          autoFocus
           title={t("invite.loadError.title")}
           description={t("invite.loadError.description")}
         >

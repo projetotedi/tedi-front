@@ -1,20 +1,11 @@
+import { GATEWAY_STATUS_CODES, readApiErrorShape } from "./api-error";
+
 export type InviteErrorKey = "invalidInvite" | "raInUse" | "emailInUse" | "network" | "unknown";
 
 export type InviteConflictField = "ra" | "email";
 
-interface ApiErrorShape {
-  statusCode?: unknown;
-  error?: unknown;
-}
-
-// TODO: unificar com `login-error.ts` em `lib/api-error.ts` quando os dois estiverem na `develop`.
-const GATEWAY_STATUS_CODES: ReadonlySet<number> = new Set([502, 503, 504]);
-
-// Checagem estrutural: o módulo não pode importar `ApiError` (depcruise).
 export function toInviteErrorKey(error: unknown): InviteErrorKey {
-  const { statusCode, error: code } = (
-    typeof error === "object" && error !== null ? error : {}
-  ) as ApiErrorShape;
+  const { statusCode, error: code } = readApiErrorShape(error);
 
   if (code === "INVALID_INVITE") return "invalidInvite";
   if (code === "RA_ALREADY_IN_USE") return "raInUse";

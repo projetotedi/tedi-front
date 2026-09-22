@@ -112,7 +112,7 @@
     },
     "invalid": {
       "title": "Este link não é mais válido",
-      "description": "O link de cadastro vale por 48 horas e só pode ser usado uma vez. Ele pode ter expirado, já ter sido usado ou ter sido cancelado. Peça um novo à coordenação."
+      "description": "O link vale por {{hours}} horas e só pode ser usado uma vez. Ele pode ter expirado, já ter sido usado ou ter sido cancelado. Peça um novo à coordenação."
     },
     "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
     "errors": {

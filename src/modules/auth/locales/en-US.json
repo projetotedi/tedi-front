@@ -112,7 +112,7 @@
     },
     "invalid": {
       "title": "This link is no longer valid",
-      "description": "The registration link is valid for 48 hours and can only be used once. It may have expired, already been used or been cancelled. Ask the coordination team for a new one."
+      "description": "The link is valid for {{hours}} hours and can only be used once. It may have expired, already been used or been cancelled. Ask the coordination team for a new one."
     },
     "slowNotice": "Connecting to the server, this may take up to a minute",
     "errors": {
