@@ -215,9 +215,7 @@ export function listAccessHandler({
   });
 }
 
-export function buildInviteListItem(
-  overrides: Partial<InviteListItemDto> = {},
-): InviteListItemDto {
+export function buildInviteListItem(overrides: Partial<InviteListItemDto> = {}): InviteListItemDto {
   return {
     id: "01952ef7-0000-7000-8000-000000000020",
     role: Role.member,

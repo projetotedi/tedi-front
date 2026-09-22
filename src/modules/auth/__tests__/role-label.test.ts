@@ -13,12 +13,9 @@ describe("roleLabelKey", () => {
     expect(roleLabelKey(Role.superadmin)).toBe("roles.coordinator");
   });
 
-  it.each([Role.member, Role.director, Role.coordinator])(
-    "maps %s to roles.<role>",
-    (role) => {
-      expect(roleLabelKey(role)).toBe(`roles.${role}`);
-    },
-  );
+  it.each([Role.member, Role.director, Role.coordinator])("maps %s to roles.<role>", (role) => {
+    expect(roleLabelKey(role)).toBe(`roles.${role}`);
+  });
 });
 
 describe("INVITABLE_ROLES", () => {

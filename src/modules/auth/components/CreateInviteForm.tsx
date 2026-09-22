@@ -49,7 +49,10 @@ export function CreateInviteForm({ onCreated, onDone }: CreateInviteFormProps): 
   });
 
   const errorKey = createInvite.isError ? toRequestErrorKey(createInvite.error) : null;
-  const roleOptions = INVITABLE_ROLES.map((role) => ({ id: role, label: t(roleLabelKey(role) ?? "") }));
+  const roleOptions = INVITABLE_ROLES.map((role) => ({
+    id: role,
+    label: t(roleLabelKey(role) ?? ""),
+  }));
 
   // Trava síncrona contra envio duplo, no mesmo padrão do LoginForm: handleSubmit valida de
   // forma assíncrona, e `isPending` só chega ao componente no próximo render.

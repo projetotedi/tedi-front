@@ -110,9 +110,7 @@ describe("CreateInviteDialog", () => {
     await openAndGenerate(user);
     await user.click(screen.getByRole("button", { name: "Copiar link" }));
 
-    expect(
-      await screen.findByText(/Não foi possível copiar automaticamente/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/Não foi possível copiar automaticamente/)).toBeInTheDocument();
     expect(screen.getByLabelText("Link do convite")).toHaveFocus();
   });
 
@@ -125,9 +123,7 @@ describe("CreateInviteDialog", () => {
     await openAndGenerate(user);
     await user.click(screen.getByRole("button", { name: "Copiar link" }));
 
-    expect(
-      await screen.findByText(/Não foi possível copiar automaticamente/),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(/Não foi possível copiar automaticamente/)).toBeInTheDocument();
   });
 
   describe("closing and reopening does not show the link again", () => {

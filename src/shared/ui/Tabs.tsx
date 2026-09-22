@@ -16,10 +16,7 @@ export interface TabsProps {
 
 export function Tabs({ label, items, selectedKey, onSelectionChange }: TabsProps): ReactElement {
   return (
-    <HeroTabs
-      selectedKey={selectedKey}
-      onSelectionChange={(key) => onSelectionChange(String(key))}
-    >
+    <HeroTabs selectedKey={selectedKey} onSelectionChange={(key) => onSelectionChange(String(key))}>
       <HeroTabs.ListContainer>
         <HeroTabs.List aria-label={label}>
           {items.map((item) => (

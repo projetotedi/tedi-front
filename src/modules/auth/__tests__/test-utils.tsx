@@ -55,7 +55,10 @@ export async function renderWithProviders(
  * sob o mesmo layout raiz do app real: `AuthProvider` como rota-layout, para que `useAuth()` e
  * `RequireRole` funcionem, inclusive com `lazy`. Em pt-BR, com QueryClientProvider + MemoryRouter.
  */
-export async function renderRoutes(routes: RouteObject[], options: RenderWithProvidersOptions = {}) {
+export async function renderRoutes(
+  routes: RouteObject[],
+  options: RenderWithProvidersOptions = {},
+) {
   const { route = "/" } = options;
 
   await i18n.changeLanguage("pt-BR");
