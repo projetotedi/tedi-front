@@ -13,6 +13,12 @@
   --color-tedi-badge-foreground: #1d4ed8;
   /* Faixa de resumo do passo 2: sobre este fundo o `text-muted` do tema cai para 4,4:1. */
   --color-tedi-summary: #eff4fc;
+
+  /* Badge/status neutro (ex.: convite expirado) e de perigo (ex.: convite revogado). */
+  --color-tedi-neutral: #f0f0f2;
+  --color-tedi-neutral-foreground: #595961;
+  --color-tedi-danger: #fde8e8;
+  --color-tedi-danger-foreground: #9f1d1d;
 }
 
 :root {

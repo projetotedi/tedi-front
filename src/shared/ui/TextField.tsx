@@ -12,6 +12,7 @@ export interface TextFieldProps {
   errorMessage?: string;
   isDisabled?: boolean;
   isRequired?: boolean;
+  isReadOnly?: boolean;
   type?: "text" | "password" | "email";
   autoComplete?: string;
   "aria-describedby"?: string;
@@ -30,6 +31,7 @@ export function TextField({
   errorMessage,
   isDisabled,
   isRequired,
+  isReadOnly,
   type = "text",
   autoComplete,
   "aria-describedby": ariaDescribedBy,
@@ -48,6 +50,7 @@ export function TextField({
       autoComplete={autoComplete}
       isDisabled={isDisabled}
       isRequired={isRequired}
+      isReadOnly={isReadOnly}
       isInvalid={Boolean(errorMessage)}
       validationBehavior="aria"
       aria-describedby={ariaDescribedBy}

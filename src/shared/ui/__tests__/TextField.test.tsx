@@ -135,4 +135,20 @@ describe("TextField", () => {
 
     expect(screen.getByLabelText("Matrícula (RA)")).toHaveClass("min-h-11", "text-base");
   });
+
+  it("read-only field keeps its value and label", () => {
+    render(
+      <TextField
+        label="Link do convite"
+        value="https://tedi.example/invite?token=abc"
+        onChange={() => {}}
+        isReadOnly
+      />,
+    );
+
+    const input = screen.getByLabelText("Link do convite");
+    expect(input).toHaveValue("https://tedi.example/invite?token=abc");
+    expect(input).toHaveAttribute("readonly");
+    expect(input).not.toBeDisabled();
+  });
 });
