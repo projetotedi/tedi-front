@@ -8,8 +8,19 @@ import { Role } from "@shared/lib/role";
 
 import { AccessTable } from "../components/AccessTable";
 import { InvitesTable } from "../components/InvitesTable";
-import { buildAccess, buildInviteListItem, listAccessHandler, listInvitesHandler } from "./handlers";
-import { renderWithProviders, server, setupAuthTestServer } from "./test-utils";
+import { AccessPage } from "../pages/AccessPage";
+import { authProtectedRoutes } from "../routes";
+import {
+  buildAccess,
+  buildCreateInviteResponse,
+  buildInviteListItem,
+  buildMeUser,
+  createInviteHandler,
+  listAccessHandler,
+  listInvitesHandler,
+  meHandler,
+} from "./handlers";
+import { renderRoutes, renderWithProviders, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
 
@@ -185,6 +196,85 @@ describe("InvitesTable", () => {
     server.use(listInvitesHandler({ data: [buildInviteListItem()] }));
     await user.click(retryButton);
 
+    expect(await screen.findByText("Pendente")).toBeInTheDocument();
+  });
+});
+
+describe("route /access", () => {
+  it("coordinator sees the People and Invites tabs", async () => {
+    server.use(
+      meHandler({ user: buildMeUser({ role: Role.coordinator }) }),
+      listAccessHandler({ data: [], total: 0 }),
+      listInvitesHandler({ data: [] }),
+    );
+
+    await renderRoutes(authProtectedRoutes, { route: "/access" });
+
+    expect(await screen.findByRole("tab", { name: "Pessoas" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Convites" })).toBeInTheDocument();
+  });
+
+  it("director gets the forbidden page and /access is never requested", async () => {
+    const onCall = vi.fn();
+    server.use(
+      meHandler({ user: buildMeUser({ role: Role.director }) }),
+      listAccessHandler({ onCall }),
+    );
+
+    await renderRoutes(authProtectedRoutes, { route: "/access" });
+
+    expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
+    expect(onCall).not.toHaveBeenCalled();
+  });
+});
+
+describe("AccessPage", () => {
+  it("empty access list shows the empty message and keeps the create button", async () => {
+    server.use(listAccessHandler({ data: [], total: 0 }), listInvitesHandler({ data: [] }));
+
+    await renderWithProviders(<AccessPage />);
+
+    expect(await screen.findByText("Nenhum acesso encontrado")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gerar convite" })).toBeInTheDocument();
+  });
+
+  it("after generating, invites list is refetched and shows the new pending invite in the Invites tab", async () => {
+    // GET /invites começa vazio; o handler de POST /invites troca a resposta do GET (como o
+    // back faria de verdade), provando que a lista é buscada de novo e mostra o item novo,
+    // e não apenas um estado local otimista.
+    server.use(
+      listAccessHandler({ data: [buildAccess()], total: 1 }),
+      listInvitesHandler({ data: [] }),
+      createInviteHandler({
+        response: buildCreateInviteResponse({ role: Role.member }),
+        onCall: () => {
+          server.use(
+            listInvitesHandler({
+              data: [
+                buildInviteListItem({
+                  status: InviteListItemDtoStatus.pending,
+                  role: Role.member,
+                }),
+              ],
+            }),
+          );
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<AccessPage />);
+
+    await screen.findByRole("cell", { name: "Ana Coordenadora" });
+    expect(screen.getByRole("tab", { name: "Pessoas", selected: true })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link" }));
+    await screen.findByLabelText("Link do convite");
+    await user.click(screen.getByRole("button", { name: "Concluir" }));
+
+    expect(
+      await screen.findByRole("tab", { name: "Convites", selected: true }),
+    ).toBeInTheDocument();
     expect(await screen.findByText("Pendente")).toBeInTheDocument();
   });
 });

@@ -13,6 +13,6 @@ export { RequireRole } from "./components/RequireRole";
 export { SignOutButton } from "./components/SignOutButton";
 export { useAuth } from "./hooks/useAuth";
 export { ForbiddenPage } from "./pages/ForbiddenPage";
-export { authRoutes } from "./routes";
+export { authProtectedRoutes, authRoutes } from "./routes";
 export type { AuthContextValue, AuthStatus } from "./auth-context";
 export type { RequireRoleProps } from "./components/RequireRole";
