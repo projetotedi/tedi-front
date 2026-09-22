@@ -27,6 +27,8 @@ const EMAIL = "lucas@instituicao.edu.br";
 const PASSWORD = "senha-segura-1";
 const SLOW_NOTICE = "Conectando ao servidor, isso pode levar até um minuto";
 const INVALID_INVITE_TITLE = "Este link não é mais válido";
+const PRIVACY_CONSENT_LABEL =
+  "Li o aviso de privacidade e autorizo o projeto a usar meus dados para a gestão do voluntariado.";
 const NO_BREAK_SPACE = String.fromCharCode(160);
 
 const PASSWORD_RESET_INVITE = buildInvite({ type: InviteType.password_reset, role: null });
@@ -57,6 +59,7 @@ const raField = () => screen.getByLabelText("RA");
 const emailField = () => screen.getByLabelText("E-mail institucional");
 const passwordField = () => screen.getByLabelText("Senha");
 const confirmationField = () => screen.getByLabelText("Confirmar senha");
+const privacyCheckbox = () => screen.getByRole("checkbox", { name: PRIVACY_CONSENT_LABEL });
 
 const continueButton = () => screen.getByRole("button", { name: "Continuar" });
 const submitButton = () => screen.getByRole("button", { name: "Enviar cadastro" });
@@ -83,9 +86,13 @@ async function goToStepTwo(user: UserEvent) {
   await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
 }
 
+// O convite de redefinição não tem o checkbox de consentimento (não há dado novo a coletar),
+// então só marca quando ele existe na tela (fluxo de aceite).
 async function fillPasswords(user: UserEvent, password = PASSWORD, confirmation = password) {
   await user.type(passwordField(), password);
   await user.type(confirmationField(), confirmation);
+  const checkbox = screen.queryByRole("checkbox", { name: PRIVACY_CONSENT_LABEL });
+  if (checkbox) await user.click(checkbox);
 }
 
 async function completeRegistration(user: UserEvent) {
@@ -699,6 +706,33 @@ describe("InvitePage step 2", () => {
     expect(posts).toBe(0);
   });
 
+  it("does not call the API when the privacy checkbox is not checked", async () => {
+    const user = userEvent.setup();
+    let posts = 0;
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler(),
+      acceptInviteHandler({ onCall: () => (posts += 1) }),
+    );
+    await openAccessInvite();
+    await goToStepTwo(user);
+
+    await user.type(passwordField(), PASSWORD);
+    await user.type(confirmationField(), PASSWORD);
+    await user.click(submitButton());
+
+    expect(await screen.findByText("É preciso concordar para continuar.")).toBeInTheDocument();
+    expect(privacyCheckbox()).not.toBeChecked();
+    expect(posts).toBe(0);
+    expect(screen.queryByRole("heading", { name: "Cadastro concluído!" })).not.toBeInTheDocument();
+
+    await user.click(privacyCheckbox());
+    await user.click(submitButton());
+
+    await screen.findByRole("heading", { name: "Cadastro concluído!" });
+    expect(posts).toBe(1);
+  });
+
   it("clears the mismatch error once the password is corrected to match", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
@@ -1053,6 +1087,8 @@ describe("InvitePage accessibility", () => {
     }
     expect(screen.getByRole("button", { name: "Voltar" })).toHaveClass("min-h-11", "text-base");
     expect(submitButton()).toHaveClass("min-h-11", "text-base");
+    expect(privacyCheckbox().closest("label")).toHaveClass("min-h-11");
+    expect(screen.getByText(PRIVACY_CONSENT_LABEL)).toHaveClass("text-base");
   });
 
   it("renders the invalid-link screen with a 44px button and 16px text", async () => {
@@ -1119,6 +1155,10 @@ describe("InvitePage accessibility", () => {
     await user.keyboard(PASSWORD);
     await user.tab();
     expect(screen.getByRole("button", { name: "Mostrar confirmação da senha" })).toHaveFocus();
+    await user.tab();
+    expect(privacyCheckbox()).toHaveFocus();
+    await user.keyboard(" ");
+    expect(privacyCheckbox()).toBeChecked();
     await user.tab();
     expect(screen.getByRole("button", { name: "Voltar" })).toHaveFocus();
     await user.tab();

@@ -2,6 +2,8 @@ export { Alert } from "./Alert";
 export type { AlertProps } from "./Alert";
 export { Button } from "./Button";
 export type { ButtonProps } from "./Button";
+export { Checkbox } from "./Checkbox";
+export type { CheckboxProps } from "./Checkbox";
 export { PasswordField } from "./PasswordField";
 export type { PasswordFieldProps } from "./PasswordField";
 export { Skeleton } from "./Skeleton";

@@ -95,6 +95,9 @@
         "hint": "Digite a mesma senha de novo.",
         "show": "Mostrar confirmação da senha",
         "hide": "Ocultar confirmação da senha"
+      },
+      "privacyConsent": {
+        "label": "Li o aviso de privacidade e autorizo o projeto a usar meus dados para a gestão do voluntariado."
       }
     },
     "requiredHint": "* Campos obrigatórios",
@@ -127,7 +130,8 @@
       "raRequired": "Informe o seu RA",
       "emailInvalid": "Informe um e-mail válido",
       "passwordMin": "A senha deve ter no mínimo 8 caracteres",
-      "passwordMismatch": "As senhas não são iguais"
+      "passwordMismatch": "As senhas não são iguais",
+      "privacyConsentRequired": "É preciso concordar para continuar."
     },
     "loadError": {
       "title": "Não foi possível carregar o convite",

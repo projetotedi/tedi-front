@@ -95,6 +95,9 @@
         "hint": "Type the same password again.",
         "show": "Show password confirmation",
         "hide": "Hide password confirmation"
+      },
+      "privacyConsent": {
+        "label": "I have read the privacy notice and authorize the project to use my data to manage volunteering."
       }
     },
     "requiredHint": "* Required fields",
@@ -127,7 +130,8 @@
       "raRequired": "Enter your RA",
       "emailInvalid": "Enter a valid email",
       "passwordMin": "The password must have at least 8 characters",
-      "passwordMismatch": "The passwords do not match"
+      "passwordMismatch": "The passwords do not match",
+      "privacyConsentRequired": "You must agree to continue."
     },
     "loadError": {
       "title": "Could not load the invitation",

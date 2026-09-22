@@ -16,6 +16,7 @@ const VALID_ACCESS_VALUES = {
   email: "lucas@instituicao.edu.br",
   password: "senha-segura-1",
   passwordConfirmation: "senha-segura-1",
+  privacyConsent: true,
 };
 
 type Schema = typeof acceptInviteFormSchema | typeof newPasswordFormSchema;
@@ -149,31 +150,41 @@ describe("acceptInviteFormSchema", () => {
         email: "",
         password: "",
         passwordConfirmation: "",
+        privacyConsent: false,
       }),
     ).toEqual({
       name: ["invite.validation.nameRequired"],
       ra: ["invite.validation.raRequired"],
       email: ["invite.validation.emailInvalid"],
       password: ["invite.validation.passwordMin"],
+      privacyConsent: ["invite.validation.privacyConsentRequired"],
     });
   });
 
-  it("has the fields of the AcceptInviteDto plus the confirmation, and no token", () => {
+  it("requires the privacy consent to be checked", () => {
+    expect(
+      messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, privacyConsent: false }),
+    ).toEqual({ privacyConsent: ["invite.validation.privacyConsentRequired"] });
+  });
+
+  it("has the fields of the AcceptInviteDto plus the confirmation and the privacy consent, and no token", () => {
     expectTypeOf<AcceptInviteFormValues>().toEqualTypeOf<{
       name: string;
       ra: string;
       email: string;
       password: string;
       passwordConfirmation: string;
+      privacyConsent: boolean;
     }>();
-    expectTypeOf<Omit<AcceptInviteFormValues, "passwordConfirmation">>().toExtend<
-      Omit<AcceptInviteDto, "token">
-    >();
+    expectTypeOf<
+      Omit<AcceptInviteFormValues, "passwordConfirmation" | "privacyConsent">
+    >().toExtend<Omit<AcceptInviteDto, "token">>();
     expect(Object.keys(acceptInviteFormSchema.shape).sort()).toEqual([
       "email",
       "name",
       "password",
       "passwordConfirmation",
+      "privacyConsent",
       "ra",
     ]);
   });
