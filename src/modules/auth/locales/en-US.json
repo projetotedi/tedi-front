@@ -150,5 +150,91 @@
       "network": "Could not connect",
       "unknown": "Could not save the new password. Please try again."
     }
+  },
+  "roles": {
+    "member": "Member",
+    "director": "Director",
+    "coordinator": "Coordinator"
+  },
+  "access": {
+    "title": "Access",
+    "tabs": {
+      "people": "People",
+      "invites": "Invites"
+    },
+    "people": {
+      "caption": "People with access to TEDI",
+      "columns": {
+        "name": "Name",
+        "ra": "RA",
+        "email": "Email",
+        "role": "Role",
+        "status": "Status"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "search": {
+        "label": "Search by name or RA",
+        "submit": "Search"
+      },
+      "loading": "Loading people…",
+      "error": "Could not load the people with access.",
+      "retry": "Try again",
+      "empty": "No access found",
+      "pagination": {
+        "nav": "People list pagination",
+        "previous": "Previous page",
+        "next": "Next page",
+        "status": "Page {{page}} of {{pages}}"
+      }
+    },
+    "invites": {
+      "caption": "Generated invites",
+      "columns": {
+        "role": "Role",
+        "type": "Type",
+        "status": "Status",
+        "expiresAt": "Valid until"
+      },
+      "type": {
+        "access": "Registration",
+        "password_reset": "Password reset"
+      },
+      "status": {
+        "pending": "Pending",
+        "used": "Used",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "loading": "Loading invites…",
+      "error": "Could not load the invites.",
+      "retry": "Try again",
+      "empty": "No invites found"
+    },
+    "createInvite": {
+      "trigger": "Generate invite",
+      "title": "Generate invite",
+      "description": "Choose the role for the invited person.",
+      "close": "Close",
+      "role": {
+        "label": "Role"
+      },
+      "submit": "Generate link",
+      "submitting": "Generating…",
+      "link": {
+        "label": "Invite link"
+      },
+      "copy": "Copy link",
+      "copied": "Link copied.",
+      "copyFallback": "Could not copy automatically. The link has been selected: use Ctrl+C (or Cmd+C) to copy it.",
+      "validity": "This link is valid for {{hours}} hours and can only be used once. It will not be shown again.",
+      "done": "Done",
+      "errors": {
+        "network": "Could not connect",
+        "unknown": "Could not generate the invite. Please try again."
+      }
+    }
   }
 }
