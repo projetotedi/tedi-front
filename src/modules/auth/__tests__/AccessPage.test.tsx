@@ -184,6 +184,19 @@ describe("InvitesTable", () => {
     expect(await screen.findByText("Nenhum convite encontrado")).toBeInTheDocument();
   });
 
+  it("shows loading status", async () => {
+    server.use(
+      http.get("*/invites", async () => {
+        await delay("infinite");
+        return HttpResponse.json([]);
+      }),
+    );
+
+    await renderWithProviders(<InvitesTable />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Carregando convites");
+  });
+
   it("shows error with retry", async () => {
     server.use(listInvitesHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
     const user = userEvent.setup();
