@@ -85,6 +85,20 @@ describe("CreateInviteDialog", () => {
     expect(await screen.findByLabelText("Link do convite")).toHaveValue(LINK);
   });
 
+  it("exposes the 48h validity warning as the accessible description of the Copiar link button", async () => {
+    // O botão recebe autoFocus assim que o link aparece: um leitor de tela precisa anunciar o
+    // aviso de validade junto do foco, não só mostrá-lo visualmente ao lado.
+    server.use(createInviteHandler({ response: buildCreateInviteResponse({ url: LINK }) }));
+    const user = userEvent.setup();
+    await renderWithProviders(<CreateInviteDialog />);
+
+    await openAndGenerate(user);
+
+    expect(screen.getByRole("button", { name: "Copiar link" })).toHaveAccessibleDescription(
+      /48 horas/,
+    );
+  });
+
   it("copies the link and shows the confirmation", async () => {
     server.use(createInviteHandler({ response: buildCreateInviteResponse({ url: LINK }) }));
     // userEvent.setup() instala o próprio stub de clipboard (para user.copy()/paste()); o mock

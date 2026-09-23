@@ -29,6 +29,7 @@ export function CreateInviteForm({ onCreated, onDone }: CreateInviteFormProps): 
   const { t } = useTranslation("auth");
   const queryClient = useQueryClient();
   const errorId = useId();
+  const validityId = useId();
   const linkRef = useRef<HTMLInputElement>(null);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
@@ -106,7 +107,7 @@ export function CreateInviteForm({ onCreated, onDone }: CreateInviteFormProps): 
           isReadOnly
           inputRef={linkRef}
         />
-        <Button autoFocus onPress={() => void copyLink(url)}>
+        <Button autoFocus aria-describedby={validityId} onPress={() => void copyLink(url)}>
           {t("access.createInvite.copy")}
         </Button>
         <Alert variant="info">
@@ -116,7 +117,7 @@ export function CreateInviteForm({ onCreated, onDone }: CreateInviteFormProps): 
               ? t("access.createInvite.copyFallback")
               : null}
         </Alert>
-        <Alert variant="warning">
+        <Alert variant="warning" id={validityId}>
           {t("access.createInvite.validity", { hours: INVITE_VALIDITY_HOURS })}
         </Alert>
         <div className="flex justify-end">
