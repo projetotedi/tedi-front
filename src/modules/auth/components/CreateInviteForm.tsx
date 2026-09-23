@@ -17,6 +17,12 @@ import { INVITABLE_ROLES, roleLabelKey } from "../lib/role-label";
 export interface CreateInviteFormProps {
   onCreated?: () => void;
   onDone: () => void;
+  /**
+   * Notifica o diálogo pai enquanto o POST /invites está em andamento, para que ele bloqueie
+   * fechar por Esc ou pelo X: fechar não cancela a mutação (o back já processa o convite), só
+   * esconderia o link gerado antes de aparecer.
+   */
+  onPendingChange?: (isPending: boolean) => void;
 }
 
 type CopyStatus = "idle" | "copied" | "fallback";
@@ -25,7 +31,11 @@ type CopyStatus = "idle" | "copied" | "fallback";
  * Conteúdo do `CreateInviteDialog`. Antes de gerar: seletor de perfil. Depois: o link (uma
  * única vez — o estado morre com o componente ao fechar o diálogo, e nunca é persistido).
  */
-export function CreateInviteForm({ onCreated, onDone }: CreateInviteFormProps): ReactElement {
+export function CreateInviteForm({
+  onCreated,
+  onDone,
+  onPendingChange,
+}: CreateInviteFormProps): ReactElement {
   const { t } = useTranslation("auth");
   const queryClient = useQueryClient();
   const errorId = useId();
@@ -62,11 +72,13 @@ export function CreateInviteForm({ onCreated, onDone }: CreateInviteFormProps): 
   function submitRole(values: CreateInviteDto) {
     if (createInvite.isPending || inFlightRef.current) return;
     inFlightRef.current = true;
+    onPendingChange?.(true);
     createInvite.mutate(
       { data: values },
       {
         onSettled: () => {
           inFlightRef.current = false;
+          onPendingChange?.(false);
         },
       },
     );

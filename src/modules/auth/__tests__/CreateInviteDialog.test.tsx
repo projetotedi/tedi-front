@@ -235,4 +235,63 @@ describe("CreateInviteDialog", () => {
     await screen.findByLabelText("Link do convite");
     expect(calls).toBe(1);
   });
+
+  describe("cannot be closed while POST /invites is in flight", () => {
+    // Fechar durante o envio não cancela a mutação (o back já cria o convite) — só esconderia
+    // o link gerado, deixando um convite pendente "órfão" sem forma de revogar (fora do escopo
+    // desta card). Enquanto isPending, Esc e o botão X devem ser ignorados.
+    async function startSubmitAndWaitForPending(user: UserEvent) {
+      await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+      await user.click(screen.getByRole("button", { name: "Gerar link" }));
+      await screen.findByRole("button", { name: "Gerando…" });
+    }
+
+    it("ignores Escape until the response arrives, then closes normally", async () => {
+      const deferred = createDeferred();
+      server.use(
+        createInviteHandler({
+          delay: deferred.promise,
+          response: buildCreateInviteResponse({ url: LINK }),
+        }),
+      );
+      const user = userEvent.setup();
+      await renderWithProviders(<CreateInviteDialog />);
+
+      await startSubmitAndWaitForPending(user);
+
+      await user.keyboard("{Escape}");
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Gerando…" })).toBeInTheDocument();
+
+      deferred.resolve();
+      await screen.findByLabelText("Link do convite");
+
+      await user.keyboard("{Escape}");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("ignores the close (X) button until the response arrives, then closes normally", async () => {
+      const deferred = createDeferred();
+      server.use(
+        createInviteHandler({
+          delay: deferred.promise,
+          response: buildCreateInviteResponse({ url: LINK }),
+        }),
+      );
+      const user = userEvent.setup();
+      await renderWithProviders(<CreateInviteDialog />);
+
+      await startSubmitAndWaitForPending(user);
+
+      await user.click(screen.getByRole("button", { name: "Fechar" }));
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Gerando…" })).toBeInTheDocument();
+
+      deferred.resolve();
+      await screen.findByLabelText("Link do convite");
+
+      await user.click(screen.getByRole("button", { name: "Fechar" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
 });

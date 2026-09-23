@@ -64,4 +64,26 @@ describe("Dialog", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.queryByText("Conteúdo do diálogo")).not.toBeInTheDocument();
   });
+
+  it("isDismissable={false} blocks both the close button and Escape", async () => {
+    const user = userEvent.setup();
+    const onOpenChange = vi.fn();
+    render(
+      <Dialog
+        isOpen
+        onOpenChange={onOpenChange}
+        title="Gerar convite"
+        closeLabel="Fechar"
+        isDismissable={false}
+      >
+        <p>Conteúdo do diálogo</p>
+      </Dialog>,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Fechar" }));
+    await user.keyboard("{Escape}");
+
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
 });
