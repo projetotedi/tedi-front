@@ -290,4 +290,47 @@ describe("AccessPage", () => {
     ).toBeInTheDocument();
     expect(await screen.findByText("Pendente")).toBeInTheDocument();
   });
+
+  it("with the Invites tab already open, generating an invite refetches GET /invites through cache invalidation", async () => {
+    // Diferente do teste anterior (que só monta a aba Convites depois de gerar o convite, então
+    // a chamada que ele observa é a primeira busca, não uma invalidação de cache): aqui a aba
+    // Convites já está aberta e com o InvitesTable observando o cache antes do POST, então só
+    // uma invalidação de verdade (a linha invalidateQueries de CreateInviteForm.tsx) explica a
+    // 2ª chamada a GET /invites — apagar aquela linha faria este teste falhar.
+    const onCall = vi.fn();
+    server.use(
+      listAccessHandler({ data: [], total: 0 }),
+      listInvitesHandler({ data: [], onCall }),
+      createInviteHandler({
+        response: buildCreateInviteResponse({ role: Role.member }),
+        onCall: () => {
+          server.use(
+            listInvitesHandler({
+              data: [
+                buildInviteListItem({
+                  status: InviteListItemDtoStatus.pending,
+                  role: Role.member,
+                }),
+              ],
+              onCall,
+            }),
+          );
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    await renderWithProviders(<AccessPage />);
+
+    await user.click(screen.getByRole("tab", { name: "Convites" }));
+    await screen.findByText("Nenhum convite encontrado");
+    expect(onCall).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link" }));
+    await screen.findByLabelText("Link do convite");
+    await user.click(screen.getByRole("button", { name: "Concluir" }));
+
+    await waitFor(() => expect(onCall).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Pendente")).toBeInTheDocument();
+  });
 });
