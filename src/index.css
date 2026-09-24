@@ -13,6 +13,9 @@
   --color-tedi-badge-foreground: #1d4ed8;
   /* Faixa de resumo do passo 2: sobre este fundo o `text-muted` do tema cai para 4,4:1. */
   --color-tedi-summary: #eff4fc;
+  /* Borda da sidebar e texto secundário da marca (Figma "Sidebar TEDI"); #334155 sobre tedi-sky dá 5,7:1. */
+  --color-tedi-sky-border: #79b5d6;
+  --color-tedi-brand-muted: #334155;
 }
 
 :root {

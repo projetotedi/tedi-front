@@ -1,5 +1,39 @@
 {
   "app": {
-    "name": "TEDI"
+    "name": "TEDI",
+    "tagline": "Gestão do Projeto de Extensão"
+  },
+  "roles": {
+    "member": "Membro",
+    "director": "Diretor",
+    "coordinator": "Coordenadora",
+    "superadmin": "Coordenadora"
+  },
+  "nav": {
+    "courses": "Cursos",
+    "lessonPlans": "Planos de aula",
+    "classes": "Turmas",
+    "students": "Alunos",
+    "lessons": "Aulas",
+    "enrollments": "Matrículas",
+    "members": "Membros e Planejamento",
+    "hours": "Banco de Horas"
+  },
+  "layout": {
+    "nav": "Menu principal",
+    "home": "TEDI, ir para o início",
+    "menu": {
+      "open": "Abrir menu",
+      "close": "Fechar menu",
+      "empty": "Nenhuma área disponível para o seu perfil."
+    },
+    "profileMenu": {
+      "label": "Menu do perfil de {{name}}",
+      "profile": "Perfil",
+      "signOut": "Sair"
+    }
+  },
+  "comingSoon": {
+    "description": "Esta área ainda está em construção e chega em breve."
   }
 }
