@@ -150,5 +150,9 @@
       "network": "Could not connect",
       "unknown": "Could not save the new password. Please try again."
     }
+  },
+  "access": {
+    "title": "Access",
+    "comingSoon": "Access management is coming soon."
   }
 }
