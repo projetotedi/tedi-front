@@ -11,9 +11,12 @@
     "description": "Se você precisa acessar esta página, fale com a coordenação.",
     "backHome": "Voltar para o início"
   },
+  "publicScreen": {
+    "brand": "TEDI",
+    "footer": "TEDI · Sistema de Gestão do Projeto de Extensão"
+  },
   "login": {
     "title": "Entrar",
-    "brand": "TEDI",
     "ra": {
       "label": "Matrícula (RA)",
       "placeholder": "Digite sua matrícula"
@@ -29,7 +32,6 @@
     "submitting": "Entrando…",
     "forgotPassword": "Esqueceu a senha?",
     "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
-    "footer": "TEDI · Sistema de Gestão do Projeto de Extensão",
     "errors": {
       "invalidCredentials": "Matrícula ou senha incorretos",
       "accessDisabled": "Seu acesso está inativo, fale com a coordenação",
@@ -40,6 +42,113 @@
     "validation": {
       "raRequired": "Informe sua matrícula",
       "passwordMin": "A senha deve ter no mínimo 8 caracteres"
+    }
+  },
+  "invite": {
+    "title": "Cadastro de membro",
+    "loading": "Carregando o convite…",
+    "badge": {
+      "withRole": "Você foi convidado como {{role}}",
+      "generic": "Você foi convidado para o TEDI"
+    },
+    "roles": {
+      "member": "Membro",
+      "director": "Diretor",
+      "coordinator": "Coordenadora"
+    },
+    "steps": {
+      "personal": "Seus dados",
+      "password": "Crie sua senha",
+      "completed": "concluída"
+    },
+    "stepLabel": "Etapa {{current}} de {{total}}",
+    "stepStatus": "Etapa {{current}} de {{total}}: {{name}}",
+    "step1": {
+      "subtitle": "Preencha seus dados para criar o seu acesso ao TEDI.",
+      "personalTitle": "Dados pessoais",
+      "academicTitle": "Dados acadêmicos"
+    },
+    "step2": {
+      "subtitle": "Último passo: crie a senha que você vai usar para entrar no TEDI.",
+      "title": "Crie sua senha",
+      "summary": "  ·  RA {{ra}} — é com este RA e a senha abaixo que você entra no sistema."
+    },
+    "fields": {
+      "name": {
+        "label": "Nome completo"
+      },
+      "ra": {
+        "label": "RA",
+        "hint": "Você vai entrar no sistema com este RA."
+      },
+      "email": {
+        "label": "E-mail institucional"
+      },
+      "password": {
+        "label": "Senha",
+        "hint": "Mínimo de 8 caracteres.",
+        "show": "Mostrar senha",
+        "hide": "Ocultar senha"
+      },
+      "passwordConfirmation": {
+        "label": "Confirmar senha",
+        "hint": "Digite a mesma senha de novo.",
+        "show": "Mostrar confirmação da senha",
+        "hide": "Ocultar confirmação da senha"
+      },
+      "privacyConsent": {
+        "label": "Li o aviso de privacidade e autorizo o projeto a usar meus dados para a gestão do voluntariado."
+      }
+    },
+    "requiredHint": "* Campos obrigatórios",
+    "actions": {
+      "next": "Continuar",
+      "back": "Voltar",
+      "submit": "Enviar cadastro",
+      "submitting": "Enviando…",
+      "goToLogin": "Ir para o login",
+      "retry": "Tentar de novo"
+    },
+    "success": {
+      "title": "Cadastro concluído!",
+      "description": "Agora você já pode entrar com o seu RA ({{ra}}) e a senha que acabou de criar."
+    },
+    "invalid": {
+      "title": "Este link não é mais válido",
+      "description": "O link vale por {{hours}} horas e só pode ser usado uma vez. Ele pode ter expirado, já ter sido usado ou ter sido cancelado. Peça um novo à coordenação."
+    },
+    "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
+    "errors": {
+      "raInUse": "Este RA já está em uso",
+      "emailInUse": "Este e-mail já está em uso",
+      "network": "Não foi possível conectar",
+      "unknown": "Não foi possível enviar o cadastro. Tente novamente."
+    },
+    "validation": {
+      "nameRequired": "Informe o seu nome completo",
+      "nameMax": "O nome deve ter no máximo 200 caracteres",
+      "raRequired": "Informe o seu RA",
+      "emailInvalid": "Informe um e-mail válido",
+      "passwordMin": "A senha deve ter no mínimo 8 caracteres",
+      "passwordMismatch": "As senhas não são iguais",
+      "privacyConsentRequired": "É preciso concordar para continuar."
+    },
+    "loadError": {
+      "title": "Não foi possível carregar o convite",
+      "description": "Não conseguimos falar com o servidor agora. Verifique a sua conexão e tente de novo. O seu link continua valendo."
+    }
+  },
+  "resetPassword": {
+    "title": "Criar nova senha",
+    "subtitle": "Escolha a senha que você vai usar para entrar no TEDI.",
+    "submit": "Salvar nova senha",
+    "success": {
+      "title": "Senha alterada!",
+      "description": "Agora você já pode entrar com a sua nova senha."
+    },
+    "errors": {
+      "network": "Não foi possível conectar",
+      "unknown": "Não foi possível salvar a nova senha. Tente novamente."
     }
   }
 }

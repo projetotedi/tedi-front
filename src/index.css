@@ -4,6 +4,15 @@
 @theme {
   --color-tedi-sky: #8ec6e6;
   --color-tedi-sky-foreground: #1e3a4c;
+
+  --color-tedi-success: #dbf5e3;
+  --color-tedi-success-foreground: #1c7842;
+  --color-tedi-warning: #fef3c7;
+  --color-tedi-warning-foreground: #92400e;
+  --color-tedi-badge: #dbeafe;
+  --color-tedi-badge-foreground: #1d4ed8;
+  /* Faixa de resumo do passo 2: sobre este fundo o `text-muted` do tema cai para 4,4:1. */
+  --color-tedi-summary: #eff4fc;
 }
 
 :root {

@@ -12,7 +12,7 @@ export interface TextFieldProps {
   errorMessage?: string;
   isDisabled?: boolean;
   isRequired?: boolean;
-  type?: "text" | "password";
+  type?: "text" | "password" | "email";
   autoComplete?: string;
   "aria-describedby"?: string;
   inputRef?: Ref<HTMLInputElement>;

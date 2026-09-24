@@ -6,6 +6,7 @@ import { Alert } from "@shared/ui";
 
 import { LoginForm } from "../components/LoginForm";
 import { LoginFormSkeleton } from "../components/LoginFormSkeleton";
+import { PublicScreen } from "../components/PublicScreen";
 import { useAuth } from "../hooks/useAuth";
 import { readReturnTo } from "../lib/return-to";
 
@@ -22,20 +23,12 @@ export function LoginPage() {
 
   const reason = new URLSearchParams(location.search).get("reason");
 
-  // `fixed` só aqui: o PublicLayout também serve à pré-inscrição e não deve herdar o fundo.
   return (
-    <div className="fixed inset-0 overflow-y-auto bg-tedi-sky text-tedi-sky-foreground">
-      <div className="flex min-h-full flex-col items-center justify-center gap-6 p-4">
-        <div className="flex w-full max-w-110 flex-col gap-5 rounded-3xl bg-surface p-8 text-foreground shadow-surface">
-          {/* TODO: wordmark provisório em texto até o designer entregar o SVG. */}
-          <p className="text-center text-5xl font-black tracking-tight">{t("login.brand")}</p>
-          {/* O design não mostra título: fica só para leitores de tela e para o título da página. */}
-          <h1 className="sr-only">{t("login.title")}</h1>
-          {reason === "expired" && <Alert variant="error">{t("session.expired")}</Alert>}
-          {status === "loading" ? <LoginFormSkeleton /> : <LoginForm />}
-        </div>
-        <p className="text-center text-sm">{t("login.footer")}</p>
-      </div>
-    </div>
+    <PublicScreen cardWidthClassName="max-w-110">
+      {/* O design não mostra título: fica só para leitores de tela e para o título da página. */}
+      <h1 className="sr-only">{t("login.title")}</h1>
+      {reason === "expired" && <Alert variant="error">{t("session.expired")}</Alert>}
+      {status === "loading" ? <LoginFormSkeleton /> : <LoginForm />}
+    </PublicScreen>
   );
 }

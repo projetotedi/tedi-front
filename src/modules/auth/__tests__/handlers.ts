@@ -1,11 +1,17 @@
 import { http, HttpResponse } from "msw";
 
-import type { LoginDto, MeResponseDto } from "@api/generated/model";
+import {
+  InviteType,
+  type AcceptInviteDto,
+  type InviteResponseDto,
+  type LoginDto,
+  type MeResponseDto,
+} from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 /**
  * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/login,
- * POST /auth/logout).
+ * POST /auth/logout, GET /auth/invites/:token, POST /auth/invites/accept).
  * Path com curinga de prefixo (ver http.get abaixo) porque http-client.ts prefixa a URL
  * com VITE_API_URL em runtime — o teste não precisa saber qual é o prefixo.
  */
@@ -73,5 +79,75 @@ export function loginHandler({
       );
     }
     return HttpResponse.json(user);
+  });
+}
+
+interface ApiErrorOptions {
+  statusCode: number;
+  error: string;
+  message?: string;
+}
+
+function apiErrorResponse({ statusCode, error, message }: ApiErrorOptions) {
+  return HttpResponse.json(
+    { statusCode, error, message: message ?? error },
+    { status: statusCode },
+  );
+}
+
+export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteResponseDto {
+  return {
+    type: InviteType.access,
+    role: Role.member,
+    expiresAt: "2026-09-22T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+interface GetInviteHandlerOptions {
+  invite?: InviteResponseDto;
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (token: string) => void;
+}
+
+export function getInviteHandler({
+  invite = buildInvite(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: GetInviteHandlerOptions = {}) {
+  return http.get("*/auth/invites/:token", async ({ params }) => {
+    onCall?.(String(params.token));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(invite);
+  });
+}
+
+interface AcceptInviteHandlerOptions {
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (body: AcceptInviteDto) => void;
+}
+
+export function acceptInviteHandler({
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: AcceptInviteHandlerOptions = {}) {
+  return http.post("*/auth/invites/accept", async ({ request }) => {
+    onCall?.((await request.json()) as AcceptInviteDto);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return new HttpResponse(null, { status: 204 });
   });
 }
