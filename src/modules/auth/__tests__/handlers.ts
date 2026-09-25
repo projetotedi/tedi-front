@@ -198,7 +198,8 @@ export function listAccessHandler({
   data = [buildAccess()],
   total,
   page = 1,
-  limit = 20,
+  // Tamanho de página da tela de Acessos (`ACCESS_PAGE_SIZE`).
+  limit = 12,
   error,
   networkError = false,
   delay,

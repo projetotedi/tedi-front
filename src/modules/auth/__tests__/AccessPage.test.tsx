@@ -3,228 +3,47 @@ import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
-import { InviteListItemDtoStatus, InviteType } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { AccessTable } from "../components/AccessTable";
-import { InvitesTable } from "../components/InvitesTable";
 import { AccessPage } from "../pages/AccessPage";
 import { authProtectedRoutes } from "../routes";
-import {
-  buildAccess,
-  buildCreateInviteResponse,
-  buildInviteListItem,
-  buildMeUser,
-  createInviteHandler,
-  listAccessHandler,
-  listInvitesHandler,
-  meHandler,
-} from "./handlers";
+import { buildAccess, buildMeUser, listAccessHandler, meHandler } from "./handlers";
 import { renderRoutes, renderWithProviders, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
 
-describe("AccessTable", () => {
-  it("renders one row per person with name, RA and translated role", async () => {
-    server.use(
-      listAccessHandler({
-        data: [
-          buildAccess({ id: "1", name: "Ana Coordenadora", ra: "2024RA0001", role: Role.director }),
-          buildAccess({
-            id: "2",
-            name: "Beto Diretor",
-            ra: "2024RA0002",
-            email: "beto@example.com",
-            role: Role.member,
-          }),
-        ],
-        total: 2,
-      }),
-    );
+type OnCall = ReturnType<typeof vi.fn<(params: URLSearchParams) => void>>;
 
-    await renderWithProviders(<AccessTable />);
+function lastParams(onCall: OnCall): URLSearchParams | undefined {
+  return onCall.mock.calls.at(-1)?.[0];
+}
 
-    expect(await screen.findByRole("cell", { name: "Ana Coordenadora" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "Beto Diretor" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "2024RA0001" })).toBeInTheDocument();
-    expect(screen.getByRole("cell", { name: "2024RA0002" })).toBeInTheDocument();
-    expect(screen.getByText("Diretor(a)")).toBeInTheDocument();
-    expect(screen.getByText("Membro")).toBeInTheDocument();
+function buildPeople(count: number) {
+  return Array.from({ length: count }, (_, index) =>
+    buildAccess({ id: `person-${index + 1}`, name: `Pessoa ${index + 1}` }),
+  );
+}
+
+function createDeferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
   });
-
-  it("shows a superadmin as Coordenadora", async () => {
-    server.use(
-      listAccessHandler({
-        data: [buildAccess({ role: Role.superadmin })],
-        total: 1,
-      }),
-    );
-
-    await renderWithProviders(<AccessTable />);
-
-    expect(await screen.findByText("Coordenadora")).toBeInTheDocument();
-  });
-
-  it("shows loading status", async () => {
-    server.use(
-      http.get("*/access", async () => {
-        await delay("infinite");
-        return HttpResponse.json({ data: [], page: 1, limit: 20, total: 0 });
-      }),
-    );
-
-    await renderWithProviders(<AccessTable />);
-
-    expect(screen.getByRole("status")).toHaveTextContent("Carregando pessoas");
-  });
-
-  it("shows error with retry", async () => {
-    server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
-    const user = userEvent.setup();
-
-    await renderWithProviders(<AccessTable />);
-
-    await screen.findByText("Não foi possível carregar as pessoas com acesso.");
-    const retryButton = screen.getByRole("button", { name: "Tentar de novo" });
-
-    server.use(listAccessHandler({ data: [buildAccess()], total: 1 }));
-    await user.click(retryButton);
-
-    expect(await screen.findByRole("cell", { name: "Ana Coordenadora" })).toBeInTheDocument();
-  });
-
-  it("empty access list shows the empty message", async () => {
-    server.use(listAccessHandler({ data: [], total: 0 }));
-
-    await renderWithProviders(<AccessTable />);
-
-    expect(await screen.findByText("Nenhum acesso encontrado")).toBeInTheDocument();
-  });
-
-  it("resets to page 1 when a new search is submitted", async () => {
-    const onCall = vi.fn<(params: URLSearchParams) => void>();
-    server.use(listAccessHandler({ data: [buildAccess()], total: 25, limit: 20, onCall }));
-    const user = userEvent.setup();
-
-    await renderWithProviders(<AccessTable />);
-    await screen.findByRole("cell", { name: "Ana Coordenadora" });
-
-    await user.click(screen.getByRole("button", { name: "Próxima página" }));
-    await waitFor(() => expect(onCall.mock.calls.at(-1)?.[0].get("page")).toBe("2"));
-
-    await user.type(screen.getByLabelText("Buscar por nome ou RA"), "Ana");
-    await user.click(screen.getByRole("button", { name: "Buscar" }));
-
-    await waitFor(() => {
-      const params = onCall.mock.calls.at(-1)?.[0];
-      expect(params?.get("page")).toBe("1");
-      expect(params?.get("search")).toBe("Ana");
-    });
-  });
-
-  it("requests the next page", async () => {
-    const onCall = vi.fn<(params: URLSearchParams) => void>();
-    server.use(listAccessHandler({ data: [buildAccess()], total: 25, limit: 20, onCall }));
-    const user = userEvent.setup();
-
-    await renderWithProviders(<AccessTable />);
-    await screen.findByRole("cell", { name: "Ana Coordenadora" });
-
-    await user.click(screen.getByRole("button", { name: "Próxima página" }));
-
-    await waitFor(() => {
-      expect(onCall.mock.calls.at(-1)?.[0].get("page")).toBe("2");
-    });
-  });
-});
-
-describe("InvitesTable", () => {
-  it("translates pending and expired statuses", async () => {
-    server.use(
-      listInvitesHandler({
-        data: [
-          buildInviteListItem({
-            id: "1",
-            status: InviteListItemDtoStatus.pending,
-            role: Role.member,
-          }),
-          buildInviteListItem({
-            id: "2",
-            status: InviteListItemDtoStatus.expired,
-            role: Role.director,
-          }),
-        ],
-      }),
-    );
-
-    await renderWithProviders(<InvitesTable />);
-
-    expect(await screen.findByText("Pendente")).toBeInTheDocument();
-    expect(screen.getByText("Expirado")).toBeInTheDocument();
-  });
-
-  it("shows a dash for the role of a password_reset invite", async () => {
-    server.use(
-      listInvitesHandler({
-        data: [buildInviteListItem({ type: InviteType.password_reset, role: null })],
-      }),
-    );
-
-    await renderWithProviders(<InvitesTable />);
-
-    expect(await screen.findByRole("cell", { name: "—" })).toBeInTheDocument();
-    expect(screen.getByText("Redefinição de senha")).toBeInTheDocument();
-  });
-
-  it("empty invites list shows the empty message", async () => {
-    server.use(listInvitesHandler({ data: [] }));
-
-    await renderWithProviders(<InvitesTable />);
-
-    expect(await screen.findByText("Nenhum convite encontrado")).toBeInTheDocument();
-  });
-
-  it("shows loading status", async () => {
-    server.use(
-      http.get("*/invites", async () => {
-        await delay("infinite");
-        return HttpResponse.json([]);
-      }),
-    );
-
-    await renderWithProviders(<InvitesTable />);
-
-    expect(screen.getByRole("status")).toHaveTextContent("Carregando convites");
-  });
-
-  it("shows error with retry", async () => {
-    server.use(listInvitesHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
-    const user = userEvent.setup();
-
-    await renderWithProviders(<InvitesTable />);
-
-    await screen.findByText("Não foi possível carregar os convites.");
-    const retryButton = screen.getByRole("button", { name: "Tentar de novo" });
-
-    server.use(listInvitesHandler({ data: [buildInviteListItem()] }));
-    await user.click(retryButton);
-
-    expect(await screen.findByText("Pendente")).toBeInTheDocument();
-  });
-});
+  return { promise, resolve };
+}
 
 describe("route /access", () => {
-  it("coordinator sees the People and Invites tabs", async () => {
+  it("coordinator sees the members card", async () => {
     server.use(
       meHandler({ user: buildMeUser({ role: Role.coordinator }) }),
       listAccessHandler({ data: [], total: 0 }),
-      listInvitesHandler({ data: [] }),
     );
 
     await renderRoutes(authProtectedRoutes, { route: "/access" });
 
-    expect(await screen.findByRole("tab", { name: "Pessoas" })).toBeInTheDocument();
-    expect(screen.getByRole("tab", { name: "Convites" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Alocações de membros (0)" }),
+    ).toBeInTheDocument();
   });
 
   it("director gets the forbidden page and /access is never requested", async () => {
@@ -242,55 +61,224 @@ describe("route /access", () => {
 });
 
 describe("AccessPage", () => {
-  it("empty access list shows the empty message and keeps the create button", async () => {
-    server.use(listAccessHandler({ data: [], total: 0 }), listInvitesHandler({ data: [] }));
+  it("requests page 1 with limit 12 and no filter", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(listAccessHandler({ data: buildPeople(3), total: 3, onCall }));
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    const params = onCall.mock.calls[0]?.[0];
+    expect(params?.get("page")).toBe("1");
+    expect(params?.get("limit")).toBe("12");
+    expect(params?.has("search")).toBe(false);
+    expect(params?.has("role")).toBe(false);
+    expect(params?.has("enabled")).toBe(false);
+  });
+
+  it("shows the total in the card title and the summary", async () => {
+    server.use(listAccessHandler({ data: buildPeople(12), total: 16 }));
+
+    await renderWithProviders(<AccessPage />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Alocações de membros (16)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Alocações de membros (16)" })).toBeInTheDocument();
+    expect(screen.getByText("Mostrando 12 de 16 alocações")).toBeInTheDocument();
+    expect(screen.getAllByRole("row")).toHaveLength(13);
+  });
+
+  it("shows loading status without the total and keeps the create button", async () => {
+    server.use(
+      http.get("*/access", async () => {
+        await delay("infinite");
+        return HttpResponse.json({ data: [], page: 1, limit: 12, total: 0 });
+      }),
+    );
+
+    await renderWithProviders(<AccessPage />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Carregando pessoas");
+    expect(screen.getByRole("heading", { name: "Alocações de membros" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
+  });
+
+  it("shows error with retry", async () => {
+    server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+
+    await screen.findByText("Não foi possível carregar as pessoas com acesso.");
+    expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
+    const retryButton = screen.getByRole("button", { name: "Tentar de novo" });
+
+    server.use(listAccessHandler({ data: [buildAccess({ name: "Ana Torres" })], total: 1 }));
+    await user.click(retryButton);
+
+    expect(await screen.findByRole("cell", { name: "Ana Torres" })).toBeInTheDocument();
+  });
+
+  it("empty list shows the empty message, keeps Gerar link de cadastro and hides the footer", async () => {
+    server.use(listAccessHandler({ data: [], total: 0 }));
 
     await renderWithProviders(<AccessPage />);
 
     expect(await screen.findByText("Nenhum acesso encontrado")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
+    ).not.toBeInTheDocument();
   });
 
-  it("with the Invites tab already open, generating an invite refetches GET /invites through cache invalidation", async () => {
-    // Diferente do teste anterior (que só monta a aba Convites depois de gerar o convite, então
-    // a chamada que ele observa é a primeira busca, não uma invalidação de cache): aqui a aba
-    // Convites já está aberta e com o InvitesTable observando o cache antes do POST, então só
-    // uma invalidação de verdade (a linha invalidateQueries de CreateInviteForm.tsx) explica a
-    // 2ª chamada a GET /invites — apagar aquela linha faria este teste falhar.
-    const onCall = vi.fn();
+  it("Papel filter sends role and returns to page 1", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    await user.click(screen.getByRole("button", { name: "Página 3" }));
+    await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("3"));
+
+    await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
+    await user.click(await screen.findByRole("option", { name: "Diretor(a)" }));
+
+    await waitFor(() => {
+      expect(lastParams(onCall)?.get("role")).toBe("director");
+      expect(lastParams(onCall)?.get("page")).toBe("1");
+    });
+  });
+
+  it("Status filter sends enabled=false for Inativo and drops it for Todos", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(listAccessHandler({ data: buildPeople(3), total: 3, onCall }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    await user.click(screen.getByRole("button", { name: /Status: todos/ }));
+    await user.click(await screen.findByRole("option", { name: "Inativo" }));
+    await waitFor(() => expect(lastParams(onCall)?.get("enabled")).toBe("false"));
+
+    await user.click(screen.getByRole("button", { name: /Status: Inativo/ }));
+    await user.click(await screen.findByRole("option", { name: "Todos" }));
+    await waitFor(() => expect(lastParams(onCall)?.has("enabled")).toBe(false));
+  });
+
+  it("search is sent after typing and returns to page 1", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    await user.click(screen.getByRole("button", { name: "Página 2" }));
+    await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("2"));
+
+    await user.type(screen.getByRole("textbox", { name: "Buscar por nome ou RA" }), "Ana");
+
+    await waitFor(
+      () => {
+        expect(lastParams(onCall)?.get("search")).toBe("Ana");
+        expect(lastParams(onCall)?.get("page")).toBe("1");
+      },
+      { timeout: 2000 },
+    );
+    // O debounce agrupa as teclas: nenhuma busca parcial ("A", "An") chegou ao back.
+    const searches = onCall.mock.calls.map(([params]) => params.get("search"));
+    expect(searches).not.toContain("A");
+    expect(searches).not.toContain("An");
+  });
+
+  it("numbered pagination requests the pressed page and marks it as current", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+    expect(screen.getByRole("button", { name: "Página 1" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Página 3" }));
+
+    await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("3"));
+    expect(screen.getByRole("button", { name: "Página 3" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("button", { name: "Página 1" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("next and previous buttons move one page", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+    expect(screen.getByRole("button", { name: "Página anterior" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Próxima página" }));
+    await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("2"));
+
+    await user.click(screen.getByRole("button", { name: "Página anterior" }));
+    await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("1"));
+  });
+
+  it("keeps the rows of the current page while the next one loads", async () => {
+    const deferred = createDeferred();
     server.use(
-      listAccessHandler({ data: [], total: 0 }),
-      listInvitesHandler({ data: [], onCall }),
-      createInviteHandler({
-        response: buildCreateInviteResponse({ role: Role.member }),
-        onCall: () => {
-          server.use(
-            listInvitesHandler({
-              data: [
-                buildInviteListItem({
-                  status: InviteListItemDtoStatus.pending,
-                  role: Role.member,
-                }),
-              ],
-              onCall,
-            }),
-          );
-        },
+      http.get("*/access", async ({ request }) => {
+        const page = Number(new URL(request.url).searchParams.get("page"));
+        if (page === 2) await deferred.promise;
+        return HttpResponse.json({
+          data: [buildAccess({ id: `page-${page}`, name: `Pessoa da página ${page}` })],
+          page,
+          limit: 12,
+          total: 30,
+        });
       }),
     );
     const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa da página 1" });
+
+    await user.click(screen.getByRole("button", { name: "Página 2" }));
+
+    expect(screen.getByRole("cell", { name: "Pessoa da página 1" })).toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+    deferred.resolve();
+    expect(await screen.findByRole("cell", { name: "Pessoa da página 2" })).toBeInTheDocument();
+  });
+
+  it("hides pagination when everything fits in one page", async () => {
+    server.use(listAccessHandler({ data: buildPeople(5), total: 5 }));
+
     await renderWithProviders(<AccessPage />);
 
-    await user.click(screen.getByRole("tab", { name: "Convites" }));
-    await screen.findByText("Nenhum convite encontrado");
-    expect(onCall).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText("Mostrando 5 de 5 alocações")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
+    ).not.toBeInTheDocument();
+  });
 
-    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
-    await user.click(screen.getByRole("button", { name: "Gerar link" }));
-    await screen.findByLabelText("Link de cadastro");
-    await user.click(screen.getByRole("button", { name: "Concluir" }));
+  it("sets the document title", async () => {
+    server.use(listAccessHandler({ data: [], total: 0 }));
 
-    await waitFor(() => expect(onCall).toHaveBeenCalledTimes(2));
-    expect(await screen.findByText("Pendente")).toBeInTheDocument();
+    await renderWithProviders(<AccessPage />);
+
+    await waitFor(() => expect(document.title).toBe("Membros e Alocações"));
   });
 });
