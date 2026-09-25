@@ -12,7 +12,7 @@ src/
 │   ├── http-client.ts         mutator do Orval (único ponto de rede)
 │   ├── query-client.ts
 │   └── generated/             GERADO pelo Orval — não editar
-├── modules/<modulo>/         um por módulo do back (auth, pessoas, turmas, aulas, ...)
+├── modules/<modulo>/         um por módulo do back (auth, people, classes, lessons, ...)
 │   ├── index.ts               API pública do módulo
 │   ├── routes.tsx  pages/  components/  hooks/  schemas/  locales/
 │   └── __tests__/
@@ -42,13 +42,14 @@ Use Yarn.
 - Linter: oxlint com plugins `react` e `typescript` (`.oxlintrc.json`), ambiente browser + ES2022. `src/api/generated` é ignorado.
 - Formatter: oxfmt.
 - TypeScript em modo `strict`, com `noUnusedLocals`, `noUnusedParameters` e `noFallthroughCasesInSwitch`.
-- Pastas de módulo em minúsculo, nome igual ao do back (`pessoas`, `turmas`). Componentes e páginas em PascalCase (`PessoaForm.tsx`, `PessoasListPage.tsx`). Hooks em camelCase com prefixo `use`. Demais arquivos em kebab-case (`http-client.ts`).
-- Nomes de domínio em português, termos técnicos em inglês.
+- Pastas de módulo em minúsculo, nome igual ao do back (`people`, `classes`). Componentes e páginas em PascalCase (`PersonForm.tsx`, `PeopleListPage.tsx`). Hooks em camelCase com prefixo `use`. Demais arquivos em kebab-case (`http-client.ts`).
+- **Código em inglês** (decisão 35 da E9.a): pastas, componentes, hooks, rotas, variáveis e nomes de teste. Texto visível ao usuário fica em português, nos `locales/`. Documentação, commits e PRs seguem em português.
 
 ## Regras do Projeto
 
 - **Nenhuma chamada HTTP escrita à mão.** Componentes e páginas usam os hooks gerados em `@api/generated/<modulo>`. `fetch`/`axios` direto e import de `@api/http-client` fora de `src/api/` são proibidos (o `depcruise` falha).
 - **Nenhum tipo de resposta da API escrito à mão.** Vem de `@api/generated/model`. Se falta algo, o problema é no Swagger da API, não aqui.
+- **Autorização vem do back.** Os endpoints do back são protegidos pelo guard global com `@Roles`/`@Public` (nenhum módulo do back importa `auth`); no front, rotas protegidas usam `RequireRole` de `@modules/auth` com a mesma hierarquia (`member < director < coordinator`).
 - **Módulo é caixa fechada.** Só o `index.ts` é público. Importar `@modules/x/components/...` de outro módulo falha no CI.
 - **Formulários** usam `react-hook-form` + `zodResolver`. O schema vem de `@api/generated/zod/<modulo>`; só crie schema próprio em `schemas/` quando o formulário difere do DTO (campo condicional, máscara).
 - **Rotas** são declaradas em `routes.tsx` de cada módulo e concatenadas em `src/app/router.tsx`. Sem roteamento paralelo dentro de páginas.
@@ -75,9 +76,9 @@ Use Yarn.
 ## Dicas de Segurança e Configuração
 
 - Não commitar `.env`. Usar `.env.example` como referência (`VITE_API_URL`).
-- Deploy: Vercel, configurado em `vercel.json` (SPA rewrite, headers, cache). `VITE_API_URL` é definida no painel do Vercel por ambiente e resolvida no build. Passo a passo em `docs/DEPLOY.md`.
-- A sessão é mantida por cookie httpOnly emitido pelo back. `src/api/http-client.ts` envia `credentials: "include"` em todo request; não há token em `localStorage`.
-- Para rodar contra a API local: `tedi-back` em `http://localhost:3000` (ver README daquele repositório).
+- Deploy: Vercel, configurado em `vercel.json` (proxy `/api/*` → Render, SPA rewrite, headers, cache). `VITE_API_URL=/api` em todos os ambientes: o rewrite deixa a API na mesma origem e o cookie funciona como first-party (inclusive Safari/iOS). Passo a passo em `docs/DEPLOY.md`.
+- A sessão é mantida por cookie httpOnly emitido pelo back. `src/api/http-client.ts` envia `credentials: "include"` em todo request; o front nunca guarda nem lê token, e descobre quem está logado por `GET /auth/me`.
+- Para rodar contra a API local: `tedi-back` em `http://localhost:3000` (ver README daquele repositório); o proxy do Vite (`vite.config.ts`) repassa `/api` para ele.
 
 ## Skills e agentes do repositório
 
