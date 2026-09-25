@@ -156,20 +156,33 @@
     "director": "Director",
     "coordinator": "Coordinator"
   },
+  "nav": {
+    "access": "Members and Planning"
+  },
+  "userMenu": {
+    "trigger": "Profile menu ({{role}})",
+    "menu": "Profile options"
+  },
   "access": {
-    "title": "Access",
+    "title": "Members and Allocations",
     "tabs": {
       "people": "People",
       "invites": "Invites"
     },
     "people": {
-      "caption": "People with access to TEDI",
+      "title": "Member allocations ({{total}})",
+      "titlePending": "Member allocations",
+      "caption": "Members with access to TEDI",
       "columns": {
         "name": "Name",
         "ra": "RA",
         "email": "Email",
+        "member": "Member",
         "role": "Role",
-        "status": "Status"
+        "departments": "Departments",
+        "mainFunction": "Main function",
+        "status": "Status",
+        "actions": "Actions"
       },
       "status": {
         "active": "Active",
@@ -177,16 +190,34 @@
       },
       "search": {
         "label": "Search by name or RA",
+        "placeholder": "Search member by name…",
         "submit": "Search"
       },
+      "filters": {
+        "label": "Member list filters",
+        "role": {
+          "label": "Role",
+          "all": "All",
+          "allValue": "Role: all",
+          "value": "Role: {{value}}"
+        },
+        "status": {
+          "label": "Status",
+          "all": "All",
+          "allValue": "Status: all",
+          "value": "Status: {{value}}"
+        }
+      },
+      "summary": "Showing {{shown}} of {{total}} allocations",
       "loading": "Loading people…",
       "error": "Could not load the people with access.",
       "retry": "Try again",
       "empty": "No access found",
       "pagination": {
-        "nav": "People list pagination",
+        "nav": "Member list pagination",
         "previous": "Previous page",
         "next": "Next page",
+        "page": "Page {{page}}",
         "status": "Page {{page}} of {{pages}}"
       }
     },
@@ -229,6 +260,7 @@
       "copy": "Copy link",
       "copied": "Link copied.",
       "copyFallback": "Could not copy automatically. The link has been selected: use Ctrl+C (or Cmd+C) to copy it.",
+      "validityTitle": "Copy the link now",
       "validity": "This link is valid for {{hours}} hours and can only be used once. It will not be shown again.",
       "done": "Done",
       "errors": {

@@ -156,20 +156,33 @@
     "director": "Diretor(a)",
     "coordinator": "Coordenadora"
   },
+  "nav": {
+    "access": "Membros e Planejamento"
+  },
+  "userMenu": {
+    "trigger": "Menu do perfil ({{role}})",
+    "menu": "Opções do perfil"
+  },
   "access": {
-    "title": "Acessos",
+    "title": "Membros e Alocações",
     "tabs": {
       "people": "Pessoas",
       "invites": "Convites"
     },
     "people": {
-      "caption": "Pessoas com acesso ao TEDI",
+      "title": "Alocações de membros ({{total}})",
+      "titlePending": "Alocações de membros",
+      "caption": "Membros com acesso ao TEDI",
       "columns": {
         "name": "Nome",
         "ra": "RA",
         "email": "E-mail",
-        "role": "Perfil",
-        "status": "Situação"
+        "member": "Membro",
+        "role": "Papel",
+        "departments": "Departamentos",
+        "mainFunction": "Função principal",
+        "status": "Status",
+        "actions": "Ações"
       },
       "status": {
         "active": "Ativo",
@@ -177,16 +190,34 @@
       },
       "search": {
         "label": "Buscar por nome ou RA",
+        "placeholder": "Buscar membro por nome…",
         "submit": "Buscar"
       },
+      "filters": {
+        "label": "Filtros da lista de membros",
+        "role": {
+          "label": "Papel",
+          "all": "Todos",
+          "allValue": "Papel: todos",
+          "value": "Papel: {{value}}"
+        },
+        "status": {
+          "label": "Status",
+          "all": "Todos",
+          "allValue": "Status: todos",
+          "value": "Status: {{value}}"
+        }
+      },
+      "summary": "Mostrando {{shown}} de {{total}} alocações",
       "loading": "Carregando pessoas…",
       "error": "Não foi possível carregar as pessoas com acesso.",
       "retry": "Tentar de novo",
       "empty": "Nenhum acesso encontrado",
       "pagination": {
-        "nav": "Paginação da lista de pessoas",
+        "nav": "Paginação da lista de membros",
         "previous": "Página anterior",
         "next": "Próxima página",
+        "page": "Página {{page}}",
         "status": "Página {{page}} de {{pages}}"
       }
     },
@@ -229,6 +260,7 @@
       "copy": "Copiar link",
       "copied": "Link copiado.",
       "copyFallback": "Não foi possível copiar automaticamente. O link foi selecionado: use Ctrl+C (ou Cmd+C) para copiar.",
+      "validityTitle": "Copie o link agora",
       "validity": "Este link vale por {{hours}} horas e só pode ser usado uma vez. Ele não será mostrado de novo.",
       "done": "Concluir",
       "errors": {
