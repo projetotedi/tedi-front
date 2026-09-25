@@ -59,9 +59,13 @@ export function AppSidebar() {
           <ul className="flex flex-col gap-1">
             {items.map((item) => (
               <li key={item.to}>
+                {/*
+                  Foco em azul-marinho: o azul de foco do tema dá 2,9:1 sobre o azul da sidebar
+                  (mínimo 3:1); este dá 6,4:1.
+                */}
                 <NavLink
                   to={item.to}
-                  className="flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-base font-medium text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus aria-[current=page]:bg-white aria-[current=page]:shadow-tedi-nav"
+                  className="flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-base font-medium text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-tedi-sky-foreground aria-[current=page]:bg-white aria-[current=page]:shadow-tedi-nav"
                 >
                   <img src={item.iconSrc} alt="" aria-hidden="true" width={24} height={24} />
                   {t(item.labelKey, { ns: item.labelNs })}
