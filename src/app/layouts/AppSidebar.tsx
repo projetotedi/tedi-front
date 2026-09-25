@@ -10,13 +10,14 @@ import textureThreeUrl from "./assets/sidebar-texture-3.svg";
 import textureFourUrl from "./assets/sidebar-texture-4.svg";
 
 // Ondas de fundo do Figma (frames 63:2947 a 63:2950): o SVG de cada uma vem do arquivo, sem
-// edição. Tamanhos são os do SVG; as posições são o ponto de partida e podem ser ajustadas
-// contra o print do frame.
+// edição, com o tamanho do SVG. As quatro se sobrepõem e cobrem a altura da sidebar, cada uma com
+// o próprio deslocamento; as posições foram ajustadas contra o print do frame 63:3122 (correlação
+// das ondas do print com cada SVG, com resolução de cerca de 2px).
 const TEXTURES = [
-  { src: textureOneUrl, width: 769.8, height: 1012.4, position: "-left-[300px] -top-10" },
-  { src: textureTwoUrl, width: 755.2, height: 1079.3, position: "-left-[260px] top-[180px]" },
-  { src: textureThreeUrl, width: 734.2, height: 1120.6, position: "-left-[320px] top-[420px]" },
-  { src: textureFourUrl, width: 753.1, height: 1078.8, position: "-left-[280px] top-[700px]" },
+  { src: textureOneUrl, width: 769.8, height: 1012.4, position: "-left-[145px] -top-[37px]" },
+  { src: textureTwoUrl, width: 755.2, height: 1079.3, position: "-left-[164px] -top-[89px]" },
+  { src: textureThreeUrl, width: 734.2, height: 1120.6, position: "-left-[139px] -top-[102px]" },
+  { src: textureFourUrl, width: 753.1, height: 1078.8, position: "-left-[150px] -top-[64px]" },
 ] as const;
 
 /**
@@ -44,13 +45,14 @@ export function AppSidebar() {
         />
       ))}
 
-      <div className="relative flex flex-col gap-1.5">
+      {/* Recuo de 8px e a legenda 22px abaixo do "TEDI": medidas do frame (a marca ocupa ~87px). */}
+      <div className="relative px-2">
         <p className="text-[28px] font-bold tracking-[0.56px] text-black">{t("app.name")}</p>
-        <p className="text-xs font-medium text-tedi-sidebar-muted">{t("app.tagline")}</p>
+        <p className="mt-5.5 text-xs font-medium text-tedi-sidebar-muted">{t("app.tagline")}</p>
       </div>
 
       {items.length > 0 ? (
-        <nav aria-label={t("layout.mainNav")} className="relative mt-4">
+        <nav aria-label={t("layout.mainNav")} className="relative mt-8">
           <ul className="flex flex-col gap-1">
             {items.map((item) => (
               <li key={item.to}>
