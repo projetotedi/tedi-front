@@ -1,25 +1,25 @@
 import { Outlet } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 
-import { SignOutButton } from "@modules/auth";
+import { AppHeader } from "./AppHeader";
+import { AppSidebar } from "./AppSidebar";
 
 /**
- * Layout da área autenticada. O menu é montado a partir das rotas dos módulos
- * e filtrado pelo perfil do usuário quando o módulo auth existir.
- * Cabeçalho com nome/perfil do usuário e menu recolhível são GUS-86; aqui só o botão sair.
+ * Layout da área autenticada: menu lateral, cabeçalho com o título da página e o menu de perfil,
+ * e o conteúdo da rota. O menu é montado a partir dos itens que os módulos declaram e filtrado
+ * pelo perfil do usuário. Nesta versão (GUS-87) a sidebar tem só o item de Membros; o menu
+ * completo por perfil e a remoção da página inicial provisória são da GUS-86.
  */
 export function AppLayout() {
-  const { t } = useTranslation();
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <header className="border-b px-4 py-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{t("app.name")}</h1>
-        <SignOutButton />
-      </header>
-      <main className="flex-1 p-4">
-        <Outlet />
-      </main>
+    <div className="flex min-h-screen flex-col bg-tedi-page lg:flex-row">
+      <AppSidebar />
+      {/* `min-w-0`: sem ele a tabela larga esticaria a coluna em vez de rolar dentro do cartão. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <AppHeader />
+        <main className="flex-1 px-4 py-6 lg:px-25 lg:py-9">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }
