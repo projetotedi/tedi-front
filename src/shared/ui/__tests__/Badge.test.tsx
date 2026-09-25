@@ -13,7 +13,8 @@ describe("Badge", () => {
   it.each([
     ["neutral", "bg-tedi-neutral"],
     ["info", "bg-tedi-badge"],
-    ["success", "bg-tedi-success"],
+    ["highlight", "bg-tedi-highlight"],
+    ["success", "bg-tedi-badge-success"],
     ["warning", "bg-tedi-warning"],
     ["danger", "bg-tedi-danger"],
   ] as const)("applies the %s tone classes", (tone, expectedClass) => {
