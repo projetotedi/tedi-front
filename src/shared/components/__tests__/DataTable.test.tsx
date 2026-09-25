@@ -42,6 +42,53 @@ describe("DataTable", () => {
     expect(screen.getByRole("columnheader", { name: "Nome" })).toBeInTheDocument();
   });
 
+  it("applies per-column header and cell classes and the table class", () => {
+    render(
+      <DataTable
+        columns={[
+          {
+            header: "Nome",
+            render: (row: Row) => row.name,
+            headerClassName: "w-40 uppercase",
+            cellClassName: "text-right",
+          },
+          { header: "Código", render: (row: Row) => row.id },
+        ]}
+        rows={[{ id: "1", name: "Ana" }]}
+        rowKey={(row) => row.id}
+        tableClassName="table-fixed min-w-[600px]"
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Nome" })).toHaveClass("w-40", "uppercase");
+    expect(screen.getByRole("cell", { name: "Ana" })).toHaveClass("text-right");
+    expect(screen.getByRole("table")).toHaveClass("table-fixed", "min-w-[600px]", "w-full");
+  });
+
+  it("keeps the default header and cell styles when a column adds its own classes", () => {
+    render(
+      <DataTable
+        columns={[
+          {
+            header: "Nome",
+            render: (row: Row) => row.name,
+            headerClassName: "w-40",
+            cellClassName: "text-right",
+          },
+        ]}
+        rows={[{ id: "1", name: "Ana" }]}
+        rowKey={(row) => row.id}
+      />,
+    );
+
+    expect(screen.getByRole("columnheader", { name: "Nome" })).toHaveClass(
+      "text-xs",
+      "font-semibold",
+      "text-muted",
+    );
+    expect(screen.getByRole("cell", { name: "Ana" })).toHaveClass("text-base", "text-foreground");
+  });
+
   it("renders no rows and no message when rows is empty and emptyMessage is not set", () => {
     render(<DataTable columns={COLUMNS} rows={[]} rowKey={(row) => row.id} />);
 
