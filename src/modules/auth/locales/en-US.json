@@ -245,17 +245,17 @@
       "empty": "No invites found"
     },
     "createInvite": {
-      "trigger": "Generate invite",
-      "title": "Generate invite",
+      "trigger": "Generate registration link",
+      "title": "Generate registration link",
       "description": "Choose the role for the invited person.",
       "close": "Close",
       "role": {
-        "label": "Role"
+        "label": "Invite role"
       },
       "submit": "Generate link",
       "submitting": "Generating…",
       "link": {
-        "label": "Invite link"
+        "label": "Registration link"
       },
       "copy": "Copy link",
       "copied": "Link copied.",

@@ -245,17 +245,17 @@
       "empty": "Nenhum convite encontrado"
     },
     "createInvite": {
-      "trigger": "Gerar convite",
-      "title": "Gerar convite",
+      "trigger": "Gerar link de cadastro",
+      "title": "Gerar link de cadastro",
       "description": "Escolha o perfil da pessoa que vai receber o convite.",
       "close": "Fechar",
       "role": {
-        "label": "Perfil"
+        "label": "Perfil do convite"
       },
       "submit": "Gerar link",
       "submitting": "Gerando…",
       "link": {
-        "label": "Link do convite"
+        "label": "Link de cadastro"
       },
       "copy": "Copiar link",
       "copied": "Link copiado.",

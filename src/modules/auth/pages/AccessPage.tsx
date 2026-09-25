@@ -26,7 +26,7 @@ export function AccessPage(): ReactElement {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <PageTitle>{t("access.title")}</PageTitle>
         {/* Fora das abas: continua visível em Pessoas e em Convites. */}
-        <CreateInviteDialog onCreated={() => setTab("invites")} />
+        <CreateInviteDialog />
       </div>
       <Tabs
         label={t("access.title")}

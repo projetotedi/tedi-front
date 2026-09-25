@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { getListInvitesQueryKey } from "@api/generated";
 import { Role } from "@shared/lib/role";
 
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
@@ -35,9 +36,9 @@ function clearClipboard() {
 }
 
 async function openAndGenerate(user: UserEvent) {
-  await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+  await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
   await user.click(screen.getByRole("button", { name: "Gerar link" }));
-  await screen.findByLabelText("Link do convite");
+  await screen.findByLabelText("Link de cadastro");
 }
 
 describe("CreateInviteDialog", () => {
@@ -46,7 +47,7 @@ describe("CreateInviteDialog", () => {
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Perfil/ })).toHaveFocus();
@@ -57,8 +58,8 @@ describe("CreateInviteDialog", () => {
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
-    const dialog = await screen.findByRole("dialog", { name: "Gerar convite" });
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
+    const dialog = await screen.findByRole("dialog", { name: "Gerar link de cadastro" });
 
     expect(within(dialog).getByRole("button", { name: /Perfil/ })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Fechar" })).toBeInTheDocument();
@@ -76,13 +77,13 @@ describe("CreateInviteDialog", () => {
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
     await user.click(screen.getByRole("button", { name: /Perfil/ }));
     await user.click(screen.getByRole("option", { name: "Diretor(a)" }));
     await user.click(screen.getByRole("button", { name: "Gerar link" }));
 
     await waitFor(() => expect(onCall).toHaveBeenCalledWith({ role: "director" }));
-    expect(await screen.findByLabelText("Link do convite")).toHaveValue(LINK);
+    expect(await screen.findByLabelText("Link de cadastro")).toHaveValue(LINK);
   });
 
   it("exposes the 48h validity warning as the accessible description of the Copiar link button", async () => {
@@ -94,8 +95,22 @@ describe("CreateInviteDialog", () => {
 
     await openAndGenerate(user);
 
-    expect(screen.getByRole("button", { name: "Copiar link" })).toHaveAccessibleDescription(
-      /48 horas/,
+    const copyButton = screen.getByRole("button", { name: "Copiar link" });
+    expect(copyButton).toHaveAccessibleDescription(/Copie o link agora/);
+    expect(copyButton).toHaveAccessibleDescription(/48 horas/);
+    expect(copyButton).toHaveAccessibleDescription(/Ele não será mostrado de novo\./);
+  });
+
+  it("invalidates the invites query after generating", async () => {
+    server.use(createInviteHandler({ response: buildCreateInviteResponse({ url: LINK }) }));
+    const user = userEvent.setup();
+    const { queryClient } = await renderWithProviders(<CreateInviteDialog />);
+    const invalidateQueries = vi.spyOn(queryClient, "invalidateQueries");
+
+    await openAndGenerate(user);
+
+    await waitFor(() =>
+      expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: getListInvitesQueryKey() }),
     );
   });
 
@@ -125,7 +140,7 @@ describe("CreateInviteDialog", () => {
     await user.click(screen.getByRole("button", { name: "Copiar link" }));
 
     expect(await screen.findByText(/Não foi possível copiar automaticamente/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Link do convite")).toHaveFocus();
+    expect(screen.getByLabelText("Link de cadastro")).toHaveFocus();
   });
 
   it("falls back to selecting the link when the clipboard write rejects", async () => {
@@ -150,9 +165,9 @@ describe("CreateInviteDialog", () => {
       await user.click(screen.getByRole("button", { name: "Concluir" }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-      await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+      await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
       expect(await screen.findByRole("dialog")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Link do convite")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Link de cadastro")).not.toBeInTheDocument();
       expect(screen.getByRole("button", { name: /Perfil/ })).toBeInTheDocument();
     });
 
@@ -165,9 +180,9 @@ describe("CreateInviteDialog", () => {
       await user.click(screen.getByRole("button", { name: "Fechar" }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-      await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+      await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
       expect(await screen.findByRole("dialog")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Link do convite")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Link de cadastro")).not.toBeInTheDocument();
     });
 
     it("via Escape", async () => {
@@ -179,9 +194,9 @@ describe("CreateInviteDialog", () => {
       await user.keyboard("{Escape}");
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-      await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+      await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
       expect(await screen.findByRole("dialog")).toBeInTheDocument();
-      expect(screen.queryByLabelText("Link do convite")).not.toBeInTheDocument();
+      expect(screen.queryByLabelText("Link de cadastro")).not.toBeInTheDocument();
     });
   });
 
@@ -190,7 +205,7 @@ describe("CreateInviteDialog", () => {
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
     await user.click(screen.getByRole("button", { name: "Gerar link" }));
 
     expect(
@@ -203,7 +218,7 @@ describe("CreateInviteDialog", () => {
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
     await user.click(screen.getByRole("button", { name: "Gerar link" }));
 
     expect(await screen.findByText("Não foi possível conectar")).toBeInTheDocument();
@@ -223,7 +238,7 @@ describe("CreateInviteDialog", () => {
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
     const submit = screen.getByRole("button", { name: "Gerar link" });
     await user.dblClick(submit);
     await user.click(submit);
@@ -232,7 +247,7 @@ describe("CreateInviteDialog", () => {
     expect(calls).toBe(1);
 
     deferred.resolve();
-    await screen.findByLabelText("Link do convite");
+    await screen.findByLabelText("Link de cadastro");
     expect(calls).toBe(1);
   });
 
@@ -241,7 +256,7 @@ describe("CreateInviteDialog", () => {
     // o link gerado, deixando um convite pendente "órfão" sem forma de revogar (fora do escopo
     // desta card). Enquanto isPending, Esc e o botão X devem ser ignorados.
     async function startSubmitAndWaitForPending(user: UserEvent) {
-      await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+      await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
       await user.click(screen.getByRole("button", { name: "Gerar link" }));
       await screen.findByRole("button", { name: "Gerando…" });
     }
@@ -264,7 +279,7 @@ describe("CreateInviteDialog", () => {
       expect(screen.getByRole("button", { name: "Gerando…" })).toBeInTheDocument();
 
       deferred.resolve();
-      await screen.findByLabelText("Link do convite");
+      await screen.findByLabelText("Link de cadastro");
 
       await user.keyboard("{Escape}");
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -288,7 +303,7 @@ describe("CreateInviteDialog", () => {
       expect(screen.getByRole("button", { name: "Gerando…" })).toBeInTheDocument();
 
       deferred.resolve();
-      await screen.findByLabelText("Link do convite");
+      await screen.findByLabelText("Link de cadastro");
 
       await user.click(screen.getByRole("button", { name: "Fechar" }));
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

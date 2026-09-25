@@ -5,12 +5,8 @@ import { Button, Dialog } from "@shared/ui";
 
 import { CreateInviteForm } from "./CreateInviteForm";
 
-export interface CreateInviteDialogProps {
-  onCreated?: () => void;
-}
-
 /**
- * Botão "Gerar convite" + diálogo de criação. O conteúdo (`CreateInviteForm`) só existe
+ * Botão "Gerar link de cadastro" + diálogo de criação. O conteúdo (`CreateInviteForm`) só existe
  * enquanto o diálogo está aberto: fechar desmonta o formulário, e com ele o link gerado —
  * reabrir nunca mostra o link de novo. O foco volta ao botão ao fechar (React Aria).
  *
@@ -18,7 +14,7 @@ export interface CreateInviteDialogProps {
  * (ver `isDismissable` em `CreateInviteForm.onPendingChange`): fechar não cancela a mutação, só
  * esconderia o link antes de ele aparecer, deixando um convite pendente "órfão" no back.
  */
-export function CreateInviteDialog({ onCreated }: CreateInviteDialogProps): ReactElement {
+export function CreateInviteDialog(): ReactElement {
   const { t } = useTranslation("auth");
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,6 +22,8 @@ export function CreateInviteDialog({ onCreated }: CreateInviteDialogProps): Reac
   return (
     <>
       <Button
+        variant="tertiary"
+        className="rounded-3xl px-4"
         onPress={() => {
           setIsSubmitting(false);
           setIsOpen(true);
@@ -42,11 +40,7 @@ export function CreateInviteDialog({ onCreated }: CreateInviteDialogProps): Reac
         isDismissable={!isSubmitting}
       >
         {isOpen ? (
-          <CreateInviteForm
-            onCreated={onCreated}
-            onDone={() => setIsOpen(false)}
-            onPendingChange={setIsSubmitting}
-          />
+          <CreateInviteForm onDone={() => setIsOpen(false)} onPendingChange={setIsSubmitting} />
         ) : null}
       </Dialog>
     </>

@@ -248,47 +248,7 @@ describe("AccessPage", () => {
     await renderWithProviders(<AccessPage />);
 
     expect(await screen.findByText("Nenhum acesso encontrado")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Gerar convite" })).toBeInTheDocument();
-  });
-
-  it("after generating, invites list is refetched and shows the new pending invite in the Invites tab", async () => {
-    // GET /invites começa vazio; o handler de POST /invites troca a resposta do GET (como o
-    // back faria de verdade), provando que a lista é buscada de novo e mostra o item novo,
-    // e não apenas um estado local otimista.
-    server.use(
-      listAccessHandler({ data: [buildAccess()], total: 1 }),
-      listInvitesHandler({ data: [] }),
-      createInviteHandler({
-        response: buildCreateInviteResponse({ role: Role.member }),
-        onCall: () => {
-          server.use(
-            listInvitesHandler({
-              data: [
-                buildInviteListItem({
-                  status: InviteListItemDtoStatus.pending,
-                  role: Role.member,
-                }),
-              ],
-            }),
-          );
-        },
-      }),
-    );
-    const user = userEvent.setup();
-    await renderWithProviders(<AccessPage />);
-
-    await screen.findByRole("cell", { name: "Ana Coordenadora" });
-    expect(screen.getByRole("tab", { name: "Pessoas", selected: true })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
-    await user.click(screen.getByRole("button", { name: "Gerar link" }));
-    await screen.findByLabelText("Link do convite");
-    await user.click(screen.getByRole("button", { name: "Concluir" }));
-
-    expect(
-      await screen.findByRole("tab", { name: "Convites", selected: true }),
-    ).toBeInTheDocument();
-    expect(await screen.findByText("Pendente")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
   });
 
   it("with the Invites tab already open, generating an invite refetches GET /invites through cache invalidation", async () => {
@@ -325,9 +285,9 @@ describe("AccessPage", () => {
     await screen.findByText("Nenhum convite encontrado");
     expect(onCall).toHaveBeenCalledTimes(1);
 
-    await user.click(screen.getByRole("button", { name: "Gerar convite" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
     await user.click(screen.getByRole("button", { name: "Gerar link" }));
-    await screen.findByLabelText("Link do convite");
+    await screen.findByLabelText("Link de cadastro");
     await user.click(screen.getByRole("button", { name: "Concluir" }));
 
     await waitFor(() => expect(onCall).toHaveBeenCalledTimes(2));

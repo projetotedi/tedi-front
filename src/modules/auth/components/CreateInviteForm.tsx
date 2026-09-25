@@ -15,7 +15,6 @@ import { toRequestErrorKey } from "../lib/request-error";
 import { INVITABLE_ROLES, roleLabelKey } from "../lib/role-label";
 
 export interface CreateInviteFormProps {
-  onCreated?: () => void;
   onDone: () => void;
   /**
    * Notifica o diálogo pai enquanto o POST /invites está em andamento, para que ele bloqueie
@@ -31,11 +30,7 @@ type CopyStatus = "idle" | "copied" | "fallback";
  * Conteúdo do `CreateInviteDialog`. Antes de gerar: seletor de perfil. Depois: o link (uma
  * única vez — o estado morre com o componente ao fechar o diálogo, e nunca é persistido).
  */
-export function CreateInviteForm({
-  onCreated,
-  onDone,
-  onPendingChange,
-}: CreateInviteFormProps): ReactElement {
+export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormProps): ReactElement {
   const { t } = useTranslation("auth");
   const queryClient = useQueryClient();
   const errorId = useId();
@@ -52,9 +47,10 @@ export function CreateInviteForm({
     mutation: {
       // O token só existe na resposta desta mutação: não deve sobreviver ao desmonte do formulário.
       gcTime: 0,
+      // Hoje nenhuma tela lista convites (a GUS-88 vai listar e revogar). Invalidar mantém o cache
+      // de GET /invites correto para quando ela existir: nunca mostra a lista sem o convite novo.
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
-        onCreated?.();
       },
     },
   });
@@ -129,8 +125,12 @@ export function CreateInviteForm({
               ? t("access.createInvite.copyFallback")
               : null}
         </Alert>
-        <Alert variant="warning" id={validityId}>
-          {t("access.createInvite.validity", { hours: INVITE_VALIDITY_HOURS })}
+        <Alert
+          variant="warning"
+          id={validityId}
+          description={t("access.createInvite.validity", { hours: INVITE_VALIDITY_HOURS })}
+        >
+          {t("access.createInvite.validityTitle")}
         </Alert>
         <div className="flex justify-end">
           <Button onPress={onDone}>{t("access.createInvite.done")}</Button>
