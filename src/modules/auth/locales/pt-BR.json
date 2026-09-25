@@ -165,18 +165,11 @@
   },
   "access": {
     "title": "Membros e Alocações",
-    "tabs": {
-      "people": "Pessoas",
-      "invites": "Convites"
-    },
     "people": {
       "title": "Alocações de membros ({{total}})",
       "titlePending": "Alocações de membros",
       "caption": "Membros com acesso ao TEDI",
       "columns": {
-        "name": "Nome",
-        "ra": "RA",
-        "email": "E-mail",
         "member": "Membro",
         "role": "Papel",
         "departments": "Departamentos",
@@ -190,8 +183,7 @@
       },
       "search": {
         "label": "Buscar por nome ou RA",
-        "placeholder": "Buscar membro por nome…",
-        "submit": "Buscar"
+        "placeholder": "Buscar membro por nome…"
       },
       "filters": {
         "label": "Filtros da lista de membros",
@@ -217,32 +209,8 @@
         "nav": "Paginação da lista de membros",
         "previous": "Página anterior",
         "next": "Próxima página",
-        "page": "Página {{page}}",
-        "status": "Página {{page}} de {{pages}}"
+        "page": "Página {{page}}"
       }
-    },
-    "invites": {
-      "caption": "Convites gerados",
-      "columns": {
-        "role": "Perfil",
-        "type": "Tipo",
-        "status": "Situação",
-        "expiresAt": "Validade"
-      },
-      "type": {
-        "access": "Cadastro",
-        "password_reset": "Redefinição de senha"
-      },
-      "status": {
-        "pending": "Pendente",
-        "used": "Usado",
-        "expired": "Expirado",
-        "revoked": "Revogado"
-      },
-      "loading": "Carregando convites…",
-      "error": "Não foi possível carregar os convites.",
-      "retry": "Tentar de novo",
-      "empty": "Nenhum convite encontrado"
     },
     "createInvite": {
       "trigger": "Gerar link de cadastro",

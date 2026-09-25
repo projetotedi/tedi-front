@@ -165,18 +165,11 @@
   },
   "access": {
     "title": "Members and Allocations",
-    "tabs": {
-      "people": "People",
-      "invites": "Invites"
-    },
     "people": {
       "title": "Member allocations ({{total}})",
       "titlePending": "Member allocations",
       "caption": "Members with access to TEDI",
       "columns": {
-        "name": "Name",
-        "ra": "RA",
-        "email": "Email",
         "member": "Member",
         "role": "Role",
         "departments": "Departments",
@@ -190,8 +183,7 @@
       },
       "search": {
         "label": "Search by name or RA",
-        "placeholder": "Search member by name…",
-        "submit": "Search"
+        "placeholder": "Search member by name…"
       },
       "filters": {
         "label": "Member list filters",
@@ -217,32 +209,8 @@
         "nav": "Member list pagination",
         "previous": "Previous page",
         "next": "Next page",
-        "page": "Page {{page}}",
-        "status": "Page {{page}} of {{pages}}"
+        "page": "Page {{page}}"
       }
-    },
-    "invites": {
-      "caption": "Generated invites",
-      "columns": {
-        "role": "Role",
-        "type": "Type",
-        "status": "Status",
-        "expiresAt": "Valid until"
-      },
-      "type": {
-        "access": "Registration",
-        "password_reset": "Password reset"
-      },
-      "status": {
-        "pending": "Pending",
-        "used": "Used",
-        "expired": "Expired",
-        "revoked": "Revoked"
-      },
-      "loading": "Loading invites…",
-      "error": "Could not load the invites.",
-      "retry": "Try again",
-      "empty": "No invites found"
     },
     "createInvite": {
       "trigger": "Generate registration link",

@@ -1,13 +1,11 @@
 import { http, HttpResponse } from "msw";
 
 import {
-  InviteListItemDtoStatus,
   InviteType,
   type AcceptInviteDto,
   type AccessResponseDto,
   type CreateInviteDto,
   type CreateInviteResponseDto,
-  type InviteListItemDto,
   type InviteResponseDto,
   type ListAccess200,
   type LoginDto,
@@ -167,8 +165,8 @@ type AccessOverrides = Partial<Omit<AccessResponseDto, "ra" | "email">> & {
 /**
  * `ra`/`email` de AccessResponseDto saem tipados como `{ [key: string]: unknown }` pelo Orval
  * (o Swagger do back declara `type: object` — ver risco 10 do plano de GUS-83), mas o back de
- * verdade devolve strings. O `as unknown as` reproduz isso no mock; `toDisplayText` do módulo
- * é quem lida com o tipo declarado.
+ * verdade devolve strings. O `as unknown as` reproduz isso no mock. A tela de Acessos não
+ * mostra RA nem e-mail (a busca por RA é feita pelo back), então nenhum código de tela lê os dois.
  */
 export function buildAccess(overrides: AccessOverrides = {}): AccessResponseDto {
   const { ra = "2024RA0001", email = "ana@example.com", ...rest } = overrides;
@@ -213,45 +211,6 @@ export function listAccessHandler({
     if (error) return apiErrorResponse(error);
     const body: ListAccess200 = { data, page, limit, total: total ?? data.length };
     return HttpResponse.json(body);
-  });
-}
-
-export function buildInviteListItem(overrides: Partial<InviteListItemDto> = {}): InviteListItemDto {
-  return {
-    id: "01952ef7-0000-7000-8000-000000000020",
-    role: Role.member,
-    type: InviteType.access,
-    status: InviteListItemDtoStatus.pending,
-    createdAt: "2026-09-20T12:00:00.000Z",
-    expiresAt: "2026-09-22T12:00:00.000Z",
-    personId: null,
-    ...overrides,
-  };
-}
-
-interface ListInvitesHandlerOptions {
-  data?: InviteListItemDto[];
-  error?: ApiErrorOptions;
-  networkError?: boolean;
-  delay?: Promise<void>;
-  onCall?: () => void;
-}
-
-/** `GET /invites` não é paginado: devolve `InviteListItemDto[]` puro, sem envelope. */
-export function listInvitesHandler({
-  data = [buildInviteListItem()],
-  error,
-  networkError = false,
-  delay,
-  onCall,
-}: ListInvitesHandlerOptions = {}) {
-  return http.get("*/invites", async () => {
-    onCall?.();
-    if (delay) await delay;
-
-    if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(data);
   });
 }
 
