@@ -70,6 +70,17 @@ describe("Select", () => {
     expect(screen.getByRole("button", { name: /Perfil: B/ })).toHaveTextContent("Perfil: B");
   });
 
+  it("keeps the 44px touch target and the 16px font on the trigger and its value", () => {
+    render(<Harness />);
+
+    const trigger = screen.getByRole("button", { name: /Perfil/ });
+    expect(trigger).toHaveClass("min-h-11", "text-base");
+    expect(trigger.querySelector("[data-slot='select-value']")).toHaveClass(
+      "text-base",
+      "sm:text-base",
+    );
+  });
+
   it("marks the chevron as decorative", () => {
     render(<Harness />);
 

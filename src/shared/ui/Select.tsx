@@ -68,7 +68,10 @@ export function Select({
     >
       <Label className={isLabelHidden ? "sr-only" : "text-base"}>{label}</Label>
       <HeroSelect.Trigger className="min-h-11 rounded-xl text-base">
-        <HeroSelect.Value>{formatValue ? () => formatValue(selected) : undefined}</HeroSelect.Value>
+        {/* `sm:text-base`: o CSS do HeroUI reduz o valor para 14px a partir de `sm`. */}
+        <HeroSelect.Value className="text-base sm:text-base">
+          {formatValue ? () => formatValue(selected) : undefined}
+        </HeroSelect.Value>
         <HeroSelect.Indicator>
           <img src={chevronDownUrl} alt="" aria-hidden="true" width={16} height={16} />
         </HeroSelect.Indicator>
