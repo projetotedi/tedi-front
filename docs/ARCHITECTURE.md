@@ -114,7 +114,7 @@ lazy: async () => {
 
 **Menu e título da página.** O layout autenticado (`app/layouts`) não conhece o domínio; cada módulo contribui com o que é dele.
 
-- Itens de menu: o módulo exporta um `NavItem[]` (`shared/lib/navigation.ts`: rota, chave de i18n do rótulo com o namespace, ícone e `minRole` opcional), por exemplo `authNavItems`. O `AppSidebar` junta os itens dos módulos e mostra só os que o perfil de quem está logado alcança (`visibleNavItems(items, user.role)`); sem `minRole`, todo usuário autenticado vê.
+- Itens de menu: o módulo exporta um `NavItem[]` (`shared/lib/navigation.ts`: rota, chave de i18n do rótulo com o namespace, ícone e `minRole` opcional), por exemplo `authNavItems`. O `AppSidebar` junta os itens dos módulos (hoje só `authNavItems`; cada módulo novo entra na lista do `AppSidebar`) e mostra só os que o perfil de quem está logado alcança (`visibleNavItems(items, user.role)`); sem `minRole`, todo usuário autenticado vê.
 - Título do cabeçalho: a rota declara `handle: { headerTitle: { ns, key } } satisfies RouteHandle` (`shared/lib/route-handle.ts`) e o `useHeaderTitle()` do `AppHeader` usa o da rota mais interna que o declara, traduzido; sem título, mostra o nome da aplicação. O título fica no `handle`, e não em um componente da página, porque o cabeçalho existe fora da página e ela ainda pode estar carregando (`lazy`) ou ter sido trocada pela página de sem acesso.
 
 ```tsx
