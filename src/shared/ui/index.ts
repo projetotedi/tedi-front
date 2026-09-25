@@ -22,7 +22,5 @@ export { StatusCard } from "./StatusCard";
 export type { StatusCardProps } from "./StatusCard";
 export { Stepper } from "./Stepper";
 export type { StepperProps } from "./Stepper";
-export { Tabs } from "./Tabs";
-export type { TabItem, TabsProps } from "./Tabs";
 export { TextField } from "./TextField";
 export type { TextFieldProps } from "./TextField";

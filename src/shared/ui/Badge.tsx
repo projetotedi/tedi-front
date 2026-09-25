@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export interface BadgeProps {
-  tone: "neutral" | "info" | "highlight" | "success" | "warning" | "danger";
+  tone: "neutral" | "info" | "highlight" | "success";
   children: ReactNode;
 }
 
@@ -10,11 +10,9 @@ const TONES = {
   info: "bg-tedi-badge text-tedi-badge-foreground",
   highlight: "bg-tedi-highlight text-tedi-highlight-foreground",
   success: "bg-tedi-badge-success text-tedi-badge-success-foreground",
-  warning: "bg-tedi-warning text-tedi-warning-foreground",
-  danger: "bg-tedi-danger text-tedi-danger-foreground",
 } as const;
 
-/** Selo de situação (perfil, status) usado nas tabelas de Acessos e Convites. */
+/** Selo de situação (papel, status) usado na tabela de membros. */
 export function Badge({ tone, children }: BadgeProps) {
   return (
     <span

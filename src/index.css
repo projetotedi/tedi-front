@@ -17,8 +17,6 @@
   /* Badge/status neutro (papel Membro, acesso Inativo): 6,7:1. */
   --color-tedi-neutral: #efeff0;
   --color-tedi-neutral-foreground: #52525b;
-  --color-tedi-danger: #fde8e8;
-  --color-tedi-danger-foreground: #9f1d1d;
 
   /* Layout autenticado (sidebar + cabeçalho + cartão da tela de Membros e Alocações). */
   --color-tedi-page: #f0f9ff;
