@@ -43,8 +43,16 @@ export function Dialog({
       isDismissable={false}
       isKeyboardDismissDisabled={!isDismissable}
     >
-      <Modal.Container placement="center" className="max-w-160">
-        <Modal.Dialog aria-describedby={description ? descriptionId : undefined}>
+      {/*
+        Diálogo de 640px (frame 50:1108). O HeroUI ajusta o container ao conteúdo (`sm:w-fit`) e
+        limita o diálogo a 448px (tamanho `md`): `sm:w-full` solta o container e `max-w-160` troca
+        o limite. O diálogo tem 640px em telas largas e encolhe com a tela.
+      */}
+      <Modal.Container placement="center" className="sm:w-full">
+        <Modal.Dialog
+          className="max-w-160"
+          aria-describedby={description ? descriptionId : undefined}
+        >
           <Modal.CloseTrigger
             aria-label={closeLabel}
             className="min-h-11 min-w-11"

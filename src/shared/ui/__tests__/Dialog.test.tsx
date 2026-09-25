@@ -32,6 +32,12 @@ describe("Dialog", () => {
     expect(dialog).toHaveAccessibleDescription("Escolha o perfil da pessoa convidada.");
   });
 
+  it("limits the dialog to 640px (the HeroUI md size would cap it at 448px)", () => {
+    render(<Harness />);
+
+    expect(screen.getByRole("dialog", { name: "Gerar convite" })).toHaveClass("max-w-160");
+  });
+
   it("close button calls onOpenChange(false)", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
