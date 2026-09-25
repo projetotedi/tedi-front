@@ -16,7 +16,7 @@ export function AppLayout() {
       {/* `min-w-0`: sem ele a tabela larga esticaria a coluna em vez de rolar dentro do cartão. */}
       <div className="flex min-w-0 flex-1 flex-col">
         <AppHeader />
-        <main className="flex-1 px-4 py-6 lg:px-25 lg:py-9">
+        <main className="flex-1 px-4 py-6 lg:px-6 lg:py-9 3xl:px-25">
           <Outlet />
         </main>
       </div>

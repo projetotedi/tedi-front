@@ -19,9 +19,12 @@ export interface AccessTableProps {
  * (ficam vazias) e Ações é da GUS-88 (também vazia); as colunas existem para manter a grade do
  * desenho.
  *
- * Larguras: as do Figma (235, 147, 279, 279, 132, 73) mais o respiro de 10px de cada lado das
- * células internas, com a última coluna sem largura para absorver a folga à direita, como no
- * desenho. `min-w-[1245px]` é a largura total do Figma; abaixo dela a tabela rola na horizontal.
+ * Larguras a partir de `3xl` (1800px, onde o frame de 1920px cabe): as do Figma (235, 147, 279,
+ * 279, 132, 73) mais o respiro de 10px de cada lado das células internas, com a última coluna
+ * sem largura para absorver a folga à direita, como no desenho (tabela de 1245px). Abaixo de
+ * `3xl` as colunas vazias (Departamentos e Função principal) perdem a largura fixa e dividem o
+ * que sobra com Ações; sem isso a coluna Status ficaria fora da tela em notebooks e com zoom.
+ * A tabela só rola na horizontal abaixo de 900px.
  */
 export function AccessTable({ rows }: AccessTableProps): ReactElement {
   const { t } = useTranslation("auth");
@@ -43,12 +46,12 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
     {
       header: t("access.people.columns.departments"),
       // Sem `uppercase`: no Figma este cabeçalho está em caixa normal (mantido idêntico).
-      headerClassName: "w-[299px]",
+      headerClassName: "3xl:w-[299px]",
       render: () => null,
     },
     {
       header: t("access.people.columns.mainFunction"),
-      headerClassName: "w-[299px] uppercase",
+      headerClassName: "uppercase 3xl:w-[299px]",
       render: () => null,
     },
     {
@@ -74,7 +77,7 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
       rowKey={(row) => row.id}
       caption={t("access.people.caption")}
       emptyMessage={t("access.people.empty")}
-      tableClassName="table-fixed min-w-[1245px]"
+      tableClassName="table-fixed min-w-[900px] 3xl:min-w-[1245px]"
     />
   );
 }

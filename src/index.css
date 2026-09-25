@@ -41,6 +41,13 @@
   --shadow-tedi-card:
     0 2px 4px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.06), 0 0 1px rgb(0 0 0 / 0.06);
   --shadow-tedi-nav: 0 1px 3px rgb(26 66 92 / 0.16);
+
+  /*
+   * Largura a partir da qual o frame do Figma (1920px) cabe inteiro: sidebar de 280px, 100px de
+   * margem de cada lado, cartão com 24px de padding e a tabela de 1245px. Abaixo disso o layout
+   * usa margens menores e colunas flexíveis (ver AppLayout e AccessTable).
+   */
+  --breakpoint-3xl: 112.5rem;
 }
 
 :root {
