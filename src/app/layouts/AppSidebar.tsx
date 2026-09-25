@@ -45,7 +45,10 @@ export function AppSidebar() {
         />
       ))}
 
-      {/* Recuo de 8px e a legenda 22px abaixo do "TEDI": medidas do frame (a marca ocupa ~87px). */}
+      {/*
+        Medidas tiradas do print do frame: recuo de 8px, legenda 22px abaixo do "TEDI" e menu 32px
+        abaixo dela, o que põe o primeiro item na mesma altura (~140px) do primeiro item do Figma.
+      */}
       <div className="relative px-2">
         <p className="text-[28px] font-bold tracking-[0.56px] text-black">{t("app.name")}</p>
         <p className="mt-5.5 text-xs font-medium text-tedi-sidebar-muted">{t("app.tagline")}</p>
