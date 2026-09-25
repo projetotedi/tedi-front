@@ -19,10 +19,17 @@ src/
 │   ├── App.tsx
 │   ├── providers.tsx                 # QueryClientProvider (+ sessão, quando auth existir)
 │   ├── router.tsx                    # concatena as rotas exportadas por cada módulo
+│   ├── menu.ts                       # concatena os <modulo>MenuItems (ordem do menu lateral)
+│   ├── useAppMenu.ts                 # menu filtrado pelo perfil do usuário logado
+│   ├── prototype-routes.tsx          # áreas do protótipo ainda sem módulo → "Em breve"
 │   ├── layouts/
-│   │   ├── AppLayout.tsx             # área autenticada: menu por perfil
+│   │   ├── AppLayout.tsx             # área autenticada: sidebar, topbar com título e menu do perfil
+│   │   ├── ProfileMenu.tsx           # avatar + perfil → Perfil / Sair
+│   │   ├── SidebarBrand.tsx
 │   │   └── PublicLayout.tsx          # login e formulário público (acessibilidade reforçada)
-│   └── pages/InicioPage.tsx          # provisório até o módulo auth existir
+│   └── pages/ComingSoonPage.tsx
+│
+├── assets/                           # SVGs baixados do Figma (ícones, marca, textura da sidebar)
 │
 ├── api/                              # fronteira com o back
 │   ├── http-client.ts                # mutator do Orval: base URL /api, cookie de sessão, 401, ApiError
@@ -33,7 +40,7 @@ src/
 │       └── zod/<tag>/<tag>.ts        # schemas Zod dos DTOs
 │
 ├── modules/                          # um por módulo do back, mesmo nome
-│   ├── auth/  pessoas/  importacao/  turmas/  aulas/  alocacoes/
+│   ├── auth/  people/  pessoas/  importacao/  turmas/  aulas/  alocacoes/
 │   ├── presencas/  horas/  relatorios/  auditoria/
 │   └── <modulo>/                     # ver template abaixo
 │
@@ -42,7 +49,7 @@ src/
     ├── components/                   # PageTitle, DataTable, EmptyState, ConfirmDialog
     ├── hooks/                        # useDocumentTitle, useDebounce...
     ├── i18n/                         # init do i18next + registerModuleLocales + locales/common
-    └── lib/                          # datas, formatação, cn()
+    └── lib/                          # role, menu (MenuItem), route-handle (título da rota), datas
 ```
 
 Fora de `src/`: `openapi/openapi.json` (cópia versionada do contrato da API), `orval.config.ts`, `vitest.setup.ts`, `.dependency-cruiser.cjs`.
@@ -54,7 +61,8 @@ Aliases: `@app/*`, `@api/*`, `@modules/*`, `@shared/*`.
 ```
 modules/pessoas/
 ├── index.ts                  # API pública: routes + o que outros módulos podem usar
-├── routes.tsx                # RouteObject[] do módulo, com RequireRole
+├── routes.tsx                # RouteObject[] do módulo, com RequireRole e handle: { title }
+├── menu.ts                   # <modulo>MenuItems: itens do menu lateral (label i18n, path, minRole, icon)
 ├── pages/
 │   ├── PessoasListPage.tsx
 │   ├── AlunoFormPage.tsx
@@ -129,6 +137,23 @@ export { SeletorPessoa } from "./components/SeletorPessoa"; // usado por turmas 
 
 `turmas` importa `SeletorPessoa` de `@modules/pessoas`, nunca de `@modules/pessoas/components/...`.
 
+**Menu e título.** O menu lateral do `AppLayout` sai de `app/menu.ts`, que concatena os `<modulo>MenuItems` exportados por cada módulo (GUS-86):
+
+```ts
+// shared/lib/menu.ts
+interface MenuItem {
+  label: string; // chave i18n com namespace, ex.: "auth:access.title"
+  path: string; // rota declarada no routes.tsx do módulo
+  minRole: Role; // repete o RequireRole da rota (decisão 18: menu e guarda andam juntos)
+  icon: string; // URL de SVG de 24px (import de arquivo .svg)
+}
+function filterMenuByRole(items: readonly MenuItem[], role: Role | null | undefined): MenuItem[];
+```
+
+`useAppMenu()` aplica o filtro com o perfil da sessão. Um módulo novo exporta `<modulo>MenuItems` e rotas com `handle: { title: "<ns>:<chave>" }`, e ganha uma linha em `app/menu.ts` e outra em `app/router.tsx`; se o item já existia em `prototypeMenuItems` (área do protótipo com página "Em breve"), a linha do protótipo sai. O `AppLayout` usa o `handle.title` da rota mais interna como `<h1>` da topbar e título da aba; por isso as páginas autenticadas não repetem o título.
+
+Após o login, `/` redireciona para `/profile` ("Meu perfil", módulo `people`). Abaixo de 1024px a sidebar vira um `Drawer`, aberto pelo botão de menu da topbar.
+
 **i18n.** Um namespace por módulo, registrado com `registerModuleLocales("pessoas", { "pt-BR": ptBR, "en-US": enUS })` no `index.ts` do módulo. Nos componentes, `useTranslation("pessoas")`.
 
 **Sessão.** `http-client.ts` envia todas as requisições com `credentials: "include"` para que o browser inclua o cookie httpOnly de sessão. Ao receber 401, dispara o evento de `window` `tedi:unauthorized` (`api/` nunca importa `modules/`, então a constante é duplicada de propósito em `shared/lib/session-events.ts`, com um teste garantindo que as duas não divirjam).
@@ -148,6 +173,8 @@ function useAuth(): AuthContextValue;
 function RequireRole(props: { minRole?: Role; children?: ReactNode }): ReactElement;
 function SignOutButton(): ReactElement | null;
 const authRoutes: RouteObject[]; // rotas públicas do módulo (hoje: "login", "invite" e "reset-password")
+const authProtectedRoutes: RouteObject[]; // rotas autenticadas (hoje: "access", só coordinator)
+const authMenuItems: MenuItem[]; // "Acessos", só coordinator
 ```
 
 `AuthProvider` carrega a sessão com `GET /auth/me` uma única vez (`staleTime: Infinity`) e entra como rota-layout raiz de `app/router.tsx` — não em `app/providers.tsx`, porque precisa de `useNavigate`/`useLocation`, que só existem dentro do `RouterProvider`. `RequireRole` protege uma rota (ou subárvore) pela hierarquia de perfil: sem sessão vai para `/login?returnTo=<rota>`; com perfil insuficiente renderiza uma página de "sem acesso" no lugar, sem deslogar e sem trocar a URL. Ouve `tedi:unauthorized` e, se já havia sessão autenticada, limpa o cache e redireciona para `/login?returnTo=...&reason=expired`; o 401 inicial de `/auth/me` é tratado como anônimo, não como expiração.
@@ -210,7 +237,9 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 
 1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
 2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85), `PasswordField`, `Alert` e `Skeleton` (GUS-84), e `Stepper` e `StatusCard` (GUS-85). Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge` e `tedi-summary`, e ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro.
+   GUS-86 acrescentou `NavList`, `Avatar`, `Card`, `Chip`, `Dropdown` e `Drawer`, e os tokens da sidebar `tedi-sky-border` e `tedi-brand-muted`; `SignOutButton` passou a aceitar `label`.
 3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84 e GUS-85** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em dois passos) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. Faltam: menu por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86), telas de Acessos (GUS-87/88).
+   Menu por perfil, topbar e "Meu perfil" como tela inicial: GUS-86 (`InicioPage` removida). `/access` é um placeholder até GUS-87/88, que só trocam a `AccessPage`. "Meu perfil" (`modules/people`) usa dados de exemplo além de nome, perfil e RA da sessão, até o back expor horas e cadastro.
 4. Módulo `pessoas` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.
 6. Resolver `VITE_API_URL` em build time: build por ambiente no pipeline ou config em runtime pelo nginx.

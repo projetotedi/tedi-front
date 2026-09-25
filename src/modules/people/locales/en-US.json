@@ -1,0 +1,102 @@
+{
+  "profile": {
+    "title": "My profile",
+    "mockNotice": "Sample data: hours, entries and registration details do not come from the system yet.",
+    "chips": {
+      "ra": "RA {{ra}}",
+      "since": "Since {{date}}"
+    },
+    "actions": {
+      "editData": "Edit my details",
+      "logHours": "Log hours"
+    },
+    "summary": {
+      "title": "Hours summary",
+      "total": "Total hours logged",
+      "validated": "Validated hours",
+      "pending": "Awaiting validation",
+      "adjustedOrRejected": "Adjusted / rejected",
+      "hours": "{{count}}h",
+      "badges": {
+        "validated": "Validated",
+        "pending": "Waiting",
+        "review": "Review"
+      }
+    },
+    "entries": {
+      "title": "My entries",
+      "columns": {
+        "date": "Date",
+        "activity": "Activity",
+        "category": "Category",
+        "declared": "Declared",
+        "validated": "Validated",
+        "status": "Status"
+      },
+      "minutes": "{{count}} min",
+      "empty": "No entries yet."
+    },
+    "byCategory": {
+      "title": "Hours by category",
+      "columns": {
+        "category": "Category",
+        "hours": "Hours",
+        "status": "Status",
+        "note": "Note"
+      }
+    },
+    "personal": {
+      "title": "Personal information",
+      "fullName": "Full name",
+      "birthDate": "Date of birth",
+      "phone": "Phone",
+      "personalEmail": "Personal email",
+      "address": "Address",
+      "city": "City",
+      "state": "State"
+    },
+    "academic": {
+      "title": "Academic and institutional details",
+      "ra": "RA",
+      "department": "Department",
+      "course": "Degree",
+      "className": "Class",
+      "semester": "Semester",
+      "semesterValue": "{{count}}",
+      "institutionalEmail": "Institutional email",
+      "cpf": "CPF",
+      "volunteerTerm": "Volunteer agreement"
+    },
+    "account": {
+      "title": "Account and access",
+      "role": "Access profile",
+      "status": "Status",
+      "joinedAt": "Joined the project",
+      "lastAccess": "Last access",
+      "signOut": "Sign out"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "entryStatus": {
+      "approved": "Approved",
+      "adjusted": "Adjusted",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    },
+    "categoryStatus": {
+      "validated": "Validated",
+      "pending": "Pending",
+      "adjusted": "Adjusted"
+    },
+    "categories": {
+      "class": "Class",
+      "management": "Management",
+      "planning": "Planning",
+      "event": "Event",
+      "other": "Other"
+    },
+    "empty": "—"
+  }
+}

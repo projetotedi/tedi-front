@@ -1,5 +1,39 @@
 {
   "app": {
-    "name": "TEDI"
+    "name": "TEDI",
+    "tagline": "Extension Project Management"
+  },
+  "roles": {
+    "member": "Member",
+    "director": "Director",
+    "coordinator": "Coordinator",
+    "superadmin": "Coordinator"
+  },
+  "nav": {
+    "courses": "Courses",
+    "lessonPlans": "Lesson plans",
+    "classes": "Classes",
+    "students": "Students",
+    "lessons": "Lessons",
+    "enrollments": "Enrollments",
+    "members": "Members and Planning",
+    "hours": "Hours bank"
+  },
+  "layout": {
+    "nav": "Main menu",
+    "home": "TEDI, go to the home page",
+    "menu": {
+      "open": "Open menu",
+      "close": "Close menu",
+      "empty": "No areas available for your profile."
+    },
+    "profileMenu": {
+      "label": "Profile menu for {{name}}",
+      "profile": "Profile",
+      "signOut": "Sign out"
+    }
+  },
+  "comingSoon": {
+    "description": "This area is still under construction and is coming soon."
   }
 }
