@@ -30,6 +30,14 @@ describe("TextField", () => {
     expect(screen.getByText("Matrícula (RA)").tagName).toBe("LABEL");
   });
 
+  it("hidden label still names the input", () => {
+    render(<Harness isLabelHidden />);
+
+    const input = screen.getByLabelText("Matrícula (RA)");
+    expect(input.tagName).toBe("INPUT");
+    expect(screen.getByText("Matrícula (RA)")).toHaveClass("sr-only");
+  });
+
   it("calls onChange with the typed text", async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);

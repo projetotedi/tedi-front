@@ -46,6 +46,38 @@ describe("Select", () => {
     expect(screen.getByRole("button", { name: /Perfil/ })).toHaveTextContent("B");
   });
 
+  it("hidden label still names the trigger", () => {
+    render(<Harness isLabelHidden />);
+
+    expect(screen.getByRole("button", { name: /Perfil/ })).toBeInTheDocument();
+    expect(screen.getByText("Perfil")).toHaveClass("sr-only");
+  });
+
+  it("formatValue controls the trigger text", async () => {
+    const user = userEvent.setup();
+    render(
+      <Harness
+        isLabelHidden
+        formatValue={(selected) => (selected ? `Perfil: ${selected.label}` : "Perfil: todos")}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: /Perfil: todos/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Perfil: todos/ }));
+    await user.click(screen.getByRole("option", { name: "B" }));
+
+    expect(screen.getByRole("button", { name: /Perfil: B/ })).toHaveTextContent("Perfil: B");
+  });
+
+  it("marks the chevron as decorative", () => {
+    render(<Harness />);
+
+    const chevron = screen.getByRole("button", { name: /Perfil/ }).querySelector("img");
+    expect(chevron).toHaveAttribute("alt", "");
+    expect(chevron).toHaveAttribute("aria-hidden", "true");
+  });
+
   it("focuses the trigger when autoFocus", () => {
     render(<Harness autoFocus />);
 
