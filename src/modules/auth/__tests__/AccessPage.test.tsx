@@ -4,6 +4,7 @@ import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import { Role } from "@shared/lib/role";
+import { getHeaderTitle } from "@shared/lib/route-handle";
 
 import { AccessPage } from "../pages/AccessPage";
 import { authProtectedRoutes } from "../routes";
@@ -44,6 +45,12 @@ describe("route /access", () => {
     expect(
       await screen.findByRole("heading", { name: "Alocações de membros (0)" }),
     ).toBeInTheDocument();
+  });
+
+  it("the /access route declares its header title", () => {
+    const indexRoute = authProtectedRoutes[0]?.children?.[0];
+
+    expect(getHeaderTitle(indexRoute?.handle)).toEqual({ ns: "auth", key: "access.title" });
   });
 
   it("director gets the forbidden page and /access is never requested", async () => {
