@@ -1,5 +1,9 @@
 {
   "app": {
-    "name": "TEDI"
+    "name": "TEDI",
+    "tagline": "Gestão do Projeto de Extensão"
+  },
+  "layout": {
+    "mainNav": "Menu principal"
   }
 }

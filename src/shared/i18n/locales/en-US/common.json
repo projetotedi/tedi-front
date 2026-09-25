@@ -1,5 +1,9 @@
 {
   "app": {
-    "name": "TEDI"
+    "name": "TEDI",
+    "tagline": "Extension Project Management"
+  },
+  "layout": {
+    "mainNav": "Main menu"
   }
 }
