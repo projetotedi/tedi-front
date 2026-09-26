@@ -7,9 +7,13 @@
     "label": "Sign out"
   },
   "forbidden": {
-    "title": "You do not have access to this area",
-    "description": "If you need access to this page, contact the coordination team.",
-    "backHome": "Back to home"
+    "headerTitle": "Restricted access",
+    "title": "You do not have access to this screen",
+    "description": "This area belongs to the coordination team. Your profile sees and logs its own hours and allocations, but cannot open other people's hour bank.",
+    "profiles": "Required profile: {{required}}   ·   Your profile: {{current}}",
+    "back": "Back to the previous screen",
+    "profile": "Go to My profile",
+    "help": "Need this access for a project task? Talk to the coordination team — only they can change access profiles."
   },
   "publicScreen": {
     "brand": "TEDI",
@@ -160,7 +164,7 @@
     "access": "Members and Planning"
   },
   "userMenu": {
-    "trigger": "Profile menu ({{role}})",
+    "trigger": "Profile menu ({{name}})",
     "menu": "Profile options"
   },
   "access": {

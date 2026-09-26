@@ -6,7 +6,7 @@ import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 
-import { AuthProvider } from "@modules/auth";
+import { AuthProvider, RequireRole } from "@modules/auth";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -51,6 +51,15 @@ async function renderLayout(route: string) {
                 handle: { headerTitle: { ns: "auth", key: "access.title" } },
                 element: <p>Conteúdo de acessos</p>,
               },
+              {
+                path: "restricted",
+                handle: { headerTitle: { ns: "auth", key: "access.title" } },
+                element: (
+                  <RequireRole minRole={Role.coordinator}>
+                    <p>Conteúdo restrito</p>
+                  </RequireRole>
+                ),
+              },
             ],
           },
         ],
@@ -93,16 +102,17 @@ describe("AppLayout", () => {
     expect(within(nav).getByRole("link", { name: "Membros e Planejamento" })).toBeInTheDocument();
   });
 
-  it("hides the navigation item from a director", async () => {
-    server.use(meHandler(Role.director));
+  it.each([Role.member, Role.director])(
+    "shows the navigation item to a %s too, as in the Figma 403 frame",
+    async (role) => {
+      server.use(meHandler(role));
 
-    await renderLayout("/");
+      await renderLayout("/");
 
-    // O menu de perfil só aparece com a sessão carregada: a partir daqui o perfil já é conhecido.
-    await screen.findByRole("button", { name: /Menu do perfil/ });
-    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Membros e Planejamento" })).not.toBeInTheDocument();
-  });
+      const nav = await screen.findByRole("navigation", { name: "Menu principal" });
+      expect(within(nav).getByRole("link", { name: "Membros e Planejamento" })).toBeInTheDocument();
+    },
+  );
 
   it("does not mark the navigation item as current away from /access", async () => {
     server.use(meHandler(Role.coordinator));
@@ -131,6 +141,27 @@ describe("AppLayout", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "TEDI" })).toBeInTheDocument();
   });
 
+  it("shows Acesso restrito in the header while the forbidden page replaces the route", async () => {
+    server.use(meHandler(Role.member));
+
+    await renderLayout("/restricted");
+
+    expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Acesso restrito" })).toBeInTheDocument();
+    expect(screen.queryByText("Conteúdo restrito")).not.toBeInTheDocument();
+  });
+
+  it("gives the header back to the route title when leaving the forbidden page", async () => {
+    server.use(meHandler(Role.member));
+
+    const router = await renderLayout("/restricted");
+    await screen.findByRole("heading", { level: 1, name: "Acesso restrito" });
+
+    await router.navigate("/");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "TEDI" })).toBeInTheDocument();
+  });
+
   it("renders the route content in the main region", async () => {
     server.use(meHandler(Role.coordinator));
 
@@ -146,8 +177,9 @@ describe("AppLayout", () => {
 
     const banner = await screen.findByRole("banner");
     expect(
-      await within(banner).findByRole("button", { name: "Menu do perfil (Coordenadora)" }),
+      await within(banner).findByRole("button", { name: "Menu do perfil (Ana Torres)" }),
     ).toBeInTheDocument();
+    expect(within(banner).getByText("AT")).toBeInTheDocument();
   });
 
   it("signs out from the profile menu", async () => {

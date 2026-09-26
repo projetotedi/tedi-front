@@ -22,8 +22,8 @@ const TEXTURES = [
 
 /**
  * Menu lateral: marca "TEDI" e os itens de navegação que os módulos declaram, filtrados pelo
- * perfil de quem está logado. Hoje só o item de Membros (do `auth`), para coordenação; o menu
- * completo por perfil é da GUS-86. Abaixo de `lg` empilha no topo da página.
+ * `minRole` de cada item quando ele existe. Hoje só o item de Membros (do `auth`), para todos os
+ * perfis como no Figma; o menu completo por perfil é da GUS-86. Abaixo de `lg` empilha no topo.
  */
 export function AppSidebar() {
   const { t } = useTranslation();

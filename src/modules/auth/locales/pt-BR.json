@@ -7,9 +7,13 @@
     "label": "Sair"
   },
   "forbidden": {
-    "title": "Você não tem acesso a esta área",
-    "description": "Se você precisa acessar esta página, fale com a coordenação.",
-    "backHome": "Voltar para o início"
+    "headerTitle": "Acesso restrito",
+    "title": "Você não tem acesso a esta tela",
+    "description": "Esta área é da coordenação. Seu perfil vê e lança as próprias horas e as próprias alocações, mas não abre o banco de horas de outras pessoas.",
+    "profiles": "Perfil necessário: {{required}}   ·   Seu perfil: {{current}}",
+    "back": "Voltar à tela anterior",
+    "profile": "Ir para Meu perfil",
+    "help": "Precisa deste acesso para alguma tarefa do projeto? Fale com a coordenação — só ela altera perfil de acesso."
   },
   "publicScreen": {
     "brand": "TEDI",
@@ -160,7 +164,7 @@
     "access": "Membros e Planejamento"
   },
   "userMenu": {
-    "trigger": "Menu do perfil ({{role}})",
+    "trigger": "Menu do perfil ({{name}})",
     "menu": "Opções do perfil"
   },
   "access": {

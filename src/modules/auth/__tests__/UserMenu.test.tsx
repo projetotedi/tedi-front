@@ -21,44 +21,28 @@ function renderUserMenu() {
 }
 
 describe("UserMenu", () => {
-  it("shows the role label and its initials for a coordinator", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.coordinator }) }));
+  it("shows the user name and the initials of the name", async () => {
+    server.use(meHandler({ user: buildMeUser({ name: "Beatriz Nunes", role: Role.member }) }));
 
     await renderUserMenu();
 
-    const trigger = await screen.findByRole("button", { name: "Menu do perfil (Coordenadora)" });
-    expect(within(trigger).getByText("Coordenadora")).toBeInTheDocument();
-    expect(within(trigger).getByText("CO")).toBeInTheDocument();
+    const trigger = await screen.findByRole("button", { name: "Menu do perfil (Beatriz Nunes)" });
+    expect(within(trigger).getByText("Beatriz Nunes")).toBeInTheDocument();
+    expect(within(trigger).getByText("BN")).toBeInTheDocument();
   });
 
-  it("shows a superadmin as Coordenadora", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.superadmin }) }));
+  it("shows the same name and initials whatever the role, without exposing the superadmin", async () => {
+    server.use(
+      meHandler({ user: buildMeUser({ name: "Ana Coordenadora", role: Role.superadmin }) }),
+    );
 
     await renderUserMenu();
 
-    const trigger = await screen.findByRole("button", { name: "Menu do perfil (Coordenadora)" });
-    expect(within(trigger).getByText("CO")).toBeInTheDocument();
+    const trigger = await screen.findByRole("button", {
+      name: "Menu do perfil (Ana Coordenadora)",
+    });
+    expect(within(trigger).getByText("AC")).toBeInTheDocument();
     expect(screen.queryByText(/superadmin/i)).not.toBeInTheDocument();
-  });
-
-  it("shows Diretor(a) for a director", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.director }) }));
-
-    await renderUserMenu();
-
-    const trigger = await screen.findByRole("button", { name: "Menu do perfil (Diretor(a))" });
-    expect(within(trigger).getByText("Diretor(a)")).toBeInTheDocument();
-    expect(within(trigger).getByText("DI")).toBeInTheDocument();
-  });
-
-  it("shows Membro for a member", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.member }) }));
-
-    await renderUserMenu();
-
-    const trigger = await screen.findByRole("button", { name: "Menu do perfil (Membro)" });
-    expect(within(trigger).getByText("Membro")).toBeInTheDocument();
-    expect(within(trigger).getByText("ME")).toBeInTheDocument();
   });
 
   it("hides the avatar initials from screen readers", async () => {
@@ -67,7 +51,7 @@ describe("UserMenu", () => {
     await renderUserMenu();
 
     const trigger = await screen.findByRole("button", { name: /Menu do perfil/ });
-    expect(within(trigger).getByText("CO")).toHaveAttribute("aria-hidden", "true");
+    expect(within(trigger).getByText("AC")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("offers Sair in the menu, calls POST /auth/logout and goes to the login page", async () => {

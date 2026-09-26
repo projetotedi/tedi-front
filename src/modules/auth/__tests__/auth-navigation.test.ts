@@ -12,16 +12,14 @@ describe("authNavItems", () => {
       to: "/access",
       labelNs: "auth",
       labelKey: "nav.access",
-      minRole: Role.coordinator,
     });
     expect(authNavItems[0]?.iconSrc).toEqual(expect.any(String));
   });
 
-  it.each([Role.coordinator, Role.superadmin])("is visible to %s", (role) => {
-    expect(visibleNavItems(authNavItems, role)).toEqual(authNavItems);
-  });
-
-  it.each([Role.member, Role.director])("is hidden from %s", (role) => {
-    expect(visibleNavItems(authNavItems, role)).toEqual([]);
-  });
+  it.each([Role.member, Role.director, Role.coordinator, Role.superadmin])(
+    "is visible to %s, as in the Figma (the route itself is guarded by RequireRole)",
+    (role) => {
+      expect(visibleNavItems(authNavItems, role)).toEqual(authNavItems);
+    },
+  );
 });

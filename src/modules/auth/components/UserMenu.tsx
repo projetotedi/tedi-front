@@ -2,16 +2,15 @@ import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import chevronDownMutedUrl from "@shared/assets/icons/chevron-down-muted.svg";
+import { getInitials } from "@shared/lib/initials";
 import { Menu } from "@shared/ui";
 
 import { useAuth } from "../hooks/useAuth";
-import { roleLabelKey } from "../lib/role-label";
 
 /**
- * Menu de perfil do cabeçalho: avatar com as iniciais, o rótulo do perfil de quem está logado
- * ("Coordenadora") e, ao abrir, a ação "Sair". Nada sem sessão ativa (telas públicas ou sessão
- * ainda carregando). As iniciais são as duas primeiras letras do rótulo do perfil, como no Figma
- * ("CO"); `superadmin` aparece como Coordenadora.
+ * Menu de perfil do cabeçalho: avatar com as iniciais, o nome de quem está logado ("Beatriz
+ * Nunes", como no frame do 403) e, ao abrir, a ação "Sair". Nada sem sessão ativa (telas públicas
+ * ou sessão ainda carregando).
  */
 export function UserMenu(): ReactElement | null {
   const { status, user, signOut } = useAuth();
@@ -19,12 +18,11 @@ export function UserMenu(): ReactElement | null {
 
   if (status !== "authenticated" || !user) return null;
 
-  const roleLabel = t(roleLabelKey(user.role) ?? "roles.member");
-  const initials = roleLabel.slice(0, 2).toLocaleUpperCase("pt-BR");
+  const initials = getInitials(user.name);
 
   return (
     <Menu
-      triggerLabel={t("userMenu.trigger", { role: roleLabel })}
+      triggerLabel={t("userMenu.trigger", { name: user.name })}
       menuLabel={t("userMenu.menu")}
       items={[{ id: "sign-out", label: t("signOut.label"), onAction: () => void signOut() }]}
       trigger={
@@ -35,7 +33,7 @@ export function UserMenu(): ReactElement | null {
           >
             {initials}
           </span>
-          <span className="text-base font-medium">{roleLabel}</span>
+          <span className="text-base font-medium">{user.name}</span>
           <img src={chevronDownMutedUrl} alt="" aria-hidden="true" width={16} height={16} />
         </>
       }
