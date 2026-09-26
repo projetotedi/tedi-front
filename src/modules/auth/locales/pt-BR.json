@@ -7,9 +7,13 @@
     "label": "Sair"
   },
   "forbidden": {
-    "title": "Você não tem acesso a esta área",
-    "description": "Se você precisa acessar esta página, fale com a coordenação.",
-    "backHome": "Voltar para o início"
+    "headerTitle": "Acesso restrito",
+    "title": "Você não tem acesso a esta tela",
+    "description": "Esta área é da coordenação. Seu perfil vê e lança as próprias horas e as próprias alocações, mas não abre o banco de horas de outras pessoas.",
+    "profiles": "Perfil necessário: {{required}}   ·   Seu perfil: {{current}}",
+    "back": "Voltar à tela anterior",
+    "profile": "Ir para Meu perfil",
+    "help": "Precisa deste acesso para alguma tarefa do projeto? Fale com a coordenação — só ela altera perfil de acesso."
   },
   "publicScreen": {
     "brand": "TEDI",
@@ -149,6 +153,92 @@
     "errors": {
       "network": "Não foi possível conectar",
       "unknown": "Não foi possível salvar a nova senha. Tente novamente."
+    }
+  },
+  "roles": {
+    "member": "Membro",
+    "director": "Diretor(a)",
+    "coordinator": "Coordenadora"
+  },
+  "nav": {
+    "access": "Membros e Planejamento"
+  },
+  "userMenu": {
+    "trigger": "Menu do perfil ({{name}})",
+    "menu": "Opções do perfil"
+  },
+  "access": {
+    "title": "Membros e Alocações",
+    "people": {
+      "title": "Alocações de membros ({{total}})",
+      "titlePending": "Alocações de membros",
+      "caption": "Membros com acesso ao TEDI",
+      "columns": {
+        "member": "Membro",
+        "role": "Papel",
+        "departments": "Departamentos",
+        "mainFunction": "Função principal",
+        "status": "Status",
+        "actions": "Ações"
+      },
+      "status": {
+        "active": "Ativo",
+        "inactive": "Inativo"
+      },
+      "search": {
+        "label": "Buscar por nome ou RA",
+        "placeholder": "Buscar membro por nome…"
+      },
+      "filters": {
+        "label": "Filtros da lista de membros",
+        "role": {
+          "label": "Papel",
+          "all": "Todos",
+          "allValue": "Papel: todos",
+          "value": "Papel: {{value}}"
+        },
+        "status": {
+          "label": "Status",
+          "all": "Todos",
+          "allValue": "Status: todos",
+          "value": "Status: {{value}}"
+        }
+      },
+      "summary": "Mostrando {{shown}} de {{total}} alocações",
+      "loading": "Carregando pessoas…",
+      "error": "Não foi possível carregar as pessoas com acesso.",
+      "retry": "Tentar de novo",
+      "empty": "Nenhum acesso encontrado",
+      "pagination": {
+        "nav": "Paginação da lista de membros",
+        "previous": "Página anterior",
+        "next": "Próxima página",
+        "page": "Página {{page}}"
+      }
+    },
+    "createInvite": {
+      "trigger": "Gerar link de cadastro",
+      "title": "Gerar link de cadastro",
+      "description": "Escolha o perfil da pessoa que vai receber o convite.",
+      "close": "Fechar",
+      "role": {
+        "label": "Perfil do convite"
+      },
+      "submit": "Gerar link",
+      "submitting": "Gerando…",
+      "link": {
+        "label": "Link de cadastro"
+      },
+      "copy": "Copiar link",
+      "copied": "Link copiado.",
+      "copyFallback": "Não foi possível copiar automaticamente. O link foi selecionado: use Ctrl+C (ou Cmd+C) para copiar.",
+      "validityTitle": "Copie o link agora",
+      "validity": "Este link vale por {{hours}} horas e só pode ser usado uma vez. Ele não será mostrado de novo.",
+      "done": "Concluir",
+      "errors": {
+        "network": "Não foi possível conectar",
+        "unknown": "Não foi possível gerar o convite. Tente novamente."
+      }
     }
   }
 }

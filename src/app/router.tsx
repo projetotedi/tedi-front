@@ -1,6 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
-import { authRoutes, AuthProvider, RequireRole } from "@modules/auth";
+import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
 
 import { AppLayout } from "./layouts/AppLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
@@ -38,6 +38,7 @@ export const router = createBrowserRouter([
             element: <AppLayout />,
             children: [
               { index: true, element: <InicioPage /> },
+              ...authProtectedRoutes,
               // ...pessoasRoutes, ...turmasRoutes, ...aulasRoutes, ...alocacoesRoutes,
               // ...presencasRoutes, ...horasRoutes, ...importacaoRoutes, ...relatoriosRoutes, ...auditoriaRoutes
               { path: "*", element: <Navigate to="/" replace /> },

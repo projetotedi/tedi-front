@@ -3,6 +3,11 @@ import type { ReactNode, Ref } from "react";
 
 export interface TextFieldProps {
   label: string;
+  /**
+   * Esconde o rótulo só visualmente (`sr-only`): o campo continua nomeado para leitores de tela.
+   * Usar quando o desenho não mostra rótulo (ex.: busca com placeholder).
+   */
+  isLabelHidden?: boolean;
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
@@ -12,6 +17,7 @@ export interface TextFieldProps {
   errorMessage?: string;
   isDisabled?: boolean;
   isRequired?: boolean;
+  isReadOnly?: boolean;
   type?: "text" | "password" | "email";
   autoComplete?: string;
   "aria-describedby"?: string;
@@ -21,6 +27,7 @@ export interface TextFieldProps {
 
 export function TextField({
   label,
+  isLabelHidden = false,
   value,
   onChange,
   onBlur,
@@ -30,6 +37,7 @@ export function TextField({
   errorMessage,
   isDisabled,
   isRequired,
+  isReadOnly,
   type = "text",
   autoComplete,
   "aria-describedby": ariaDescribedBy,
@@ -48,11 +56,12 @@ export function TextField({
       autoComplete={autoComplete}
       isDisabled={isDisabled}
       isRequired={isRequired}
+      isReadOnly={isReadOnly}
       isInvalid={Boolean(errorMessage)}
       validationBehavior="aria"
       aria-describedby={ariaDescribedBy}
     >
-      <Label className="text-base">{label}</Label>
+      <Label className={isLabelHidden ? "sr-only" : "text-base"}>{label}</Label>
       <div className="relative">
         <Input
           ref={inputRef}

@@ -7,9 +7,13 @@
     "label": "Sign out"
   },
   "forbidden": {
-    "title": "You do not have access to this area",
-    "description": "If you need access to this page, contact the coordination team.",
-    "backHome": "Back to home"
+    "headerTitle": "Restricted access",
+    "title": "You do not have access to this screen",
+    "description": "This area belongs to the coordination team. Your profile sees and logs its own hours and allocations, but cannot open other people's hour bank.",
+    "profiles": "Required profile: {{required}}   ·   Your profile: {{current}}",
+    "back": "Back to the previous screen",
+    "profile": "Go to My profile",
+    "help": "Need this access for a project task? Talk to the coordination team — only they can change access profiles."
   },
   "publicScreen": {
     "brand": "TEDI",
@@ -149,6 +153,92 @@
     "errors": {
       "network": "Could not connect",
       "unknown": "Could not save the new password. Please try again."
+    }
+  },
+  "roles": {
+    "member": "Member",
+    "director": "Director",
+    "coordinator": "Coordinator"
+  },
+  "nav": {
+    "access": "Members and Planning"
+  },
+  "userMenu": {
+    "trigger": "Profile menu ({{name}})",
+    "menu": "Profile options"
+  },
+  "access": {
+    "title": "Members and Allocations",
+    "people": {
+      "title": "Member allocations ({{total}})",
+      "titlePending": "Member allocations",
+      "caption": "Members with access to TEDI",
+      "columns": {
+        "member": "Member",
+        "role": "Role",
+        "departments": "Departments",
+        "mainFunction": "Main function",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      },
+      "search": {
+        "label": "Search by name or RA",
+        "placeholder": "Search member by name…"
+      },
+      "filters": {
+        "label": "Member list filters",
+        "role": {
+          "label": "Role",
+          "all": "All",
+          "allValue": "Role: all",
+          "value": "Role: {{value}}"
+        },
+        "status": {
+          "label": "Status",
+          "all": "All",
+          "allValue": "Status: all",
+          "value": "Status: {{value}}"
+        }
+      },
+      "summary": "Showing {{shown}} of {{total}} allocations",
+      "loading": "Loading people…",
+      "error": "Could not load the people with access.",
+      "retry": "Try again",
+      "empty": "No access found",
+      "pagination": {
+        "nav": "Member list pagination",
+        "previous": "Previous page",
+        "next": "Next page",
+        "page": "Page {{page}}"
+      }
+    },
+    "createInvite": {
+      "trigger": "Generate registration link",
+      "title": "Generate registration link",
+      "description": "Choose the role for the invited person.",
+      "close": "Close",
+      "role": {
+        "label": "Invite role"
+      },
+      "submit": "Generate link",
+      "submitting": "Generating…",
+      "link": {
+        "label": "Registration link"
+      },
+      "copy": "Copy link",
+      "copied": "Link copied.",
+      "copyFallback": "Could not copy automatically. The link has been selected: use Ctrl+C (or Cmd+C) to copy it.",
+      "validityTitle": "Copy the link now",
+      "validity": "This link is valid for {{hours}} hours and can only be used once. It will not be shown again.",
+      "done": "Done",
+      "errors": {
+        "network": "Could not connect",
+        "unknown": "Could not generate the invite. Please try again."
+      }
     }
   }
 }

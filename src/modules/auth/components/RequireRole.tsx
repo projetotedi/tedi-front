@@ -36,7 +36,7 @@ export function RequireRole({ minRole, children }: RequireRoleProps): ReactEleme
   }
 
   if (minRole && !roleSatisfies(user?.role, minRole)) {
-    return <ForbiddenPage />;
+    return <ForbiddenPage requiredRole={minRole} />;
   }
 
   return <>{children ?? <Outlet />}</>;

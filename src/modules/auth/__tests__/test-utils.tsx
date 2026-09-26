@@ -7,6 +7,7 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 
 import i18n from "@shared/i18n";
 
+import { AuthProvider } from "../AuthProvider";
 // Registra o namespace "auth" no i18n (efeito colateral do import da API pública do módulo).
 import "../index";
 
@@ -39,6 +40,35 @@ export async function renderWithProviders(
 
   const routes: RouteObject[] = [{ path: "*", element: ui }];
   const router = createMemoryRouter(routes, { initialEntries: [route] });
+
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+
+  return { ...view, router, queryClient };
+}
+
+/**
+ * Renderiza `routes` (o array exportado por `routes.tsx` de um módulo, ex.: `authProtectedRoutes`)
+ * sob o mesmo layout raiz do app real: `AuthProvider` como rota-layout, para que `useAuth()` e
+ * `RequireRole` funcionem, inclusive com `lazy`. Em pt-BR, com QueryClientProvider + MemoryRouter.
+ */
+export async function renderRoutes(
+  routes: RouteObject[],
+  options: RenderWithProvidersOptions = {},
+) {
+  const { route = "/" } = options;
+
+  await i18n.changeLanguage("pt-BR");
+
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  const rootRoutes: RouteObject[] = [{ element: <AuthProvider />, children: routes }];
+  const router = createMemoryRouter(rootRoutes, { initialEntries: [route] });
 
   const view = render(
     <QueryClientProvider client={queryClient}>

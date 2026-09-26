@@ -20,7 +20,11 @@ src/
 │   ├── providers.tsx                 # QueryClientProvider (+ sessão, quando auth existir)
 │   ├── router.tsx                    # concatena as rotas exportadas por cada módulo
 │   ├── layouts/
-│   │   ├── AppLayout.tsx             # área autenticada: menu por perfil
+│   │   ├── AppLayout.tsx             # área autenticada: sidebar + cabeçalho + conteúdo da rota
+│   │   ├── AppSidebar.tsx            # marca e itens de menu (NavItem dos módulos, filtrados pelo perfil)
+│   │   ├── AppHeader.tsx             # título da página (h1) + menu de perfil
+│   │   ├── useHeaderTitle.ts         # título vindo de handle.headerTitle da rota
+│   │   ├── assets/                   # texturas da sidebar (SVG do Figma)
 │   │   └── PublicLayout.tsx          # login e formulário público (acessibilidade reforçada)
 │   └── pages/InicioPage.tsx          # provisório até o módulo auth existir
 │
@@ -38,11 +42,12 @@ src/
 │   └── <modulo>/                     # ver template abaixo
 │
 └── shared/                           # genérico, sem domínio
-    ├── ui/                           # Button, TextField, PasswordField, Alert, Skeleton, Stepper, StatusCard, Select, Dialog, Toast (acessíveis)
+    ├── ui/                           # Button, TextField, PasswordField, Alert, Skeleton, Stepper, StatusCard, Select, Dialog, Badge, Pagination, Menu (acessíveis); Toast ainda não existe (§8.2)
     ├── components/                   # PageTitle, DataTable, EmptyState, ConfirmDialog
     ├── hooks/                        # useDocumentTitle, useDebounce...
     ├── i18n/                         # init do i18next + registerModuleLocales + locales/common
-    └── lib/                          # datas, formatação, cn()
+    ├── assets/icons/                 # SVGs do Figma, importados como URL (<img alt="" aria-hidden>)
+    └── lib/                          # role, session-events, navigation (NavItem), route-handle, pagination...
 ```
 
 Fora de `src/`: `openapi/openapi.json` (cópia versionada do contrato da API), `orval.config.ts`, `vitest.setup.ts`, `.dependency-cruiser.cjs`.
@@ -93,6 +98,32 @@ export const pessoasRoutes: RouteObject[] = [
     ],
   },
 ];
+```
+
+Um módulo pode exportar mais de um array de rotas quando parte é pública e parte exige sessão —
+`auth` faz isso: `authRoutes` (login, convite) fica sob `PublicLayout`, `authProtectedRoutes`
+(hoje só `/access`) fica sob `AppLayout`, e `app/router.tsx` concatena os dois em lugares
+diferentes. `lazy` no código de verdade devolve `{ Component }`, e não o módulo inteiro:
+
+```tsx
+lazy: async () => {
+  const { AccessPage } = await import("./pages/AccessPage");
+  return { Component: AccessPage };
+},
+```
+
+**Menu e título da página.** O layout autenticado (`app/layouts`) não conhece o domínio; cada módulo contribui com o que é dele.
+
+- Itens de menu: o módulo exporta um `NavItem[]` (`shared/lib/navigation.ts`: rota, chave de i18n do rótulo com o namespace, ícone e `minRole` opcional), por exemplo `authNavItems`. O `AppSidebar` junta os itens dos módulos (hoje só `authNavItems`; cada módulo novo entra na lista do `AppSidebar`) e mostra só os que o perfil de quem está logado alcança (`visibleNavItems(items, user.role)`); sem `minRole`, todo usuário autenticado vê.
+- Título do cabeçalho: a rota declara `handle: { headerTitle: { ns, key } } satisfies RouteHandle` (`shared/lib/route-handle.ts`) e o `useHeaderTitle()` do `AppHeader` usa o da rota mais interna que o declara, traduzido; sem título, mostra o nome da aplicação. O título fica no `handle`, e não em um componente da página, porque o cabeçalho existe fora da página e ela ainda pode estar carregando (`lazy`) ou ter sido trocada pela página de sem acesso.
+
+```tsx
+// modules/auth/routes.tsx
+{
+  index: true,
+  handle: { headerTitle: { ns: "auth", key: "access.title" } } satisfies RouteHandle,
+  lazy: async () => { /* ... */ },
+},
 ```
 
 **Dados.** Hook, tipo dos filtros e tipo da resposta vêm do Orval. Nenhum `fetch` em componente.
@@ -147,7 +178,10 @@ function AuthProvider(props: { children?: ReactNode }): ReactElement; // sem chi
 function useAuth(): AuthContextValue;
 function RequireRole(props: { minRole?: Role; children?: ReactNode }): ReactElement;
 function SignOutButton(): ReactElement | null;
+function UserMenu(): ReactElement | null; // avatar + rótulo do perfil + "Sair" (GUS-87); nada sem sessão ativa
+const authNavItems: NavItem[]; // itens de menu do módulo (hoje: "/access", minRole coordinator; GUS-87)
 const authRoutes: RouteObject[]; // rotas públicas do módulo (hoje: "login", "invite" e "reset-password")
+const authProtectedRoutes: RouteObject[]; // rotas autenticadas do módulo (hoje: "access", sob RequireRole minRole={Role.coordinator})
 ```
 
 `AuthProvider` carrega a sessão com `GET /auth/me` uma única vez (`staleTime: Infinity`) e entra como rota-layout raiz de `app/router.tsx` — não em `app/providers.tsx`, porque precisa de `useNavigate`/`useLocation`, que só existem dentro do `RouterProvider`. `RequireRole` protege uma rota (ou subárvore) pela hierarquia de perfil: sem sessão vai para `/login?returnTo=<rota>`; com perfil insuficiente renderiza uma página de "sem acesso" no lugar, sem deslogar e sem trocar a URL. Ouve `tedi:unauthorized` e, se já havia sessão autenticada, limpa o cache e redireciona para `/login?returnTo=...&reason=expired`; o 401 inicial de `/auth/me` é tratado como anônimo, não como expiração.
@@ -209,8 +243,8 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 ## 8. Próximos passos previstos
 
 1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
-2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85), `PasswordField`, `Alert` e `Skeleton` (GUS-84), e `Stepper` e `StatusCard` (GUS-85). Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge` e `tedi-summary`, e ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro.
-3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84 e GUS-85** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em dois passos) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. Faltam: menu por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86), telas de Acessos (GUS-87/88).
+2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85; ganhou `isReadOnly` e `isLabelHidden` na GUS-87), `PasswordField`, `Alert` (GUS-84; ganhou a variante estática `warning` e `description` na GUS-87 — sem `role` nem região viva, para avisos que já nascem preenchidos) e `Skeleton` (GUS-84), `Stepper` e `StatusCard` (GUS-85), e `Select`, `Dialog`, `Badge`, `Pagination` e `Menu` (GUS-87 — camadas finas sobre `Select`, `Modal`/`ListBox`, `Pagination` e `Dropdown` do HeroUI; o `Select` aceita `isLabelHidden` e `formatValue` para mostrar o valor já contextualizado no gatilho, como "Papel: todos"; `Pagination` é a paginação numerada, com a lógica das reticências em `shared/lib/pagination.ts`; `Menu` é o menu suspenso de ações). A GUS-87 chegou a criar um `Tabs` e o removeu quando a tela deixou as abas. Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge`, `tedi-summary`; na GUS-87, as do layout autenticado `tedi-page`, `tedi-sidebar-border`, `tedi-sidebar-muted`, `tedi-header-border`, `tedi-divider` e `tedi-avatar-foreground`, as dos selos `tedi-neutral`, `tedi-highlight` e `tedi-badge-success`, a da página atual da paginação `tedi-page-current` e as sombras `shadow-tedi-card` e `shadow-tedi-nav` — cada cor com o contraste medido em comentário no CSS — e o breakpoint `3xl` (1800px, a largura em que o frame de 1920px do Figma cabe inteiro; abaixo dele o layout autenticado usa margens menores e colunas flexíveis), e ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro. `Toast` continua sem existir: a GUS-87 decidiu não criá-lo (o aviso de link copiado usa `Alert info`, que já é uma região `role="status"`); fica para quem precisar.
+3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84, GUS-85 e GUS-87** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85; tela de Acessos: GUS-87). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em dois passos) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. A tela de Acessos (`/access`, `AccessPage`, sob `RequireRole minRole={Role.coordinator}`) segue o frame "Membros e Alocações" do Figma: um cartão único, sem abas, com o título e o total, o botão "Gerar link de cadastro" (`CreateInviteDialog`/`CreateInviteForm`, `POST /invites`, que mostra o link gerado uma única vez — nunca persistido: o estado morre ao fechar o diálogo), a busca ao vivo (com debounce) e os filtros de Papel e Status (`AccessFilters`), a `AccessTable` de seis colunas (`GET /access`, 12 por página; Departamentos, Função principal e Ações ficam vazias) e o rodapé com o resumo e a paginação numerada. A partir de 1800px o layout é o do Figma (colunas nas mesmas posições); abaixo disso as margens caem para 24px e as colunas vazias dividem o que sobra, para a coluna Status continuar à vista em notebooks e com zoom. Não há listagem de convites: o convite gerado não aparece em lugar nenhum (a `InvitesTable` foi removida; a GUS-88 recupera a listagem se precisar revogar convites). O `AppLayout` ganhou, na GUS-87, a sidebar do Figma com um único item (Membros e Planejamento, só para a coordenação) e o cabeçalho com o menu de perfil (`UserMenu`, onde fica o "Sair"). Faltam: o menu completo por perfil no `AppLayout` e remover `app/pages/InicioPage.tsx` (GUS-86); ações por linha na tela de Acessos — mudar perfil, ativar/desativar, redefinir senha, revogar convite (GUS-88); dados de Departamentos e Função principal, que a API ainda não tem.
 4. Módulo `pessoas` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.
 6. Resolver `VITE_API_URL` em build time: build por ambiente no pipeline ou config em runtime pelo nginx.

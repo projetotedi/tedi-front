@@ -3,7 +3,11 @@ import { http, HttpResponse } from "msw";
 import {
   InviteType,
   type AcceptInviteDto,
+  type AccessResponseDto,
+  type CreateInviteDto,
+  type CreateInviteResponseDto,
   type InviteResponseDto,
+  type ListAccess200,
   type LoginDto,
   type MeResponseDto,
 } from "@api/generated/model";
@@ -149,5 +153,101 @@ export function acceptInviteHandler({
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
     return new HttpResponse(null, { status: 204 });
+  });
+}
+
+type AccessOverrides = Partial<Omit<AccessResponseDto, "ra" | "email">> & {
+  /** String de verdade: o tipo `{ [key: string]: unknown }` gerado pelo Orval é um bug do Swagger. */
+  ra?: string;
+  email?: string;
+};
+
+/**
+ * `ra`/`email` de AccessResponseDto saem tipados como `{ [key: string]: unknown }` pelo Orval
+ * (o Swagger do back declara `type: object` — ver risco 10 do plano de GUS-83), mas o back de
+ * verdade devolve strings. O `as unknown as` reproduz isso no mock. A tela de Acessos não
+ * mostra RA nem e-mail (a busca por RA é feita pelo back), então nenhum código de tela lê os dois.
+ */
+export function buildAccess(overrides: AccessOverrides = {}): AccessResponseDto {
+  const { ra = "2024RA0001", email = "ana@example.com", ...rest } = overrides;
+  return {
+    id: "01952ef7-0000-7000-8000-000000000010",
+    name: "Ana Coordenadora",
+    role: Role.coordinator,
+    accessEnabled: true,
+    ...rest,
+    ra: ra as unknown as AccessResponseDto["ra"],
+    email: email as unknown as AccessResponseDto["email"],
+  };
+}
+
+interface ListAccessHandlerOptions {
+  data?: AccessResponseDto[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (params: URLSearchParams) => void;
+}
+
+export function listAccessHandler({
+  data = [buildAccess()],
+  total,
+  page = 1,
+  // Tamanho de página da tela de Acessos (`ACCESS_PAGE_SIZE`).
+  limit = 12,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: ListAccessHandlerOptions = {}) {
+  return http.get("*/access", async ({ request }) => {
+    onCall?.(new URL(request.url).searchParams);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    const body: ListAccess200 = { data, page, limit, total: total ?? data.length };
+    return HttpResponse.json(body);
+  });
+}
+
+export function buildCreateInviteResponse(
+  overrides: Partial<CreateInviteResponseDto> = {},
+): CreateInviteResponseDto {
+  return {
+    id: "01952ef7-0000-7000-8000-000000000099",
+    role: Role.member,
+    expiresAt: "2026-09-24T12:00:00.000Z",
+    url: "https://tedi.example/invite?token=plain-text-token",
+    ...overrides,
+  };
+}
+
+interface CreateInviteHandlerOptions {
+  response?: CreateInviteResponseDto;
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (body: CreateInviteDto) => void;
+}
+
+// Path exato "invites" (POST): não confundir com o GET de um convite por token nem com /accept.
+export function createInviteHandler({
+  response = buildCreateInviteResponse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: CreateInviteHandlerOptions = {}) {
+  return http.post("*/invites", async ({ request }) => {
+    onCall?.((await request.json()) as CreateInviteDto);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
   });
 }
