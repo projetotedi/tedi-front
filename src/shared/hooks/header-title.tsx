@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from "react";
 
 interface HeaderTitleContextValue {
   title: string | null;
@@ -20,13 +20,14 @@ export function useHeaderTitleOverride(): string | null {
 
 /**
  * Telas renderizadas no lugar da rota (ex.: acesso negado) usam isto para trocar o título do
- * cabeçalho enquanto estiverem montadas. Fora do provider não faz nada.
+ * cabeçalho enquanto estiverem montadas. Fora do provider não faz nada. `useLayoutEffect` para o
+ * título da rota não aparecer por um quadro antes do pedido da tela.
  */
 export function useSetHeaderTitle(title: string): void {
   const context = useContext(HeaderTitleContext);
   const setTitle = context?.setTitle;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setTitle?.(title);
     return () => setTitle?.(null);
   }, [setTitle, title]);

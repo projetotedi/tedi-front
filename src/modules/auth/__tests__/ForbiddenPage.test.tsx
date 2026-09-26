@@ -62,12 +62,13 @@ describe("ForbiddenPage (403 do Figma)", () => {
 
   it("goes back to the previous screen", async () => {
     const user = userEvent.setup();
-    const { router } = await renderForbidden("/", Role.member);
+    // Começa fora de "/" para que "voltar" e "sem tela anterior" (que vai a "/") tenham destinos diferentes.
+    const { router } = await renderForbidden("/people", Role.member);
     await screen.findByRole("heading", { name: "Você não tem acesso a esta tela" });
     await router.navigate("/access");
     await user.click(await screen.findByRole("button", { name: "Voltar à tela anterior" }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/people"));
   });
 
   it("goes to the home page when there is no previous screen", async () => {
