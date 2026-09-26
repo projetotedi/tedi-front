@@ -4,6 +4,7 @@ import { NavLink } from "react-router-dom";
 import { authNavItems, useAuth } from "@modules/auth";
 import { visibleNavItems } from "@shared/lib/navigation";
 
+import logoUrl from "./assets/logo-tedi.svg";
 import textureOneUrl from "./assets/sidebar-texture-1.svg";
 import textureTwoUrl from "./assets/sidebar-texture-2.svg";
 import textureThreeUrl from "./assets/sidebar-texture-3.svg";
@@ -46,12 +47,13 @@ export function AppSidebar() {
       ))}
 
       {/*
-        Medidas tiradas do print do frame: recuo de 8px, legenda 22px abaixo do "TEDI" e menu 32px
-        abaixo dela, o que põe o primeiro item na mesma altura (~140px) do primeiro item do Figma.
+        Logo do TEDI (SVG do Figma, com o retângulo tracejado e o cursor, que fazem parte dele):
+        recuo de 8px, legenda 6px abaixo e menu 32px abaixo dela, o que põe o primeiro item na
+        altura (~140px) do primeiro item do Figma.
       */}
       <div className="relative px-2">
-        <p className="text-[28px] font-bold tracking-[0.56px] text-black">{t("app.name")}</p>
-        <p className="mt-5.5 text-xs font-medium text-tedi-sidebar-muted">{t("app.tagline")}</p>
+        <img src={logoUrl} alt={t("app.name")} width={66} height={60} />
+        <p className="mt-1.5 text-xs font-medium text-tedi-sidebar-muted">{t("app.tagline")}</p>
       </div>
 
       {items.length > 0 ? (

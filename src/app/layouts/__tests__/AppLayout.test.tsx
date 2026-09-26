@@ -89,7 +89,7 @@ describe("AppLayout", () => {
     expect(links[0]).toHaveAccessibleName("Membros e Planejamento");
     expect(links[0]).toHaveAttribute("href", "/access");
     expect(links[0]).toHaveAttribute("aria-current", "page");
-    expect(screen.getByText("TEDI")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "TEDI" })).toBeInTheDocument();
     expect(screen.getByText("Gestão do Projeto de Extensão")).toBeInTheDocument();
   });
 
@@ -202,12 +202,12 @@ describe("AppLayout", () => {
     expect(await screen.findByText("Tela de login")).toBeInTheDocument();
   });
 
-  it("keeps the decorative sidebar images out of the accessibility tree", async () => {
+  it("exposes only the logo as an image and keeps the decorative sidebar images hidden", async () => {
     server.use(meHandler(Role.coordinator));
 
     await renderLayout("/access");
 
     await screen.findByRole("navigation", { name: "Menu principal" });
-    expect(screen.queryAllByRole("img")).toHaveLength(0);
+    expect(screen.getAllByRole("img")).toEqual([screen.getByRole("img", { name: "TEDI" })]);
   });
 });
