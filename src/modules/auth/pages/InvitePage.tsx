@@ -12,13 +12,12 @@ import { NewPasswordForm } from "../components/NewPasswordForm";
 import { PublicScreen } from "../components/PublicScreen";
 import { useSlowRequestNotice } from "../hooks/useSlowRequestNotice";
 import { toInviteErrorKey } from "../lib/invite-error";
+import { INVITE_VALIDITY_HOURS } from "../lib/invite-validity";
 
 type Outcome = { kind: "accepted"; ra: string } | { kind: "passwordChanged" } | { kind: "invalid" };
 
 const FORM_CARD_WIDTH = "max-w-200";
 const STATUS_CARD_WIDTH = "max-w-120";
-/** Mesmo TTL do back (`invites.service.ts`, `INVITE_TTL_MS`, decisão 33). */
-const INVITE_VALIDITY_HOURS = 48;
 
 /** Quem já está logado não é redirecionado: pode estar abrindo o link de outra pessoa. */
 export function InvitePage(): ReactElement {
