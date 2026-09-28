@@ -150,5 +150,9 @@
       "network": "Não foi possível conectar",
       "unknown": "Não foi possível salvar a nova senha. Tente novamente."
     }
+  },
+  "access": {
+    "title": "Acessos",
+    "comingSoon": "A gestão de acessos chega em breve."
   }
 }
