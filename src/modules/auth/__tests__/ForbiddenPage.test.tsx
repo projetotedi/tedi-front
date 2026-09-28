@@ -80,12 +80,12 @@ describe("ForbiddenPage (403 do Figma)", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/"));
   });
 
-  it("goes to the home page from Ir para Meu perfil (there is no profile screen yet)", async () => {
+  it("goes to Meu perfil from Ir para Meu perfil", async () => {
     const user = userEvent.setup();
     const { router } = await renderForbidden("/access", Role.member);
 
     await user.click(await screen.findByRole("button", { name: "Ir para Meu perfil" }));
 
-    await waitFor(() => expect(router.state.location.pathname).toBe("/"));
+    await waitFor(() => expect(router.state.location.pathname).toBe("/profile"));
   });
 });

@@ -7,7 +7,6 @@
     "label": "Sair"
   },
   "forbidden": {
-    "headerTitle": "Acesso restrito",
     "title": "Você não tem acesso a esta tela",
     "description": "Esta área é da coordenação. Seu perfil vê e lança as próprias horas e as próprias alocações, mas não abre o banco de horas de outras pessoas.",
     "profiles": "Perfil necessário: {{required}}   ·   Seu perfil: {{current}}",

@@ -61,7 +61,7 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
       rowKey={(row) => row.id}
       caption={t("access.people.caption")}
       emptyMessage={t("access.people.empty")}
-      tableClassName="table-fixed min-w-[900px]"
+      tableClassName="table-fixed min-w-[840px]"
     />
   );
 }

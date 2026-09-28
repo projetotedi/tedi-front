@@ -12,7 +12,7 @@ export function SidebarBrand() {
       <Link
         to="/"
         aria-label={t("layout.home")}
-        className="relative block h-15 w-17 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+        className="block h-15 w-17 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-foreground"
       >
         <img src={logoTediUrl} alt={t("app.name")} width={66} height={60} />
       </Link>

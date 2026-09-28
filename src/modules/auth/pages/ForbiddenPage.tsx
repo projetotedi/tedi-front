@@ -2,7 +2,6 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import { useDocumentTitle } from "@shared/hooks/useDocumentTitle";
 import type { Role } from "@shared/lib/role";
 import { Button } from "@shared/ui";
 
@@ -18,8 +17,6 @@ export function ForbiddenPage({ requiredRole }: ForbiddenPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const headingId = useId();
-
-  useDocumentTitle(t("forbidden.headerTitle"));
 
   const requiredLabel = requiredRole ? t(`roles.${requiredRole}`, { ns: "common" }) : null;
   const currentLabel = user?.role ? t(`roles.${user.role}`, { ns: "common" }) : null;
@@ -60,8 +57,7 @@ export function ForbiddenPage({ requiredRole }: ForbiddenPageProps) {
           >
             {t("forbidden.back")}
           </Button>
-          {/* Ainda não há tela "Meu perfil"; até existir, leva à página inicial. */}
-          <Button className="rounded-3xl px-4" onPress={() => navigate("/")}>
+          <Button className="rounded-3xl px-4" onPress={() => navigate("/profile")}>
             {t("forbidden.profile")}
           </Button>
         </div>
