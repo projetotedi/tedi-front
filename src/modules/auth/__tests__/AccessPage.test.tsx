@@ -32,32 +32,32 @@ function createDeferred() {
   return { promise, resolve };
 }
 
-describe("route /access", () => {
+describe("route /members", () => {
   it("coordinator sees the members card", async () => {
     server.use(
       meHandler({ user: buildMeUser({ role: Role.coordinator }) }),
       listAccessHandler({ data: [], total: 0 }),
     );
 
-    await renderRoutes(authProtectedRoutes, { route: "/access" });
+    await renderRoutes(authProtectedRoutes, { route: "/members" });
 
     expect(
       await screen.findByRole("heading", { name: "Alocações de membros (0)" }),
     ).toBeInTheDocument();
   });
 
-  it("the /access route declares its route title", () => {
-    expect(authProtectedRoutes[0]?.handle).toEqual({ title: "auth:access.title" });
+  it("the /members route declares its route title", () => {
+    expect(authProtectedRoutes[0]?.handle).toEqual({ title: "common:nav.members" });
   });
 
-  it("director gets the forbidden page and /access is never requested", async () => {
+  it("director gets the forbidden page and GET /access is never requested", async () => {
     const onCall = vi.fn();
     server.use(
       meHandler({ user: buildMeUser({ role: Role.director }) }),
       listAccessHandler({ onCall }),
     );
 
-    await renderRoutes(authProtectedRoutes, { route: "/access" });
+    await renderRoutes(authProtectedRoutes, { route: "/members" });
 
     expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
     expect(onCall).not.toHaveBeenCalled();

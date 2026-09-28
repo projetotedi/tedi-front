@@ -60,19 +60,27 @@ async function renderApp(user: MeResponseDto, route = "/") {
 }
 
 describe("AppLayout", () => {
-  it("shows Access to the coordinator", async () => {
+  it("shows Membros e Planejamento to the coordinator", async () => {
     const { nav } = await renderApp(buildMeUser({ role: Role.coordinator }));
 
-    expect(within(nav).getByRole("link", { name: "Acessos" })).toHaveAttribute("href", "/access");
+    expect(within(nav).getByRole("link", { name: "Membros e Planejamento" })).toHaveAttribute(
+      "href",
+      "/members",
+    );
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
   });
 
-  it.each([Role.director, Role.member])("hides Access from the %s", async (role) => {
-    const { nav } = await renderApp(buildMeUser({ role }));
+  it.each([Role.director, Role.member])(
+    "hides Membros e Planejamento from the %s",
+    async (role) => {
+      const { nav } = await renderApp(buildMeUser({ role }));
 
-    expect(within(nav).getByRole("link", { name: "Banco de Horas" })).toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Acessos" })).not.toBeInTheDocument();
-  });
+      expect(within(nav).getByRole("link", { name: "Banco de Horas" })).toBeInTheDocument();
+      expect(
+        within(nav).queryByRole("link", { name: "Membros e Planejamento" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it.each([
     [Role.member, "Membro"],
@@ -145,12 +153,14 @@ describe("AppLayout", () => {
     expect(drawer).toHaveAttribute("id", "app-menu");
     expect(button).toHaveAttribute("aria-expanded", "true");
 
-    await userEvent.click(within(drawer).getByRole("link", { name: "Acessos" }));
+    await userEvent.click(within(drawer).getByRole("link", { name: "Membros e Planejamento" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Menu principal" })).not.toBeInTheDocument(),
     );
-    expect(screen.getByRole("heading", { level: 1, name: "Acessos" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Membros e Planejamento" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the coming soon page for prototype areas", async () => {
@@ -160,8 +170,8 @@ describe("AppLayout", () => {
     expect(screen.getByText(/ainda está em construção/)).toBeInTheDocument();
   });
 
-  it("blocks Access for a member even through the URL", async () => {
-    await renderApp(buildMeUser({ role: Role.member }), "/access");
+  it("blocks Membros e Planejamento for a member even through the URL", async () => {
+    await renderApp(buildMeUser({ role: Role.member }), "/members");
 
     expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
   });

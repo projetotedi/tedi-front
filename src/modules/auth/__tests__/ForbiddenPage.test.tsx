@@ -25,7 +25,7 @@ function renderForbidden(route: string, role: Role, minRole: Role = Role.coordin
 
 describe("ForbiddenPage (403 do Figma)", () => {
   it("shows the heading, the explanation and the help text", async () => {
-    await renderForbidden("/access", Role.member);
+    await renderForbidden("/members", Role.member);
 
     expect(
       await screen.findByRole("heading", { level: 2, name: "Você não tem acesso a esta tela" }),
@@ -38,14 +38,14 @@ describe("ForbiddenPage (403 do Figma)", () => {
   });
 
   it("hides the decorative 403 numeral from screen readers", async () => {
-    await renderForbidden("/access", Role.member);
+    await renderForbidden("/members", Role.member);
 
     await screen.findByRole("heading", { name: "Você não tem acesso a esta tela" });
     expect(screen.getByText("403")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("shows the required profile and the current profile", async () => {
-    await renderForbidden("/access", Role.member);
+    await renderForbidden("/members", Role.member);
 
     expect(
       await screen.findByText("Perfil necessário: Coordenadora · Seu perfil: Membro"),
@@ -65,7 +65,7 @@ describe("ForbiddenPage (403 do Figma)", () => {
     // Começa fora de "/" para que "voltar" e "sem tela anterior" (que vai a "/") tenham destinos diferentes.
     const { router } = await renderForbidden("/people", Role.member);
     await screen.findByRole("heading", { name: "Você não tem acesso a esta tela" });
-    await router.navigate("/access");
+    await router.navigate("/members");
     await user.click(await screen.findByRole("button", { name: "Voltar à tela anterior" }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/people"));
@@ -73,7 +73,7 @@ describe("ForbiddenPage (403 do Figma)", () => {
 
   it("goes to the home page when there is no previous screen", async () => {
     const user = userEvent.setup();
-    const { router } = await renderForbidden("/access", Role.member);
+    const { router } = await renderForbidden("/members", Role.member);
 
     await user.click(await screen.findByRole("button", { name: "Voltar à tela anterior" }));
 
@@ -82,7 +82,7 @@ describe("ForbiddenPage (403 do Figma)", () => {
 
   it("goes to Meu perfil from Ir para Meu perfil", async () => {
     const user = userEvent.setup();
-    const { router } = await renderForbidden("/access", Role.member);
+    const { router } = await renderForbidden("/members", Role.member);
 
     await user.click(await screen.findByRole("button", { name: "Ir para Meu perfil" }));
 

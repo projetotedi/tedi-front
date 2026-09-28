@@ -155,7 +155,6 @@
     }
   },
   "access": {
-    "title": "Access",
     "people": {
       "title": "Member allocations ({{total}})",
       "titlePending": "Member allocations",

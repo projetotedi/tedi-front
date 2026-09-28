@@ -14,9 +14,9 @@ describe("authMenuItems", () => {
     }
   });
 
-  it("shows Access only from coordinator up", () => {
+  it("shows Membros e Planejamento only from coordinator up", () => {
     expect(authMenuItems).toContainEqual(
-      expect.objectContaining({ path: "/access", minRole: Role.coordinator }),
+      expect.objectContaining({ path: "/members", minRole: Role.coordinator }),
     );
   });
 });

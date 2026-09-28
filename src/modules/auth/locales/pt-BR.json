@@ -155,7 +155,6 @@
     }
   },
   "access": {
-    "title": "Acessos",
     "people": {
       "title": "Alocações de membros ({{total}})",
       "titlePending": "Alocações de membros",
