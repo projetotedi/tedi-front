@@ -115,4 +115,23 @@ describe("Alert", () => {
     );
     expect(alert.textContent).toBe("Matrícula ou senha incorretos");
   });
+
+  it("renders a static warning with title and description (no alert/status role)", () => {
+    render(
+      <Alert variant="warning" description="O link vale por 48 horas.">
+        Guarde este link agora
+      </Alert>,
+    );
+
+    expect(screen.getByText("Guarde este link agora")).toBeInTheDocument();
+    expect(screen.getByText("O link vale por 48 horas.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("renders nothing for an empty warning", () => {
+    const { container } = render(<Alert variant="warning">{null}</Alert>);
+
+    expect(container).toBeEmptyDOMElement();
+  });
 });

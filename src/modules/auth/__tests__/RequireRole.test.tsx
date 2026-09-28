@@ -50,7 +50,7 @@ describe("role hierarchy", () => {
     server.use(meHandler({ user: buildMeUser({ role: Role.member }) }));
     await renderProtected(Role.director, "/people");
 
-    expect(await screen.findByText("Você não tem acesso a esta área")).toBeInTheDocument();
+    expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
     expect(screen.queryByText("Conteúdo protegido")).not.toBeInTheDocument();
     expect(screen.getByTestId("status")).toHaveTextContent("authenticated");
   });

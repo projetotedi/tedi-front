@@ -30,6 +30,14 @@ describe("TextField", () => {
     expect(screen.getByText("Matrícula (RA)").tagName).toBe("LABEL");
   });
 
+  it("hidden label still names the input", () => {
+    render(<Harness isLabelHidden />);
+
+    const input = screen.getByLabelText("Matrícula (RA)");
+    expect(input.tagName).toBe("INPUT");
+    expect(screen.getByText("Matrícula (RA)")).toHaveClass("sr-only");
+  });
+
   it("calls onChange with the typed text", async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
@@ -134,5 +142,21 @@ describe("TextField", () => {
     render(<Harness />);
 
     expect(screen.getByLabelText("Matrícula (RA)")).toHaveClass("min-h-11", "text-base");
+  });
+
+  it("read-only field keeps its value and label", () => {
+    render(
+      <TextField
+        label="Link do convite"
+        value="https://tedi.example/invite?token=abc"
+        onChange={() => {}}
+        isReadOnly
+      />,
+    );
+
+    const input = screen.getByLabelText("Link do convite");
+    expect(input).toHaveValue("https://tedi.example/invite?token=abc");
+    expect(input).toHaveAttribute("readonly");
+    expect(input).not.toBeDisabled();
   });
 });
