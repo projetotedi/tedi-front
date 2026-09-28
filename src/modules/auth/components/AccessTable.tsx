@@ -5,15 +5,14 @@ import type { AccessResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge } from "@shared/ui";
 
-import { roleBadgeTone, roleLabelKey } from "../lib/role-label";
+import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: AccessResponseDto[];
 }
 
-// Abaixo de 3xl as colunas vazias dividem a folga; sem isso a coluna Status sai da tela em notebooks.
 export function AccessTable({ rows }: AccessTableProps): ReactElement {
-  const { t } = useTranslation("auth");
+  const { t } = useTranslation(["auth", "common"]);
 
   const columns: Column<AccessResponseDto>[] = [
     {
@@ -24,20 +23,19 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
     {
       header: t("access.people.columns.role"),
       headerClassName: "w-[167px] uppercase",
-      render: (row) => {
-        const key = roleLabelKey(row.role);
-        return key ? <Badge tone={roleBadgeTone(row.role)}>{t(key)}</Badge> : null;
-      },
+      render: (row) =>
+        row.role ? (
+          <Badge tone={roleBadgeTone(row.role)}>{t(`roles.${row.role}`, { ns: "common" })}</Badge>
+        ) : null,
     },
     {
       header: t("access.people.columns.departments"),
       // Sem `uppercase`: no Figma este cabeçalho está em caixa normal (mantido idêntico).
-      headerClassName: "3xl:w-[299px]",
       render: () => null,
     },
     {
       header: t("access.people.columns.mainFunction"),
-      headerClassName: "uppercase 3xl:w-[299px]",
+      headerClassName: "uppercase",
       render: () => null,
     },
     {
@@ -63,7 +61,7 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
       rowKey={(row) => row.id}
       caption={t("access.people.caption")}
       emptyMessage={t("access.people.empty")}
-      tableClassName="table-fixed min-w-[900px] 3xl:min-w-[1245px]"
+      tableClassName="table-fixed min-w-[900px]"
     />
   );
 }

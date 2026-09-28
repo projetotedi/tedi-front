@@ -61,17 +61,17 @@ describe("AccessFilters", () => {
     expect(onChange).toHaveBeenLastCalledWith({ search: "Ana", role: "all", status: "all" });
   });
 
-  it("reports role director when Diretor(a) is chosen", async () => {
+  it("reports role director when Diretor is chosen", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();
     await renderWithProviders(<Harness onChange={onChange} />);
 
     await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
-    await user.click(await screen.findByRole("option", { name: "Diretor(a)" }));
+    await user.click(await screen.findByRole("option", { name: "Diretor" }));
 
     expect(onChange).toHaveBeenLastCalledWith({ search: "", role: "director", status: "all" });
-    expect(screen.getByRole("button", { name: /Papel: Diretor\(a\)/ })).toHaveTextContent(
-      "Papel: Diretor(a)",
+    expect(screen.getByRole("button", { name: /Papel: Diretor/ })).toHaveTextContent(
+      "Papel: Diretor",
     );
   });
 
@@ -85,7 +85,7 @@ describe("AccessFilters", () => {
     expect(options.map((option) => option.textContent)).toEqual([
       "Todos",
       "Membro",
-      "Diretor(a)",
+      "Diretor",
       "Coordenadora",
     ]);
   });

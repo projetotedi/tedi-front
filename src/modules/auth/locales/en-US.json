@@ -155,20 +155,8 @@
       "unknown": "Could not save the new password. Please try again."
     }
   },
-  "roles": {
-    "member": "Member",
-    "director": "Director",
-    "coordinator": "Coordinator"
-  },
-  "nav": {
-    "access": "Members and Planning"
-  },
-  "userMenu": {
-    "trigger": "Profile menu ({{name}})",
-    "menu": "Profile options"
-  },
   "access": {
-    "title": "Members and Allocations",
+    "title": "Access",
     "people": {
       "title": "Member allocations ({{total}})",
       "titlePending": "Member allocations",

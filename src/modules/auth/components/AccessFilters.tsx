@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Select, TextField, type SelectOption } from "@shared/ui";
 
 import { isRoleFilter, isStatusFilter, type AccessFilterValues } from "../lib/access-filters";
-import { INVITABLE_ROLES, roleLabelKey } from "../lib/role-label";
+import { INVITABLE_ROLES } from "../lib/role-label";
 
 export interface AccessFiltersProps {
   value: AccessFilterValues;
@@ -12,11 +12,11 @@ export interface AccessFiltersProps {
 }
 
 export function AccessFilters({ value, onChange }: AccessFiltersProps): ReactElement {
-  const { t } = useTranslation("auth");
+  const { t } = useTranslation(["auth", "common"]);
 
   const roleOptions: SelectOption[] = [
     { id: "all", label: t("access.people.filters.role.all") },
-    ...INVITABLE_ROLES.map((role) => ({ id: role, label: t(roleLabelKey(role) ?? "") })),
+    ...INVITABLE_ROLES.map((role) => ({ id: role, label: t(`roles.${role}`, { ns: "common" }) })),
   ];
   const statusOptions: SelectOption[] = [
     { id: "all", label: t("access.people.filters.status.all") },

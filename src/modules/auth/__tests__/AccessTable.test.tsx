@@ -24,7 +24,7 @@ describe("AccessTable", () => {
     expect(within(ana).getByText("Ativo")).toBeInTheDocument();
 
     const beto = screen.getByRole("row", { name: /Beto Nunes/ });
-    expect(within(beto).getByText("Diretor(a)")).toBeInTheDocument();
+    expect(within(beto).getByText("Diretor")).toBeInTheDocument();
     expect(within(beto).getByText("Inativo")).toBeInTheDocument();
 
     const caio = screen.getByRole("row", { name: /Caio Lopes/ });
@@ -99,7 +99,7 @@ describe("AccessTable", () => {
     expect(within(ana).getByText("Ativo")).toHaveClass("bg-tedi-badge-success");
 
     const beto = screen.getByRole("row", { name: /Beto Nunes/ });
-    expect(within(beto).getByText("Diretor(a)")).toHaveClass("bg-tedi-badge");
+    expect(within(beto).getByText("Diretor")).toHaveClass("bg-tedi-badge");
     expect(within(beto).getByText("Inativo")).toHaveClass("bg-tedi-neutral");
 
     const caio = screen.getByRole("row", { name: /Caio Lopes/ });

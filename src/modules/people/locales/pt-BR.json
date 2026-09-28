@@ -1,0 +1,102 @@
+{
+  "profile": {
+    "title": "Meu perfil",
+    "mockNotice": "Dados de exemplo: horas, lançamentos e cadastro ainda não vêm do sistema.",
+    "chips": {
+      "ra": "RA {{ra}}",
+      "since": "Desde {{date}}"
+    },
+    "actions": {
+      "editData": "Editar meus dados",
+      "logHours": "Lançar horas"
+    },
+    "summary": {
+      "title": "Resumo de horas",
+      "total": "Total de horas lançadas",
+      "validated": "Horas validadas",
+      "pending": "Pendentes de validação",
+      "adjustedOrRejected": "Ajustadas / rejeitadas",
+      "hours": "{{count}}h",
+      "badges": {
+        "validated": "Validado",
+        "pending": "Aguardando",
+        "review": "Revisar"
+      }
+    },
+    "entries": {
+      "title": "Meus lançamentos",
+      "columns": {
+        "date": "Data",
+        "activity": "Atividade",
+        "category": "Categoria",
+        "declared": "Declarado",
+        "validated": "Validado",
+        "status": "Status"
+      },
+      "minutes": "{{count}} min",
+      "empty": "Nenhum lançamento ainda."
+    },
+    "byCategory": {
+      "title": "Horas por categoria",
+      "columns": {
+        "category": "Categoria",
+        "hours": "Horas",
+        "status": "Status",
+        "note": "Observação"
+      }
+    },
+    "personal": {
+      "title": "Informações pessoais",
+      "fullName": "Nome completo",
+      "birthDate": "Data de nascimento",
+      "phone": "Telefone",
+      "personalEmail": "E-mail pessoal",
+      "address": "Endereço",
+      "city": "Cidade",
+      "state": "Estado (UF)"
+    },
+    "academic": {
+      "title": "Dados acadêmicos e institucionais",
+      "ra": "RA",
+      "department": "Departamento",
+      "course": "Curso da faculdade",
+      "className": "Turma",
+      "semester": "Período",
+      "semesterValue": "{{count}}º",
+      "institutionalEmail": "E-mail institucional",
+      "cpf": "CPF",
+      "volunteerTerm": "Termo de voluntariado"
+    },
+    "account": {
+      "title": "Conta e acesso",
+      "role": "Perfil de acesso",
+      "status": "Status",
+      "joinedAt": "Entrada no projeto",
+      "lastAccess": "Último acesso",
+      "signOut": "Sair do sistema"
+    },
+    "status": {
+      "active": "Ativa",
+      "inactive": "Inativa"
+    },
+    "entryStatus": {
+      "approved": "Aprovado",
+      "adjusted": "Ajustado",
+      "pending": "Pendente",
+      "rejected": "Rejeitado"
+    },
+    "categoryStatus": {
+      "validated": "Validado",
+      "pending": "Pendente",
+      "adjusted": "Ajustado"
+    },
+    "categories": {
+      "class": "Aula",
+      "management": "Gestão",
+      "planning": "Planejamento",
+      "event": "Evento",
+      "other": "Outros"
+    },
+    "empty": "—"
+  }
+}

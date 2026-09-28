@@ -155,20 +155,8 @@
       "unknown": "Não foi possível salvar a nova senha. Tente novamente."
     }
   },
-  "roles": {
-    "member": "Membro",
-    "director": "Diretor(a)",
-    "coordinator": "Coordenadora"
-  },
-  "nav": {
-    "access": "Membros e Planejamento"
-  },
-  "userMenu": {
-    "trigger": "Menu do perfil ({{name}})",
-    "menu": "Opções do perfil"
-  },
   "access": {
-    "title": "Membros e Alocações",
+    "title": "Acessos",
     "people": {
       "title": "Alocações de membros ({{total}})",
       "titlePending": "Alocações de membros",

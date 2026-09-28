@@ -79,7 +79,7 @@ describe("CreateInviteDialog", () => {
 
     await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
     await user.click(screen.getByRole("button", { name: /Perfil/ }));
-    await user.click(screen.getByRole("option", { name: "Diretor(a)" }));
+    await user.click(screen.getByRole("option", { name: "Diretor" }));
     await user.click(screen.getByRole("button", { name: "Gerar link" }));
 
     await waitFor(() => expect(onCall).toHaveBeenCalledWith({ role: "director" }));

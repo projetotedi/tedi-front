@@ -12,7 +12,7 @@ import { Alert, Button, Select, TextField } from "@shared/ui";
 
 import { INVITE_VALIDITY_HOURS } from "../lib/invite-validity";
 import { toRequestErrorKey } from "../lib/request-error";
-import { INVITABLE_ROLES, roleLabelKey } from "../lib/role-label";
+import { INVITABLE_ROLES } from "../lib/role-label";
 
 export interface CreateInviteFormProps {
   onDone: () => void;
@@ -23,7 +23,7 @@ export interface CreateInviteFormProps {
 type CopyStatus = "idle" | "copied" | "fallback";
 
 export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormProps): ReactElement {
-  const { t } = useTranslation("auth");
+  const { t } = useTranslation(["auth", "common"]);
   const queryClient = useQueryClient();
   const errorId = useId();
   const validityId = useId();
@@ -49,7 +49,7 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
   const errorKey = createInvite.isError ? toRequestErrorKey(createInvite.error) : null;
   const roleOptions = INVITABLE_ROLES.map((role) => ({
     id: role,
-    label: t(roleLabelKey(role) ?? ""),
+    label: t(`roles.${role}`, { ns: "common" }),
   }));
 
   // Trava síncrona contra envio duplo, no mesmo padrão do LoginForm: handleSubmit valida de

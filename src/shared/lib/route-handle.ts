@@ -1,21 +1,25 @@
-export interface I18nText {
-  ns: string;
-  key: string;
-}
-
+/**
+ * `handle` das rotas autenticadas. O AppLayout lê o `title` da rota mais interna que o
+ * declarar e o usa como título da topbar e da aba.
+ */
 export interface RouteHandle {
-  headerTitle?: I18nText;
+  /** Chave de i18n com namespace (ex.: "people:profile.title"). */
+  title: string;
 }
 
-/** O React Router tipa `handle` como `unknown`: valida a forma. */
-export function getHeaderTitle(handle: unknown): I18nText | undefined {
-  if (typeof handle !== "object" || handle === null) return undefined;
+function isRouteHandle(handle: unknown): handle is RouteHandle {
+  return (
+    typeof handle === "object" &&
+    handle !== null &&
+    typeof (handle as { title?: unknown }).title === "string"
+  );
+}
 
-  const { headerTitle } = handle as { headerTitle?: unknown };
-  if (typeof headerTitle !== "object" || headerTitle === null) return undefined;
-
-  const { ns, key } = headerTitle as Partial<Record<keyof I18nText, unknown>>;
-  if (typeof ns !== "string" || typeof key !== "string") return undefined;
-
-  return { ns, key };
+/** Título da rota mais interna que declara `handle.title`; null se nenhuma declara. */
+export function findRouteTitle(matches: readonly { handle: unknown }[]): string | null {
+  for (let index = matches.length - 1; index >= 0; index -= 1) {
+    const { handle } = matches[index];
+    if (isRouteHandle(handle)) return handle.title;
+  }
+  return null;
 }

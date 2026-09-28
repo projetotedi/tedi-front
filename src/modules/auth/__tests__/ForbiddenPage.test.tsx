@@ -56,7 +56,7 @@ describe("ForbiddenPage (403 do Figma)", () => {
     await renderForbidden("/people", Role.member, Role.director);
 
     expect(
-      await screen.findByText("Perfil necessário: Diretor(a) · Seu perfil: Membro"),
+      await screen.findByText("Perfil necessário: Diretor · Seu perfil: Membro"),
     ).toBeInTheDocument();
   });
 

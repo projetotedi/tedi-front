@@ -4,7 +4,6 @@ import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import { Role } from "@shared/lib/role";
-import { getHeaderTitle } from "@shared/lib/route-handle";
 
 import { AccessPage } from "../pages/AccessPage";
 import { authProtectedRoutes } from "../routes";
@@ -47,10 +46,8 @@ describe("route /access", () => {
     ).toBeInTheDocument();
   });
 
-  it("the /access route declares its header title", () => {
-    const indexRoute = authProtectedRoutes[0]?.children?.[0];
-
-    expect(getHeaderTitle(indexRoute?.handle)).toEqual({ ns: "auth", key: "access.title" });
+  it("the /access route declares its route title", () => {
+    expect(authProtectedRoutes[0]?.handle).toEqual({ title: "auth:access.title" });
   });
 
   it("director gets the forbidden page and /access is never requested", async () => {
@@ -153,7 +150,7 @@ describe("AccessPage", () => {
     await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("3"));
 
     await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
-    await user.click(await screen.findByRole("option", { name: "Diretor(a)" }));
+    await user.click(await screen.findByRole("option", { name: "Diretor" }));
 
     await waitFor(() => {
       expect(lastParams(onCall)?.get("role")).toBe("director");
@@ -278,13 +275,5 @@ describe("AccessPage", () => {
     expect(
       screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
     ).not.toBeInTheDocument();
-  });
-
-  it("sets the document title", async () => {
-    server.use(listAccessHandler({ data: [], total: 0 }));
-
-    await renderWithProviders(<AccessPage />);
-
-    await waitFor(() => expect(document.title).toBe("Membros e Alocações"));
   });
 });
