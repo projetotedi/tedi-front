@@ -11,21 +11,7 @@ export interface AccessTableProps {
   rows: AccessResponseDto[];
 }
 
-/**
- * Tabela de membros com acesso ao TEDI, com as seis colunas do Figma. Só apresenta as linhas
- * que recebe: busca, filtros, paginação e estados de carga ficam na `AccessPage`.
- *
- * Membro, Papel e Status vêm da API. Departamentos e Função principal não existem no back
- * (ficam vazias) e Ações é da GUS-88 (também vazia); as colunas existem para manter a grade do
- * desenho.
- *
- * Larguras a partir de `3xl` (1800px, onde o frame de 1920px cabe): as do Figma (235, 147, 279,
- * 279, 132, 73) mais o respiro de 10px de cada lado das células internas, com a última coluna
- * sem largura para absorver a folga à direita, como no desenho (tabela de 1245px). Abaixo de
- * `3xl` as colunas vazias (Departamentos e Função principal) perdem a largura fixa e dividem o
- * que sobra com Ações; sem isso a coluna Status ficaria fora da tela em notebooks e com zoom.
- * A tabela só rola na horizontal abaixo de 900px.
- */
+// Abaixo de 3xl as colunas vazias dividem a folga; sem isso a coluna Status sai da tela em notebooks.
 export function AccessTable({ rows }: AccessTableProps): ReactElement {
   const { t } = useTranslation("auth");
 

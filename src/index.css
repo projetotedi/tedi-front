@@ -18,7 +18,6 @@
   --color-tedi-neutral: #efeff0;
   --color-tedi-neutral-foreground: #52525b;
 
-  /* Layout autenticado (sidebar + cabeçalho + cartão da tela de Membros e Alocações). */
   --color-tedi-page: #f0f9ff;
   --color-tedi-sidebar-border: #79b5d6;
   /* Subtítulo da marca sobre o azul da sidebar: 5,6:1 sobre #8ec6e6. */
@@ -46,11 +45,7 @@
     0 2px 4px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.06), 0 0 1px rgb(0 0 0 / 0.06);
   --shadow-tedi-nav: 0 1px 3px rgb(26 66 92 / 0.16);
 
-  /*
-   * Largura a partir da qual o frame do Figma (1920px) cabe inteiro: sidebar de 280px, 100px de
-   * margem de cada lado, cartão com 24px de padding e a tabela de 1245px. Abaixo disso o layout
-   * usa margens menores e colunas flexíveis (ver AppLayout e AccessTable).
-   */
+  /* Largura a partir da qual o frame de 1920px do Figma cabe inteiro. */
   --breakpoint-3xl: 112.5rem;
 }
 

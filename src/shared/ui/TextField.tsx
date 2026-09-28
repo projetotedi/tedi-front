@@ -3,10 +3,6 @@ import type { ReactNode, Ref } from "react";
 
 export interface TextFieldProps {
   label: string;
-  /**
-   * Esconde o rótulo só visualmente (`sr-only`): o campo continua nomeado para leitores de tela.
-   * Usar quando o desenho não mostra rótulo (ex.: busca com placeholder).
-   */
   isLabelHidden?: boolean;
   value: string;
   onChange: (value: string) => void;

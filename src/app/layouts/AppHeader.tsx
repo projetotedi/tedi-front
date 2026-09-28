@@ -2,7 +2,6 @@ import { UserMenu } from "@modules/auth";
 
 import { useHeaderTitle } from "./useHeaderTitle";
 
-/** Cabeçalho da área autenticada: título da página (`h1`) à esquerda e menu de perfil à direita. */
 export function AppHeader() {
   const title = useHeaderTitle();
 

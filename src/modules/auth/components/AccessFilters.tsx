@@ -11,12 +11,6 @@ export interface AccessFiltersProps {
   onChange: (next: AccessFilterValues) => void;
 }
 
-/**
- * Busca por nome ou RA e filtros de Papel e Status da lista de membros. Sem estado próprio: os
- * valores vêm de `AccessPage`, que decide quando buscar (a busca é ao vivo, com debounce).
- * O rótulo dos três controles fica oculto só visualmente, como no Figma: o gatilho do select
- * já mostra o valor contextualizado ("Papel: todos") e o campo de busca tem placeholder.
- */
 export function AccessFilters({ value, onChange }: AccessFiltersProps): ReactElement {
   const { t } = useTranslation("auth");
 

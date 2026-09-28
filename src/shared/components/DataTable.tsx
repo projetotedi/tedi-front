@@ -3,9 +3,7 @@ import type { ReactNode } from "react";
 export interface Column<T> {
   header: string;
   render: (row: T) => ReactNode;
-  /** Classes acrescentadas ao `th` da coluna (ex.: largura, caixa alta). */
   headerClassName?: string;
-  /** Classes acrescentadas ao `td` da coluna (ex.: alinhamento). */
   cellClassName?: string;
 }
 
@@ -15,9 +13,7 @@ interface DataTableProps<T> {
   rowKey: (row: T) => string;
   /** Descrição da tabela para leitores de tela. */
   caption?: string;
-  /** Mostrada em uma célula de largura total quando `rows` está vazio. */
   emptyMessage?: string;
-  /** Classes acrescentadas ao `table` (ex.: `table-fixed min-w-[1245px]`). */
   tableClassName?: string;
 }
 

@@ -18,14 +18,6 @@ import {
   type AccessFilterValues,
 } from "../lib/access-filters";
 
-/**
- * `/access`, sob `RequireRole minRole={Role.coordinator}`. Um cartão único, como no Figma
- * "Membros e Alocações": título com o total, botão "Gerar link de cadastro", busca e filtros,
- * a tabela de quem tem acesso e o rodapé com o resumo e a paginação numerada.
- *
- * A busca é ao vivo (debounce); qualquer mudança de filtro volta para a página 1. O título da
- * página (`h1`) fica no cabeçalho do layout, que o lê do `handle` da rota.
- */
 export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
@@ -59,7 +51,6 @@ export function AccessPage(): ReactElement {
             ? t("access.people.titlePending")
             : t("access.people.title", { total })}
         </h2>
-        {/* Sempre visível: gerar o link não depende da lista (vazia, carregando ou com erro). */}
         <CreateInviteDialog />
       </div>
 

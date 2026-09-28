@@ -11,15 +11,9 @@ import { useAuth } from "../hooks/useAuth";
 import { roleLabelKey } from "../lib/role-label";
 
 export interface ForbiddenPageProps {
-  /** Perfil que a rota exige; sem ele o quadro "Perfil necessário / Seu perfil" não aparece. */
   requiredRole?: Role;
 }
 
-/**
- * Tela 403 do Figma (frame 64:3096), renderizada no lugar pela RequireRole quando o perfil não
- * atende o `minRole` da rota. A sessão continua ativa e a URL não muda (decisão 18).
- * O cabeçalho passa a dizer "Acesso restrito" enquanto ela está montada.
- */
 export function ForbiddenPage({ requiredRole }: ForbiddenPageProps) {
   const { t } = useTranslation("auth");
   const { user } = useAuth();

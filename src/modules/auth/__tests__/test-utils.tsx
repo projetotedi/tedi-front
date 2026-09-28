@@ -50,11 +50,6 @@ export async function renderWithProviders(
   return { ...view, router, queryClient };
 }
 
-/**
- * Renderiza `routes` (o array exportado por `routes.tsx` de um módulo, ex.: `authProtectedRoutes`)
- * sob o mesmo layout raiz do app real: `AuthProvider` como rota-layout, para que `useAuth()` e
- * `RequireRole` funcionem, inclusive com `lazy`. Em pt-BR, com QueryClientProvider + MemoryRouter.
- */
 export async function renderRoutes(
   routes: RouteObject[],
   options: RenderWithProvidersOptions = {},

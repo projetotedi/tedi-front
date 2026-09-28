@@ -87,8 +87,6 @@ describe("CreateInviteDialog", () => {
   });
 
   it("exposes the 48h validity warning as the accessible description of the Copiar link button", async () => {
-    // O botão recebe autoFocus assim que o link aparece: um leitor de tela precisa anunciar o
-    // aviso de validade junto do foco, não só mostrá-lo visualmente ao lado.
     server.use(createInviteHandler({ response: buildCreateInviteResponse({ url: LINK }) }));
     const user = userEvent.setup();
     await renderWithProviders(<CreateInviteDialog />);
@@ -252,9 +250,6 @@ describe("CreateInviteDialog", () => {
   });
 
   describe("cannot be closed while POST /invites is in flight", () => {
-    // Fechar durante o envio não cancela a mutação (o back já cria o convite) — só esconderia
-    // o link gerado, deixando um convite pendente "órfão" sem forma de revogar (fora do escopo
-    // desta card). Enquanto isPending, Esc e o botão X devem ser ignorados.
     async function startSubmitAndWaitForPending(user: UserEvent) {
       await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
       await user.click(screen.getByRole("button", { name: "Gerar link" }));

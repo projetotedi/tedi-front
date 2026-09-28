@@ -1,4 +1,3 @@
-/** Iniciais para o avatar: primeira letra do primeiro e do último nome ("Beatriz Nunes" → "BN"). Nome de uma palavra só usa as duas primeiras letras. */
 export function getInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   const first = words[0];

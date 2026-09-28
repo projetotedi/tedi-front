@@ -15,7 +15,6 @@ export const authRoutes: RouteObject[] = [
   { path: "reset-password", element: <InvitePage /> },
 ];
 
-/** Rotas autenticadas do módulo, montadas sob AppLayout em app/router.tsx. */
 export const authProtectedRoutes: RouteObject[] = [
   {
     path: "access",

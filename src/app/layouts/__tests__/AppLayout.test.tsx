@@ -31,7 +31,6 @@ function logoutHandler(onCall: () => void) {
   });
 }
 
-/** O layout real, sob o `AuthProvider`, com duas rotas de teste (uma delas com título no handle). */
 async function renderLayout(route: string) {
   await i18n.changeLanguage("pt-BR");
 

@@ -4,11 +4,6 @@ import { useMatches } from "react-router-dom";
 import { useHeaderTitleOverride } from "@shared/hooks/header-title";
 import { getHeaderTitle } from "@shared/lib/route-handle";
 
-/**
- * Título do cabeçalho: o que a tela montada pediu (ex.: "Acesso restrito" na 403, que aparece no
- * lugar da rota), senão o `handle.headerTitle` da rota mais interna que o declara, já traduzido.
- * Rotas sem título (ex.: a página inicial) mostram o nome da aplicação.
- */
 export function useHeaderTitle(): string {
   const { t } = useTranslation();
   const matches = useMatches();

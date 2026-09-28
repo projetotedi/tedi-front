@@ -17,7 +17,6 @@ describe("AccessTable", () => {
   it("renders one row per person with name, translated role and status", async () => {
     await renderWithProviders(<AccessTable rows={ROWS} />);
 
-    // Uma linha de cabeçalho mais uma por pessoa.
     expect(screen.getAllByRole("row")).toHaveLength(4);
 
     const ana = screen.getByRole("row", { name: /Ana Torres/ });

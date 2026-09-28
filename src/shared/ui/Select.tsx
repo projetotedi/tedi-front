@@ -10,18 +10,10 @@ export interface SelectOption {
 
 export interface SelectProps {
   label: string;
-  /**
-   * Esconde o rótulo só visualmente (`sr-only`): o gatilho continua nomeado para leitores de
-   * tela. Usar quando o desenho mostra o valor já contextualizado no próprio gatilho.
-   */
   isLabelHidden?: boolean;
   options: SelectOption[];
   value: string | null;
   onChange: (value: string) => void;
-  /**
-   * Texto mostrado no gatilho (ex.: "Papel: todos"). Recebe a opção selecionada, ou `null`
-   * quando `value` não corresponde a nenhuma opção. Sem ela, o gatilho mostra o rótulo da opção.
-   */
   formatValue?: (selected: SelectOption | null) => string;
   onBlur?: () => void;
   name?: string;

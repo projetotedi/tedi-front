@@ -6,15 +6,12 @@ import arrowRightUrl from "../assets/icons/arrow-right.svg";
 import { getPageItems } from "../lib/pagination";
 
 export interface PaginationProps {
-  /** Página atual, a partir de 1. */
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  /** Nome da região de navegação (`nav`). */
   label: string;
   previousLabel: string;
   nextLabel: string;
-  /** Nome acessível do botão de um número (ex.: "Página 3"). */
   pageLabel: (page: number) => string;
 }
 
@@ -23,10 +20,6 @@ export interface PaginationProps {
 const BUTTON_CLASS =
   "min-h-11 min-w-11 rounded-[10px] text-base font-medium text-foreground data-[active=true]:bg-tedi-page-current data-[active=true]:text-tedi-page-current-foreground";
 
-/**
- * Paginação numerada (anterior, números com reticências, próxima) sobre o `Pagination` do
- * HeroUI. Não guarda estado: a página atual e a mudança vêm de quem chama.
- */
 export function Pagination({
   page,
   totalPages,

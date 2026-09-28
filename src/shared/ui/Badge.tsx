@@ -12,7 +12,6 @@ const TONES = {
   success: "bg-tedi-badge-success text-tedi-badge-success-foreground",
 } as const;
 
-/** Selo de situação (papel, status) usado na tabela de membros. */
 export function Badge({ tone, children }: BadgeProps) {
   return (
     <span

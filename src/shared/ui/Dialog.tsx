@@ -9,21 +9,9 @@ export interface DialogProps {
   closeLabel: string;
   children: ReactNode;
   footer?: ReactNode;
-  /**
-   * Se `false`, bloqueia fechar por Esc ou pelo botão X — o clique fora já é sempre bloqueado
-   * (`isDismissable={false}` fixo no Modal.Backdrop, ver abaixo). Usar enquanto uma mutação em
-   * andamento não pode ser interrompida sem perder o que ela retorna (ex.: um link exibido uma
-   * única vez).
-   * @default true
-   */
   isDismissable?: boolean;
 }
 
-/**
- * Diálogo acessível sobre o HeroUI Modal. Toque fora nunca fecha (isDismissable={false} fixo no
- * Modal.Backdrop); Esc e o X fecham, a menos que a prop `isDismissable` deste componente seja
- * `false`.
- */
 export function Dialog({
   isOpen,
   onOpenChange,
@@ -43,11 +31,7 @@ export function Dialog({
       isDismissable={false}
       isKeyboardDismissDisabled={!isDismissable}
     >
-      {/*
-        Diálogo de 640px (frame 50:1108). O HeroUI ajusta o container ao conteúdo (`sm:w-fit`) e
-        limita o diálogo a 448px (tamanho `md`): `sm:w-full` solta o container e `max-w-160` troca
-        o limite. O diálogo tem 640px em telas largas e encolhe com a tela.
-      */}
+      {/* O HeroUI ajusta o container ao conteúdo (`sm:w-fit`) e limita o diálogo a 448px: `sm:w-full` e `max-w-160` dão os 640px. */}
       <Modal.Container placement="center" className="sm:w-full">
         <Modal.Dialog
           className="max-w-160"

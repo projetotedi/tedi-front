@@ -7,11 +7,6 @@ import { Menu } from "@shared/ui";
 
 import { useAuth } from "../hooks/useAuth";
 
-/**
- * Menu de perfil do cabeçalho: avatar com as iniciais, o nome de quem está logado ("Beatriz
- * Nunes", como no frame do 403) e, ao abrir, a ação "Sair". Nada sem sessão ativa (telas públicas
- * ou sessão ainda carregando).
- */
 export function UserMenu(): ReactElement | null {
   const { status, user, signOut } = useAuth();
   const { t } = useTranslation("auth");

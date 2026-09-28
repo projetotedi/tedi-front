@@ -198,7 +198,6 @@ describe("AccessPage", () => {
       },
       { timeout: 2000 },
     );
-    // O debounce agrupa as teclas: nenhuma busca parcial ("A", "An") chegou ao back.
     const searches = onCall.mock.calls.map(([params]) => params.get("search"));
     expect(searches).not.toContain("A");
     expect(searches).not.toContain("An");

@@ -162,12 +162,6 @@ type AccessOverrides = Partial<Omit<AccessResponseDto, "ra" | "email">> & {
   email?: string;
 };
 
-/**
- * `ra`/`email` de AccessResponseDto saem tipados como `{ [key: string]: unknown }` pelo Orval
- * (o Swagger do back declara `type: object` — ver risco 10 do plano de GUS-83), mas o back de
- * verdade devolve strings. O `as unknown as` reproduz isso no mock. A tela de Acessos não
- * mostra RA nem e-mail (a busca por RA é feita pelo back), então nenhum código de tela lê os dois.
- */
 export function buildAccess(overrides: AccessOverrides = {}): AccessResponseDto {
   const { ra = "2024RA0001", email = "ana@example.com", ...rest } = overrides;
   return {
@@ -196,7 +190,6 @@ export function listAccessHandler({
   data = [buildAccess()],
   total,
   page = 1,
-  // Tamanho de página da tela de Acessos (`ACCESS_PAGE_SIZE`).
   limit = 12,
   error,
   networkError = false,

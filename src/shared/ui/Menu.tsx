@@ -8,23 +8,13 @@ export interface MenuAction {
 }
 
 export interface MenuProps {
-  /** Nome acessível do gatilho (o conteúdo visual de `trigger` é decorativo para o leitor de tela). */
   triggerLabel: string;
-  /**
-   * `aria-label` da lista de ações. O React Aria também liga o menu ao gatilho por
-   * `aria-labelledby`, que vence na leitura do nome: hoje o menu é anunciado com `triggerLabel`,
-   * e este rótulo fica como reserva.
-   */
+  /** O React Aria nomeia o menu pelo gatilho (`aria-labelledby`); este rótulo é só reserva. */
   menuLabel: string;
-  /** Conteúdo visual do gatilho (avatar, texto, ícone). */
   trigger: ReactNode;
   items: MenuAction[];
 }
 
-/**
- * Menu suspenso de ações sobre o `Dropdown` do HeroUI: abre por clique, Enter, Espaço ou seta
- * para baixo, navega por setas, fecha por Esc ou ao escolher, e devolve o foco ao gatilho.
- */
 export function Menu({ triggerLabel, menuLabel, trigger, items }: MenuProps): ReactElement {
   return (
     <Dropdown>

@@ -16,20 +16,12 @@ import { INVITABLE_ROLES, roleLabelKey } from "../lib/role-label";
 
 export interface CreateInviteFormProps {
   onDone: () => void;
-  /**
-   * Notifica o diálogo pai enquanto o POST /invites está em andamento, para que ele bloqueie
-   * fechar por Esc ou pelo X: fechar não cancela a mutação (o back já processa o convite), só
-   * esconderia o link gerado antes de aparecer.
-   */
+  /** Avisa o diálogo durante o POST para bloquear Esc e X: fechar não cancela a mutação e o link gerado se perderia. */
   onPendingChange?: (isPending: boolean) => void;
 }
 
 type CopyStatus = "idle" | "copied" | "fallback";
 
-/**
- * Conteúdo do `CreateInviteDialog`. Antes de gerar: seletor de perfil. Depois: o link (uma
- * única vez — o estado morre com o componente ao fechar o diálogo, e nunca é persistido).
- */
 export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormProps): ReactElement {
   const { t } = useTranslation("auth");
   const queryClient = useQueryClient();
@@ -47,8 +39,7 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
     mutation: {
       // O token só existe na resposta desta mutação: não deve sobreviver ao desmonte do formulário.
       gcTime: 0,
-      // Hoje nenhuma tela lista convites (a GUS-88 vai listar e revogar). Invalidar mantém o cache
-      // de GET /invites correto para quando ela existir: nunca mostra a lista sem o convite novo.
+      // Nenhuma tela lista convites ainda; invalidar mantém o cache correto para quando existir.
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
       },
