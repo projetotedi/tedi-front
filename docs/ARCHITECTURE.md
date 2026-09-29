@@ -4,11 +4,12 @@ Frontend do TEDI organizado **por módulo de domínio**, espelhando o `tedi-back
 
 ## 1. Princípios
 
-1. **Mesmo mapa do back.** Cada pasta em `src/modules/` tem o nome de um módulo da API (`pessoas`, `turmas`, `aulas`...). Quem lê o Linear, o back ou o front vê os mesmos nomes.
-2. **Módulo é uma caixa fechada.** Só o que está no `index.ts` do módulo pode ser importado por outro módulo ou pelo `app/`.
-3. **Ninguém escreve código de integração.** Tipos, funções de chamada, hooks de dados e schemas Zod são gerados pelo **Orval** a partir do `openapi.json` da API. Módulos só têm interface e regras de tela.
-4. **`shared/` não conhece domínio.** Componentes de interface, hooks genéricos, i18n, utilitários.
-5. **Testes vivem dentro do módulo**, em `__tests__/`.
+1. **Mesmo mapa do back.** Cada pasta em `src/modules/` tem o nome de um módulo da API (`people`, `classes`, `lessons`...). Quem lê o Linear, o back ou o front vê os mesmos nomes.
+2. **Todo código em inglês** (decisão 35 da E9.a): pastas, componentes, hooks, rotas, variáveis e nomes de teste. Textos de interface ficam em português nos arquivos de `locales/`.
+3. **Módulo é uma caixa fechada.** Só o que está no `index.ts` do módulo pode ser importado por outro módulo ou pelo `app/`.
+4. **Ninguém escreve código de integração.** Tipos, funções de chamada, hooks de dados e schemas Zod são gerados pelo **Orval** a partir do `openapi.json` da API. Módulos só têm interface e regras de tela.
+5. **`shared/` não conhece domínio.** Componentes de interface, hooks genéricos, i18n, utilitários.
+6. **Testes vivem dentro do módulo**, em `__tests__/`.
 
 ## 2. Estrutura de pastas
 
@@ -40,8 +41,8 @@ src/
 │       └── zod/<tag>/<tag>.ts        # schemas Zod dos DTOs
 │
 ├── modules/                          # um por módulo do back, mesmo nome
-│   ├── auth/  people/  pessoas/  importacao/  turmas/  aulas/  alocacoes/
-│   ├── presencas/  horas/  relatorios/  auditoria/
+│   ├── auth/  people/  imports/  classes/  lessons/  assignments/
+│   ├── attendance/  hours/  reports/  audit/
 │   └── <modulo>/                     # ver template abaixo
 │
 └── shared/                           # genérico, sem domínio
@@ -60,26 +61,26 @@ Aliases: `@app/*`, `@api/*`, `@modules/*`, `@shared/*`.
 ### 2.1 Template de um módulo
 
 ```
-modules/pessoas/
+modules/people/
 ├── index.ts                  # API pública: routes + o que outros módulos podem usar
 ├── routes.tsx                # RouteObject[] do módulo, com RequireRole e handle: { title }
 ├── menu.ts                   # <modulo>MenuItems: itens do menu lateral (label i18n, path, minRole, icon)
 ├── pages/
-│   ├── PessoasListPage.tsx
-│   ├── AlunoFormPage.tsx
-│   └── MembroFormPage.tsx
+│   ├── PeopleListPage.tsx
+│   ├── StudentFormPage.tsx
+│   └── MemberFormPage.tsx
 ├── components/
-│   ├── PessoaForm.tsx
-│   ├── PessoasTable.tsx
-│   └── AlertaDuplicidade.tsx
+│   ├── PersonForm.tsx
+│   ├── PeopleTable.tsx
+│   └── DuplicateAlert.tsx
 ├── hooks/                    # composição de hooks gerados + estado de tela
 ├── schemas/                  # Zod só quando o formulário difere do DTO (campo condicional, máscara)
 ├── locales/
-│   ├── pt-BR.json            # namespace "pessoas"
+│   ├── pt-BR.json            # namespace "people"
 │   └── en-US.json
 └── __tests__/
-    ├── PessoaForm.test.tsx
-    └── PessoasListPage.test.tsx
+    ├── PersonForm.test.tsx
+    └── PeopleListPage.test.tsx
 ```
 
 O que **não** existe dentro do módulo: `services/`, `types/`, `api/`. Tudo isso vem de `@api/generated/<modulo>`.
@@ -89,16 +90,16 @@ O que **não** existe dentro do módulo: `services/`, `types/`, `api/`. Tudo iss
 **Rotas.** Cada módulo declara as suas; o `app/router.tsx` só concatena. `lazy` dá um chunk por módulo sem configuração extra.
 
 ```tsx
-// modules/pessoas/routes.tsx
+// modules/people/routes.tsx
 import { Role } from "@shared/lib/role";
 
-export const pessoasRoutes: RouteObject[] = [
+export const peopleRoutes: RouteObject[] = [
   {
-    path: "pessoas",
+    path: "people",
     element: <RequireRole minRole={Role.director} />,
     children: [
-      { index: true, lazy: () => import("./pages/PessoasListPage") },
-      { path: "alunos/novo", lazy: () => import("./pages/AlunoFormPage") },
+      { index: true, lazy: () => import("./pages/PeopleListPage") },
+      { path: "students/new", lazy: () => import("./pages/StudentFormPage") },
     ],
   },
 ];
@@ -109,7 +110,7 @@ Um módulo pode exportar mais de um array de rotas quando parte é pública e pa
 (hoje só `/members`) fica sob `AppLayout`, e `app/router.tsx` concatena os dois em lugares
 diferentes. `authProtectedRoutes` não usa `lazy`: a GUS-86 não usa lazy loading em nenhuma rota
 do módulo `auth`, e misturar um padrão diferente só nessa rota seria inconsistente — diverge do
-exemplo acima (pensado para quando `pessoas` nascer), decisão tomada na integração GUS-86/87.
+padrão do exemplo acima, do módulo `people`, decisão tomada na integração GUS-86/87.
 
 **Menu e título da página.** O layout autenticado (`app/layouts/AppLayout.tsx`) não conhece o domínio; cada módulo contribui com o que é dele.
 
@@ -148,9 +149,9 @@ Abaixo de 1024px a sidebar vira um `Drawer`, aberto pelo botão de menu da topba
 **Dados.** Hook, tipo dos filtros e tipo da resposta vêm do Orval. Nenhum `fetch` em componente.
 
 ```tsx
-import { useListarPessoas, type ListarPessoasParams } from "@api/generated/pessoas/pessoas";
+import { useListPeople, type ListPeopleParams } from "@api/generated/people/people";
 
-const { data, isLoading } = useListarPessoas(params);
+const { data, isLoading } = useListPeople(params);
 ```
 
 **Formulários.** React Hook Form + `zodResolver` com o schema gerado. Validação no front e no back saem do mesmo DTO.
@@ -158,13 +159,13 @@ const { data, isLoading } = useListarPessoas(params);
 ```tsx
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCriarPessoa, getListarPessoasQueryKey } from "@api/generated/pessoas/pessoas";
-import { criarPessoaDtoSchema } from "@api/generated/zod/pessoas/pessoas";
+import { useCreatePerson, getListPeopleQueryKey } from "@api/generated/people/people";
+import { createPersonDtoSchema } from "@api/generated/zod/people/people";
 
-const form = useForm<CriarPessoaDto>({ resolver: zodResolver(criarPessoaDtoSchema) });
-const criar = useCriarPessoa({
+const form = useForm<CreatePersonDto>({ resolver: zodResolver(createPersonDtoSchema) });
+const createPerson = useCreatePerson({
   mutation: {
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: getListarPessoasQueryKey() }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: getListPeopleQueryKey() }),
   },
 });
 ```
@@ -172,16 +173,16 @@ const criar = useCriarPessoa({
 **API pública do módulo.** Equivalente ao `exports` do `@Module` no Nest.
 
 ```ts
-// modules/pessoas/index.ts
-export { pessoasRoutes } from "./routes";
-export { SeletorPessoa } from "./components/SeletorPessoa"; // usado por turmas e alocacoes
+// modules/people/index.ts
+export { peopleRoutes } from "./routes";
+export { PersonPicker } from "./components/PersonPicker"; // usado por classes e assignments
 ```
 
-`turmas` importa `SeletorPessoa` de `@modules/pessoas`, nunca de `@modules/pessoas/components/...`.
+`classes` importa `PersonPicker` de `@modules/people`, nunca de `@modules/people/components/...`.
 
 Após o login, `/` redireciona para `/profile` ("Meu perfil", módulo `people`).
 
-**i18n.** Um namespace por módulo, registrado com `registerModuleLocales("pessoas", { "pt-BR": ptBR, "en-US": enUS })` no `index.ts` do módulo. Nos componentes, `useTranslation("pessoas")`.
+**i18n.** Um namespace por módulo, registrado com `registerModuleLocales("people", { "pt-BR": ptBR, "en-US": enUS })` no `index.ts` do módulo. Nos componentes, `useTranslation("people")`.
 
 **Sessão.** `http-client.ts` envia todas as requisições com `credentials: "include"` para que o browser inclua o cookie httpOnly de sessão. Ao receber 401, dispara o evento de `window` `tedi:unauthorized` (`api/` nunca importa `modules/`, então a constante é duplicada de propósito em `shared/lib/session-events.ts`, com um teste garantindo que as duas não divirjam).
 
@@ -265,6 +266,6 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
 2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85; ganhou `isReadOnly` e `isLabelHidden` na GUS-87), `PasswordField`, `Alert` (GUS-84; ganhou a variante estática `warning` e `description` na GUS-87 — sem `role` nem região viva, para avisos que já nascem preenchidos), `Skeleton` (GUS-84), `Stepper` e `StatusCard` (GUS-85), `Select`, `Dialog`, `Badge` e `Pagination` (GUS-87 — camadas finas sobre `Select`, `Modal`/`ListBox` e `Pagination` do HeroUI; o `Select` aceita `isLabelHidden` e `formatValue` para mostrar o valor já contextualizado no gatilho, como "Papel: todos"; `Pagination` é a paginação numerada, com a lógica das reticências em `shared/lib/pagination.ts`), e `NavList`, `Avatar`, `Card`, `Chip`, `Dropdown` e `Drawer` (GUS-86 — a sidebar/topbar do `AppLayout` e o `ProfileMenu` são construídos sobre eles; `Card` não expõe `aria-labelledby`/`role` próprios, então quem precisar de uma região nomeada — como a `AccessPage` — embrulha o `Card` num `<section aria-labelledby>` por fora). A GUS-87 chegou a criar um `Tabs` (removido quando a tela deixou as abas) e um `Menu` de menu suspenso (removido na integração com a GUS-86: o `Dropdown` dela faz o mesmo, e é quem o `ProfileMenu` usa). Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge`, `tedi-summary`; da sidebar `tedi-sky-border` e `tedi-brand-muted`, GUS-86; dos selos e do cartão de Membros e Planejamento `tedi-neutral`, `tedi-highlight`, `tedi-badge-success`, `tedi-avatar-foreground`, `tedi-divider` (também usado pela `DataTable` genérica) e `tedi-page-current(-foreground)`; da tela 403 `tedi-texture-light`, `tedi-info-subtle` e a sombra `shadow-tedi-card` — cada cor com o contraste medido em comentário no CSS —, além dos ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro. `Toast` continua sem existir: a GUS-87 decidiu não criá-lo (o aviso de link copiado usa `Alert info`, que já é uma região `role="status"`); fica para quem precisar.
 3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84, GUS-85, GUS-86 e GUS-87** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85; `AppLayout` oficial — sidebar com o menu completo por perfil, topbar com título de rota e `ProfileMenu`, `/` redirecionando para "Meu perfil": GUS-86; tela de gestão de acessos: GUS-87). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em dois passos) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. A tela de gestão de acessos (`/members`, `AccessPage`, sob `RequireRole minRole={Role.coordinator}`) segue o frame "Membros e Alocações" do Figma dentro do `Card` da GUS-86: o título e o total, o botão "Gerar link de cadastro" (`CreateInviteDialog`/`CreateInviteForm`, `POST /invites`, que mostra o link gerado uma única vez — nunca persistido: o estado morre ao fechar o diálogo), a busca ao vivo (com debounce) e os filtros de Papel e Status (`AccessFilters`), a `AccessTable` de seis colunas (`GET /access`, 12 por página; Departamentos, Função principal e Ações ficam vazias) e o rodapé com o resumo e a paginação numerada. Os rótulos de papel (`Membro`/`Diretor`/`Coordenadora`) vêm de `common:roles.*`, compartilhado com o `ProfileMenu` da GUS-86, e não mais de um `auth:roles.*` próprio. Não há listagem de convites: o convite gerado não aparece em lugar nenhum (a `InvitesTable` foi removida; a GUS-88 recupera a listagem se precisar revogar convites). **`/members` é o item "Membros e Planejamento" do protótipo**, não uma rota "Acessos" separada: `authMenuItems` substitui a linha correspondente em `app/menu.ts` (`prototypeMenuItems`), na mesma posição entre Matrículas e Banco de Horas, com `minRole: Role.coordinator` — diretor e membro não veem o item nem acessam a rota (decisão CA1 da GUS-86; diverge do frame 403 do Figma, que mostra o item visível para um Membro). Faltam: ações por linha — mudar perfil, ativar/desativar, redefinir senha, revogar convite (GUS-88); dados de Departamentos e Função principal, que a API ainda não tem; um jeito de a página de sem acesso personalizar o título do cabeçalho (hoje a topbar sempre mostra o título estático da rota, "Membros e Planejamento", mesmo com a `ForbiddenPage` no lugar da tela — regressão pequena e cosmética, aceita na integração GUS-86/87). "Meu perfil" (`modules/people`) usa dados de exemplo além de nome, perfil e RA da sessão, até o back expor horas e cadastro.
-4. Módulo `pessoas` como referência para os demais.
+4. Módulo `people` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.
-6. Resolver `VITE_API_URL` em build time: build por ambiente no pipeline ou config em runtime pelo nginx.
+6. ~~Resolver `VITE_API_URL` em build time~~: resolvido na E9.a (decisão 25, GUS-82). `VITE_API_URL=/api` em todos os ambientes; o rewrite do `vercel.json` (produção/preview) e o proxy do Vite (dev) repassam `/api` para a API.
