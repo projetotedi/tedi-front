@@ -141,6 +141,13 @@
       "description": "Não conseguimos falar com o servidor agora. Verifique a sua conexão e tente de novo. O seu link continua valendo."
     }
   },
+  "forgotPassword": {
+    "title": "Esqueceu a senha?",
+    "description": "Fale com a coordenação do projeto. Ela gera um link para você criar uma senha nova.",
+    "notice": "O link vale por {{hours}} horas e só pode ser usado uma vez. A senha nunca é enviada por e-mail.",
+    "confirm": "Entendi",
+    "close": "Fechar"
+  },
   "resetPassword": {
     "title": "Criar nova senha",
     "subtitle": "Escolha a senha que você vai usar para entrar no TEDI.",

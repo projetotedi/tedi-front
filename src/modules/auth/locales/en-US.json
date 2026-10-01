@@ -141,6 +141,13 @@
       "description": "We could not reach the server right now. Check your connection and try again. Your link is still valid."
     }
   },
+  "forgotPassword": {
+    "title": "Forgot your password?",
+    "description": "Talk to the project coordination team. They will generate a link for you to create a new password.",
+    "notice": "The link is valid for {{hours}} hours and can only be used once. Your password is never sent by email.",
+    "confirm": "Got it",
+    "close": "Close"
+  },
   "resetPassword": {
     "title": "Create a new password",
     "subtitle": "Choose the password you will use to sign in to TEDI.",
