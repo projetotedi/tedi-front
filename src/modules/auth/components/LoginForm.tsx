@@ -10,6 +10,7 @@ import { Alert, Button, PasswordField, TextField } from "@shared/ui";
 import { useSlowRequestNotice } from "../hooks/useSlowRequestNotice";
 import { toLoginErrorKey } from "../lib/login-error";
 import { loginFormSchema, type LoginFormValues } from "../schemas/login-form.schema";
+import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 
 /** Não navega: o sucesso só preenche o cache da sessão e a `LoginPage` redireciona quando ela fica autenticada. */
 export function LoginForm(): ReactElement {
@@ -107,7 +108,7 @@ export function LoginForm(): ReactElement {
         )}
       />
 
-      <p className="text-right text-base text-accent">{t("login.forgotPassword")}</p>
+      <ForgotPasswordDialog />
 
       {/* Sempre montado: leitores de tela não anunciam região viva que nasce preenchida. */}
       <Alert variant="info">{showSlowNotice ? t("login.slowNotice") : null}</Alert>

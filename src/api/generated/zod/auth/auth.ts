@@ -98,6 +98,13 @@ export const GetInviteParams = zod.object({
 
 export const GetInviteResponse = zod.object({
   expiresAt: zod.iso.datetime({ offset: true }),
+  person: zod
+    .object({
+      name: zod.string(),
+      ra: zod.string(),
+    })
+    .nullable()
+    .describe("Account owner. Only on password_reset invites; always null on access invites."),
   role: zod.union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()]),
   type: zod.enum(["access", "password_reset"]),
 });

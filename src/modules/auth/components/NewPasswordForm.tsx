@@ -3,6 +3,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import type { InvitePersonDto } from "@api/generated/model";
 import { Alert, Button } from "@shared/ui";
 
 import { useInviteAcceptance } from "../hooks/useInviteAcceptance";
@@ -11,12 +12,15 @@ import { PasswordFields } from "./PasswordFields";
 
 export interface NewPasswordFormProps {
   token: string;
+  /** Dono da conta, só no link de redefinição. Nulo não acontece na prática: o back responde 400. */
+  person: InvitePersonDto | null;
   onDone: () => void;
   onInvalidInvite: () => void;
 }
 
 export function NewPasswordForm({
   token,
+  person,
   onDone,
   onInvalidInvite,
 }: NewPasswordFormProps): ReactElement {
@@ -64,7 +68,17 @@ export function NewPasswordForm({
       <div aria-hidden="true" className="h-px bg-separator" />
 
       <form onSubmit={onSubmit} noValidate aria-busy={isBusy} className="flex flex-col gap-5">
-        <PasswordFields isDisabled={isBusy} describedBy={generalErrorKey ? errorId : undefined} />
+        {person ? (
+          <p className="rounded-xl bg-tedi-summary px-4 py-3 text-base whitespace-pre-wrap text-foreground">
+            <span className="font-semibold">{person.name}</span>
+            {t("resetPassword.account.summary", { ra: person.ra })}
+          </p>
+        ) : null}
+        <PasswordFields
+          variant="reset"
+          isDisabled={isBusy}
+          describedBy={generalErrorKey ? errorId : undefined}
+        />
 
         <Alert variant="info">{showSlowNotice ? t("invite.slowNotice") : null}</Alert>
         <Alert variant="error" id={errorId}>
