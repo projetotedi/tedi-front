@@ -2,22 +2,23 @@ import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
+import type { Permission } from "@shared/lib/permissions";
 import { Role } from "@shared/lib/role";
 
 import { AuthProvider } from "../AuthProvider";
-import { RequireRole } from "../components/RequireRole";
+import { RequirePermission } from "../components/RequirePermission";
 import { buildMeUser, meHandler } from "./handlers";
 import { renderWithProviders, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
 
-function renderForbidden(route: string, role: Role, minRole: Role = Role.coordinator) {
+function renderForbidden(route: string, role: Role, permission: Permission = "access.manage") {
   server.use(meHandler({ user: buildMeUser({ role }) }));
   return renderWithProviders(
     <AuthProvider>
-      <RequireRole minRole={minRole}>
+      <RequirePermission permission={permission}>
         <p>Conteúdo protegido</p>
-      </RequireRole>
+      </RequirePermission>
     </AuthProvider>,
     { route },
   );
@@ -44,20 +45,11 @@ describe("ForbiddenPage (403 do Figma)", () => {
     expect(screen.getByText("403")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("shows the required profile and the current profile", async () => {
+  it("shows the current profile", async () => {
     await renderForbidden("/members", Role.member);
 
-    expect(
-      await screen.findByText("Perfil necessário: Coordenadora · Seu perfil: Membro"),
-    ).toBeInTheDocument();
-  });
-
-  it("names the director when that is the required profile", async () => {
-    await renderForbidden("/people", Role.member, Role.director);
-
-    expect(
-      await screen.findByText("Perfil necessário: Diretor · Seu perfil: Membro"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Seu perfil: Membro")).toBeInTheDocument();
+    expect(screen.queryByText(/Perfil necessário/)).not.toBeInTheDocument();
   });
 
   it("goes back to the previous screen", async () => {

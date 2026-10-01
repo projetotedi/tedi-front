@@ -21,10 +21,10 @@ function StatusProbe() {
   return <p data-testid="status">{status}</p>;
 }
 
-function renderProtected(minRole: Role | undefined, route: string) {
+function renderProtected(route: string) {
   return renderWithProviders(
     <AuthProvider>
-      <RequireRole minRole={minRole}>
+      <RequireRole>
         <Protected />
       </RequireRole>
       <StatusProbe />
@@ -33,33 +33,10 @@ function renderProtected(minRole: Role | undefined, route: string) {
   );
 }
 
-describe("role hierarchy", () => {
-  it("renders the child for director and coordinator", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.director }) }));
-    await renderProtected(Role.director, "/people");
-    expect(await screen.findByText("Conteúdo protegido")).toBeInTheDocument();
-  });
-
-  it("renders the child for coordinator", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.coordinator }) }));
-    await renderProtected(Role.director, "/people");
-    expect(await screen.findByText("Conteúdo protegido")).toBeInTheDocument();
-  });
-
-  it("renders the forbidden page for member and keeps the session", async () => {
-    server.use(meHandler({ user: buildMeUser({ role: Role.member }) }));
-    await renderProtected(Role.director, "/people");
-
-    expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
-    expect(screen.queryByText("Conteúdo protegido")).not.toBeInTheDocument();
-    expect(screen.getByTestId("status")).toHaveTextContent("authenticated");
-  });
-});
-
 describe("anonymous", () => {
   it("redirects an anonymous user to /login?returnTo=%2Fpeople", async () => {
     server.use(meHandler({ user: null }));
-    const { router } = await renderProtected(Role.director, "/people");
+    const { router } = await renderProtected("/people");
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/login");
@@ -68,9 +45,9 @@ describe("anonymous", () => {
   });
 });
 
-it("requires only an active session when minRole is omitted", async () => {
+it("requires only an active session", async () => {
   server.use(meHandler({ user: buildMeUser({ role: Role.member }) }));
-  await renderProtected(undefined, "/");
+  await renderProtected("/");
   expect(await screen.findByText("Conteúdo protegido")).toBeInTheDocument();
 });
 
@@ -82,7 +59,7 @@ it("does not redirect nor render children while loading", async () => {
     }),
   );
 
-  const { router } = await renderProtected(Role.director, "/people");
+  const { router } = await renderProtected("/people");
 
   expect(screen.getByRole("status")).toHaveTextContent("Carregando sua sessão...");
   expect(screen.queryByText("Conteúdo protegido")).not.toBeInTheDocument();

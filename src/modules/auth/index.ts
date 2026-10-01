@@ -9,12 +9,15 @@ import ptBR from "./locales/pt-BR.json";
 registerModuleLocales("auth", { "pt-BR": ptBR, "en-US": enUS });
 
 export { AuthProvider } from "./AuthProvider";
+export { RequirePermission } from "./components/RequirePermission";
 export { RequireRole } from "./components/RequireRole";
 export { SignOutButton } from "./components/SignOutButton";
 export { useAuth } from "./hooks/useAuth";
+export { useCan } from "./hooks/useCan";
 export { authMenuItems } from "./menu";
 export { ForbiddenPage } from "./pages/ForbiddenPage";
 export { authProtectedRoutes, authRoutes } from "./routes";
 export type { AuthContextValue, AuthStatus } from "./auth-context";
+export type { RequirePermissionProps } from "./components/RequirePermission";
 export type { RequireRoleProps } from "./components/RequireRole";
 export type { SignOutButtonProps } from "./components/SignOutButton";

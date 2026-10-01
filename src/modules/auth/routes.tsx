@@ -1,9 +1,8 @@
 import type { RouteObject } from "react-router-dom";
 
-import { Role } from "@shared/lib/role";
 import type { RouteHandle } from "@shared/lib/route-handle";
 
-import { RequireRole } from "./components/RequireRole";
+import { RequirePermission } from "./components/RequirePermission";
 import { AccessPage } from "./pages/AccessPage";
 import { InvitePage } from "./pages/InvitePage";
 import { LoginPage } from "./pages/LoginPage";
@@ -26,9 +25,9 @@ export const authProtectedRoutes: RouteObject[] = [
     path: "members",
     handle: { title: "common:nav.members" } satisfies RouteHandle,
     element: (
-      <RequireRole minRole={Role.coordinator}>
+      <RequirePermission permission="access.manage">
         <AccessPage />
-      </RequireRole>
+      </RequirePermission>
     ),
   },
 ];
