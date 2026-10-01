@@ -7,7 +7,8 @@ import { defineConfig } from "orval";
  * Saída:   src/api/generated/** — versionado, nunca editado à mão.
  *
  * Fluxo (manual; não existe workflow de sync): quando a API muda o contrato, copiar
- * docs/openapi.json da tedi-back para openapi/openapi.json e rodar `yarn generate`.
+ * docs/openapi.json da tedi-back para openapi/openapi.json e rodar `yarn generate` e `yarn format` (o JSON do back não
+ * passa no format:check).
  */
 export default defineConfig({
   tedi: {

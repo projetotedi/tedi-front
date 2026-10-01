@@ -233,11 +233,11 @@ tedi-back                                       tedi-front
 3. CI: openapi:check
 4. merge em develop
 5. copiar docs/openapi.json aqui  ───────────▶  openapi/openapi.json (manual)
-   e rodar `yarn generate`                       src/api/generated/** regenerado
+   e rodar `yarn generate` + `yarn format`        src/api/generated/** regenerado
                                                6. CI: typecheck quebra se alguma tela usa campo que sumiu
 ```
 
-O passo 5 é manual: não existe workflow `openapi.yml` nem skill de sync. No PowerShell: `Copy-Item ..\tedi-back\docs\openapi.json openapi\openapi.json; yarn generate`. O PR do front que muda o contrato carrega a cópia de `openapi/openapi.json` e entra depois do PR do back.
+O passo 5 é manual: não existe workflow `openapi.yml` nem skill de sync. No PowerShell: `Copy-Item ..\tedi-back\docs\openapi.json openapi\openapi.json; yarn generate; yarn format`. O `yarn format` é necessário porque o JSON copiado do back não passa no `format:check`. O PR do front que muda o contrato carrega a cópia de `openapi/openapi.json` e entra depois do PR do back.
 
 Configuração em `orval.config.ts`: `mode: "tags-split"` (um arquivo por tag = um por módulo do back), `client: "react-query"`, `httpClient: "fetch"` com mutator `src/api/http-client.ts`, e um segundo output `client: "zod"`.
 
