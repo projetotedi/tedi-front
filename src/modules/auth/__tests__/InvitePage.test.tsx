@@ -378,6 +378,21 @@ describe("InvitePage with a password_reset invite", () => {
     expect(screen.queryByLabelText("Nova senha")).not.toBeInTheDocument();
   });
 
+  it("hides the account banner but keeps the new password fields when person is null", async () => {
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler({
+        invite: buildInvite({ type: InviteType.password_reset, role: null, person: null }),
+      }),
+    );
+    await renderInvitePage(`/reset-password?token=${TOKEN}`);
+    await screen.findByRole("heading", { level: 1, name: "Redefinir senha" });
+
+    expect(screen.queryByText(/a senha antiga deixa de funcionar/)).not.toBeInTheDocument();
+    expect(newPasswordField()).toBeVisible();
+    expect(newPasswordConfirmationField()).toBeVisible();
+  });
+
   it("shows the name and RA of the account above the new password fields", async () => {
     server.use(meHandler({ user: null }), getInviteHandler({ invite: PASSWORD_RESET_INVITE }));
     await renderInvitePage(`/reset-password?token=${TOKEN}`);

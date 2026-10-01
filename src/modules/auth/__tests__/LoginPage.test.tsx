@@ -639,14 +639,54 @@ describe("LoginPage forgot-password dialog", () => {
     expect(within(dialog).getByRole("button", { name: "Fechar" })).toBeInTheDocument();
   });
 
+  // Chega ao gatilho só por Tab, a partir do campo de senha (Senha → Mostrar senha → Esqueceu a senha?).
+  async function tabToForgotButtonFromPassword(user: UserEvent) {
+    await user.click(passwordField());
+    await user.tab();
+    await user.tab();
+    expect(forgotButton()).toHaveFocus();
+  }
+
   it("opens the guidance dialog from the keyboard with Enter", async () => {
     const user = userEvent.setup();
-    await renderLoginPageAnonymous();
+    const calls: LoginDto[] = [];
+    server.use(meHandler({ user: null }), loginHandler({ onCall: (body) => calls.push(body) }));
+    await renderLoginPage("/login");
 
-    forgotButton().focus();
+    await tabToForgotButtonFromPassword(user);
     await user.keyboard("{Enter}");
 
     expect(await screen.findByRole("dialog", { name: "Esqueceu a senha?" })).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("opens the guidance dialog from the keyboard with Space", async () => {
+    const user = userEvent.setup();
+    const calls: LoginDto[] = [];
+    server.use(meHandler({ user: null }), loginHandler({ onCall: (body) => calls.push(body) }));
+    await renderLoginPage("/login");
+
+    await tabToForgotButtonFromPassword(user);
+    await user.keyboard(" ");
+
+    expect(await screen.findByRole("dialog", { name: "Esqueceu a senha?" })).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("keeps focus inside the dialog while tabbing", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+    await user.click(forgotButton());
+    const dialog = await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+
+    for (let presses = 0; presses < 6; presses += 1) {
+      await user.tab();
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
+    for (let presses = 0; presses < 3; presses += 1) {
+      await user.tab({ shift: true });
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
   });
 
   it("closes on Entendi and returns focus to the forgot-password button", async () => {
