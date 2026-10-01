@@ -31,7 +31,13 @@ const PRIVACY_CONSENT_LABEL =
   "Li o aviso de privacidade e autorizo o projeto a usar meus dados para a gestão do voluntariado.";
 const NO_BREAK_SPACE = String.fromCharCode(160);
 
-const PASSWORD_RESET_INVITE = buildInvite({ type: InviteType.password_reset, role: null });
+const RESET_NAME = "Beatriz Nunes Carvalho";
+const RESET_RA = "202400003";
+const PASSWORD_RESET_INVITE = buildInvite({
+  type: InviteType.password_reset,
+  role: null,
+  person: { name: RESET_NAME, ra: RESET_RA },
+});
 
 function renderInvitePage(route: string) {
   return renderWithProviders(

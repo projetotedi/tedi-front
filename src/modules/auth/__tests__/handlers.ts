@@ -16,6 +16,7 @@ import { Role } from "@shared/lib/role";
 /**
  * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/login,
  * POST /auth/logout, GET /auth/invites/:token, POST /auth/invites/accept).
+ * `buildInvite` devolve `person: null` (tipo access); o tipo password_reset leva `{ name, ra }`.
  * Path com curinga de prefixo (ver http.get abaixo) porque http-client.ts prefixa a URL
  * com VITE_API_URL em runtime — o teste não precisa saber qual é o prefixo.
  */
@@ -104,6 +105,7 @@ export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteR
     type: InviteType.access,
     role: Role.member,
     expiresAt: "2026-09-22T12:00:00.000Z",
+    person: null,
     ...overrides,
   };
 }
