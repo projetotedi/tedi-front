@@ -260,7 +260,7 @@ export const LoginResponse = zod.object({
       "members.edit": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
       "members.list": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
       "members.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
-      "students.delete": zod.enum([
+      "students.archive": zod.enum([
         "all",
         "own",
         "department",
@@ -438,7 +438,7 @@ export const MeResponse = zod.object({
       "members.edit": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
       "members.list": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
       "members.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
-      "students.delete": zod.enum([
+      "students.archive": zod.enum([
         "all",
         "own",
         "department",

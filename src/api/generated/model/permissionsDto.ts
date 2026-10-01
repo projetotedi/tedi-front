@@ -34,7 +34,7 @@ export interface PermissionsDto {
   "members.edit": Scope;
   "members.list": Scope;
   "members.view": Scope;
-  "students.delete": Scope;
+  "students.archive": Scope;
   "students.manage": Scope;
   "students.view": Scope;
 }
