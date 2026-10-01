@@ -149,12 +149,23 @@
     "close": "Fechar"
   },
   "resetPassword": {
-    "title": "Criar nova senha",
-    "subtitle": "Escolha a senha que você vai usar para entrar no TEDI.",
+    "title": "Redefinir senha",
+    "subtitle": "Crie uma nova senha para entrar no TEDI.",
+    "account": {
+      "summary": "  ·  RA {{ra}} — a senha antiga deixa de funcionar quando você salvar."
+    },
+    "fields": {
+      "password": {
+        "label": "Nova senha"
+      },
+      "passwordConfirmation": {
+        "label": "Confirmar nova senha"
+      }
+    },
     "submit": "Salvar nova senha",
     "success": {
-      "title": "Senha alterada!",
-      "description": "Agora você já pode entrar com a sua nova senha."
+      "title": "Senha redefinida!",
+      "description": "Pronto. Entre com o seu RA e a senha nova."
     },
     "errors": {
       "network": "Não foi possível conectar",

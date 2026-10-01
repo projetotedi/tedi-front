@@ -149,12 +149,23 @@
     "close": "Close"
   },
   "resetPassword": {
-    "title": "Create a new password",
-    "subtitle": "Choose the password you will use to sign in to TEDI.",
+    "title": "Reset password",
+    "subtitle": "Create a new password to sign in to TEDI.",
+    "account": {
+      "summary": "  ·  RA {{ra}} — your old password stops working when you save."
+    },
+    "fields": {
+      "password": {
+        "label": "New password"
+      },
+      "passwordConfirmation": {
+        "label": "Confirm new password"
+      }
+    },
     "submit": "Save new password",
     "success": {
-      "title": "Password changed!",
-      "description": "You can now sign in with your new password."
+      "title": "Password reset!",
+      "description": "All set. Sign in with your RA and your new password."
     },
     "errors": {
       "network": "Could not connect",

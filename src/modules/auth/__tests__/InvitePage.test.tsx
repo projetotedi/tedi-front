@@ -65,6 +65,8 @@ const raField = () => screen.getByLabelText("RA");
 const emailField = () => screen.getByLabelText("E-mail institucional");
 const passwordField = () => screen.getByLabelText("Senha");
 const confirmationField = () => screen.getByLabelText("Confirmar senha");
+const newPasswordField = () => screen.getByLabelText("Nova senha");
+const newPasswordConfirmationField = () => screen.getByLabelText("Confirmar nova senha");
 const privacyCheckbox = () => screen.getByRole("checkbox", { name: PRIVACY_CONSENT_LABEL });
 
 const continueButton = () => screen.getByRole("button", { name: "Continuar" });
@@ -99,6 +101,12 @@ async function fillPasswords(user: UserEvent, password = PASSWORD, confirmation 
   await user.type(confirmationField(), confirmation);
   const checkbox = screen.queryByRole("checkbox", { name: PRIVACY_CONSENT_LABEL });
   if (checkbox) await user.click(checkbox);
+}
+
+// Os campos do link de redefinição têm outros rótulos ("Nova senha"); não há checkbox de consentimento.
+async function fillNewPasswords(user: UserEvent, password = PASSWORD, confirmation = password) {
+  await user.type(newPasswordField(), password);
+  await user.type(newPasswordConfirmationField(), confirmation);
 }
 
 async function completeRegistration(user: UserEvent) {
@@ -209,6 +217,14 @@ describe("InvitePage with an access invite", () => {
     ).toBeVisible();
   });
 
+  it("shows no account banner on an access invite", async () => {
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+
+    expect(screen.queryByText(/a senha antiga deixa de funcionar/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Beatriz Nunes Carvalho/)).not.toBeInTheDocument();
+  });
+
   it("serves the same page on /reset-password", async () => {
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite(`/reset-password?token=${TOKEN}`);
@@ -251,11 +267,9 @@ describe("InvitePage with a password_reset invite", () => {
     server.use(meHandler({ user: null }), getInviteHandler({ invite: PASSWORD_RESET_INVITE }));
     const { container } = await renderInvitePage(`/invite?token=${TOKEN}`);
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Criar nova senha" }),
-    ).toBeVisible();
-    expect(passwordField()).toBeVisible();
-    expect(confirmationField()).toBeVisible();
+    expect(await screen.findByRole("heading", { level: 1, name: "Redefinir senha" })).toBeVisible();
+    expect(newPasswordField()).toBeVisible();
+    expect(newPasswordConfirmationField()).toBeVisible();
     expect(screen.getByRole("button", { name: "Salvar nova senha" })).toBeVisible();
     expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("RA")).not.toBeInTheDocument();
@@ -263,7 +277,7 @@ describe("InvitePage with a password_reset invite", () => {
     expect(screen.queryByRole("list")).not.toBeInTheDocument();
     expect(screen.queryByText(/Você foi convidado/)).not.toBeInTheDocument();
     expect(container.querySelectorAll("input")).toHaveLength(2);
-    expect(document.title).toBe("Criar nova senha");
+    expect(document.title).toBe("Redefinir senha");
   });
 
   it("sends only token and password on a password_reset invite", async () => {
@@ -275,12 +289,12 @@ describe("InvitePage with a password_reset invite", () => {
       acceptInviteHandler({ onCall: (body) => accepted.push(body) }),
     );
     const { router } = await renderInvitePage(`/reset-password?token=${TOKEN}`);
-    await screen.findByRole("heading", { name: "Criar nova senha" });
+    await screen.findByRole("heading", { name: "Redefinir senha" });
 
-    await fillPasswords(user);
+    await fillNewPasswords(user);
     await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
 
-    const title = await screen.findByRole("heading", { level: 1, name: "Senha alterada!" });
+    const title = await screen.findByRole("heading", { level: 1, name: "Senha redefinida!" });
     await waitFor(() => expect(title).toHaveFocus());
     expect(accepted).toStrictEqual([{ token: TOKEN, password: PASSWORD }]);
 
@@ -298,15 +312,15 @@ describe("InvitePage with a password_reset invite", () => {
       acceptInviteHandler({ onCall: () => (posts += 1) }),
     );
     await renderInvitePage(`/invite?token=${TOKEN}`);
-    await screen.findByRole("heading", { name: "Criar nova senha" });
+    await screen.findByRole("heading", { name: "Redefinir senha" });
 
-    await fillPasswords(user, "1234567", "12345678");
+    await fillNewPasswords(user, "1234567", "12345678");
     await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
 
     expect(await screen.findByText("A senha deve ter no mínimo 8 caracteres")).toBeInTheDocument();
     expect(screen.getByText("As senhas não são iguais")).toBeInTheDocument();
-    expect(passwordField()).toHaveAttribute("aria-invalid", "true");
-    expect(confirmationField()).toHaveAttribute("aria-invalid", "true");
+    expect(newPasswordField()).toHaveAttribute("aria-invalid", "true");
+    expect(newPasswordConfirmationField()).toHaveAttribute("aria-invalid", "true");
     expect(posts).toBe(0);
   });
 
@@ -318,15 +332,15 @@ describe("InvitePage with a password_reset invite", () => {
       acceptInviteHandler({ networkError: true }),
     );
     await renderInvitePage(`/invite?token=${TOKEN}`);
-    await screen.findByRole("heading", { name: "Criar nova senha" });
+    await screen.findByRole("heading", { name: "Redefinir senha" });
 
-    await fillPasswords(user);
+    await fillNewPasswords(user);
     await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível conectar");
-    await waitFor(() => expect(passwordField()).toHaveFocus());
-    expect(passwordField()).toBeEnabled();
-    expect(passwordField()).toHaveValue(PASSWORD);
+    await waitFor(() => expect(newPasswordField()).toHaveFocus());
+    expect(newPasswordField()).toBeEnabled();
+    expect(newPasswordField()).toHaveValue(PASSWORD);
   });
 
   it("shows the generic message when the API answers an unexpected error", async () => {
@@ -337,9 +351,9 @@ describe("InvitePage with a password_reset invite", () => {
       acceptInviteHandler({ error: { statusCode: 409, error: "RA_ALREADY_IN_USE" } }),
     );
     await renderInvitePage(`/invite?token=${TOKEN}`);
-    await screen.findByRole("heading", { name: "Criar nova senha" });
+    await screen.findByRole("heading", { name: "Redefinir senha" });
 
-    await fillPasswords(user);
+    await fillNewPasswords(user);
     await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -355,13 +369,88 @@ describe("InvitePage with a password_reset invite", () => {
       acceptInviteHandler({ error: { statusCode: 400, error: "INVALID_INVITE" } }),
     );
     await renderInvitePage(`/invite?token=${TOKEN}`);
-    await screen.findByRole("heading", { name: "Criar nova senha" });
+    await screen.findByRole("heading", { name: "Redefinir senha" });
 
-    await fillPasswords(user);
+    await fillNewPasswords(user);
     await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(INVALID_INVITE_TITLE);
-    expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Nova senha")).not.toBeInTheDocument();
+  });
+
+  it("shows the name and RA of the account above the new password fields", async () => {
+    server.use(meHandler({ user: null }), getInviteHandler({ invite: PASSWORD_RESET_INVITE }));
+    await renderInvitePage(`/reset-password?token=${TOKEN}`);
+    await screen.findByRole("heading", { level: 1, name: "Redefinir senha" });
+
+    const banner = screen.getByText(RESET_NAME).closest("p");
+    expect(banner).toHaveTextContent(
+      `${RESET_NAME} · RA ${RESET_RA} — a senha antiga deixa de funcionar quando você salvar.`,
+    );
+    expect(banner?.textContent).toContain(`RA${NO_BREAK_SPACE}${RESET_RA}`);
+    expect(screen.getByText(RESET_NAME)).toHaveClass("font-semibold");
+    // A faixa vem antes dos campos na ordem do documento.
+    expect(banner!.compareDocumentPosition(newPasswordField())).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it("shows the reset password title, subtitle, field labels and hints", async () => {
+    server.use(meHandler({ user: null }), getInviteHandler({ invite: PASSWORD_RESET_INVITE }));
+    await renderInvitePage(`/reset-password?token=${TOKEN}`);
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Redefinir senha" })).toBeVisible();
+    expect(screen.getByText("Crie uma nova senha para entrar no TEDI.")).toBeVisible();
+    expect(newPasswordField()).toHaveAccessibleDescription("Mínimo de 8 caracteres.");
+    expect(newPasswordConfirmationField()).toHaveAccessibleDescription(
+      "Digite a mesma senha de novo.",
+    );
+    expect(screen.getByRole("button", { name: "Mostrar senha" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Mostrar confirmação da senha" })).toBeVisible();
+  });
+
+  it("shows the reset success screen and leads to /login", async () => {
+    const user = userEvent.setup();
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler({ invite: PASSWORD_RESET_INVITE }),
+      acceptInviteHandler(),
+    );
+    const { router } = await renderInvitePage(`/reset-password?token=${TOKEN}`);
+    await screen.findByRole("heading", { name: "Redefinir senha" });
+
+    await fillNewPasswords(user);
+    await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
+
+    const title = await screen.findByRole("heading", { level: 1, name: "Senha redefinida!" });
+    await waitFor(() => expect(title).toHaveFocus());
+    expect(screen.getByText("Pronto. Entre com o seu RA e a senha nova.")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Ir para o login" }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
+  });
+
+  it("keeps the account name and RA out of the page title", async () => {
+    const user = userEvent.setup();
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler({ invite: PASSWORD_RESET_INVITE }),
+      acceptInviteHandler(),
+    );
+    await renderInvitePage(`/reset-password?token=${TOKEN}`);
+    await screen.findByRole("heading", { name: "Redefinir senha" });
+
+    expect(document.title).toBe("Redefinir senha");
+    expect(document.title).not.toContain("Beatriz");
+    expect(document.title).not.toContain(RESET_RA);
+
+    await fillNewPasswords(user);
+    await user.click(screen.getByRole("button", { name: "Salvar nova senha" }));
+    await screen.findByRole("heading", { name: "Senha redefinida!" });
+
+    expect(document.title).not.toContain("Beatriz");
+    expect(document.title).not.toContain(RESET_RA);
   });
 });
 
@@ -1007,20 +1096,20 @@ describe("InvitePage while sending", () => {
       acceptInviteHandler({ delay: deferred.promise, onCall: () => (posts += 1) }),
     );
     await renderInvitePage(`/invite?token=${TOKEN}`);
-    await screen.findByRole("heading", { name: "Criar nova senha" });
-    await fillPasswords(user);
+    await screen.findByRole("heading", { name: "Redefinir senha" });
+    await fillNewPasswords(user);
 
     const button = screen.getByRole("button", { name: "Salvar nova senha" });
     await user.dblClick(button);
     await user.click(button);
 
     await screen.findByRole("button", { name: "Enviando…" });
-    expect(passwordField()).toBeDisabled();
+    expect(newPasswordField()).toBeDisabled();
     await waitFor(() => expect(posts).toBeGreaterThan(0));
     expect(posts).toBe(1);
 
     deferred.resolve();
-    await screen.findByRole("heading", { name: "Senha alterada!" });
+    await screen.findByRole("heading", { name: "Senha redefinida!" });
     expect(posts).toBe(1);
   });
 
