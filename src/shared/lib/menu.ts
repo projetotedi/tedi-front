@@ -1,4 +1,4 @@
-import { type Role, roleSatisfies } from "./role";
+import { can, type Permission, type PermissionSubject } from "./permissions";
 
 /**
  * Item do menu lateral. Cada módulo exporta os seus (`<modulo>MenuItems`) e o app os
@@ -9,16 +9,16 @@ export interface MenuItem {
   label: string;
   /** Caminho absoluto de uma rota declarada no `routes.tsx` do módulo. */
   path: string;
-  /** Perfil mínimo para ver o item; deve bater com o `RequireRole` da rota. */
-  minRole: Role;
+  /** Permissão para ver o item; deve bater com o `RequirePermission` da rota. */
+  permission: Permission;
   /** URL de um SVG decorativo de 24px (import de arquivo `.svg`). */
   icon: string;
 }
 
-/** Itens que o perfil atende, na ordem original. Sem perfil (sem sessão), nenhum. */
-export function filterMenuByRole(
+/** Itens que o usuário pode ver, na ordem original. Sem sessão, nenhum. */
+export function filterMenuByPermission(
   items: readonly MenuItem[],
-  role: Role | null | undefined,
+  user: PermissionSubject | null | undefined,
 ): MenuItem[] {
-  return items.filter((item) => roleSatisfies(role, item.minRole));
+  return items.filter((item) => can(user, item.permission));
 }
