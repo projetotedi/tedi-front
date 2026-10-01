@@ -26,10 +26,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "token",
-          "password"
-        ],
+        "required": ["token", "password"],
         "type": "object"
       },
       "AccessResponseDto": {
@@ -63,14 +60,7 @@
             "nullable": true
           }
         },
-        "required": [
-          "id",
-          "name",
-          "ra",
-          "email",
-          "role",
-          "accessEnabled"
-        ],
+        "required": ["id", "name", "ra", "email", "role", "accessEnabled"],
         "type": "object"
       },
       "ApiErrorDto": {
@@ -94,11 +84,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "statusCode",
-          "message",
-          "error"
-        ],
+        "required": ["statusCode", "message", "error"],
         "type": "object"
       },
       "ApiFieldErrorDto": {
@@ -113,10 +99,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "field",
-          "message"
-        ],
+        "required": ["field", "message"],
         "type": "object"
       },
       "CreateInviteDto": {
@@ -131,9 +114,7 @@
             "example": "member"
           }
         },
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "type": "object"
       },
       "CreateInviteResponseDto": {
@@ -161,29 +142,18 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "role",
-          "expiresAt",
-          "url"
-        ],
+        "required": ["id", "role", "expiresAt", "url"],
         "type": "object"
       },
       "HealthResponseDto": {
         "properties": {
           "database": {
-            "enum": [
-              "up",
-              "down"
-            ],
+            "enum": ["up", "down"],
             "example": "up",
             "type": "string"
           },
           "status": {
-            "enum": [
-              "ok",
-              "error"
-            ],
+            "enum": ["ok", "error"],
             "example": "ok",
             "type": "string"
           },
@@ -196,12 +166,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "status",
-          "database",
-          "uptimeSeconds",
-          "timestamp"
-        ],
+        "required": ["status", "database", "uptimeSeconds", "timestamp"],
         "type": "object"
       },
       "InviteListItemDto": {
@@ -235,12 +200,7 @@
           },
           "status": {
             "description": "Computed invite status",
-            "enum": [
-              "pending",
-              "used",
-              "expired",
-              "revoked"
-            ],
+            "enum": ["pending", "used", "expired", "revoked"],
             "example": "pending",
             "type": "string"
           },
@@ -252,14 +212,7 @@
             ]
           }
         },
-        "required": [
-          "id",
-          "type",
-          "role",
-          "status",
-          "expiresAt",
-          "createdAt"
-        ],
+        "required": ["id", "type", "role", "status", "expiresAt", "createdAt"],
         "type": "object"
       },
       "InviteResponseDto": {
@@ -285,18 +238,11 @@
             ]
           }
         },
-        "required": [
-          "type",
-          "role",
-          "expiresAt"
-        ],
+        "required": ["type", "role", "expiresAt"],
         "type": "object"
       },
       "InviteType": {
-        "enum": [
-          "access",
-          "password_reset"
-        ],
+        "enum": ["access", "password_reset"],
         "type": "string"
       },
       "LoginDto": {
@@ -312,10 +258,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "ra",
-          "password"
-        ],
+        "required": ["ra", "password"],
         "type": "object"
       },
       "MeResponseDto": {
@@ -354,14 +297,7 @@
             ]
           }
         },
-        "required": [
-          "id",
-          "name",
-          "ra",
-          "email",
-          "role",
-          "permissions"
-        ],
+        "required": ["id", "name", "ra", "email", "role", "permissions"],
         "type": "object"
       },
       "PasswordResetResponseDto": {
@@ -377,10 +313,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "url",
-          "expiresAt"
-        ],
+        "required": ["url", "expiresAt"],
         "type": "object"
       },
       "PermissionsDto": {
@@ -623,23 +556,11 @@
         "type": "object"
       },
       "Role": {
-        "enum": [
-          "member",
-          "director",
-          "coordinator",
-          "superadmin"
-        ],
+        "enum": ["member", "director", "coordinator", "superadmin"],
         "type": "string"
       },
       "Scope": {
-        "enum": [
-          "all",
-          "own",
-          "department",
-          "allocated",
-          "lessonTeacher",
-          "none"
-        ],
+        "enum": ["all", "own", "department", "allocated", "lessonTeacher", "none"],
         "type": "string"
       },
       "UpdateAccessEnabledDto": {
@@ -649,9 +570,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "enabled"
-        ],
+        "required": ["enabled"],
         "type": "object"
       },
       "UpdateAccessRoleDto": {
@@ -665,9 +584,7 @@
             "example": "coordinator"
           }
         },
-        "required": [
-          "role"
-        ],
+        "required": ["role"],
         "type": "object"
       }
     },
@@ -765,12 +682,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "data",
-                    "total",
-                    "page",
-                    "limit"
-                  ],
+                  "required": ["data", "total", "page", "limit"],
                   "type": "object"
                 }
               }
@@ -828,9 +740,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/access/{id}/enabled": {
@@ -918,9 +828,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/access/{id}/password-reset": {
@@ -998,9 +906,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/access/{id}/role": {
@@ -1088,9 +994,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/auth/invites/accept": {
@@ -1162,9 +1066,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/auth/invites/{token}": {
@@ -1242,9 +1144,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/auth/login": {
@@ -1333,9 +1233,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/auth/logout": {
@@ -1397,9 +1295,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/auth/me": {
@@ -1468,9 +1364,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/health": {
@@ -1542,9 +1436,7 @@
             "description": "Banco de dados indisponível"
           }
         },
-        "tags": [
-          "health"
-        ]
+        "tags": ["health"]
       }
     },
     "/invites": {
@@ -1557,12 +1449,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": [
-                "pending",
-                "used",
-                "expired",
-                "revoked"
-              ],
+              "enum": ["pending", "used", "expired", "revoked"],
               "example": "pending",
               "type": "string"
             }
@@ -1633,9 +1520,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       },
       "post": {
         "operationId": "createInvite",
@@ -1712,9 +1597,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     },
     "/invites/{id}": {
@@ -1785,9 +1668,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "auth"
-        ]
+        "tags": ["auth"]
       }
     }
   },
