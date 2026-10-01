@@ -105,3 +105,21 @@ describe("can", () => {
     );
   });
 });
+
+describe("can with an incomplete /auth/me", () => {
+  it("denies instead of throwing when /auth/me has no permissions", () => {
+    const user: PermissionSubject = { id: SELF, permissions: undefined as never };
+
+    expect(scopeOf(user, "catalog.view")).toBe("none");
+    expect(can(user, "catalog.view")).toBe(false);
+    expect(can(user, "catalog.view", { personId: SELF })).toBe(false);
+  });
+
+  it("denies an unknown permission key", () => {
+    const user = userWith(Role.coordinator);
+    const unknown = "unknown.permission" as never;
+
+    expect(scopeOf(user, unknown)).toBe("none");
+    expect(can(user, unknown)).toBe(false);
+  });
+});

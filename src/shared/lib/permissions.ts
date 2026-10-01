@@ -19,7 +19,7 @@ export interface PermissionTarget {
 
 /** Escopo que o back concedeu ao usuário para a permissão; "none" sem sessão. */
 export function scopeOf(user: PermissionSubject | null | undefined, permission: Permission): Scope {
-  return user?.permissions[permission] ?? "none";
+  return user?.permissions?.[permission] ?? "none";
 }
 
 /**
