@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { DataTable } from "@shared/components/DataTable";
+import { formatHours } from "@shared/lib/format";
 import { Card, Chip } from "@shared/ui";
 
 import { formatDayMonth } from "../lib/format";
@@ -14,8 +15,8 @@ interface EntriesCardProps {
 /** Últimos lançamentos. O link "Ver extrato completo" abre um modal que fica fora da GUS-86. */
 export function EntriesCard({ entries }: EntriesCardProps) {
   const { t, i18n } = useTranslation("people");
-  const minutes = (value: number | null) =>
-    value === null ? t("profile.empty") : t("profile.entries.minutes", { count: value });
+  const duration = (value: number | null) =>
+    value === null ? t("profile.empty") : formatHours(value);
 
   return (
     <Card title={t("profile.entries.title")}>
@@ -38,11 +39,11 @@ export function EntriesCard({ entries }: EntriesCardProps) {
             },
             {
               header: t("profile.entries.columns.declared"),
-              render: (entry) => minutes(entry.declaredMinutes),
+              render: (entry) => duration(entry.declaredMinutes),
             },
             {
               header: t("profile.entries.columns.validated"),
-              render: (entry) => minutes(entry.validatedMinutes),
+              render: (entry) => duration(entry.validatedMinutes),
             },
             {
               header: t("profile.entries.columns.status"),

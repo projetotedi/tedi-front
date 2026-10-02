@@ -1,15 +1,16 @@
 import { useTranslation } from "react-i18next";
 
+import { formatHours } from "@shared/lib/format";
 import { Card, Chip, type ChipProps } from "@shared/ui";
 
 import type { ProfileMock } from "../mocks/profile.mock";
 
 interface HoursSummaryProps {
-  hours: ProfileMock["hours"];
+  minutes: ProfileMock["summaryMinutes"];
 }
 
 interface Indicator {
-  key: keyof ProfileMock["hours"];
+  key: keyof ProfileMock["summaryMinutes"];
   badge?: { label: string; color: NonNullable<ChipProps["color"]> };
 }
 
@@ -21,7 +22,7 @@ const INDICATORS: Indicator[] = [
 ];
 
 /** Os quatro indicadores de horas do topo do perfil. */
-export function HoursSummary({ hours }: HoursSummaryProps) {
+export function HoursSummary({ minutes }: HoursSummaryProps) {
   const { t } = useTranslation("people");
 
   return (
@@ -31,9 +32,7 @@ export function HoursSummary({ hours }: HoursSummaryProps) {
           <li key={key}>
             <Card className="h-full">
               <p className="text-muted">{t(`profile.summary.${key}`)}</p>
-              <p className="mt-1 text-3xl font-semibold">
-                {t("profile.summary.hours", { count: hours[key] })}
-              </p>
+              <p className="mt-1 text-3xl font-semibold">{formatHours(minutes[key])}</p>
               {badge && (
                 <div className="mt-2">
                   <Chip color={badge.color}>{t(`profile.summary.badges.${badge.label}`)}</Chip>

@@ -27,6 +27,11 @@ async function renderProfile(user: MeResponseDto) {
   return screen.findByText(user.name, { selector: "p" });
 }
 
+/** As células da linha da tabela cujo nome acessível (o texto da linha) casa com `name`. */
+function cellsOfRow(table: HTMLElement, name: RegExp): HTMLElement[] {
+  return within(within(table).getByRole("row", { name })).getAllByRole("cell");
+}
+
 describe("ProfilePage", () => {
   it("shows the signed in user name in the header card", async () => {
     const name = await renderProfile(buildMeUser({ name: "Maria" }));
@@ -76,5 +81,75 @@ describe("ProfilePage", () => {
     expect(screen.getByRole("button", { name: "Editar meus dados" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Lançar horas" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Sair do sistema" })).toBeEnabled();
+  });
+
+  it("shows the summary cards in hours", async () => {
+    await renderProfile(buildMeUser());
+
+    const summary = screen.getByRole("region", { name: "Resumo de horas" });
+    const hoursByLabel = {
+      "Total de horas lançadas": "58h",
+      "Horas validadas": "48h",
+      "Pendentes de validação": "8h",
+      "Ajustadas / rejeitadas": "2h",
+    };
+    for (const [label, hours] of Object.entries(hoursByLabel)) {
+      const card = within(summary).getByText(label).closest("li") as HTMLElement;
+      expect(within(card).getByText(hours)).toBeInTheDocument();
+    }
+  });
+
+  it("shows declared and validated time in hours", async () => {
+    await renderProfile(buildMeUser());
+
+    const table = screen.getByRole("table", { name: "Meus lançamentos" });
+
+    const adjusted = cellsOfRow(table, /Planejamento de conteúdo do bimestre/);
+    expect(adjusted[3]).toHaveTextContent(/^3h$/);
+    expect(adjusted[4]).toHaveTextContent(/^2h$/);
+
+    const notValidated = cellsOfRow(table, /Feira de tecnologia/);
+    expect(notValidated[3]).toHaveTextContent(/^4h$/);
+    expect(notValidated[4]).toHaveTextContent(/^—$/);
+
+    const rejected = cellsOfRow(table, /Material de apoio sem comprovação/);
+    expect(rejected[3]).toHaveTextContent(/^2h$/);
+    expect(rejected[4]).toHaveTextContent(/^0h$/);
+  });
+
+  it("lists the category table columns without a status column", async () => {
+    await renderProfile(buildMeUser());
+
+    const table = screen.getByRole("table", { name: "Horas por categoria" });
+
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Categoria", "Horas", "Pendentes", "Observação"]);
+  });
+
+  it("shows pending hours as a tag and a dash when nothing is pending", async () => {
+    await renderProfile(buildMeUser());
+
+    const table = screen.getByRole("table", { name: "Horas por categoria" });
+
+    const planning = cellsOfRow(table, /^Planejamento/);
+    expect(planning[1]).toHaveTextContent(/^8h$/);
+    expect(within(planning[2]).getByText("8h")).toHaveAttribute("aria-hidden", "true");
+    expect(within(planning[2]).getByText("8 horas pendentes")).toBeInTheDocument();
+
+    const lesson = cellsOfRow(table, /^Aula/);
+    expect(lesson[1]).toHaveTextContent(/^28h$/);
+    expect(within(lesson[2]).getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(within(lesson[2]).getByText("Sem pendência")).toBeInTheDocument();
+
+    expect(within(table).queryByText(/Validado|Ajustado/)).not.toBeInTheDocument();
+  });
+
+  it("never shows a duration in minutes", async () => {
+    await renderProfile(buildMeUser());
+
+    expect(screen.queryByText(/\d+\s*min\b/)).not.toBeInTheDocument();
   });
 });
