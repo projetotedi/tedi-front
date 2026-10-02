@@ -1,5 +1,5 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import i18n from "@shared/i18n";
 
@@ -54,6 +54,11 @@ const PENDING_CASES = [
 ];
 
 describe("CategoryHoursCard pending column", () => {
+  // O i18n é global ao arquivo de teste: devolve o idioma padrão depois de cada caso.
+  afterEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
   it.each(PENDING_CASES)(
     "spells out $minutes pending minutes for screen readers in pt-BR",
     async ({ minutes, tag, ptBR }) => {
