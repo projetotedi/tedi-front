@@ -28,4 +28,18 @@ describe("formatHours", () => {
     expect(formatHours(89.6)).toBe("1h30");
     expect(formatHours(59.6)).toBe("1h");
   });
+
+  it("puts the sign in front of the absolute value when negative", () => {
+    expect(formatHours(-90)).toBe("-1h30");
+    expect(formatHours(-120)).toBe("-2h");
+    expect(formatHours(-30)).toBe("-0h30");
+  });
+
+  it("rounds negative values before splitting, like positive ones", () => {
+    expect(formatHours(-59.6)).toBe("-1h");
+  });
+
+  it("shows no sign when a negative value rounds to zero", () => {
+    expect(formatHours(-0.4)).toBe("0h");
+  });
 });
