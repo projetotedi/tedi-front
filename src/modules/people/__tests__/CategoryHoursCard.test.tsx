@@ -45,6 +45,7 @@ const PENDING_CASES = [
   },
   { minutes: 30, tag: "0h30", ptBR: "30 minutos pendentes", enUS: "30 minutes pending" },
   { minutes: 1, tag: "0h01", ptBR: "1 minuto pendente", enUS: "1 minute pending" },
+  { minutes: 0.5, tag: "0h01", ptBR: "1 minuto pendente", enUS: "1 minute pending" },
   {
     minutes: 60_000_000,
     tag: "1000000h",
@@ -88,5 +89,13 @@ describe("CategoryHoursCard pending column", () => {
     expect(screen.getByRole("columnheader", { name: header })).toBeInTheDocument();
     expect(within(cell).getByText("—")).toHaveAttribute("aria-hidden", "true");
     expect(within(cell).getByText(label)).toBeInTheDocument();
+  });
+
+  it("shows the dash and no tag when the pending minutes round to zero", async () => {
+    const cell = await renderPendingCell(0.4, "pt-BR");
+
+    expect(within(cell).getByText("—")).toBeInTheDocument();
+    expect(within(cell).getByText("Sem pendência")).toBeInTheDocument();
+    expect(within(cell).queryByText("0h")).not.toBeInTheDocument();
   });
 });

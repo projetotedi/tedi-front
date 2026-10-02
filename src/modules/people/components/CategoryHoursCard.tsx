@@ -53,7 +53,7 @@ export function CategoryHoursCard({ period, rows }: CategoryHoursCardProps) {
           {
             header: t("profile.byCategory.columns.pending"),
             render: (row) =>
-              row.pendingMinutes > 0 ? (
+              Math.round(row.pendingMinutes) > 0 ? (
                 <Chip color="warning">
                   <span aria-hidden="true">{formatHours(row.pendingMinutes)}</span>
                   <span className="sr-only">{pendingLabel(row.pendingMinutes)}</span>
