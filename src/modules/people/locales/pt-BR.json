@@ -16,7 +16,6 @@
       "validated": "Horas validadas",
       "pending": "Pendentes de validação",
       "adjustedOrRejected": "Ajustadas / rejeitadas",
-      "hours": "{{count}}h",
       "badges": {
         "validated": "Validado",
         "pending": "Aguardando",
@@ -33,7 +32,6 @@
         "validated": "Validado",
         "status": "Status"
       },
-      "minutes": "{{count}} min",
       "empty": "Nenhum lançamento ainda."
     },
     "byCategory": {
@@ -41,8 +39,24 @@
       "columns": {
         "category": "Categoria",
         "hours": "Horas",
-        "status": "Status",
+        "pending": "Pendentes",
         "note": "Observação"
+      },
+      "noPending": "Sem pendência",
+      "pendingLabel": {
+        "hours_one": "{{count}} hora pendente",
+        "hours_many": "{{count}} de horas pendentes",
+        "hours_other": "{{count}} horas pendentes",
+        "minutes_one": "{{count}} minuto pendente",
+        "minutes_many": "{{count}} de minutos pendentes",
+        "minutes_other": "{{count}} minutos pendentes",
+        "hourPart_one": "{{count}} hora",
+        "hourPart_many": "{{count}} de horas",
+        "hourPart_other": "{{count}} horas",
+        "minutePart_one": "{{count}} minuto",
+        "minutePart_many": "{{count}} de minutos",
+        "minutePart_other": "{{count}} minutos",
+        "hoursAndMinutes": "{{hours}} e {{minutes}} pendentes"
       }
     },
     "personal": {
@@ -84,11 +98,6 @@
       "adjusted": "Ajustado",
       "pending": "Pendente",
       "rejected": "Rejeitado"
-    },
-    "categoryStatus": {
-      "validated": "Validado",
-      "pending": "Pendente",
-      "adjusted": "Ajustado"
     },
     "categories": {
       "class": "Aula",

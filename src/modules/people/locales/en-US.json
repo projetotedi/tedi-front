@@ -16,7 +16,6 @@
       "validated": "Validated hours",
       "pending": "Awaiting validation",
       "adjustedOrRejected": "Adjusted / rejected",
-      "hours": "{{count}}h",
       "badges": {
         "validated": "Validated",
         "pending": "Waiting",
@@ -33,7 +32,6 @@
         "validated": "Validated",
         "status": "Status"
       },
-      "minutes": "{{count}} min",
       "empty": "No entries yet."
     },
     "byCategory": {
@@ -41,8 +39,20 @@
       "columns": {
         "category": "Category",
         "hours": "Hours",
-        "status": "Status",
+        "pending": "Pending",
         "note": "Note"
+      },
+      "noPending": "Nothing pending",
+      "pendingLabel": {
+        "hours_one": "{{count}} hour pending",
+        "hours_other": "{{count}} hours pending",
+        "minutes_one": "{{count}} minute pending",
+        "minutes_other": "{{count}} minutes pending",
+        "hourPart_one": "{{count}} hour",
+        "hourPart_other": "{{count}} hours",
+        "minutePart_one": "{{count}} minute",
+        "minutePart_other": "{{count}} minutes",
+        "hoursAndMinutes": "{{hours}} and {{minutes}} pending"
       }
     },
     "personal": {
@@ -84,11 +94,6 @@
       "adjusted": "Adjusted",
       "pending": "Pending",
       "rejected": "Rejected"
-    },
-    "categoryStatus": {
-      "validated": "Validated",
-      "pending": "Pending",
-      "adjusted": "Adjusted"
     },
     "categories": {
       "class": "Class",

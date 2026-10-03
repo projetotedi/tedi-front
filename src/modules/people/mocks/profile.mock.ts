@@ -6,7 +6,6 @@
 
 export type AccountStatus = "active" | "inactive";
 export type EntryStatus = "approved" | "adjusted" | "pending" | "rejected";
-export type CategoryStatus = "validated" | "pending" | "adjusted";
 export type HoursCategory = "class" | "management" | "planning" | "event" | "other";
 
 export interface HoursEntry {
@@ -23,8 +22,9 @@ export interface HoursEntry {
 
 export interface CategoryHours {
   category: HoursCategory;
-  hours: number;
-  status: CategoryStatus;
+  totalMinutes: number;
+  /** 0 quando não há nada a validar. */
+  pendingMinutes: number;
   note: string;
 }
 
@@ -35,7 +35,7 @@ export interface ProfileMock {
   joinedAt: string;
   /** Data e hora locais, `YYYY-MM-DDTHH:mm`. */
   lastAccessAt: string;
-  hours: { total: number; validated: number; pending: number; adjustedOrRejected: number };
+  summaryMinutes: { total: number; validated: number; pending: number; adjustedOrRejected: number };
   entries: HoursEntry[];
   /** Mês de referência, `YYYY-MM`. */
   categoryPeriod: string;
@@ -64,7 +64,7 @@ export const profileMock: ProfileMock = {
   department: "Tecnologia",
   joinedAt: "2024-03-01",
   lastAccessAt: "2026-03-14T09:12",
-  hours: { total: 58, validated: 48, pending: 8, adjustedOrRejected: 2 },
+  summaryMinutes: { total: 3480, validated: 2880, pending: 480, adjustedOrRejected: 120 },
   entries: [
     {
       id: "e1",
@@ -116,26 +116,26 @@ export const profileMock: ProfileMock = {
   hoursByCategory: [
     {
       category: "class",
-      hours: 28,
-      status: "validated",
+      totalMinutes: 1680,
+      pendingMinutes: 0,
       note: "Geradas pela presença nas aulas das turmas",
     },
     {
       category: "management",
-      hours: 20,
-      status: "validated",
+      totalMinutes: 1200,
+      pendingMinutes: 0,
       note: "Reuniões administrativas do projeto",
     },
     {
       category: "planning",
-      hours: 8,
-      status: "pending",
+      totalMinutes: 480,
+      pendingMinutes: 480,
       note: "Aguardando validação da coordenação",
     },
     {
       category: "event",
-      hours: 2,
-      status: "adjusted",
+      totalMinutes: 120,
+      pendingMinutes: 0,
       note: "Feira de tecnologia — ajustado para 2h",
     },
   ],

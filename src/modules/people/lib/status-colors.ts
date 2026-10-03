@@ -1,6 +1,6 @@
 import type { ChipProps } from "@shared/ui";
 
-import type { AccountStatus, CategoryStatus, EntryStatus } from "../mocks/profile.mock";
+import type { AccountStatus, EntryStatus } from "../mocks/profile.mock";
 
 type ChipColor = NonNullable<ChipProps["color"]>;
 
@@ -14,10 +14,4 @@ export const ENTRY_STATUS_COLOR: Record<EntryStatus, ChipColor> = {
   adjusted: "accent",
   pending: "warning",
   rejected: "danger",
-};
-
-export const CATEGORY_STATUS_COLOR: Record<CategoryStatus, ChipColor> = {
-  validated: "success",
-  pending: "warning",
-  adjusted: "accent",
 };
