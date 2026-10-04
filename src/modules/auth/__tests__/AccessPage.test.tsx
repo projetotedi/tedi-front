@@ -1,16 +1,28 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { getListAccessQueryKey } from "@api/generated";
 import { Role } from "@shared/lib/role";
 
 import { AccessPage } from "../pages/AccessPage";
 import { authProtectedRoutes } from "../routes";
-import { buildAccess, buildMeUser, listAccessHandler, meHandler } from "./handlers";
+import {
+  buildAccess,
+  buildInviteListItem,
+  buildMeUser,
+  listAccessHandler,
+  listInvitesHandler,
+  meHandler,
+} from "./handlers";
 import { renderRoutes, renderWithProviders, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
+
+beforeEach(() => {
+  server.use(listInvitesHandler());
+});
 
 type OnCall = ReturnType<typeof vi.fn<(params: URLSearchParams) => void>>;
 
@@ -22,6 +34,16 @@ function buildPeople(count: number) {
   return Array.from({ length: count }, (_, index) =>
     buildAccess({ id: `person-${index + 1}`, name: `Pessoa ${index + 1}` }),
   );
+}
+
+/** Responde sem linhas quando `isMiss` reconhece os filtros da requisição; senão devolve 3 pessoas. */
+function accessHandlerWhere(isMiss: (params: URLSearchParams) => boolean, onCall?: OnCall) {
+  return http.get("*/access", ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    onCall?.(params);
+    const data = isMiss(params) ? [] : buildPeople(3);
+    return HttpResponse.json({ data, page: 1, limit: 12, total: data.length });
+  });
 }
 
 function createDeferred() {
@@ -41,26 +63,27 @@ describe("route /members", () => {
 
     await renderRoutes(authProtectedRoutes, { route: "/members" });
 
-    expect(
-      await screen.findByRole("heading", { name: "Alocações de membros (0)" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Membros (0)" })).toBeInTheDocument();
   });
 
   it("the /members route declares its route title", () => {
     expect(authProtectedRoutes[0]?.handle).toEqual({ title: "common:nav.members" });
   });
 
-  it("director gets the forbidden page and GET /access is never requested", async () => {
-    const onCall = vi.fn();
+  it("director gets the forbidden page and neither GET /access nor GET /invites is requested", async () => {
+    const onAccessCall = vi.fn();
+    const onInvitesCall = vi.fn();
     server.use(
       meHandler({ user: buildMeUser({ role: Role.director }) }),
-      listAccessHandler({ onCall }),
+      listAccessHandler({ onCall: onAccessCall }),
+      listInvitesHandler({ onCall: onInvitesCall }),
     );
 
     await renderRoutes(authProtectedRoutes, { route: "/members" });
 
     expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
-    expect(onCall).not.toHaveBeenCalled();
+    expect(onAccessCall).not.toHaveBeenCalled();
+    expect(onInvitesCall).not.toHaveBeenCalled();
   });
 });
 
@@ -85,15 +108,13 @@ describe("AccessPage", () => {
 
     await renderWithProviders(<AccessPage />);
 
-    expect(
-      await screen.findByRole("heading", { name: "Alocações de membros (16)" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Alocações de membros (16)" })).toBeInTheDocument();
-    expect(screen.getByText("Mostrando 12 de 16 alocações")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Membros (16)" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Membros (16)" })).toBeInTheDocument();
+    expect(screen.getByText("Mostrando 12 de 16 membros")).toBeInTheDocument();
     expect(screen.getAllByRole("row")).toHaveLength(13);
   });
 
-  it("shows loading status without the total and keeps the create button", async () => {
+  it("first load shows the loading status, the title without total and keeps the create button", async () => {
     server.use(
       http.get("*/access", async () => {
         await delay("infinite");
@@ -103,8 +124,8 @@ describe("AccessPage", () => {
 
     await renderWithProviders(<AccessPage />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Carregando pessoas");
-    expect(screen.getByRole("heading", { name: "Alocações de membros" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("Carregando membros…");
+    expect(screen.getByRole("heading", { name: "Membros" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
     expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
   });
@@ -115,7 +136,10 @@ describe("AccessPage", () => {
 
     await renderWithProviders(<AccessPage />);
 
-    await screen.findByText("Não foi possível carregar as pessoas com acesso.");
+    const alert = await screen.findByRole("alert");
+    expect(
+      within(alert).getByRole("heading", { name: "Não foi possível carregar os membros" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
     const retryButton = screen.getByRole("button", { name: "Tentar de novo" });
 
@@ -123,20 +147,203 @@ describe("AccessPage", () => {
     await user.click(retryButton);
 
     expect(await screen.findByRole("cell", { name: "Ana Torres" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("empty list shows the empty message, keeps Gerar link de cadastro and hides the footer", async () => {
+  it("empty list shows the empty state, keeps the column headers and hides the footer", async () => {
     server.use(listAccessHandler({ data: [], total: 0 }));
 
     await renderWithProviders(<AccessPage />);
 
-    expect(await screen.findByText("Nenhum acesso encontrado")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Nenhum membro ainda" })).toBeInTheDocument();
+    expect(screen.getAllByRole("columnheader")).toHaveLength(6);
     expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
     expect(
       screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
     ).not.toBeInTheDocument();
   });
+
+  it("the empty state offers a second Gerar link de cadastro that opens the dialog", async () => {
+    server.use(listAccessHandler({ data: [], total: 0 }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("heading", { name: "Nenhum membro ainda" });
+
+    expect(screen.getAllByRole("button", { name: "Gerar link de cadastro" })).toHaveLength(2);
+    await user.click(
+      within(screen.getByTestId("access-list")).getByRole("button", {
+        name: "Gerar link de cadastro",
+      }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Gerar link de cadastro" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the pending invites count next to the create button", async () => {
+    server.use(
+      listAccessHandler({ data: buildPeople(3) }),
+      listInvitesHandler({
+        data: [buildInviteListItem({ id: "invite-1" }), buildInviteListItem({ id: "invite-2" })],
+      }),
+    );
+
+    await renderWithProviders(<AccessPage />);
+
+    const pending = await screen.findByRole("button", { name: "Convites pendentes (2)" });
+    const create = screen.getByRole("button", { name: "Gerar link de cadastro" });
+    expect(pending).toBeDisabled();
+    expect(pending.parentElement).toBe(create.parentElement);
+    expect(pending.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("a search without matches shows Nada encontrado and Limpar filtros brings the list back", async () => {
+    const onCall = vi.fn<(params: URLSearchParams) => void>();
+    server.use(accessHandlerWhere((params) => params.get("search") === "zzz", onCall));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    const search = screen.getByRole("textbox", { name: "Buscar por nome ou RA" });
+    await user.type(search, "zzz");
+    expect(
+      await screen.findByRole("heading", { name: "Nada encontrado" }, { timeout: 2000 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
+    const callsBeforeClearing = onCall.mock.calls.length;
+
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+    // O prazo menor que o debounce (400 ms) prova que apagar a busca não espera por ele.
+    expect(
+      await screen.findByRole("cell", { name: "Pessoa 1" }, { timeout: 300 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Nada encontrado" })).not.toBeInTheDocument();
+    expect(search).toHaveValue("");
+    expect(search).toHaveFocus();
+    const laterSearches = onCall.mock.calls
+      .slice(callsBeforeClearing)
+      .map(([p]) => p.get("search"));
+    expect(laterSearches).not.toContain("zzz");
+  });
+
+  it("a role filter without matches shows Nada encontrado, not the empty state", async () => {
+    server.use(accessHandlerWhere((params) => params.has("role")));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
+    await user.click(await screen.findByRole("option", { name: "Diretor" }));
+
+    expect(await screen.findByRole("heading", { name: "Nada encontrado" })).toBeInTheDocument();
+    expect(screen.queryByText("Nenhum membro ainda")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Limpar filtros" })).toBeInTheDocument();
+  });
+
+  it("clearing the filters resets the role and status selects", async () => {
+    server.use(accessHandlerWhere((params) => params.has("role") || params.has("enabled")));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
+    await user.click(await screen.findByRole("option", { name: "Diretor" }));
+    await user.click(await screen.findByRole("button", { name: "Limpar filtros" }));
+
+    expect(await screen.findByRole("cell", { name: "Pessoa 1" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Papel: todos/ })).toBeInTheDocument();
+  });
+
+  it("waiting for an uncached list after clearing shows the loading state, never the empty state", async () => {
+    const deferred = createDeferred();
+    let holdUnfilteredList = false;
+    server.use(
+      http.get("*/access", async ({ request }) => {
+        const isMiss = new URL(request.url).searchParams.get("search") === "zzz";
+        if (!isMiss && holdUnfilteredList) await deferred.promise;
+        const data = isMiss ? [] : buildPeople(3);
+        return HttpResponse.json({ data, page: 1, limit: 12, total: data.length });
+      }),
+    );
+    const user = userEvent.setup();
+
+    const { queryClient } = await renderWithProviders(<AccessPage />);
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+    await user.type(screen.getByRole("textbox", { name: "Buscar por nome ou RA" }), "zzz");
+    await screen.findByRole("heading", { name: "Nada encontrado" }, { timeout: 2000 });
+
+    queryClient.removeQueries({ queryKey: getListAccessQueryKey({ page: 1, limit: 12 }) });
+    holdUnfilteredList = true;
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Carregando membros…");
+    expect(screen.queryByText("Nenhum membro ainda")).not.toBeInTheDocument();
+
+    deferred.resolve();
+    expect(await screen.findByRole("cell", { name: "Pessoa 1" })).toBeInTheDocument();
+  });
+
+  const LIST_STATES: Array<[string, () => Promise<void>]> = [
+    [
+      "loading",
+      async () => {
+        server.use(
+          http.get("*/access", async () => {
+            await delay("infinite");
+            return HttpResponse.json({ data: [], page: 1, limit: 12, total: 0 });
+          }),
+        );
+        await renderWithProviders(<AccessPage />);
+        await screen.findByRole("status");
+      },
+    ],
+    [
+      "error",
+      async () => {
+        server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
+        await renderWithProviders(<AccessPage />);
+        await screen.findByRole("alert");
+      },
+    ],
+    [
+      "empty",
+      async () => {
+        server.use(listAccessHandler({ data: [], total: 0 }));
+        await renderWithProviders(<AccessPage />);
+        await screen.findByRole("heading", { name: "Nenhum membro ainda" });
+      },
+    ],
+    [
+      "noResults",
+      async () => {
+        server.use(accessHandlerWhere((params) => params.has("enabled")));
+        const user = userEvent.setup();
+        await renderWithProviders(<AccessPage />);
+        await screen.findByRole("cell", { name: "Pessoa 1" });
+        await user.click(screen.getByRole("button", { name: /Status: todos/ }));
+        await user.click(await screen.findByRole("option", { name: "Inativo" }));
+        await screen.findByRole("heading", { name: "Nada encontrado" });
+      },
+    ],
+  ];
+
+  it.each(LIST_STATES)(
+    "the %s state shows neither the summary nor the pagination",
+    async (_state, arrange) => {
+      await arrange();
+
+      expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it("Papel filter sends role and returns to page 1", async () => {
     const onCall = vi.fn<(params: URLSearchParams) => void>();
@@ -238,7 +445,7 @@ describe("AccessPage", () => {
     await waitFor(() => expect(lastParams(onCall)?.get("page")).toBe("1"));
   });
 
-  it("keeps the rows of the current page while the next one loads", async () => {
+  it("keeps the rows of the current page, marked as busy, while the next one loads", async () => {
     const deferred = createDeferred();
     server.use(
       http.get("*/access", async ({ request }) => {
@@ -256,14 +463,20 @@ describe("AccessPage", () => {
 
     await renderWithProviders(<AccessPage />);
     await screen.findByRole("cell", { name: "Pessoa da página 1" });
+    expect(screen.getByTestId("access-list")).not.toHaveAttribute("aria-busy");
 
     await user.click(screen.getByRole("button", { name: "Página 2" }));
 
     expect(screen.getByRole("cell", { name: "Pessoa da página 1" })).toBeInTheDocument();
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.getByTestId("access-list")).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByText("Carregando membros…")).toBeInTheDocument();
+    expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
 
     deferred.resolve();
     expect(await screen.findByRole("cell", { name: "Pessoa da página 2" })).toBeInTheDocument();
+    expect(screen.getByTestId("access-list")).not.toHaveAttribute("aria-busy");
+    expect(screen.getByText("Mostrando 1 de 30 membros")).toBeInTheDocument();
   });
 
   it("hides pagination when everything fits in one page", async () => {
@@ -271,7 +484,7 @@ describe("AccessPage", () => {
 
     await renderWithProviders(<AccessPage />);
 
-    expect(await screen.findByText("Mostrando 5 de 5 alocações")).toBeInTheDocument();
+    expect(await screen.findByText("Mostrando 5 de 5 membros")).toBeInTheDocument();
     expect(
       screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
     ).not.toBeInTheDocument();

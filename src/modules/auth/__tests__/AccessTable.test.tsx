@@ -132,10 +132,10 @@ describe("AccessTable", () => {
     expect(within(caio).getByText("Membro")).toHaveClass("bg-tedi-neutral");
   });
 
-  it("empty list shows Nenhum acesso encontrado", async () => {
+  it("keeps the column headers and draws no row when there are no people", async () => {
     await renderWithProviders(<AccessTable rows={[]} />);
 
-    expect(screen.getByRole("cell", { name: "Nenhum acesso encontrado" })).toBeInTheDocument();
     expect(screen.getAllByRole("columnheader")).toHaveLength(6);
+    expect(screen.queryAllByRole("cell")).toHaveLength(0);
   });
 });
