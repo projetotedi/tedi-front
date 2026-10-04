@@ -162,11 +162,12 @@
       "columns": {
         "member": "Membro",
         "role": "Papel",
-        "departments": "Departamentos",
+        "department": "Departamento",
         "mainFunction": "Função principal",
         "status": "Status",
         "actions": "Ações"
       },
+      "rowActions": "Ações de {{name}}",
       "status": {
         "active": "Ativo",
         "inactive": "Inativo"

@@ -3,12 +3,22 @@ import { useTranslation } from "react-i18next";
 
 import type { AccessResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
-import { Badge } from "@shared/ui";
+import { Badge, Button } from "@shared/ui";
 
 import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: AccessResponseDto[];
+}
+
+function KebabIcon(): ReactElement {
+  return (
+    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <circle cx="8" cy="3" r="1.25" />
+      <circle cx="8" cy="8" r="1.25" />
+      <circle cx="8" cy="13" r="1.25" />
+    </svg>
+  );
 }
 
 export function AccessTable({ rows }: AccessTableProps): ReactElement {
@@ -29,8 +39,8 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
         ) : null,
     },
     {
-      header: t("access.people.columns.departments"),
-      // Sem `uppercase`: no Figma este cabeçalho está em caixa normal (mantido idêntico).
+      header: t("access.people.columns.department"),
+      headerClassName: "uppercase",
       render: () => null,
     },
     {
@@ -50,7 +60,16 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
     {
       header: t("access.people.columns.actions"),
       headerClassName: "uppercase",
-      render: () => null,
+      // Ainda sem ação: o menu da linha é da GUS-88.
+      render: (row) => (
+        <Button
+          isIconOnly
+          variant="ghost"
+          aria-label={t("access.people.rowActions", { name: row.name })}
+        >
+          <KebabIcon />
+        </Button>
+      ),
     },
   ];
 

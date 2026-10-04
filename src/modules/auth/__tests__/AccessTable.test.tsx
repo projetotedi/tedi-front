@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { Role } from "@shared/lib/role";
@@ -38,7 +39,7 @@ describe("AccessTable", () => {
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
       "Membro",
       "Papel",
-      "Departamentos",
+      "Departamento",
       "Função principal",
       "Status",
       "Ações",
@@ -51,7 +52,7 @@ describe("AccessTable", () => {
     expect(screen.getByRole("table", { name: "Membros com acesso ao TEDI" })).toBeInTheDocument();
   });
 
-  it("leaves Departamentos, Função principal and Ações empty", async () => {
+  it("leaves Departamento and Função principal empty", async () => {
     await renderWithProviders(<AccessTable rows={ROWS} />);
 
     for (const row of screen.getAllByRole("row").slice(1)) {
@@ -59,8 +60,33 @@ describe("AccessTable", () => {
       expect(cells).toHaveLength(6);
       expect(cells[2]).toBeEmptyDOMElement();
       expect(cells[3]).toBeEmptyDOMElement();
-      expect(cells[5]).toBeEmptyDOMElement();
     }
+  });
+
+  it("each row has an actions button named after the person", async () => {
+    await renderWithProviders(<AccessTable rows={ROWS} />);
+
+    for (const name of ["Ana Torres", "Beto Nunes", "Caio Lopes"]) {
+      const row = screen.getByRole("row", { name: new RegExp(name) });
+      expect(within(row).getByRole("button", { name: `Ações de ${name}` })).toBeInTheDocument();
+    }
+    expect(screen.getAllByRole("button")).toHaveLength(ROWS.length);
+  });
+
+  it("row actions are reachable by keyboard", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<AccessTable rows={ROWS} />);
+
+    await user.tab();
+    const ana = screen.getByRole("button", { name: "Ações de Ana Torres" });
+    expect(ana).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Ações de Beto Nunes" })).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(ana).not.toHaveAttribute("aria-haspopup");
   });
 
   it("does not show the RA nor the email of the person", async () => {

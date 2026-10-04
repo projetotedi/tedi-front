@@ -162,11 +162,12 @@
       "columns": {
         "member": "Member",
         "role": "Role",
-        "departments": "Departments",
+        "department": "Department",
         "mainFunction": "Main function",
         "status": "Status",
         "actions": "Actions"
       },
+      "rowActions": "Actions for {{name}}",
       "status": {
         "active": "Active",
         "inactive": "Inactive"
