@@ -158,6 +158,7 @@
     "people": {
       "title": "Member allocations ({{total}})",
       "titlePending": "Member allocations",
+      "pendingInvites": "Pending invites ({{count}})",
       "caption": "Members with access to TEDI",
       "columns": {
         "member": "Member",
