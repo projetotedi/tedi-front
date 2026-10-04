@@ -4,6 +4,7 @@ import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getListAccessQueryKey } from "@api/generated";
+import type { InviteListItemDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 import { AccessPage } from "../pages/AccessPage";
@@ -12,6 +13,7 @@ import {
   buildAccess,
   buildInviteListItem,
   buildMeUser,
+  createInviteHandler,
   listAccessHandler,
   listInvitesHandler,
   meHandler,
@@ -197,6 +199,27 @@ describe("AccessPage", () => {
     expect(pending).toBeDisabled();
     expect(pending.parentElement).toBe(create.parentElement);
     expect(pending.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("generating an invite refreshes the pending invites count", async () => {
+    const pendingInvites: InviteListItemDto[] = [];
+    server.use(
+      listAccessHandler({ data: buildPeople(3) }),
+      listInvitesHandler({ data: pendingInvites }),
+      createInviteHandler({ onCall: () => pendingInvites.push(buildInviteListItem()) }),
+    );
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+    await screen.findByRole("button", { name: "Convites pendentes (0)" });
+
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
+    await user.click(screen.getByRole("button", { name: "Gerar link" }));
+    await user.click(await screen.findByRole("button", { name: "Concluir" }));
+
+    expect(
+      await screen.findByRole("button", { name: "Convites pendentes (1)" }),
+    ).toBeInTheDocument();
   });
 
   it("a search without matches shows Nada encontrado and Limpar filtros brings the list back", async () => {
