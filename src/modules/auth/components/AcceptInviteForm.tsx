@@ -12,7 +12,7 @@ import { Controller, FormProvider, useForm, useFormContext } from "react-hook-fo
 import { useTranslation } from "react-i18next";
 
 import { Role } from "@shared/lib/role";
-import { Alert, Button, Checkbox, Stepper, TextField } from "@shared/ui";
+import { Alert, Button, Stepper, TextField } from "@shared/ui";
 
 import { useInviteAcceptance } from "../hooks/useInviteAcceptance";
 import { toAcceptFieldError } from "../lib/invite-error";
@@ -67,10 +67,9 @@ export function AcceptInviteForm({
       email: "",
       password: "",
       passwordConfirmation: "",
-      privacyConsent: false,
     },
   });
-  const { control, handleSubmit, trigger, getValues, setError, setFocus } = form;
+  const { handleSubmit, trigger, getValues, setError, setFocus } = form;
 
   const acceptance = useInviteAcceptance({
     onAccepted: () => onAccepted(getValues("ra").trim()),
@@ -224,21 +223,6 @@ export function AcceptInviteForm({
                 describedBy={generalErrorKey ? errorId : undefined}
               />
             </div>
-
-            <Controller
-              name="privacyConsent"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Checkbox
-                  label={t("invite.fields.privacyConsent.label")}
-                  isSelected={field.value}
-                  onChange={field.onChange}
-                  isRequired
-                  isDisabled={isBusy}
-                  errorMessage={fieldState.error?.message ? t(fieldState.error.message) : undefined}
-                />
-              )}
-            />
 
             <Alert variant="info">{showSlowNotice ? t("invite.slowNotice") : null}</Alert>
             <Alert variant="error" id={errorId}>

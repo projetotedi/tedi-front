@@ -41,11 +41,6 @@ export const acceptInviteFormSchema = AcceptInviteBody.omit({ token: true })
       .trim()
       .pipe(zod.email({ message: "invite.validation.emailInvalid" })),
     ...passwordFields,
-    // Só validação de tela: o DTO não tem esse campo, então nada é persistido ainda (fica para a
-    // E9.b, que vai guardar o registro de consentimento).
-    privacyConsent: zod
-      .boolean()
-      .refine((value) => value, { message: "invite.validation.privacyConsentRequired" }),
   })
   .refine(passwordsMatch, passwordMismatch);
 
