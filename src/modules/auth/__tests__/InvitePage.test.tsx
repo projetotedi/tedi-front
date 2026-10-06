@@ -59,26 +59,38 @@ const passwordField = () => screen.getByLabelText("Senha");
 const confirmationField = () => screen.getByLabelText("Confirmar senha");
 
 const continueButton = () => screen.getByRole("button", { name: "Continuar" });
+const backButton = () => screen.getByRole("button", { name: "Voltar" });
 const submitButton = () => screen.getByRole("button", { name: "Enviar cadastro" });
+const summaryStrip = () =>
+  screen.getByText(
+    (_content, element) => element?.tagName === "P" && element.textContent?.includes(NAME) === true,
+  );
 
 // Espera o primeiro campo, e não o título: o título já existe (sr-only) na tela de carregamento.
 async function openAccessInvite(route = `/invite?token=${TOKEN}`) {
   const view = await renderInvitePage(route);
-  await screen.findByLabelText("Nome completo");
+  await screen.findByLabelText("RA");
   return view;
 }
 
-async function fillStepOne(
-  user: UserEvent,
-  values: { name?: string; ra?: string; email?: string } = {},
-) {
-  await user.type(nameField(), values.name ?? NAME);
+async function fillAcademicStep(user: UserEvent, values: { ra?: string; email?: string } = {}) {
   await user.type(raField(), values.ra ?? RA);
   await user.type(emailField(), values.email ?? EMAIL);
 }
 
-async function goToStepTwo(user: UserEvent) {
-  await fillStepOne(user);
+async function fillPersonalStep(user: UserEvent, values: { name?: string } = {}) {
+  await user.type(nameField(), values.name ?? NAME);
+}
+
+async function goToPersonalStep(user: UserEvent) {
+  await fillAcademicStep(user);
+  await user.click(continueButton());
+  await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+}
+
+async function goToPasswordStep(user: UserEvent) {
+  await goToPersonalStep(user);
+  await fillPersonalStep(user);
   await user.click(continueButton());
   await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
 }
@@ -89,7 +101,7 @@ async function fillPasswords(user: UserEvent, password = PASSWORD, confirmation 
 }
 
 async function completeRegistration(user: UserEvent) {
-  await goToStepTwo(user);
+  await goToPasswordStep(user);
   await fillPasswords(user);
   await user.click(submitButton());
 }
@@ -99,7 +111,7 @@ afterEach(() => {
 });
 
 describe("InvitePage with an access invite", () => {
-  it("shows the granted role and the step 1 fields for an access invite", async () => {
+  it("shows the granted role and the academic step fields for an access invite", async () => {
     const tokens: string[] = [];
     server.use(
       meHandler({ user: null }),
@@ -108,17 +120,21 @@ describe("InvitePage with an access invite", () => {
     await openAccessInvite();
 
     expect(screen.getByText("Você foi convidado como Membro")).toBeVisible();
-    expect(screen.getByText("Preencha seus dados para criar o seu acesso ao TEDI.")).toBeVisible();
-    expect(screen.getByRole("heading", { level: 2, name: "Dados pessoais" })).toBeVisible();
+    expect(
+      screen.getByText(
+        "Etapa 1 de 3 · Comece pelos seus dados acadêmicos. O RA informado será o seu usuário de acesso ao sistema.",
+      ),
+    ).toBeVisible();
     expect(screen.getByRole("heading", { level: 2, name: "Dados acadêmicos" })).toBeVisible();
-    for (const field of [nameField(), raField(), emailField()]) {
+    for (const field of [raField(), emailField()]) {
       expect(field).toBeVisible();
       expect(field).toBeRequired();
     }
     expect(raField()).toHaveAccessibleDescription("Você vai entrar no sistema com este RA.");
+    expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
     expect(screen.getByText("* Campos obrigatórios")).toBeVisible();
     expect(continueButton()).toBeVisible();
-    expect(screen.getByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
+    expect(screen.getByRole("list", { name: "Etapa 1 de 3" })).toBeVisible();
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Voltar" })).not.toBeInTheDocument();
     expect(tokens).toEqual([TOKEN]);
@@ -179,7 +195,10 @@ describe("InvitePage with an access invite", () => {
     );
     await openAccessInvite();
 
-    await fillStepOne(user, { name: `  ${NAME} `, ra: ` ${RA} `, email: ` ${EMAIL} ` });
+    await fillAcademicStep(user, { ra: ` ${RA} `, email: ` ${EMAIL} ` });
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    await fillPersonalStep(user, { name: `  ${NAME} ` });
     await user.click(continueButton());
     await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
     await fillPasswords(user);
@@ -201,7 +220,7 @@ describe("InvitePage with an access invite", () => {
     await openAccessInvite(`/reset-password?token=${TOKEN}`);
 
     expect(screen.getByText("Você foi convidado como Membro")).toBeVisible();
-    expect(nameField()).toBeVisible();
+    expect(raField()).toBeVisible();
   });
 
   it("does not redirect a user who is already signed in", async () => {
@@ -215,7 +234,7 @@ describe("InvitePage with an access invite", () => {
     await waitFor(() => expect(meCalls).toBeGreaterThan(0));
     await waitFor(() => expect(screen.getByText("Você foi convidado como Membro")).toBeVisible());
     expect(router.state.location.pathname).toBe("/invite");
-    expect(nameField()).toBeVisible();
+    expect(raField()).toBeVisible();
   });
 
   it("keeps the token out of the page title, the page text and the browser storage", async () => {
@@ -466,7 +485,7 @@ describe("InvitePage with a link that does not work", () => {
     await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
 
     expect(await screen.findByText("Você foi convidado como Membro")).toBeVisible();
-    expect(nameField()).toBeVisible();
+    expect(raField()).toBeVisible();
     expect(calls).toBe(2);
   });
 
@@ -530,74 +549,78 @@ describe("InvitePage while loading the invite", () => {
   });
 });
 
-describe("InvitePage step 1", () => {
-  it("does not advance to step 2 while step 1 is invalid", async () => {
+describe("InvitePage academic step", () => {
+  it("validates only the fields of the current step", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
 
     await user.click(continueButton());
 
-    expect(await screen.findByText("Informe o seu nome completo")).toBeInTheDocument();
-    expect(screen.getByText("Informe o seu RA")).toBeInTheDocument();
+    expect(await screen.findByText("Informe o seu RA")).toBeInTheDocument();
     expect(screen.getByText("Informe um e-mail válido")).toBeInTheDocument();
-    expect(nameField()).toHaveAttribute("aria-invalid", "true");
-    expect(nameField()).toHaveAccessibleDescription("Informe o seu nome completo");
+    expect(screen.queryByText("Informe o seu nome completo")).not.toBeInTheDocument();
     expect(raField()).toHaveAttribute("aria-invalid", "true");
+    expect(raField()).toHaveAccessibleDescription("Informe o seu RA");
     expect(emailField()).toHaveAttribute("aria-invalid", "true");
-    await waitFor(() => expect(nameField()).toHaveFocus());
-    expect(screen.getByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
+    await waitFor(() => expect(raField()).toHaveFocus());
+    expect(screen.getByRole("list", { name: "Etapa 1 de 3" })).toBeVisible();
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("does not advance from the academic step while the RA is empty", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+
+    await user.type(emailField(), EMAIL);
+    await user.click(continueButton());
+
+    expect(await screen.findByText("Informe o seu RA")).toBeInTheDocument();
+    expect(raField()).toHaveAttribute("aria-invalid", "true");
+    await waitFor(() => expect(raField()).toHaveFocus());
+    expect(emailField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("list", { name: "Etapa 1 de 3" })).toBeVisible();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Dados pessoais" }),
+    ).not.toBeInTheDocument();
+  });
+
   it.each(["lucas", "lucas@", "lucas@instituicao"])(
-    "rejects the email %j and keeps the person on step 1",
+    "rejects the email %j and keeps the person on the academic step",
     async (email) => {
       const user = userEvent.setup();
       server.use(meHandler({ user: null }), getInviteHandler());
       await openAccessInvite();
 
-      await fillStepOne(user, { email });
+      await fillAcademicStep(user, { email });
       await user.click(continueButton());
 
       expect(await screen.findByText("Informe um e-mail válido")).toBeInTheDocument();
       expect(emailField()).toHaveAttribute("aria-invalid", "true");
-      expect(nameField()).not.toHaveAttribute("aria-invalid", "true");
       expect(raField()).not.toHaveAttribute("aria-invalid", "true");
       await waitFor(() => expect(emailField()).toHaveFocus());
+      expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
       expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
     },
   );
-
-  it("does not accept a name of only spaces", async () => {
-    const user = userEvent.setup();
-    server.use(meHandler({ user: null }), getInviteHandler());
-    await openAccessInvite();
-
-    await fillStepOne(user, { name: "   " });
-    await user.click(continueButton());
-
-    expect(await screen.findByText("Informe o seu nome completo")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
-  });
 
   it("clears an error as soon as the field is fixed, without pressing Continue again", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
     await user.click(continueButton());
-    await screen.findByText("Informe o seu nome completo");
+    await screen.findByText("Informe o seu RA");
 
-    await user.type(nameField(), NAME);
+    await user.type(raField(), RA);
 
-    await waitFor(() => expect(nameField()).not.toHaveAttribute("aria-invalid", "true"));
-    expect(screen.queryByText("Informe o seu nome completo")).not.toBeInTheDocument();
-    expect(raField()).toHaveAttribute("aria-invalid", "true");
+    await waitFor(() => expect(raField()).not.toHaveAttribute("aria-invalid", "true"));
+    expect(screen.queryByText("Informe o seu RA")).not.toBeInTheDocument();
     expect(emailField()).toHaveAttribute("aria-invalid", "true");
   });
 
-  it("advances to step 2 with Enter instead of sending the registration", async () => {
+  it("advances to the personal step with Enter instead of sending the registration", async () => {
     const user = userEvent.setup();
     let posts = 0;
     server.use(
@@ -607,51 +630,134 @@ describe("InvitePage step 1", () => {
     );
     await openAccessInvite();
 
-    await fillStepOne(user);
+    await fillAcademicStep(user);
     await user.type(emailField(), "{Enter}");
 
-    expect(await screen.findByRole("heading", { level: 2, name: "Crie sua senha" })).toBeVisible();
+    expect(await screen.findByRole("heading", { level: 2, name: "Dados pessoais" })).toBeVisible();
     expect(posts).toBe(0);
   });
 
-  it("does not advance with Enter while step 1 is invalid", async () => {
+  it("does not advance with Enter while the academic step is invalid", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
 
-    await user.type(nameField(), `${NAME}{Enter}`);
+    await user.type(raField(), `${RA}{Enter}`);
 
-    expect(await screen.findByText("Informe o seu RA")).toBeInTheDocument();
+    expect(await screen.findByText("Informe um e-mail válido")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { level: 2, name: "Dados pessoais" }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
   });
 });
 
-describe("InvitePage step 2", () => {
-  it("shows the summary of the typed name and RA above the password fields", async () => {
+describe("InvitePage personal step", () => {
+  it("shows only the full name on the personal step", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
 
-    await goToStepTwo(user);
+    await goToPersonalStep(user);
 
-    const summary = screen.getByText(
-      (_content, element) =>
-        element?.tagName === "P" && element.textContent?.includes(NAME) === true,
-    );
+    expect(screen.getByRole("heading", { level: 2, name: "Dados pessoais" })).toBeVisible();
+    expect(screen.getByText("Etapa 2 de 3 · Agora, seus dados pessoais.")).toBeVisible();
+    expect(screen.getByRole("list", { name: "Etapa 2 de 3" })).toBeVisible();
+    expect(nameField()).toBeVisible();
+    expect(nameField()).toBeRequired();
+    expect(screen.getByText("* Campos obrigatórios")).toBeVisible();
+    expect(backButton()).toBeVisible();
+    expect(continueButton()).toBeVisible();
+    expect(screen.queryByLabelText("RA")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("E-mail institucional")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
+  });
+
+  it("arrives at the personal step without an error on the name that was still empty", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+
+    await goToPersonalStep(user);
+
+    expect(nameField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText("Informe o seu nome completo")).not.toBeInTheDocument();
+  });
+
+  it.each(["", "   "])(
+    "does not advance from the personal step while the name is empty or only spaces (%j)",
+    async (name) => {
+      const user = userEvent.setup();
+      let posts = 0;
+      server.use(
+        meHandler({ user: null }),
+        getInviteHandler(),
+        acceptInviteHandler({ onCall: () => (posts += 1) }),
+      );
+      await openAccessInvite();
+      await goToPersonalStep(user);
+
+      if (name) await user.type(nameField(), name);
+      await user.click(continueButton());
+
+      expect(await screen.findByText("Informe o seu nome completo")).toBeInTheDocument();
+      expect(nameField()).toHaveAttribute("aria-invalid", "true");
+      expect(nameField()).toHaveAccessibleDescription("Informe o seu nome completo");
+      await waitFor(() => expect(nameField()).toHaveFocus());
+      expect(screen.getByRole("list", { name: "Etapa 2 de 3" })).toBeVisible();
+      expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
+      expect(posts).toBe(0);
+    },
+  );
+
+  it("clears the name error as soon as the name is typed", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+    await goToPersonalStep(user);
+    await user.click(continueButton());
+    await screen.findByText("Informe o seu nome completo");
+
+    await user.type(nameField(), NAME);
+
+    await waitFor(() => expect(nameField()).not.toHaveAttribute("aria-invalid", "true"));
+    expect(screen.queryByText("Informe o seu nome completo")).not.toBeInTheDocument();
+  });
+});
+
+describe("InvitePage password step", () => {
+  it("shows the typed name and RA above the password fields", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+
+    await goToPasswordStep(user);
+
+    const summary = summaryStrip();
+    const heading = screen.getByRole("heading", { level: 2, name: "Crie sua senha" });
     expect(summary).toHaveTextContent(
       `${NAME} · RA ${RA} — é com este RA e a senha abaixo que você entra no sistema.`,
     );
     expect(summary.textContent).toContain(`RA${NO_BREAK_SPACE}${RA}`);
     expect(
-      screen.getByText("Último passo: crie a senha que você vai usar para entrar no TEDI."),
+      summary.compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(heading).toHaveAccessibleDescription(expect.stringContaining(`${NAME} · RA`));
+    expect(
+      screen.getByText(
+        "Etapa 3 de 3 · Último passo: crie a senha que você vai usar para entrar no sistema.",
+      ),
     ).toBeVisible();
+    expect(screen.getByRole("list", { name: "Etapa 3 de 3" })).toBeVisible();
     expect(passwordField()).toHaveAccessibleDescription("Mínimo de 8 caracteres.");
     expect(confirmationField()).toHaveAccessibleDescription("Digite a mesma senha de novo.");
     expect(passwordField()).toBeRequired();
     expect(confirmationField()).toBeRequired();
-    expect(screen.getByRole("button", { name: "Voltar" })).toBeVisible();
+    expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(backButton()).toBeVisible();
     expect(submitButton()).toBeVisible();
     expect(screen.queryByLabelText("Nome completo")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("RA")).not.toBeInTheDocument();
   });
 
   it("does not call the API when the password is too short", async () => {
@@ -663,7 +769,7 @@ describe("InvitePage step 2", () => {
       acceptInviteHandler({ onCall: () => (posts += 1) }),
     );
     await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
 
     await fillPasswords(user, "1234567");
     await user.click(submitButton());
@@ -686,7 +792,7 @@ describe("InvitePage step 2", () => {
       acceptInviteHandler({ onCall: () => (posts += 1) }),
     );
     await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
 
     await fillPasswords(user, "12345678", "12345679");
     await user.click(submitButton());
@@ -704,7 +810,7 @@ describe("InvitePage step 2", () => {
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
 
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
 
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     expect(screen.queryByText(/aviso de privacidade/)).not.toBeInTheDocument();
@@ -714,7 +820,7 @@ describe("InvitePage step 2", () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
     await fillPasswords(user, "12345678", "12345679");
     await user.click(submitButton());
     await screen.findByText("As senhas não são iguais");
@@ -732,7 +838,7 @@ describe("InvitePage step 2", () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
     expect(passwordField()).toHaveAttribute("type", "password");
     expect(confirmationField()).toHaveAttribute("type", "password");
 
@@ -752,29 +858,36 @@ describe("InvitePage step 2", () => {
 });
 
 describe("InvitePage going between the steps", () => {
-  it("keeps the typed data when going back to step 1", async () => {
+  it("keeps every typed value when going from step 3 back to step 1 and forward again", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
     await fillPasswords(user);
 
-    await user.click(screen.getByRole("button", { name: "Voltar" }));
+    await user.click(backButton());
 
-    expect(await screen.findByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
+    expect(await screen.findByRole("list", { name: "Etapa 2 de 3" })).toBeVisible();
     expect(nameField()).toHaveValue(NAME);
-    expect(raField()).toHaveValue(RA);
-    expect(emailField()).toHaveValue(EMAIL);
     expect(screen.queryByLabelText("Senha")).not.toBeInTheDocument();
 
-    await user.click(continueButton());
+    await user.click(backButton());
 
+    expect(await screen.findByRole("list", { name: "Etapa 1 de 3" })).toBeVisible();
+    expect(raField()).toHaveValue(RA);
+    expect(emailField()).toHaveValue(EMAIL);
+
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    expect(nameField()).toHaveValue(NAME);
+
+    await user.click(continueButton());
     await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
     expect(passwordField()).toHaveValue(PASSWORD);
     expect(confirmationField()).toHaveValue(PASSWORD);
   });
 
-  it("moves focus to the step heading and announces the step change", async () => {
+  it("moves focus to the step heading and announces each step change", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
@@ -784,28 +897,108 @@ describe("InvitePage going between the steps", () => {
     expect(announcement).toHaveAttribute("aria-live", "polite");
     expect(document.body).toHaveFocus();
 
-    await goToStepTwo(user);
+    await goToPersonalStep(user);
 
-    const stepTwoHeading = screen.getByRole("heading", { level: 2, name: "Crie sua senha" });
-    await waitFor(() => expect(stepTwoHeading).toHaveFocus());
-    expect(screen.getByText("Etapa 2 de 2: Crie sua senha")).toBe(announcement);
-    const list = screen.getByRole("list", { name: "Etapa 2 de 2" });
-    const [first, second] = within(list).getAllByRole("listitem");
-    expect(first).toHaveTextContent("Seus dados");
-    expect(first).toHaveTextContent("concluída");
-    expect(first).not.toHaveAttribute("aria-current");
-    expect(second).toHaveAttribute("aria-current", "step");
+    const personalHeading = screen.getByRole("heading", { level: 2, name: "Dados pessoais" });
+    await waitFor(() => expect(personalHeading).toHaveFocus());
+    expect(screen.getByText("Etapa 2 de 3: Dados pessoais")).toBe(announcement);
 
-    await user.click(screen.getByRole("button", { name: "Voltar" }));
+    await fillPersonalStep(user);
+    await user.click(continueButton());
 
-    const stepOneHeading = await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
-    await waitFor(() => expect(stepOneHeading).toHaveFocus());
-    expect(screen.getByText("Etapa 1 de 2: Seus dados")).toBe(announcement);
+    const passwordHeading = await screen.findByRole("heading", {
+      level: 2,
+      name: "Crie sua senha",
+    });
+    await waitFor(() => expect(passwordHeading).toHaveFocus());
+    expect(screen.getByText("Etapa 3 de 3: Crie sua senha")).toBe(announcement);
+
+    await user.click(backButton());
+
+    const personalHeadingAgain = await screen.findByRole("heading", {
+      level: 2,
+      name: "Dados pessoais",
+    });
+    await waitFor(() => expect(personalHeadingAgain).toHaveFocus());
+    expect(screen.getByText("Etapa 2 de 3: Dados pessoais")).toBe(announcement);
+  });
+
+  it("marks the finished steps as completed in the three-step stepper", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    const { container } = await openAccessInvite();
+    const stepItems = () =>
+      within(screen.getByRole("list", { name: /^Etapa \d de 3$/ })).getAllByRole("listitem");
+    const circles = () =>
+      Array.from(container.querySelectorAll("ol > li > span:first-child")).map(
+        (circle) => circle.textContent,
+      );
+
+    expect(stepItems()).toHaveLength(3);
+    expect(stepItems()[0]).toHaveTextContent("Dados acadêmicos");
+    expect(stepItems()[1]).toHaveTextContent("Dados pessoais");
+    expect(stepItems()[2]).toHaveTextContent("Crie sua senha");
+    expect(circles()).toEqual(["1", "2", "3"]);
+    expect(stepItems()[0]).toHaveAttribute("aria-current", "step");
+    expect(screen.queryByText("concluída")).not.toBeInTheDocument();
+
+    await goToPersonalStep(user);
+
+    expect(circles()).toEqual(["✓", "2", "3"]);
+    expect(stepItems()[0]).toHaveTextContent("concluída");
+    expect(stepItems()[0]).not.toHaveAttribute("aria-current");
+    expect(stepItems()[1]).toHaveAttribute("aria-current", "step");
+    expect(stepItems()[1]).not.toHaveTextContent("concluída");
+
+    await fillPersonalStep(user);
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
+
+    expect(circles()).toEqual(["✓", "✓", "3"]);
+    expect(stepItems()[0]).toHaveTextContent("concluída");
+    expect(stepItems()[1]).toHaveTextContent("concluída");
+    expect(stepItems()[1]).not.toHaveAttribute("aria-current");
+    expect(stepItems()[2]).toHaveAttribute("aria-current", "step");
+    expect(stepItems()[2]).not.toHaveTextContent("concluída");
+
+    await user.click(backButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+
+    expect(circles()).toEqual(["✓", "2", "3"]);
+  });
+
+  it("does not call the API while moving through steps 1 and 2, with Enter or Continue", async () => {
+    const user = userEvent.setup();
+    let posts = 0;
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler(),
+      acceptInviteHandler({ onCall: () => (posts += 1) }),
+    );
+    await openAccessInvite();
+
+    await fillAcademicStep(user);
+    await user.type(emailField(), "{Enter}");
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    await user.type(nameField(), `${NAME}{Enter}`);
+    await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
+
+    await user.click(backButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    await user.click(backButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados acadêmicos" });
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
+
+    expect(posts).toBe(0);
+    expect(screen.queryByRole("heading", { name: "Cadastro concluído!" })).not.toBeInTheDocument();
   });
 });
 
 describe("InvitePage errors from the API", () => {
-  it("shows the RA-in-use error on the RA field and keeps the form open", async () => {
+  it("goes back to step 1 with the RA-in-use error and the focus on the RA field", async () => {
     const user = userEvent.setup();
     server.use(
       meHandler({ user: null }),
@@ -819,19 +1012,18 @@ describe("InvitePage errors from the API", () => {
     await waitFor(() => expect(raField()).toHaveAttribute("aria-invalid", "true"));
     expect(raField()).toHaveAccessibleDescription("Este RA já está em uso");
     await waitFor(() => expect(raField()).toHaveFocus());
-    expect(nameField()).toHaveValue(NAME);
     expect(raField()).toHaveValue(RA);
     expect(emailField()).toHaveValue(EMAIL);
-    expect(nameField()).not.toHaveAttribute("aria-invalid", "true");
     expect(emailField()).not.toHaveAttribute("aria-invalid", "true");
-    expect(screen.getByRole("list", { name: "Etapa 1 de 2" })).toBeVisible();
+    expect(screen.getByRole("list", { name: "Etapa 1 de 3" })).toBeVisible();
+    expect(screen.getByRole("heading", { level: 2, name: "Dados acadêmicos" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "Cadastro concluído!" })).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/invite");
     expect(raField()).toBeEnabled();
   });
 
-  it("shows the email-in-use error on the email field", async () => {
+  it("goes back to step 1 with the email-in-use error and the focus on the email field", async () => {
     const user = userEvent.setup();
     server.use(
       meHandler({ user: null }),
@@ -846,8 +1038,15 @@ describe("InvitePage errors from the API", () => {
     expect(emailField()).toHaveAccessibleDescription("Este e-mail já está em uso");
     await waitFor(() => expect(emailField()).toHaveFocus());
     expect(raField()).not.toHaveAttribute("aria-invalid", "true");
-    expect(nameField()).toHaveValue(NAME);
+    expect(raField()).toHaveValue(RA);
+    expect(emailField()).toHaveValue(EMAIL);
+    expect(screen.getByRole("list", { name: "Etapa 1 de 3" })).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+
+    await user.click(continueButton());
+
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    expect(nameField()).toHaveValue(NAME);
   });
 
   it("clears the RA-in-use error when the RA is edited and lets the person try again", async () => {
@@ -868,6 +1067,9 @@ describe("InvitePage errors from the API", () => {
     expect(screen.queryByText("Este RA já está em uso")).not.toBeInTheDocument();
 
     server.use(acceptInviteHandler({ onCall: (body) => accepted.push(body) }));
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    expect(nameField()).toHaveValue(NAME);
     await user.click(continueButton());
     await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -915,7 +1117,7 @@ describe("InvitePage errors from the API", () => {
     );
   });
 
-  it("does not bring an error of the failed attempt back after going through step 1 again", async () => {
+  it("does not bring an error of the failed attempt back after going back and forward again", async () => {
     const user = userEvent.setup();
     server.use(
       meHandler({ user: null }),
@@ -926,7 +1128,7 @@ describe("InvitePage errors from the API", () => {
     await completeRegistration(user);
     await screen.findByRole("alert");
 
-    await user.click(screen.getByRole("button", { name: "Voltar" }));
+    await user.click(backButton());
     await user.click(await screen.findByRole("button", { name: "Continuar" }));
     await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
 
@@ -945,7 +1147,7 @@ describe("InvitePage while sending", () => {
       acceptInviteHandler({ delay: deferred.promise, onCall: () => (posts += 1) }),
     );
     const { container } = await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
     await fillPasswords(user);
 
     const button = submitButton();
@@ -958,7 +1160,7 @@ describe("InvitePage while sending", () => {
     expect(container.querySelector("form")).toHaveAttribute("aria-busy", "true");
     expect(passwordField()).toBeDisabled();
     expect(confirmationField()).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Voltar" })).toBeDisabled();
+    expect(backButton()).toBeDisabled();
     expect(screen.getByRole("button", { name: "Mostrar senha" })).toBeDisabled();
     await waitFor(() => expect(posts).toBeGreaterThan(0));
     expect(posts).toBe(1);
@@ -1008,7 +1210,7 @@ describe("InvitePage while sending", () => {
       }),
     );
     const { container } = await openAccessInvite();
-    await goToStepTwo(user);
+    await goToPasswordStep(user);
     const region = container.querySelector<HTMLElement>("div[role='status']");
     expect(region).toBeEmptyDOMElement();
 
@@ -1034,24 +1236,34 @@ describe("InvitePage while sending", () => {
 describe("InvitePage accessibility", () => {
   // Exceção consciente à regra "asserção por papel, não por classe": o jsdom não carrega CSS, então
   // alvo de 44px e fonte de 16px só são verificáveis pelas classes do Tailwind.
-  it("renders 44px targets and 16px text", async () => {
+  it("renders 44px targets and 16px text on the three steps", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
     await openAccessInvite();
 
-    for (const field of [nameField(), raField(), emailField()]) {
+    for (const field of [raField(), emailField()]) {
       expect(field).toHaveClass("min-h-11", "text-base");
     }
+    expect(continueButton()).toHaveClass("min-h-11", "text-base");
+    expect(screen.getByRole("heading", { level: 2, name: "Dados acadêmicos" })).toHaveClass(
+      "text-base",
+    );
+    expect(screen.getByText(/^Etapa 1 de 3 · /)).toHaveClass("text-base");
+    expect(screen.getByText("Você foi convidado como Membro")).toHaveClass("text-base");
+
+    await goToPersonalStep(user);
+
+    expect(nameField()).toHaveClass("min-h-11", "text-base");
+    expect(backButton()).toHaveClass("min-h-11", "text-base");
     expect(continueButton()).toHaveClass("min-h-11", "text-base");
     expect(screen.getByRole("heading", { level: 2, name: "Dados pessoais" })).toHaveClass(
       "text-base",
     );
-    expect(screen.getByText("Preencha seus dados para criar o seu acesso ao TEDI.")).toHaveClass(
-      "text-base",
-    );
-    expect(screen.getByText("Você foi convidado como Membro")).toHaveClass("text-base");
+    expect(screen.getByText(/^Etapa 2 de 3 · /)).toHaveClass("text-base");
 
-    await goToStepTwo(user);
+    await fillPersonalStep(user);
+    await user.click(continueButton());
+    await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
 
     for (const field of [passwordField(), confirmationField()]) {
       expect(field).toHaveClass("min-h-11", "text-base");
@@ -1062,8 +1274,13 @@ describe("InvitePage accessibility", () => {
     ]) {
       expect(eye).toHaveClass("min-h-11", "min-w-11");
     }
-    expect(screen.getByRole("button", { name: "Voltar" })).toHaveClass("min-h-11", "text-base");
+    expect(backButton()).toHaveClass("min-h-11", "text-base");
     expect(submitButton()).toHaveClass("min-h-11", "text-base");
+    expect(screen.getByRole("heading", { level: 2, name: "Crie sua senha" })).toHaveClass(
+      "text-base",
+    );
+    expect(summaryStrip()).toHaveClass("text-base");
+    expect(screen.getByText(/^Etapa 3 de 3 · /)).toHaveClass("text-base");
   });
 
   it("renders the invalid-link screen with a 44px button and 16px text", async () => {
@@ -1107,9 +1324,6 @@ describe("InvitePage accessibility", () => {
     await openAccessInvite();
 
     await user.tab();
-    expect(nameField()).toHaveFocus();
-    await user.keyboard(NAME);
-    await user.tab();
     expect(raField()).toHaveFocus();
     await user.keyboard(RA);
     await user.tab();
@@ -1119,7 +1333,25 @@ describe("InvitePage accessibility", () => {
     expect(continueButton()).toHaveFocus();
     await user.keyboard("{Enter}");
 
-    await screen.findByRole("heading", { level: 2, name: "Crie sua senha" });
+    const personalHeading = await screen.findByRole("heading", {
+      level: 2,
+      name: "Dados pessoais",
+    });
+    await waitFor(() => expect(personalHeading).toHaveFocus());
+    await user.tab();
+    expect(nameField()).toHaveFocus();
+    await user.keyboard(NAME);
+    await user.tab();
+    expect(backButton()).toHaveFocus();
+    await user.tab();
+    expect(continueButton()).toHaveFocus();
+    await user.keyboard("{Enter}");
+
+    const passwordHeading = await screen.findByRole("heading", {
+      level: 2,
+      name: "Crie sua senha",
+    });
+    await waitFor(() => expect(passwordHeading).toHaveFocus());
     await user.tab();
     expect(passwordField()).toHaveFocus();
     await user.keyboard(PASSWORD);
@@ -1131,7 +1363,7 @@ describe("InvitePage accessibility", () => {
     await user.tab();
     expect(screen.getByRole("button", { name: "Mostrar confirmação da senha" })).toHaveFocus();
     await user.tab();
-    expect(screen.getByRole("button", { name: "Voltar" })).toHaveFocus();
+    expect(backButton()).toHaveFocus();
     await user.tab();
     expect(submitButton()).toHaveFocus();
     await user.keyboard("{Enter}");
