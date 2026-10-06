@@ -125,6 +125,7 @@ export function InvitePage(): ReactElement {
       {invite.data.type === InviteType.password_reset ? (
         <NewPasswordForm
           token={token}
+          person={invite.data.person}
           onDone={() => setOutcome({ kind: "passwordChanged" })}
           onInvalidInvite={() => setOutcome({ kind: "invalid" })}
         />

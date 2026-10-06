@@ -20,6 +20,7 @@ export * from "./healthResponseDtoStatus.ts";
 export * from "./inviteListItemDto.ts";
 export * from "./inviteListItemDtoPersonId.ts";
 export * from "./inviteListItemDtoStatus.ts";
+export * from "./invitePersonDto.ts";
 export * from "./inviteResponseDto.ts";
 export * from "./inviteType.ts";
 export * from "./listAccess200.ts";
