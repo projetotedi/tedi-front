@@ -62,11 +62,15 @@ export function AccessPage(): ReactElement {
   const cardTitle =
     total === undefined ? t("access.people.titlePending") : t("access.people.title", { total });
 
+  // O refetch de uma consulta em erro e sem dados volta a status "pending"; manter o painel de
+  // erro (botão em carregamento) evita desmontar o botão e perder o foco.
+  const isRetrying = query.isPending && query.isFetching && query.errorUpdateCount > 0;
+
   const listState = resolveListState({
     // Sem linhas, o placeholder não tem o que manter na tela e, lido com os filtros novos,
     // mostraria o estado errado (vazio logo depois de Limpar filtros): espera no carregando.
-    isPending: query.isPending || (query.isPlaceholderData && total === 0),
-    isError: query.isError,
+    isPending: (query.isPending && !isRetrying) || (query.isPlaceholderData && total === 0),
+    isError: query.isError || isRetrying,
     total,
     hasActiveFilters: hasActiveFilters(appliedFilters),
   });
@@ -136,7 +140,7 @@ export function AccessPage(): ReactElement {
         <div
           data-testid="access-list"
           aria-busy={query.isPlaceholderData || undefined}
-          className={query.isPlaceholderData ? "opacity-60" : undefined}
+          className={query.isPlaceholderData ? "opacity-75" : undefined}
         >
           <AccessTable rows={query.data?.data ?? []} />
           {renderListState()}

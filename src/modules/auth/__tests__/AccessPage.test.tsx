@@ -152,6 +152,25 @@ describe("AccessPage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
+  it("keeps the error panel and the retry button mounted while retrying", async () => {
+    server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
+    const user = userEvent.setup();
+
+    await renderWithProviders(<AccessPage />);
+
+    const retryButton = await screen.findByRole("button", { name: "Tentar de novo" });
+    server.use(
+      http.get("*/access", async () => {
+        await delay("infinite");
+        return HttpResponse.json({ data: [], page: 1, limit: 12, total: 0 });
+      }),
+    );
+    await user.click(retryButton);
+
+    expect(screen.getByRole("button", { name: "Tentar de novo" })).toBe(retryButton);
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("empty list shows the empty state, keeps the column headers and hides the footer", async () => {
     server.use(listAccessHandler({ data: [], total: 0 }));
 
