@@ -32,6 +32,8 @@ export * from "./meResponseDto.ts";
 export * from "./meResponseDtoEmail.ts";
 export * from "./meResponseDtoRa.ts";
 export * from "./passwordResetResponseDto.ts";
+export * from "./permissionsDto.ts";
 export * from "./role.ts";
+export * from "./scope.ts";
 export * from "./updateAccessEnabledDto.ts";
 export * from "./updateAccessRoleDto.ts";

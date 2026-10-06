@@ -7,6 +7,7 @@
  */
 import type { MeResponseDtoEmail } from "./meResponseDtoEmail.ts";
 import type { MeResponseDtoRa } from "./meResponseDtoRa.ts";
+import type { PermissionsDto } from "./permissionsDto.ts";
 import type { Role } from "./role.ts";
 
 export interface MeResponseDto {
@@ -14,6 +15,8 @@ export interface MeResponseDto {
   email: MeResponseDtoEmail;
   id: string;
   name: string;
+  /** Scope per permission for the logged-in role (source: PERMISSION_MATRIX, docs/PERMISSIONS.md). */
+  permissions: PermissionsDto;
   /** @nullable */
   ra: MeResponseDtoRa;
   role: Role;

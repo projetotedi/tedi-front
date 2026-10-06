@@ -13,6 +13,8 @@ import {
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
+import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
+
 /**
  * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/login,
  * POST /auth/logout, GET /auth/invites/:token, POST /auth/invites/accept).
@@ -22,6 +24,7 @@ import { Role } from "@shared/lib/role";
  */
 
 export function buildMeUser(overrides: Partial<MeResponseDto> = {}): MeResponseDto {
+  const role = overrides.role ?? Role.coordinator;
   return {
     id: "01952ef7-0000-7000-8000-000000000001",
     name: "Ana Coordenadora",
@@ -29,7 +32,8 @@ export function buildMeUser(overrides: Partial<MeResponseDto> = {}): MeResponseD
     // risco 10 do plano de GUS-83); este card só usa id/name/role, então ficam null aqui.
     ra: null,
     email: null,
-    role: Role.coordinator,
+    role,
+    permissions: PERMISSIONS_BY_ROLE[role],
     ...overrides,
   };
 }

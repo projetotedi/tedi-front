@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import { Role } from "@shared/lib/role";
-
 import { authMenuItems } from "../menu";
 import { authProtectedRoutes } from "../routes";
 
@@ -14,9 +12,9 @@ describe("authMenuItems", () => {
     }
   });
 
-  it("shows Membros e Planejamento only from coordinator up", () => {
+  it("shows Membros e Planejamento only with access.manage", () => {
     expect(authMenuItems).toContainEqual(
-      expect.objectContaining({ path: "/members", minRole: Role.coordinator }),
+      expect.objectContaining({ path: "/members", permission: "access.manage" }),
     );
   });
 });
