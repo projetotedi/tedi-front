@@ -4,8 +4,12 @@ import type { AcceptInviteDto } from "@api/generated/model";
 import { acceptInviteBodyPasswordMin } from "@api/generated/zod/auth/auth";
 
 import {
+  academicStepSchema,
   acceptInviteFormSchema,
   newPasswordFormSchema,
+  personalStepSchema,
+  STEP_ONE_FIELDS,
+  STEP_TWO_FIELDS,
   type AcceptInviteFormValues,
   type NewPasswordFormValues,
 } from "../schemas/password.schema";
@@ -176,6 +180,22 @@ describe("acceptInviteFormSchema", () => {
       "passwordConfirmation",
       "ra",
     ]);
+  });
+});
+
+describe("the steps of the registration form", () => {
+  it("lists the fields of step 1 as the keys of the academic step schema", () => {
+    expect([...STEP_ONE_FIELDS].sort()).toEqual(Object.keys(academicStepSchema.shape).sort());
+  });
+
+  it("lists the fields of step 2 as the keys of the personal step schema", () => {
+    expect([...STEP_TWO_FIELDS].sort()).toEqual(Object.keys(personalStepSchema.shape).sort());
+  });
+
+  it("splits every form field into exactly one step", () => {
+    const stepFields = [...STEP_ONE_FIELDS, ...STEP_TWO_FIELDS, "password", "passwordConfirmation"];
+
+    expect(stepFields.sort()).toEqual(Object.keys(acceptInviteFormSchema.shape).sort());
   });
 });
 
