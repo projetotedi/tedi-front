@@ -8,16 +8,24 @@ import {
   type ReactElement,
 } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, FormProvider, useForm, useFormContext } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { Role } from "@shared/lib/role";
-import { Alert, Button, Checkbox, Stepper, TextField } from "@shared/ui";
+import { Alert, Button, Stepper } from "@shared/ui";
 
 import { useInviteAcceptance } from "../hooks/useInviteAcceptance";
 import { toAcceptFieldError } from "../lib/invite-error";
-import { acceptInviteFormSchema, type AcceptInviteFormValues } from "../schemas/password.schema";
+import {
+  acceptInviteFormSchema,
+  STEP_ONE_FIELDS,
+  STEP_TWO_FIELDS,
+  type AcceptInviteFormValues,
+} from "../schemas/password.schema";
+import { AcademicStep } from "./AcademicStep";
 import { PasswordFields } from "./PasswordFields";
+import { PersonalStep } from "./PersonalStep";
+import { STEP_HEADING_CLASS } from "./step-section";
 
 export interface AcceptInviteFormProps {
   token: string;
@@ -26,13 +34,19 @@ export interface AcceptInviteFormProps {
   onInvalidInvite: () => void;
 }
 
-type Step = 1 | 2;
+type Step = 1 | 2 | 3;
 
-const TOTAL_STEPS = 2;
+const TOTAL_STEPS = 3;
 
-const STEP_HEADING_CLASS =
-  "w-fit rounded-md text-base font-semibold text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus";
-const STEP_ONE_FIELDS = ["name", "ra", "email"] as const;
+const STEP_FIELDS = { 1: STEP_ONE_FIELDS, 2: STEP_TWO_FIELDS } as const;
+const NEXT_STEP = { 1: 2, 2: 3 } as const satisfies Record<1 | 2, Step>;
+const PREVIOUS_STEP = { 2: 1, 3: 2 } as const satisfies Record<2 | 3, Step>;
+
+const STEP_DESCRIPTION_KEYS = {
+  1: "invite.academicStep.description",
+  2: "invite.personalStep.description",
+  3: "invite.passwordStep.description",
+} as const satisfies Record<Step, string>;
 
 const ROLE_LABEL_KEYS = {
   [Role.member]: "invite.roles.member",
@@ -52,6 +66,7 @@ export function AcceptInviteForm({
 }: AcceptInviteFormProps): ReactElement {
   const { t } = useTranslation("auth");
   const errorId = useId();
+  const summaryId = useId();
 
   const [step, setStep] = useState<Step>(1);
   const [hasChangedStep, setHasChangedStep] = useState(false);
@@ -67,10 +82,9 @@ export function AcceptInviteForm({
       email: "",
       password: "",
       passwordConfirmation: "",
-      privacyConsent: false,
     },
   });
-  const { control, handleSubmit, trigger, getValues, setError, setFocus } = form;
+  const { handleSubmit, trigger, getValues, setError, setFocus } = form;
 
   const acceptance = useInviteAcceptance({
     onAccepted: () => onAccepted(getValues("ra").trim()),
@@ -105,11 +119,15 @@ export function AcceptInviteForm({
     setHasChangedStep(true);
   }
 
-  async function goToPasswordStep() {
-    const isStepValid = await trigger(STEP_ONE_FIELDS, { shouldFocus: true });
+  async function goToNextStep(from: 1 | 2) {
+    const isStepValid = await trigger(STEP_FIELDS[from], { shouldFocus: true });
     if (!isStepValid) return;
     acceptance.reset();
-    changeStep(2);
+    changeStep(NEXT_STEP[from]);
+  }
+
+  function goToPreviousStep(from: 2 | 3) {
+    changeStep(PREVIOUS_STEP[from]);
   }
 
   function submitRegistration(values: AcceptInviteFormValues) {
@@ -124,15 +142,19 @@ export function AcceptInviteForm({
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
-    if (step === 1) {
+    if (step !== TOTAL_STEPS) {
       event.preventDefault();
-      void goToPasswordStep();
+      void goToNextStep(step);
       return;
     }
     void handleSubmit(submitRegistration)(event);
   }
 
-  const stepNames = [t("invite.steps.personal"), t("invite.steps.password")];
+  const stepNames = [
+    t("invite.steps.academic"),
+    t("invite.steps.personal"),
+    t("invite.steps.password"),
+  ];
   const roleKey = roleLabelKey(role);
   const [name, ra] = getValues(["name", "ra"]);
 
@@ -144,7 +166,11 @@ export function AcceptInviteForm({
         </p>
         <h1 className="text-2xl font-semibold text-foreground">{t("invite.title")}</h1>
         <p className="max-w-130 text-base text-muted">
-          {step === 1 ? t("invite.step1.subtitle") : t("invite.step2.subtitle")}
+          {t("invite.subtitle", {
+            current: step,
+            total: TOTAL_STEPS,
+            description: t(STEP_DESCRIPTION_KEYS[step]),
+          })}
         </p>
       </header>
 
@@ -168,146 +194,80 @@ export function AcceptInviteForm({
       </p>
 
       <form onSubmit={onSubmit} noValidate aria-busy={isBusy} className="flex flex-col gap-5">
-        {/* `key` por passo: sem remontar, o React reaproveita os nós do DOM e um clique repetido em
-            "Continuar" cairia no "Enviar cadastro", que ocupa o mesmo lugar. */}
-        {step === 1 ? (
-          <Fragment key="step-1">
-            <div className="flex flex-col gap-4">
-              <h2 ref={stepHeadingRef} tabIndex={-1} className={STEP_HEADING_CLASS}>
-                {t("invite.step1.personalTitle")}
-              </h2>
-              <StepOneField
-                name="name"
-                label={t("invite.fields.name.label")}
-                autoComplete="name"
-                isDisabled={isBusy}
-              />
-            </div>
-            <div className="flex flex-col gap-4">
-              <h2 className="text-base font-semibold text-foreground">
-                {t("invite.step1.academicTitle")}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
-                <StepOneField
-                  name="ra"
-                  label={t("invite.fields.ra.label")}
-                  description={t("invite.fields.ra.hint")}
-                  autoComplete="username"
+        {/* `key` por etapa: sem remontar, o React reaproveita o botão focado e um Enter repetido em
+            "Continuar" acionaria o "Enviar cadastro", que ocupa o mesmo lugar. */}
+        <Fragment key={`step-${step}`}>
+          {step === 1 ? (
+            <>
+              <AcademicStep headingRef={stepHeadingRef} isDisabled={isBusy} />
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <p className="text-sm text-muted">{t("invite.requiredHint")}</p>
+                <Button type="submit">{t("invite.actions.next")}</Button>
+              </div>
+            </>
+          ) : null}
+
+          {step === 2 ? (
+            <>
+              <PersonalStep headingRef={stepHeadingRef} isDisabled={isBusy} />
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <p className="text-sm text-muted">{t("invite.requiredHint")}</p>
+                <div className="flex gap-3">
+                  <Button type="button" variant="secondary" onPress={() => goToPreviousStep(2)}>
+                    {t("invite.actions.back")}
+                  </Button>
+                  <Button type="submit">{t("invite.actions.next")}</Button>
+                </div>
+              </div>
+            </>
+          ) : null}
+
+          {step === 3 ? (
+            <>
+              <div className="flex flex-col gap-4">
+                <p
+                  id={summaryId}
+                  className="rounded-xl bg-tedi-summary px-4 py-3 text-base whitespace-pre-wrap text-foreground"
+                >
+                  <span className="font-semibold">{name.trim()}</span>
+                  {t("invite.passwordStep.summary", { ra: ra.trim() })}
+                </p>
+                <h2
+                  ref={stepHeadingRef}
+                  tabIndex={-1}
+                  aria-describedby={summaryId}
+                  className={STEP_HEADING_CLASS}
+                >
+                  {t("invite.steps.password")}
+                </h2>
+                <PasswordFields
                   isDisabled={isBusy}
-                />
-                <StepOneField
-                  name="email"
-                  label={t("invite.fields.email.label")}
-                  type="email"
-                  autoComplete="email"
-                  isDisabled={isBusy}
+                  describedBy={generalErrorKey ? errorId : undefined}
                 />
               </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <p className="text-sm text-muted">{t("invite.requiredHint")}</p>
-              <Button type="submit">{t("invite.actions.next")}</Button>
-            </div>
-          </Fragment>
-        ) : (
-          <Fragment key="step-2">
-            <div className="flex flex-col gap-4">
-              <h2 ref={stepHeadingRef} tabIndex={-1} className={STEP_HEADING_CLASS}>
-                {t("invite.step2.title")}
-              </h2>
-              <p className="rounded-xl bg-tedi-summary px-4 py-3 text-base whitespace-pre-wrap text-foreground">
-                <span className="font-semibold">{name.trim()}</span>
-                {t("invite.step2.summary", { ra: ra.trim() })}
-              </p>
-              <PasswordFields
-                isDisabled={isBusy}
-                describedBy={generalErrorKey ? errorId : undefined}
-              />
-            </div>
 
-            <Controller
-              name="privacyConsent"
-              control={control}
-              render={({ field, fieldState }) => (
-                <Checkbox
-                  label={t("invite.fields.privacyConsent.label")}
-                  isSelected={field.value}
-                  onChange={field.onChange}
-                  isRequired
+              <Alert variant="info">{showSlowNotice ? t("invite.slowNotice") : null}</Alert>
+              <Alert variant="error" id={errorId}>
+                {generalErrorKey ? t(`invite.errors.${generalErrorKey}`) : null}
+              </Alert>
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
                   isDisabled={isBusy}
-                  errorMessage={fieldState.error?.message ? t(fieldState.error.message) : undefined}
-                />
-              )}
-            />
-
-            <Alert variant="info">{showSlowNotice ? t("invite.slowNotice") : null}</Alert>
-            <Alert variant="error" id={errorId}>
-              {generalErrorKey ? t(`invite.errors.${generalErrorKey}`) : null}
-            </Alert>
-
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              <Button
-                type="button"
-                variant="secondary"
-                isDisabled={isBusy}
-                onPress={() => changeStep(1)}
-              >
-                {t("invite.actions.back")}
-              </Button>
-              <Button type="submit" isLoading={isBusy}>
-                {isBusy ? t("invite.actions.submitting") : t("invite.actions.submit")}
-              </Button>
-            </div>
-          </Fragment>
-        )}
+                  onPress={() => goToPreviousStep(3)}
+                >
+                  {t("invite.actions.back")}
+                </Button>
+                <Button type="submit" isLoading={isBusy}>
+                  {isBusy ? t("invite.actions.submitting") : t("invite.actions.submit")}
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </Fragment>
       </form>
     </FormProvider>
-  );
-}
-
-interface StepOneFieldProps {
-  name: (typeof STEP_ONE_FIELDS)[number];
-  label: string;
-  description?: string;
-  type?: "text" | "email";
-  autoComplete: string;
-  isDisabled: boolean;
-}
-
-function StepOneField({
-  name,
-  label,
-  description,
-  type,
-  autoComplete,
-  isDisabled,
-}: StepOneFieldProps): ReactElement {
-  const { t } = useTranslation("auth");
-  const { control, trigger } = useFormContext<AcceptInviteFormValues>();
-
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState }) => (
-        <TextField
-          label={label}
-          description={description}
-          name={field.name}
-          value={field.value}
-          onChange={(value) => {
-            field.onChange(value);
-            if (fieldState.error) void trigger(name);
-          }}
-          onBlur={field.onBlur}
-          inputRef={field.ref}
-          type={type}
-          autoComplete={autoComplete}
-          isRequired
-          isDisabled={isDisabled}
-          errorMessage={fieldState.error?.message ? t(fieldState.error.message) : undefined}
-        />
-      )}
-    />
   );
 }

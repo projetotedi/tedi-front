@@ -60,20 +60,22 @@
       "coordinator": "Coordinator"
     },
     "steps": {
-      "personal": "Your details",
+      "academic": "Academic details",
+      "personal": "Personal details",
       "password": "Create your password",
       "completed": "completed"
     },
     "stepLabel": "Step {{current}} of {{total}}",
     "stepStatus": "Step {{current}} of {{total}}: {{name}}",
-    "step1": {
-      "subtitle": "Fill in your details to create your TEDI access.",
-      "personalTitle": "Personal details",
-      "academicTitle": "Academic details"
+    "subtitle": "Step {{current}} of {{total}} · {{description}}",
+    "academicStep": {
+      "description": "Start with your academic details. The RA you enter will be your username in the system."
     },
-    "step2": {
-      "subtitle": "Last step: create the password you will use to sign in to TEDI.",
-      "title": "Create your password",
+    "personalStep": {
+      "description": "Now, your personal details."
+    },
+    "passwordStep": {
+      "description": "Last step: create the password you will use to sign in to the system.",
       "summary": "  ·  RA {{ra}} — this RA and the password below are how you sign in to the system."
     },
     "fields": {
@@ -98,9 +100,6 @@
         "hint": "Type the same password again.",
         "show": "Show password confirmation",
         "hide": "Hide password confirmation"
-      },
-      "privacyConsent": {
-        "label": "I have read the privacy notice and authorize the project to use my data to manage volunteering."
       }
     },
     "requiredHint": "* Required fields",
@@ -133,8 +132,7 @@
       "raRequired": "Enter your RA",
       "emailInvalid": "Enter a valid email",
       "passwordMin": "The password must have at least 8 characters",
-      "passwordMismatch": "The passwords do not match",
-      "privacyConsentRequired": "You must agree to continue."
+      "passwordMismatch": "The passwords do not match"
     },
     "loadError": {
       "title": "Could not load the invitation",

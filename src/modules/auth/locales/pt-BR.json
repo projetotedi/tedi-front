@@ -60,20 +60,22 @@
       "coordinator": "Coordenadora"
     },
     "steps": {
-      "personal": "Seus dados",
+      "academic": "Dados acadêmicos",
+      "personal": "Dados pessoais",
       "password": "Crie sua senha",
       "completed": "concluída"
     },
     "stepLabel": "Etapa {{current}} de {{total}}",
     "stepStatus": "Etapa {{current}} de {{total}}: {{name}}",
-    "step1": {
-      "subtitle": "Preencha seus dados para criar o seu acesso ao TEDI.",
-      "personalTitle": "Dados pessoais",
-      "academicTitle": "Dados acadêmicos"
+    "subtitle": "Etapa {{current}} de {{total}} · {{description}}",
+    "academicStep": {
+      "description": "Comece pelos seus dados acadêmicos. O RA informado será o seu usuário de acesso ao sistema."
     },
-    "step2": {
-      "subtitle": "Último passo: crie a senha que você vai usar para entrar no TEDI.",
-      "title": "Crie sua senha",
+    "personalStep": {
+      "description": "Agora, seus dados pessoais."
+    },
+    "passwordStep": {
+      "description": "Último passo: crie a senha que você vai usar para entrar no sistema.",
       "summary": "  ·  RA {{ra}} — é com este RA e a senha abaixo que você entra no sistema."
     },
     "fields": {
@@ -98,9 +100,6 @@
         "hint": "Digite a mesma senha de novo.",
         "show": "Mostrar confirmação da senha",
         "hide": "Ocultar confirmação da senha"
-      },
-      "privacyConsent": {
-        "label": "Li o aviso de privacidade e autorizo o projeto a usar meus dados para a gestão do voluntariado."
       }
     },
     "requiredHint": "* Campos obrigatórios",
@@ -133,8 +132,7 @@
       "raRequired": "Informe o seu RA",
       "emailInvalid": "Informe um e-mail válido",
       "passwordMin": "A senha deve ter no mínimo 8 caracteres",
-      "passwordMismatch": "As senhas não são iguais",
-      "privacyConsentRequired": "É preciso concordar para continuar."
+      "passwordMismatch": "As senhas não são iguais"
     },
     "loadError": {
       "title": "Não foi possível carregar o convite",
