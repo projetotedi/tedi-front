@@ -174,17 +174,19 @@
   },
   "access": {
     "people": {
-      "title": "Member allocations ({{total}})",
-      "titlePending": "Member allocations",
+      "title": "Members ({{total}})",
+      "titlePending": "Members",
+      "pendingInvites": "Pending invites ({{count}})",
       "caption": "Members with access to TEDI",
       "columns": {
         "member": "Member",
         "role": "Role",
-        "departments": "Departments",
+        "department": "Department",
         "mainFunction": "Main function",
         "status": "Status",
         "actions": "Actions"
       },
+      "rowActions": "Actions for {{name}}",
       "status": {
         "active": "Active",
         "inactive": "Inactive"
@@ -208,11 +210,24 @@
           "value": "Status: {{value}}"
         }
       },
-      "summary": "Showing {{shown}} of {{total}} allocations",
-      "loading": "Loading people…",
-      "error": "Could not load the people with access.",
-      "retry": "Try again",
-      "empty": "No access found",
+      "summary": "Showing {{shown}} of {{total}} members",
+      "loading": "Loading members…",
+      "states": {
+        "empty": {
+          "title": "No members yet",
+          "description": "Generate a registration link and send it to the person. They show up here as soon as they finish signing up."
+        },
+        "noResults": {
+          "title": "Nothing found",
+          "description": "No member matches the search and the selected filters. Try another term or clear the filters.",
+          "clear": "Clear filters"
+        },
+        "error": {
+          "title": "Could not load the members",
+          "description": "Check your connection and try again.",
+          "retry": "Try again"
+        }
+      },
       "pagination": {
         "nav": "Member list pagination",
         "previous": "Previous page",

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -41,6 +42,19 @@ async function openAndGenerate(user: UserEvent) {
   await screen.findByLabelText("Link de cadastro");
 }
 
+function ControlledDialog() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <button type="button" onClick={() => setIsOpen(true)}>
+        Abrir de fora
+      </button>
+      <CreateInviteDialog isOpen={isOpen} onOpenChange={setIsOpen} />
+    </>
+  );
+}
+
 describe("CreateInviteDialog", () => {
   it("focuses the role select when the dialog opens", async () => {
     server.use(createInviteHandler());
@@ -51,6 +65,32 @@ describe("CreateInviteDialog", () => {
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Perfil/ })).toHaveFocus();
+  });
+
+  it("opens from outside when controlled", async () => {
+    const user = userEvent.setup();
+    await renderWithProviders(<ControlledDialog />);
+
+    await user.click(screen.getByRole("button", { name: "Abrir de fora" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Gerar link de cadastro" }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("asks the parent to open instead of opening by itself when controlled", async () => {
+    const onOpenChange = vi.fn();
+    const user = userEvent.setup();
+    await renderWithProviders(<CreateInviteDialog isOpen={false} onOpenChange={onOpenChange} />);
+
+    await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
+
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it("every control has an accessible name", async () => {

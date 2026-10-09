@@ -174,17 +174,19 @@
   },
   "access": {
     "people": {
-      "title": "Alocações de membros ({{total}})",
-      "titlePending": "Alocações de membros",
+      "title": "Membros ({{total}})",
+      "titlePending": "Membros",
+      "pendingInvites": "Convites pendentes ({{count}})",
       "caption": "Membros com acesso ao TEDI",
       "columns": {
         "member": "Membro",
         "role": "Papel",
-        "departments": "Departamentos",
+        "department": "Departamento",
         "mainFunction": "Função principal",
         "status": "Status",
         "actions": "Ações"
       },
+      "rowActions": "Ações de {{name}}",
       "status": {
         "active": "Ativo",
         "inactive": "Inativo"
@@ -208,11 +210,24 @@
           "value": "Status: {{value}}"
         }
       },
-      "summary": "Mostrando {{shown}} de {{total}} alocações",
-      "loading": "Carregando pessoas…",
-      "error": "Não foi possível carregar as pessoas com acesso.",
-      "retry": "Tentar de novo",
-      "empty": "Nenhum acesso encontrado",
+      "summary": "Mostrando {{shown}} de {{total}} membros",
+      "loading": "Carregando membros…",
+      "states": {
+        "empty": {
+          "title": "Nenhum membro ainda",
+          "description": "Gere um link de cadastro e envie para a pessoa. Ela aparece aqui assim que concluir o cadastro."
+        },
+        "noResults": {
+          "title": "Nada encontrado",
+          "description": "Nenhum membro combina com a busca e os filtros escolhidos. Tente outro termo ou limpe os filtros.",
+          "clear": "Limpar filtros"
+        },
+        "error": {
+          "title": "Não foi possível carregar os membros",
+          "description": "Verifique a sua conexão e tente de novo.",
+          "retry": "Tentar de novo"
+        }
+      },
       "pagination": {
         "nav": "Paginação da lista de membros",
         "previous": "Página anterior",
