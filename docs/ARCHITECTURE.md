@@ -63,8 +63,8 @@ Aliases: `@app/*`, `@api/*`, `@modules/*`, `@shared/*`.
 ```
 modules/people/
 ├── index.ts                  # API pública: routes + o que outros módulos podem usar
-├── routes.tsx                # RouteObject[] do módulo, com RequireRole e handle: { title }
-├── menu.ts                   # <modulo>MenuItems: itens do menu lateral (label i18n, path, minRole, icon)
+├── routes.tsx                # RouteObject[] do módulo, com RequirePermission e handle: { title }
+├── menu.ts                   # <modulo>MenuItems: itens do menu lateral (label i18n, path, permission, icon)
 ├── pages/
 │   ├── PeopleListPage.tsx
 │   ├── StudentFormPage.tsx
@@ -91,12 +91,10 @@ O que **não** existe dentro do módulo: `services/`, `types/`, `api/`. Tudo iss
 
 ```tsx
 // modules/people/routes.tsx
-import { Role } from "@shared/lib/role";
-
 export const peopleRoutes: RouteObject[] = [
   {
     path: "people",
-    element: <RequireRole minRole={Role.director} />,
+    element: <RequirePermission permission="members.list" />,
     children: [
       { index: true, lazy: () => import("./pages/PeopleListPage") },
       { path: "students/new", lazy: () => import("./pages/StudentFormPage") },
@@ -114,20 +112,23 @@ padrão do exemplo acima, do módulo `people`, decisão tomada na integração G
 
 **Menu e título da página.** O layout autenticado (`app/layouts/AppLayout.tsx`) não conhece o domínio; cada módulo contribui com o que é dele.
 
-- Itens de menu: o módulo exporta um `MenuItem[]` (rota, chave de i18n do rótulo com namespace, ícone e `minRole` opcional), por exemplo `authMenuItems`:
+- Itens de menu: o módulo exporta um `MenuItem[]` (rota, chave de i18n do rótulo com namespace, ícone e a `permission` que o item exige), por exemplo `authMenuItems`:
 
 ```ts
 // shared/lib/menu.ts
 interface MenuItem {
   label: string; // chave i18n com namespace, ex.: "auth:access.title"
   path: string; // rota declarada no routes.tsx do módulo
-  minRole: Role; // repete o RequireRole da rota (decisão 18: menu e guarda andam juntos)
+  permission: Permission; // repete o RequirePermission da rota (decisão 18: menu e guarda andam juntos)
   icon: string; // URL de SVG de 24px (import de arquivo .svg)
 }
-function filterMenuByRole(items: readonly MenuItem[], role: Role | null | undefined): MenuItem[];
+function filterMenuByPermission(
+  items: readonly MenuItem[],
+  user: PermissionSubject | null | undefined,
+): MenuItem[];
 ```
 
-`app/menu.ts` concatena os `<modulo>MenuItems` de cada módulo (mais `prototypeMenuItems`, para as áreas do protótipo sem módulo ainda) na ordem de exibição; um módulo novo entra com uma linha ali e outra em `app/router.tsx`, e sai de `prototypeMenuItems` se já estava lá. `useAppMenu()` aplica `filterMenuByRole` com o perfil da sessão antes do `AppLayout` desenhar a sidebar/Drawer.
+`app/menu.ts` concatena os `<modulo>MenuItems` de cada módulo (mais `prototypeMenuItems`, para as áreas do protótipo sem módulo ainda) na ordem de exibição; um módulo novo entra com uma linha ali e outra em `app/router.tsx`, e sai de `prototypeMenuItems` se já estava lá. `useAppMenu()` aplica `filterMenuByPermission` com o usuário da sessão antes do `AppLayout` desenhar a sidebar/Drawer.
 
 - Título da rota: a rota declara `handle: { title: "<ns>:<chave>" } satisfies RouteHandle` (`shared/lib/route-handle.ts`) e o `AppLayout` usa `findRouteTitle()` sobre `useMatches()` para achar o título da rota mais interna que o declarar, traduzido; sem título, mostra o nome da aplicação. O título fica no `handle`, e não em um componente da página — por isso as páginas autenticadas não têm `<h1>` nem chamam `useDocumentTitle` próprios; é o `AppLayout` quem cuida dos dois.
 
@@ -137,9 +138,9 @@ function filterMenuByRole(items: readonly MenuItem[], role: Role | null | undefi
   path: "access",
   handle: { title: "auth:access.title" } satisfies RouteHandle,
   element: (
-    <RequireRole minRole={Role.coordinator}>
+    <RequirePermission permission="access.manage">
       <AccessPage />
-    </RequireRole>
+    </RequirePermission>
   ),
 },
 ```
@@ -198,16 +199,18 @@ interface AuthContextValue {
 
 function AuthProvider(props: { children?: ReactNode }): ReactElement; // sem children, renderiza <Outlet />
 function useAuth(): AuthContextValue;
-function RequireRole(props: { minRole?: Role; children?: ReactNode }): ReactElement;
+function RequireRole(props: { children?: ReactNode }): ReactElement; // só exige sessão ativa
+function RequirePermission(props: { permission: Permission; children?: ReactNode }): ReactElement;
+function useCan(permission: Permission, target?: PermissionTarget): boolean;
 function SignOutButton(): ReactElement | null;
 const authRoutes: RouteObject[]; // rotas públicas do módulo (hoje: "login", "invite" e "reset-password")
-const authProtectedRoutes: RouteObject[]; // rotas autenticadas (hoje: "members", só coordinator)
-const authMenuItems: MenuItem[]; // "Membros e Planejamento", só coordinator
+const authProtectedRoutes: RouteObject[]; // rotas autenticadas (hoje: "members", com access.manage)
+const authMenuItems: MenuItem[]; // "Membros e Planejamento", com access.manage
 ```
 
-`AuthProvider` carrega a sessão com `GET /auth/me` uma única vez (`staleTime: Infinity`) e entra como rota-layout raiz de `app/router.tsx` — não em `app/providers.tsx`, porque precisa de `useNavigate`/`useLocation`, que só existem dentro do `RouterProvider`. `RequireRole` protege uma rota (ou subárvore) pela hierarquia de perfil: sem sessão vai para `/login?returnTo=<rota>`; com perfil insuficiente renderiza uma página de "sem acesso" no lugar, sem deslogar e sem trocar a URL. Ouve `tedi:unauthorized` e, se já havia sessão autenticada, limpa o cache e redireciona para `/login?returnTo=...&reason=expired`; o 401 inicial de `/auth/me` é tratado como anônimo, não como expiração.
+`AuthProvider` carrega a sessão com `GET /auth/me` uma única vez (`staleTime: Infinity`) e entra como rota-layout raiz de `app/router.tsx` — não em `app/providers.tsx`, porque precisa de `useNavigate`/`useLocation`, que só existem dentro do `RouterProvider`. `RequireRole` só exige sessão (é a rota-layout do `AppLayout`). `RequirePermission` protege uma rota (ou subárvore) por permissão: sem sessão vai para `/login?returnTo=<rota>`; sem a permissão renderiza uma página de "sem acesso" no lugar, sem deslogar e sem trocar a URL. Ouve `tedi:unauthorized` e, se já havia sessão autenticada, limpa o cache e redireciona para `/login?returnTo=...&reason=expired`; o 401 inicial de `/auth/me` é tratado como anônimo, não como expiração.
 
-`shared/lib/role.ts` reexporta o enum `Role` gerado pelo Orval e expõe `roleSatisfies(userRole, minRole)`, espelhando a hierarquia do `RolesGuard` do back: `member < director < coordinator < superadmin`.
+**Permissões (GUS-114).** O `GET /auth/me` (e o `POST /auth/login`) devolve `permissions`: o escopo de cada permissão para o perfil logado (`all`, `own`, `department`, `allocated`, `lessonTeacher` ou `none`), a partir da matriz do back (`tedi-back/docs/PERMISSIONS.md`). O front não repete a matriz: `shared/lib/permissions.ts` expõe `Permission = keyof PermissionsDto` (tipo gerado), `scopeOf` e `can(user, permission, target?)`; `modules/auth` expõe `useCan(permission, target?)` e `<RequirePermission permission>`. Sem `target`, `can` responde "o perfil tem alguma chance?" (menu, rota, botão de criar). Com `target`, `own` compara `target.personId` com o usuário; `department`, `allocated` e `lessonTeacher` seguem `PermissionTarget.serverGrant`, a flag que o back calcula para o recurso (ex.: `canTakeAttendance`, `canConfirmMembers`). `attendance.confirmMember` nunca vale sobre a própria pessoa. A autoridade é sempre o back (RNF-22): esconder botão é só conveniência. Botões e ações usam `useCan`; nenhum componente compara `user.role` (`app/__tests__/no-role-authorization.test.ts` varre `src/`). `shared/lib/role.ts` só reexporta o enum `Role` gerado pelo Orval, usado para rótulo e badge.
 
 ## 4. Regras de fronteira (`.dependency-cruiser.cjs`, roda no CI)
 
@@ -229,12 +232,12 @@ tedi-back                                       tedi-front
 2. yarn openapi:export → docs/openapi.json
 3. CI: openapi:check
 4. merge em develop
-5. workflow openapi.yml abre PR aqui  ───────▶  openapi/openapi.json
-   com o contrato novo e `yarn generate`         src/api/generated/** regenerado
+5. copiar docs/openapi.json aqui  ───────────▶  openapi/openapi.json (manual)
+   e rodar `yarn generate` + `yarn format`        src/api/generated/** regenerado
                                                6. CI: typecheck quebra se alguma tela usa campo que sumiu
 ```
 
-Manualmente: copiar `docs/openapi.json` da API para `openapi/openapi.json` e rodar `yarn generate`.
+O passo 5 é manual: não existe workflow `openapi.yml` nem skill de sync. No PowerShell: `Copy-Item ..\tedi-back\docs\openapi.json openapi\openapi.json; yarn generate; yarn format`. O `yarn format` é necessário porque o JSON copiado do back não passa no `format:check`. O PR do front que muda o contrato carrega a cópia de `openapi/openapi.json` e entra depois do PR do back.
 
 Configuração em `orval.config.ts`: `mode: "tags-split"` (um arquivo por tag = um por módulo do back), `client: "react-query"`, `httpClient: "fetch"` com mutator `src/api/http-client.ts`, e um segundo output `client: "zod"`.
 
@@ -265,7 +268,7 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 
 1. ~~Primeiro `openapi.json` da API → `yarn generate` → versionar `src/api/generated/`.~~ Feito em GUS-83.
 2. `shared/ui`: base de componentes acessíveis (fonte base 16px, alvos 44px, contraste 4.5:1) sobre **HeroUI / React Aria**, já instalados. Componentes de `shared/ui` envolvem os do HeroUI com os padrões do TEDI; módulos não importam `@heroui/react` direto. Por enquanto existem `Button` (GUS-83; ganhou `isLoading` na GUS-84), `TextField` (aceita `type="email"` na GUS-85; ganhou `isReadOnly` e `isLabelHidden` na GUS-87), `PasswordField`, `Alert` (GUS-84; ganhou a variante estática `warning` e `description` na GUS-87 — sem `role` nem região viva, para avisos que já nascem preenchidos), `Skeleton` (GUS-84), `Stepper` e `StatusCard` (GUS-85), `Select`, `Dialog`, `Badge` e `Pagination` (GUS-87 — camadas finas sobre `Select`, `Modal`/`ListBox` e `Pagination` do HeroUI; o `Select` aceita `isLabelHidden` e `formatValue` para mostrar o valor já contextualizado no gatilho, como "Papel: todos"; `Pagination` é a paginação numerada, com a lógica das reticências em `shared/lib/pagination.ts`), e `NavList`, `Avatar`, `Card`, `Chip`, `Dropdown` e `Drawer` (GUS-86 — a sidebar/topbar do `AppLayout` e o `ProfileMenu` são construídos sobre eles; `Card` não expõe `aria-labelledby`/`role` próprios, então quem precisar de uma região nomeada — como a `AccessPage` — embrulha o `Card` num `<section aria-labelledby>` por fora). A GUS-87 chegou a criar um `Tabs` (removido quando a tela deixou as abas) e um `Menu` de menu suspenso (removido na integração com a GUS-86: o `Dropdown` dela faz o mesmo, e é quem o `ProfileMenu` usa). Os tokens do TEDI (`bg-tedi-sky`, as cores da tela de convite `tedi-success`, `tedi-warning`, `tedi-badge`, `tedi-summary`; da sidebar `tedi-sky-border` e `tedi-brand-muted`, GUS-86; dos selos e do cartão de Membros e Planejamento `tedi-neutral`, `tedi-highlight`, `tedi-badge-success`, `tedi-avatar-foreground`, `tedi-divider` (também usado pela `DataTable` genérica) e `tedi-page-current(-foreground)`; da tela 403 `tedi-texture-light`, `tedi-info-subtle` e a sombra `shadow-tedi-card` — cada cor com o contraste medido em comentário no CSS —, além dos ajustes de contraste do tema do HeroUI: `--accent`, `--accent-hover`, `--danger`, `--field-border`, `--field-border-width`, `--disabled-opacity`) ficam em `src/index.css` e valem para o app inteiro. `Toast` continua sem existir: a GUS-87 decidiu não criá-lo (o aviso de link copiado usa `Alert info`, que já é uma região `role="status"`); fica para quem precisar.
-3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84, GUS-85, GUS-86 e GUS-87** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85; `AppLayout` oficial — sidebar com o menu completo por perfil, topbar com título de rota e `ProfileMenu`, `/` redirecionando para "Meu perfil": GUS-86; tela de gestão de acessos: GUS-87). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em três etapas: dados acadêmicos, dados pessoais e senha; a etapa 1 tem só RA e e-mail e a 2 só o nome até a GUS-91) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. A tela de gestão de acessos (`/members`, `AccessPage`, sob `RequireRole minRole={Role.coordinator}`) segue o frame "Membros e Alocações" do Figma dentro do `Card` da GUS-86: o título e o total, o botão "Gerar link de cadastro" (`CreateInviteDialog`/`CreateInviteForm`, `POST /invites`, que mostra o link gerado uma única vez — nunca persistido: o estado morre ao fechar o diálogo), a busca ao vivo (com debounce) e os filtros de Papel e Status (`AccessFilters`), a `AccessTable` de seis colunas (`GET /access`, 12 por página; Departamentos, Função principal e Ações ficam vazias) e o rodapé com o resumo e a paginação numerada. Os rótulos de papel (`Membro`/`Diretor`/`Coordenadora`) vêm de `common:roles.*`, compartilhado com o `ProfileMenu` da GUS-86, e não mais de um `auth:roles.*` próprio. Não há listagem de convites: o convite gerado não aparece em lugar nenhum (a `InvitesTable` foi removida; a GUS-88 recupera a listagem se precisar revogar convites). **`/members` é o item "Membros e Planejamento" do protótipo**, não uma rota "Acessos" separada: `authMenuItems` substitui a linha correspondente em `app/menu.ts` (`prototypeMenuItems`), na mesma posição entre Matrículas e Banco de Horas, com `minRole: Role.coordinator` — diretor e membro não veem o item nem acessam a rota (decisão CA1 da GUS-86; diverge do frame 403 do Figma, que mostra o item visível para um Membro). Faltam: ações por linha — mudar perfil, ativar/desativar, redefinir senha, revogar convite (GUS-88); dados de Departamentos e Função principal, que a API ainda não tem; um jeito de a página de sem acesso personalizar o título do cabeçalho (hoje a topbar sempre mostra o título estático da rota, "Membros e Planejamento", mesmo com a `ForbiddenPage` no lugar da tela — regressão pequena e cosmética, aceita na integração GUS-86/87). "Meu perfil" (`modules/people`) usa dados de exemplo além de nome, perfil e RA da sessão, até o back expor horas e cadastro.
+3. Módulo `auth`: **parcialmente entregue em GUS-83, GUS-84, GUS-85, GUS-86 e GUS-87** (sessão via `/auth/me`, `RequireRole`, 401 com retorno, página de sem acesso, logout: GUS-83; formulário de login com RA e senha: GUS-84; aceite de convite: GUS-85; `AppLayout` oficial — sidebar com o menu completo por perfil, topbar com título de rota e `ProfileMenu`, `/` redirecionando para "Meu perfil": GUS-86; tela de gestão de acessos: GUS-87). O aceite é a `InvitePage`, que atende `/invite?token=...` (cadastro em três etapas: dados acadêmicos, dados pessoais e senha; a etapa 1 tem só RA e e-mail e a 2 só o nome até a GUS-91) e `/reset-password?token=...` (só a nova senha, o link que o back gera para a redefinição): ela decide pelo `type` que `GET /auth/invites/:token` devolve. O `PublicScreen` (fundo azul, cartão e rodapé) é o invólucro comum da tela de login e da de convite. A tela de gestão de acessos (`/members`, `AccessPage`, sob `RequirePermission permission="access.manage"`) segue o frame "Membros e Alocações" do Figma dentro do `Card` da GUS-86: o título e o total, o botão "Gerar link de cadastro" (`CreateInviteDialog`/`CreateInviteForm`, `POST /invites`, que mostra o link gerado uma única vez — nunca persistido: o estado morre ao fechar o diálogo), a busca ao vivo (com debounce) e os filtros de Papel e Status (`AccessFilters`), a `AccessTable` de seis colunas (`GET /access`, 12 por página; Departamentos, Função principal e Ações ficam vazias) e o rodapé com o resumo e a paginação numerada. Os rótulos de papel (`Membro`/`Diretor`/`Coordenadora`) vêm de `common:roles.*`, compartilhado com o `ProfileMenu` da GUS-86, e não mais de um `auth:roles.*` próprio. Não há listagem de convites: o convite gerado não aparece em lugar nenhum (a `InvitesTable` foi removida; a GUS-88 recupera a listagem se precisar revogar convites). **`/members` é o item "Membros e Planejamento" do protótipo**, não uma rota "Acessos" separada: `authMenuItems` substitui a linha correspondente em `app/menu.ts` (`prototypeMenuItems`), na mesma posição entre Matrículas e Banco de Horas, com `permission: "access.manage"` (GUS-114; a tela chama `GET /access`, só da coordenação) — diretor e membro não veem o item nem acessam a rota (decisão CA1 da GUS-86; diverge do frame 403 do Figma, que mostra o item visível para um Membro). Faltam: ações por linha — mudar perfil, ativar/desativar, redefinir senha, revogar convite (GUS-88); dados de Departamentos e Função principal, que a API ainda não tem; um jeito de a página de sem acesso personalizar o título do cabeçalho (hoje a topbar sempre mostra o título estático da rota, "Membros e Planejamento", mesmo com a `ForbiddenPage` no lugar da tela — regressão pequena e cosmética, aceita na integração GUS-86/87). "Meu perfil" (`modules/people`) usa dados de exemplo além de nome, perfil e RA da sessão, até o back expor horas e cadastro.
 4. Módulo `people` como referência para os demais.
 5. Habilitar `mock: true` no Orval e MSW nos testes.
 6. ~~Resolver `VITE_API_URL` em build time~~: resolvido na E9.a (decisão 25, GUS-82). `VITE_API_URL=/api` em todos os ambientes; o rewrite do `vercel.json` (produção/preview) e o proxy do Vite (dev) repassam `/api` para a API.

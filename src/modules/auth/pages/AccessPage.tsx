@@ -9,6 +9,7 @@ import { Alert, Button, Card, Pagination, Skeleton } from "@shared/ui";
 import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
+import { useCan } from "../hooks/useCan";
 import {
   ACCESS_PAGE_SIZE,
   EMPTY_ACCESS_FILTERS,
@@ -24,6 +25,8 @@ import {
 export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
+  // Ações por linha (GUS-88) devem usar `useCan("access.manage")` e a regra de própria conta (decisão 23).
+  const canInvite = useCan("invites.manage");
   const [filters, setFilters] = useState<AccessFilterValues>(EMPTY_ACCESS_FILTERS);
   const [page, setPage] = useState(1);
   const search = useDebounce(filters.search, SEARCH_DEBOUNCE_MS);
@@ -47,7 +50,10 @@ export function AccessPage(): ReactElement {
     // <Card> não expõe aria-labelledby/role próprios (shared/ui, GUS-86): a região fica aqui,
     // com o id apontando para o texto do título que o Card desenha dentro do seu <h2>.
     <section aria-labelledby={titleId}>
-      <Card title={<span id={titleId}>{cardTitle}</span>} aside={<CreateInviteDialog />}>
+      <Card
+        title={<span id={titleId}>{cardTitle}</span>}
+        aside={canInvite ? <CreateInviteDialog /> : undefined}
+      >
         <AccessFilters value={filters} onChange={onFiltersChange} />
 
         <hr className="my-1.5 border-tedi-divider" />

@@ -6,13 +6,33 @@ import { PasswordField } from "@shared/ui";
 
 import type { NewPasswordFormValues } from "../schemas/password.schema";
 
+/** `reset` troca só os rótulos ("Nova senha"); dicas e botões do olho são os mesmos do convite. */
+export type PasswordFieldsVariant = "create" | "reset";
+
+const LABEL_KEYS = {
+  create: {
+    password: "invite.fields.password.label",
+    passwordConfirmation: "invite.fields.passwordConfirmation.label",
+  },
+  reset: {
+    password: "resetPassword.fields.password.label",
+    passwordConfirmation: "resetPassword.fields.passwordConfirmation.label",
+  },
+} as const;
+
 export interface PasswordFieldsProps {
   isDisabled: boolean;
   describedBy?: string;
+  variant?: PasswordFieldsVariant;
 }
 
-export function PasswordFields({ isDisabled, describedBy }: PasswordFieldsProps): ReactElement {
+export function PasswordFields({
+  isDisabled,
+  describedBy,
+  variant = "create",
+}: PasswordFieldsProps): ReactElement {
   const { t } = useTranslation("auth");
+  const labelKeys = LABEL_KEYS[variant];
   const { control } = useFormContext<NewPasswordFormValues>();
 
   return (
@@ -23,7 +43,7 @@ export function PasswordFields({ isDisabled, describedBy }: PasswordFieldsProps)
         rules={{ deps: ["passwordConfirmation"] }}
         render={({ field, fieldState }) => (
           <PasswordField
-            label={t("invite.fields.password.label")}
+            label={t(labelKeys.password)}
             description={t("invite.fields.password.hint")}
             showLabel={t("invite.fields.password.show")}
             hideLabel={t("invite.fields.password.hide")}
@@ -45,7 +65,7 @@ export function PasswordFields({ isDisabled, describedBy }: PasswordFieldsProps)
         control={control}
         render={({ field, fieldState }) => (
           <PasswordField
-            label={t("invite.fields.passwordConfirmation.label")}
+            label={t(labelKeys.passwordConfirmation)}
             description={t("invite.fields.passwordConfirmation.hint")}
             showLabel={t("invite.fields.passwordConfirmation.show")}
             hideLabel={t("invite.fields.passwordConfirmation.hide")}

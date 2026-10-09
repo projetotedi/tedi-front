@@ -2,23 +2,17 @@ import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import type { Role } from "@shared/lib/role";
 import { Button } from "@shared/ui";
 
 import { useAuth } from "../hooks/useAuth";
 
-export interface ForbiddenPageProps {
-  requiredRole?: Role;
-}
-
-export function ForbiddenPage({ requiredRole }: ForbiddenPageProps) {
+export function ForbiddenPage() {
   const { t } = useTranslation(["auth", "common"]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const headingId = useId();
 
-  const requiredLabel = requiredRole ? t(`roles.${requiredRole}`, { ns: "common" }) : null;
   const currentLabel = user?.role ? t(`roles.${user.role}`, { ns: "common" }) : null;
 
   // `key === "default"` é a primeira entrada do histórico: não há tela anterior para voltar.
@@ -43,9 +37,9 @@ export function ForbiddenPage({ requiredRole }: ForbiddenPageProps) {
           {t("forbidden.description")}
         </p>
 
-        {requiredLabel && currentLabel ? (
+        {currentLabel ? (
           <p className="mt-5 rounded-[10px] bg-tedi-info-subtle px-4 py-2.5 text-sm font-medium whitespace-pre-wrap text-foreground">
-            {t("forbidden.profiles", { required: requiredLabel, current: currentLabel })}
+            {t("forbidden.currentProfile", { current: currentLabel })}
           </p>
         ) : null}
 

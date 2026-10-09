@@ -49,7 +49,7 @@ Use Yarn.
 
 - **Nenhuma chamada HTTP escrita à mão.** Componentes e páginas usam os hooks gerados em `@api/generated/<modulo>`. `fetch`/`axios` direto e import de `@api/http-client` fora de `src/api/` são proibidos (o `depcruise` falha).
 - **Nenhum tipo de resposta da API escrito à mão.** Vem de `@api/generated/model`. Se falta algo, o problema é no Swagger da API, não aqui.
-- **Autorização vem do back.** Os endpoints do back são protegidos pelo guard global com `@Roles`/`@Public` (nenhum módulo do back importa `auth`); no front, rotas protegidas usam `RequireRole` de `@modules/auth` com a mesma hierarquia (`member < director < coordinator`).
+- **Autorização vem do back.** Os endpoints do back são protegidos pelo guard global com `@RequirePermission`/`@Public` (nenhum módulo do back importa `auth`) e o `GET /auth/me` devolve o `permissions` do perfil logado. No front, rotas protegidas usam `RequirePermission` de `@modules/auth` e botões e ações usam `useCan`; nunca compare `user.role` para liberar algo (`src/app/__tests__/no-role-authorization.test.ts` falha se alguém fizer). `RequireRole` só exige sessão.
 - **Módulo é caixa fechada.** Só o `index.ts` é público. Importar `@modules/x/components/...` de outro módulo falha no CI.
 - **Formulários** usam `react-hook-form` + `zodResolver`. O schema vem de `@api/generated/zod/<modulo>`; só crie schema próprio em `schemas/` quando o formulário difere do DTO (campo condicional, máscara).
 - **Rotas** são declaradas em `routes.tsx` de cada módulo e concatenadas em `src/app/router.tsx`. Sem roteamento paralelo dentro de páginas.

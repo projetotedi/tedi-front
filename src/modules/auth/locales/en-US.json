@@ -9,7 +9,7 @@
   "forbidden": {
     "title": "You do not have access to this screen",
     "description": "This area belongs to the coordination team. Your profile sees and logs its own hours and allocations, but cannot open other people's hour bank.",
-    "profiles": "Required profile: {{required}}   ·   Your profile: {{current}}",
+    "currentProfile": "Your profile: {{current}}",
     "back": "Back to the previous screen",
     "profile": "Go to My profile",
     "help": "Need this access for a project task? Talk to the coordination team — only they can change access profiles."
@@ -139,13 +139,31 @@
       "description": "We could not reach the server right now. Check your connection and try again. Your link is still valid."
     }
   },
+  "forgotPassword": {
+    "title": "Forgot your password?",
+    "description": "Talk to the project coordination team. They will generate a link for you to create a new password.",
+    "notice": "The link is valid for {{hours}} hours and can only be used once. Your password is never sent by email.",
+    "confirm": "Got it",
+    "close": "Close"
+  },
   "resetPassword": {
-    "title": "Create a new password",
-    "subtitle": "Choose the password you will use to sign in to TEDI.",
+    "title": "Reset password",
+    "subtitle": "Create a new password to sign in to TEDI.",
+    "account": {
+      "summary": "  ·  RA {{ra}} — your old password stops working when you save."
+    },
+    "fields": {
+      "password": {
+        "label": "New password"
+      },
+      "passwordConfirmation": {
+        "label": "Confirm new password"
+      }
+    },
     "submit": "Save new password",
     "success": {
-      "title": "Password changed!",
-      "description": "You can now sign in with your new password."
+      "title": "Password reset!",
+      "description": "All set. Sign in with your RA and your new password."
     },
     "errors": {
       "network": "Could not connect",
