@@ -13,6 +13,7 @@ import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
 import { PendingInvitesButton } from "../components/PendingInvitesButton";
+import { useCan } from "../hooks/useCan";
 import {
   ACCESS_PAGE_SIZE,
   EMPTY_ACCESS_FILTERS,
@@ -30,6 +31,8 @@ export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  // Ações por linha (GUS-88) devem usar `useCan("access.manage")` e a regra de própria conta (decisão 23).
+  const canInvite = useCan("invites.manage");
   const [filters, setFilters] = useState<AccessFilterValues>(EMPTY_ACCESS_FILTERS);
   const [page, setPage] = useState(1);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -86,10 +89,14 @@ export function AccessPage(): ReactElement {
             title={t("access.people.states.empty.title")}
             description={t("access.people.states.empty.description")}
             icon={personsIcon}
-            action={{
-              label: t("access.createInvite.trigger"),
-              onPress: () => setIsInviteOpen(true),
-            }}
+            action={
+              canInvite
+                ? {
+                    label: t("access.createInvite.trigger"),
+                    onPress: () => setIsInviteOpen(true),
+                  }
+                : undefined
+            }
           />
         );
       case "noResults":
@@ -127,10 +134,12 @@ export function AccessPage(): ReactElement {
       <Card
         title={<span id={titleId}>{cardTitle}</span>}
         aside={
-          <div className="flex flex-wrap gap-2">
-            <PendingInvitesButton />
-            <CreateInviteDialog isOpen={isInviteOpen} onOpenChange={setIsInviteOpen} />
-          </div>
+          canInvite ? (
+            <div className="flex flex-wrap gap-2">
+              <PendingInvitesButton />
+              <CreateInviteDialog isOpen={isInviteOpen} onOpenChange={setIsInviteOpen} />
+            </div>
+          ) : undefined
         }
       >
         <AccessFilters value={filters} onChange={onFiltersChange} searchInputRef={searchInputRef} />

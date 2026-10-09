@@ -70,17 +70,24 @@ describe("AppLayout", () => {
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
   });
 
-  it.each([Role.director, Role.member])(
-    "hides Membros e Planejamento from the %s",
-    async (role) => {
-      const { nav } = await renderApp(buildMeUser({ role }));
+  it("hides Membros e Planejamento from the director but keeps Banco de Horas", async () => {
+    const { nav } = await renderApp(buildMeUser({ role: Role.director }));
 
-      expect(within(nav).getByRole("link", { name: "Banco de Horas" })).toBeInTheDocument();
-      expect(
-        within(nav).queryByRole("link", { name: "Membros e Planejamento" }),
-      ).not.toBeInTheDocument();
-    },
-  );
+    expect(within(nav).getByRole("link", { name: "Banco de Horas" })).toBeInTheDocument();
+    expect(
+      within(nav).queryByRole("link", { name: "Membros e Planejamento" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("hides Membros e Planejamento and Banco de Horas from the member", async () => {
+    const { nav } = await renderApp(buildMeUser({ role: Role.member }));
+
+    expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
+    expect(
+      within(nav).queryByRole("link", { name: "Membros e Planejamento" }),
+    ).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Banco de Horas" })).not.toBeInTheDocument();
+  });
 
   it.each([
     [Role.member, "Membro"],
@@ -168,6 +175,12 @@ describe("AppLayout", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Alunos" })).toBeInTheDocument();
     expect(screen.getByText(/ainda está em construção/)).toBeInTheDocument();
+  });
+
+  it("blocks Banco de Horas for a member even through the URL", async () => {
+    await renderApp(buildMeUser({ role: Role.member }), "/hours");
+
+    expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
   });
 
   it("blocks Membros e Planejamento for a member even through the URL", async () => {

@@ -5,11 +5,17 @@
  * Documentação da API do projeto TEDI
  * OpenAPI spec version: 0.1.0
  */
+import type { InvitePersonDto } from "./invitePersonDto.ts";
 import type { InviteType } from "./inviteType.ts";
 import type { Role } from "./role.ts";
 
 export interface InviteResponseDto {
   expiresAt: string;
+  /**
+   * Account owner. Only on password_reset invites; always null on access invites.
+   * @nullable
+   */
+  person: InvitePersonDto | null;
   role: Role | null;
   type: InviteType;
 }

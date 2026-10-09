@@ -9,7 +9,7 @@
   "forbidden": {
     "title": "Você não tem acesso a esta tela",
     "description": "Esta área é da coordenação. Seu perfil vê e lança as próprias horas e as próprias alocações, mas não abre o banco de horas de outras pessoas.",
-    "profiles": "Perfil necessário: {{required}}   ·   Seu perfil: {{current}}",
+    "currentProfile": "Seu perfil: {{current}}",
     "back": "Voltar à tela anterior",
     "profile": "Ir para Meu perfil",
     "help": "Precisa deste acesso para alguma tarefa do projeto? Fale com a coordenação — só ela altera perfil de acesso."
@@ -141,13 +141,31 @@
       "description": "Não conseguimos falar com o servidor agora. Verifique a sua conexão e tente de novo. O seu link continua valendo."
     }
   },
+  "forgotPassword": {
+    "title": "Esqueceu a senha?",
+    "description": "Fale com a coordenação do projeto. Ela gera um link para você criar uma senha nova.",
+    "notice": "O link vale por {{hours}} horas e só pode ser usado uma vez. A senha nunca é enviada por e-mail.",
+    "confirm": "Entendi",
+    "close": "Fechar"
+  },
   "resetPassword": {
-    "title": "Criar nova senha",
-    "subtitle": "Escolha a senha que você vai usar para entrar no TEDI.",
+    "title": "Redefinir senha",
+    "subtitle": "Crie uma nova senha para entrar no TEDI.",
+    "account": {
+      "summary": "  ·  RA {{ra}} — a senha antiga deixa de funcionar quando você salvar."
+    },
+    "fields": {
+      "password": {
+        "label": "Nova senha"
+      },
+      "passwordConfirmation": {
+        "label": "Confirmar nova senha"
+      }
+    },
     "submit": "Salvar nova senha",
     "success": {
-      "title": "Senha alterada!",
-      "description": "Agora você já pode entrar com a sua nova senha."
+      "title": "Senha redefinida!",
+      "description": "Pronto. Entre com o seu RA e a senha nova."
     },
     "errors": {
       "network": "Não foi possível conectar",

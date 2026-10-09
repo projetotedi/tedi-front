@@ -15,8 +15,9 @@ import { prototypeRoutes } from "./prototype-routes";
  * menu de cada uma entra em `app/menu.ts`.
  *
  * Rotas públicas (login, formulário de pré-inscrição) ficam sob PublicLayout;
- * o restante sob AppLayout, atrás de RequireRole (só exige sessão ativa; cada
- * rota que precisar de um perfil mínimo usa `<RequireRole minRole={...}>` por dentro).
+ * o restante sob AppLayout, atrás de RequireRole (só exige sessão ativa; cada rota que
+ * dependa de permissão usa `<RequirePermission permission="...">` por dentro, com a mesma
+ * permissão do `MenuItem`).
  * Rotas autenticadas declaram `handle: { title }`, que vira o título da topbar.
  * `prototypeRoutes` são as áreas do protótipo ainda sem módulo ("Em breve").
  *

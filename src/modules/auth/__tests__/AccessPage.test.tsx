@@ -7,6 +7,7 @@ import { getListAccessQueryKey } from "@api/generated";
 import type { InviteListItemDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
+import { AuthProvider } from "../AuthProvider";
 import { AccessPage } from "../pages/AccessPage";
 import { authProtectedRoutes } from "../routes";
 import {
@@ -18,6 +19,7 @@ import {
   listInvitesHandler,
   meHandler,
 } from "./handlers";
+import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
 import { renderRoutes, renderWithProviders, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
@@ -30,6 +32,16 @@ type OnCall = ReturnType<typeof vi.fn<(params: URLSearchParams) => void>>;
 
 function lastParams(onCall: OnCall): URLSearchParams | undefined {
   return onCall.mock.calls.at(-1)?.[0];
+}
+
+/** A página lê `invites.manage` do /auth/me, então precisa do AuthProvider e de uma sessão. */
+function renderAccessPage(user = buildMeUser({ role: Role.coordinator })) {
+  server.use(meHandler({ user }));
+  return renderWithProviders(
+    <AuthProvider>
+      <AccessPage />
+    </AuthProvider>,
+  );
 }
 
 function buildPeople(count: number) {
@@ -90,11 +102,46 @@ describe("route /members", () => {
 });
 
 describe("AccessPage", () => {
+  it("hides Gerar link de cadastro without invites.manage", async () => {
+    server.use(listAccessHandler({ data: buildPeople(1), total: 1 }));
+
+    await renderAccessPage(
+      buildMeUser({
+        permissions: { ...PERMISSIONS_BY_ROLE.coordinator, "invites.manage": "none" },
+      }),
+    );
+    await screen.findByRole("cell", { name: "Pessoa 1" });
+
+    expect(
+      screen.queryByRole("button", { name: "Gerar link de cadastro" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not request pending invites nor offer the invite action without invites.manage", async () => {
+    const invitesCall = vi.fn();
+    server.use(
+      listAccessHandler({ data: [], total: 0 }),
+      listInvitesHandler({ onCall: invitesCall }),
+    );
+
+    await renderAccessPage(
+      buildMeUser({
+        permissions: { ...PERMISSIONS_BY_ROLE.coordinator, "invites.manage": "none" },
+      }),
+    );
+
+    expect(await screen.findByRole("heading", { name: "Nenhum membro ainda" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Gerar link de cadastro" }),
+    ).not.toBeInTheDocument();
+    expect(invitesCall).not.toHaveBeenCalled();
+  });
+
   it("requests page 1 with limit 12 and no filter", async () => {
     const onCall = vi.fn<(params: URLSearchParams) => void>();
     server.use(listAccessHandler({ data: buildPeople(3), total: 3, onCall }));
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     const params = onCall.mock.calls[0]?.[0];
@@ -108,7 +155,7 @@ describe("AccessPage", () => {
   it("shows the total in the card title and the summary", async () => {
     server.use(listAccessHandler({ data: buildPeople(12), total: 16 }));
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     expect(await screen.findByRole("heading", { name: "Membros (16)" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Membros (16)" })).toBeInTheDocument();
@@ -124,11 +171,13 @@ describe("AccessPage", () => {
       }),
     );
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     expect(screen.getByRole("status")).toHaveTextContent("Carregando membros…");
     expect(screen.getByRole("heading", { name: "Membros" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Gerar link de cadastro" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Gerar link de cadastro" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/Mostrando/)).not.toBeInTheDocument();
   });
 
@@ -136,7 +185,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     const alert = await screen.findByRole("alert");
     expect(
@@ -156,7 +205,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     const retryButton = await screen.findByRole("button", { name: "Tentar de novo" });
     server.use(
@@ -174,7 +223,7 @@ describe("AccessPage", () => {
   it("empty list shows the empty state, keeps the column headers and hides the footer", async () => {
     server.use(listAccessHandler({ data: [], total: 0 }));
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     expect(await screen.findByRole("heading", { name: "Nenhum membro ainda" })).toBeInTheDocument();
     expect(screen.getAllByRole("columnheader")).toHaveLength(6);
@@ -188,7 +237,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ data: [], total: 0 }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("heading", { name: "Nenhum membro ainda" });
 
     expect(screen.getAllByRole("button", { name: "Gerar link de cadastro" })).toHaveLength(2);
@@ -211,7 +260,7 @@ describe("AccessPage", () => {
       }),
     );
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     const pending = await screen.findByRole("button", { name: "Convites pendentes (2)" });
     const create = screen.getByRole("button", { name: "Gerar link de cadastro" });
@@ -229,7 +278,7 @@ describe("AccessPage", () => {
     );
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("button", { name: "Convites pendentes (0)" });
 
     await user.click(screen.getByRole("button", { name: "Gerar link de cadastro" }));
@@ -246,7 +295,7 @@ describe("AccessPage", () => {
     server.use(accessHandlerWhere((params) => params.get("search") === "zzz", onCall));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     const search = screen.getByRole("textbox", { name: "Buscar por nome ou RA" });
@@ -276,7 +325,7 @@ describe("AccessPage", () => {
     server.use(accessHandlerWhere((params) => params.has("role")));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
@@ -291,7 +340,7 @@ describe("AccessPage", () => {
     server.use(accessHandlerWhere((params) => params.has("role") || params.has("enabled")));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     await user.click(screen.getByRole("button", { name: /Papel: todos/ }));
@@ -315,7 +364,7 @@ describe("AccessPage", () => {
     );
     const user = userEvent.setup();
 
-    const { queryClient } = await renderWithProviders(<AccessPage />);
+    const { queryClient } = await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
     await user.type(screen.getByRole("textbox", { name: "Buscar por nome ou RA" }), "zzz");
     await screen.findByRole("heading", { name: "Nada encontrado" }, { timeout: 2000 });
@@ -341,7 +390,7 @@ describe("AccessPage", () => {
             return HttpResponse.json({ data: [], page: 1, limit: 12, total: 0 });
           }),
         );
-        await renderWithProviders(<AccessPage />);
+        await renderAccessPage();
         await screen.findByRole("status");
       },
     ],
@@ -349,7 +398,7 @@ describe("AccessPage", () => {
       "error",
       async () => {
         server.use(listAccessHandler({ error: { statusCode: 500, error: "INTERNAL" } }));
-        await renderWithProviders(<AccessPage />);
+        await renderAccessPage();
         await screen.findByRole("alert");
       },
     ],
@@ -357,7 +406,7 @@ describe("AccessPage", () => {
       "empty",
       async () => {
         server.use(listAccessHandler({ data: [], total: 0 }));
-        await renderWithProviders(<AccessPage />);
+        await renderAccessPage();
         await screen.findByRole("heading", { name: "Nenhum membro ainda" });
       },
     ],
@@ -366,7 +415,7 @@ describe("AccessPage", () => {
       async () => {
         server.use(accessHandlerWhere((params) => params.has("enabled")));
         const user = userEvent.setup();
-        await renderWithProviders(<AccessPage />);
+        await renderAccessPage();
         await screen.findByRole("cell", { name: "Pessoa 1" });
         await user.click(screen.getByRole("button", { name: /Status: todos/ }));
         await user.click(await screen.findByRole("option", { name: "Inativo" }));
@@ -392,7 +441,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     await user.click(screen.getByRole("button", { name: "Página 3" }));
@@ -412,7 +461,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ data: buildPeople(3), total: 3, onCall }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     await user.click(screen.getByRole("button", { name: /Status: todos/ }));
@@ -429,7 +478,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
 
     await user.click(screen.getByRole("button", { name: "Página 2" }));
@@ -454,7 +503,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
     expect(screen.getByRole("button", { name: "Página 1" })).toHaveAttribute(
       "aria-current",
@@ -476,7 +525,7 @@ describe("AccessPage", () => {
     server.use(listAccessHandler({ data: buildPeople(12), total: 30, onCall }));
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa 1" });
     expect(screen.getByRole("button", { name: "Página anterior" })).toBeDisabled();
 
@@ -503,7 +552,7 @@ describe("AccessPage", () => {
     );
     const user = userEvent.setup();
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
     await screen.findByRole("cell", { name: "Pessoa da página 1" });
     expect(screen.getByTestId("access-list")).not.toHaveAttribute("aria-busy");
 
@@ -524,7 +573,7 @@ describe("AccessPage", () => {
   it("hides pagination when everything fits in one page", async () => {
     server.use(listAccessHandler({ data: buildPeople(5), total: 5 }));
 
-    await renderWithProviders(<AccessPage />);
+    await renderAccessPage();
 
     expect(await screen.findByText("Mostrando 5 de 5 membros")).toBeInTheDocument();
     expect(

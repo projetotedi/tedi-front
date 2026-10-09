@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { Route, Routes } from "react-router-dom";
@@ -133,28 +133,6 @@ describe("LoginPage form", () => {
     await renderLoginPage("/login");
 
     expect(passwordField()).toHaveAccessibleDescription("Mínimo de 8 caracteres");
-  });
-
-  it("shows the forgot-password text as plain text, not as a link or a button", async () => {
-    server.use(meHandler({ user: null }));
-    await renderLoginPage("/login");
-
-    const text = screen.getByText("Esqueceu a senha?");
-    expect(text.tagName).toBe("P");
-    expect(text).not.toHaveAttribute("role");
-    expect(text).not.toHaveAttribute("tabindex");
-    expect(text.closest("a, button")).toBeNull();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /esqueceu/i })).not.toBeInTheDocument();
-  });
-
-  it("styles the forgot-password text blue and right-aligned without making it look clickable", async () => {
-    server.use(meHandler({ user: null }));
-    await renderLoginPage("/login");
-
-    const text = screen.getByText("Esqueceu a senha?");
-    expect(text).toHaveClass("text-accent", "text-right", "text-base");
-    expect(text.className).not.toMatch(/underline|cursor-|hover:|focus/);
   });
 
   it("signs in and navigates to /", async () => {
@@ -563,6 +541,8 @@ describe("LoginPage form", () => {
     await user.tab();
     expect(screen.getByRole("button", { name: "Mostrar senha" })).toHaveFocus();
     await user.tab();
+    expect(screen.getByRole("button", { name: "Esqueceu a senha?" })).toHaveFocus();
+    await user.tab();
     expect(screen.getByRole("button", { name: "Entrar" })).toHaveFocus();
     await user.keyboard("{Enter}");
 
@@ -622,5 +602,150 @@ describe("LoginPage validation", () => {
     );
     expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
     expect(passwordField()).toHaveAccessibleDescription("Mínimo de 8 caracteres");
+  });
+});
+
+describe("LoginPage forgot-password dialog", () => {
+  const COORDINATION_TEXT =
+    "Fale com a coordenação do projeto. Ela gera um link para você criar uma senha nova.";
+  const NOTICE_TEXT =
+    "O link vale por 48 horas e só pode ser usado uma vez. A senha nunca é enviada por e-mail.";
+
+  const forgotButton = () => screen.getByRole("button", { name: "Esqueceu a senha?" });
+
+  async function renderLoginPageAnonymous() {
+    server.use(meHandler({ user: null }));
+    return renderLoginPage("/login");
+  }
+
+  it("renders the forgot-password as a 44px button, not as plain text", async () => {
+    await renderLoginPageAnonymous();
+
+    expect(forgotButton()).toHaveAttribute("type", "button");
+    expect(forgotButton()).toHaveClass("min-h-11", "text-base");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("opens the guidance dialog on click with the coordination text and the 48h notice", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+
+    await user.click(forgotButton());
+
+    const dialog = await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+    expect(dialog).toHaveAccessibleDescription(COORDINATION_TEXT);
+    expect(within(dialog).getByText(NOTICE_TEXT)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Entendi" })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Fechar" })).toBeInTheDocument();
+  });
+
+  // Chega ao gatilho só por Tab, a partir do campo de senha (Senha → Mostrar senha → Esqueceu a senha?).
+  async function tabToForgotButtonFromPassword(user: UserEvent) {
+    await user.click(passwordField());
+    await user.tab();
+    await user.tab();
+    expect(forgotButton()).toHaveFocus();
+  }
+
+  it("opens the guidance dialog from the keyboard with Enter", async () => {
+    const user = userEvent.setup();
+    const calls: LoginDto[] = [];
+    server.use(meHandler({ user: null }), loginHandler({ onCall: (body) => calls.push(body) }));
+    await renderLoginPage("/login");
+
+    await tabToForgotButtonFromPassword(user);
+    await user.keyboard("{Enter}");
+
+    expect(await screen.findByRole("dialog", { name: "Esqueceu a senha?" })).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("opens the guidance dialog from the keyboard with Space", async () => {
+    const user = userEvent.setup();
+    const calls: LoginDto[] = [];
+    server.use(meHandler({ user: null }), loginHandler({ onCall: (body) => calls.push(body) }));
+    await renderLoginPage("/login");
+
+    await tabToForgotButtonFromPassword(user);
+    await user.keyboard(" ");
+
+    expect(await screen.findByRole("dialog", { name: "Esqueceu a senha?" })).toBeInTheDocument();
+    expect(calls).toHaveLength(0);
+  });
+
+  it("keeps focus inside the dialog while tabbing", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+    await user.click(forgotButton());
+    const dialog = await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+
+    for (let presses = 0; presses < 6; presses += 1) {
+      await user.tab();
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
+    for (let presses = 0; presses < 3; presses += 1) {
+      await user.tab({ shift: true });
+      expect(dialog).toContainElement(document.activeElement as HTMLElement);
+    }
+  });
+
+  it("closes on Entendi and returns focus to the forgot-password button", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+    await user.click(forgotButton());
+    const dialog = await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+
+    await user.click(within(dialog).getByRole("button", { name: "Entendi" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(forgotButton()).toHaveFocus());
+  });
+
+  it("closes on the close button and returns focus to the forgot-password button", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+    await user.click(forgotButton());
+    const dialog = await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+
+    await user.click(within(dialog).getByRole("button", { name: "Fechar" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(forgotButton()).toHaveFocus());
+  });
+
+  it("closes on Escape and returns focus to the forgot-password button", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+    await user.click(forgotButton());
+    await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(forgotButton()).toHaveFocus());
+  });
+
+  it("offers no automatic recovery: the dialog has no field and no link", async () => {
+    const user = userEvent.setup();
+    await renderLoginPageAnonymous();
+
+    await user.click(forgotButton());
+
+    const dialog = await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+    expect(within(dialog).queryByRole("textbox")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("does not send POST /auth/login when the forgot-password button is pressed", async () => {
+    const user = userEvent.setup();
+    const calls: LoginDto[] = [];
+    server.use(meHandler({ user: null }), loginHandler({ onCall: (body) => calls.push(body) }));
+    await renderLoginPage("/login");
+
+    await user.click(forgotButton());
+    await screen.findByRole("dialog", { name: "Esqueceu a senha?" });
+
+    expect(calls).toHaveLength(0);
+    expect(screen.queryByText("Informe sua matrícula")).not.toBeInTheDocument();
   });
 });

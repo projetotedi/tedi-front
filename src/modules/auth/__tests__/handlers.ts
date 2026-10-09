@@ -15,14 +15,18 @@ import {
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
+import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
+
 /**
  * Handlers MSW escritos à mão sobre o contrato real (GET /auth/me, POST /auth/login,
  * POST /auth/logout, GET /auth/invites/:token, POST /auth/invites/accept).
+ * `buildInvite` devolve `person: null` (tipo access); o tipo password_reset leva `{ name, ra }`.
  * Path com curinga de prefixo (ver http.get abaixo) porque http-client.ts prefixa a URL
  * com VITE_API_URL em runtime — o teste não precisa saber qual é o prefixo.
  */
 
 export function buildMeUser(overrides: Partial<MeResponseDto> = {}): MeResponseDto {
+  const role = overrides.role ?? Role.coordinator;
   return {
     id: "01952ef7-0000-7000-8000-000000000001",
     name: "Ana Coordenadora",
@@ -30,7 +34,8 @@ export function buildMeUser(overrides: Partial<MeResponseDto> = {}): MeResponseD
     // risco 10 do plano de GUS-83); este card só usa id/name/role, então ficam null aqui.
     ra: null,
     email: null,
-    role: Role.coordinator,
+    role,
+    permissions: PERMISSIONS_BY_ROLE[role],
     ...overrides,
   };
 }
@@ -106,6 +111,7 @@ export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteR
     type: InviteType.access,
     role: Role.member,
     expiresAt: "2026-09-22T12:00:00.000Z",
+    person: null,
     ...overrides,
   };
 }

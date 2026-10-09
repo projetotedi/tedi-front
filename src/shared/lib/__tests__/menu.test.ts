@@ -1,53 +1,70 @@
 import { describe, expect, it } from "vitest";
 
-import { filterMenuByRole, type MenuItem } from "../menu";
+import { PERMISSIONS_BY_ROLE } from "@modules/auth/__tests__/fixtures/permissions";
+
+import { filterMenuByPermission, type MenuItem } from "../menu";
+import type { PermissionSubject } from "../permissions";
 import { Role } from "../role";
 
 const items: MenuItem[] = [
-  { label: "common:nav.courses", path: "/courses", minRole: Role.member, icon: "courses.svg" },
-  { label: "common:nav.members", path: "/members", minRole: Role.director, icon: "members.svg" },
-  { label: "auth:access.title", path: "/access", minRole: Role.coordinator, icon: "access.svg" },
+  {
+    label: "common:nav.courses",
+    path: "/courses",
+    permission: "catalog.view",
+    icon: "courses.svg",
+  },
+  {
+    label: "common:nav.hours",
+    path: "/hours",
+    permission: "hours.viewOthers",
+    icon: "hours.svg",
+  },
+  {
+    label: "auth:access.title",
+    path: "/access",
+    permission: "access.manage",
+    icon: "access.svg",
+  },
 ];
 
 const paths = (result: MenuItem[]) => result.map((item) => item.path);
 
-describe("filterMenuByRole", () => {
-  it("keeps only the items the role satisfies", () => {
-    expect(paths(filterMenuByRole(items, Role.member))).toEqual(["/courses"]);
-    expect(paths(filterMenuByRole(items, Role.director))).toEqual(["/courses", "/members"]);
-  });
+function userOf(role: Role): PermissionSubject {
+  return { id: "person-1", permissions: PERMISSIONS_BY_ROLE[role] };
+}
 
-  it("shows every item to the coordinator", () => {
-    expect(paths(filterMenuByRole(items, Role.coordinator))).toEqual([
+describe("filterMenuByPermission", () => {
+  it("keeps only the items the user can see, in the original order", () => {
+    expect(paths(filterMenuByPermission(items, userOf(Role.member)))).toEqual(["/courses"]);
+    expect(paths(filterMenuByPermission(items, userOf(Role.director)))).toEqual([
       "/courses",
-      "/members",
+      "/hours",
+    ]);
+    expect(paths(filterMenuByPermission(items, userOf(Role.coordinator)))).toEqual([
+      "/courses",
+      "/hours",
       "/access",
     ]);
-  });
-
-  it("shows every item to the superadmin", () => {
-    expect(filterMenuByRole(items, Role.superadmin)).toHaveLength(items.length);
-  });
-
-  it("returns nothing without a role", () => {
-    expect(filterMenuByRole(items, null)).toEqual([]);
-    expect(filterMenuByRole(items, undefined)).toEqual([]);
-  });
-
-  it("keeps the original order", () => {
-    const reversed = [...items].reverse();
-
-    expect(paths(filterMenuByRole(reversed, Role.coordinator))).toEqual([
+    expect(paths(filterMenuByPermission([...items].reverse(), userOf(Role.coordinator)))).toEqual([
       "/access",
-      "/members",
+      "/hours",
       "/courses",
     ]);
+  });
+
+  it("returns no items without a session", () => {
+    expect(filterMenuByPermission(items, null)).toEqual([]);
+    expect(filterMenuByPermission(items, undefined)).toEqual([]);
+  });
+
+  it("superadmin sees every item", () => {
+    expect(filterMenuByPermission(items, userOf(Role.superadmin))).toHaveLength(items.length);
   });
 
   it("does not mutate the input", () => {
     const copy = [...items];
 
-    filterMenuByRole(items, Role.member);
+    filterMenuByPermission(items, userOf(Role.member));
 
     expect(items).toEqual(copy);
   });
