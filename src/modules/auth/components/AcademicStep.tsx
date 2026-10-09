@@ -1,15 +1,8 @@
-import type { ReactElement, RefObject } from "react";
+import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import { InviteTextField } from "./InviteTextField";
-
-export interface StepSectionProps {
-  headingRef: RefObject<HTMLHeadingElement | null>;
-  isDisabled: boolean;
-}
-
-export const STEP_HEADING_CLASS =
-  "w-fit rounded-md text-base font-semibold text-foreground outline-offset-4 focus-visible:outline-2 focus-visible:outline-focus";
+import { STEP_HEADING_CLASS, type StepSectionProps } from "./step-section";
 
 export function AcademicStep({ headingRef, isDisabled }: StepSectionProps): ReactElement {
   const { t } = useTranslation("auth");

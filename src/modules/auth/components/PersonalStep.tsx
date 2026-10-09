@@ -1,7 +1,7 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-import { STEP_HEADING_CLASS, type StepSectionProps } from "./AcademicStep";
+import { STEP_HEADING_CLASS, type StepSectionProps } from "./step-section";
 import { InviteTextField } from "./InviteTextField";
 
 export function PersonalStep({ headingRef, isDisabled }: StepSectionProps): ReactElement {

@@ -22,9 +22,10 @@ import {
   STEP_TWO_FIELDS,
   type AcceptInviteFormValues,
 } from "../schemas/password.schema";
-import { AcademicStep, STEP_HEADING_CLASS } from "./AcademicStep";
+import { AcademicStep } from "./AcademicStep";
 import { PasswordFields } from "./PasswordFields";
 import { PersonalStep } from "./PersonalStep";
+import { STEP_HEADING_CLASS } from "./step-section";
 
 export interface AcceptInviteFormProps {
   token: string;
@@ -193,8 +194,8 @@ export function AcceptInviteForm({
       </p>
 
       <form onSubmit={onSubmit} noValidate aria-busy={isBusy} className="flex flex-col gap-5">
-        {/* `key` por etapa: sem remontar, o React reaproveita os nós do DOM e um clique repetido em
-            "Continuar" cairia no "Enviar cadastro", que ocupa o mesmo lugar. */}
+        {/* `key` por etapa: sem remontar, o React reaproveita o botão focado e um Enter repetido em
+            "Continuar" acionaria o "Enviar cadastro", que ocupa o mesmo lugar. */}
         <Fragment key={`step-${step}`}>
           {step === 1 ? (
             <>

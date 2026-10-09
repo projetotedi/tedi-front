@@ -1077,6 +1077,19 @@ describe("InvitePage going between the steps", () => {
     expect(circles()).toEqual(["✓", "2", "3"]);
   });
 
+  it("does not validate the next step when Continue is double-clicked", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+    await fillAcademicStep(user);
+
+    await user.dblClick(continueButton());
+
+    await screen.findByRole("heading", { level: 2, name: "Dados pessoais" });
+    expect(screen.queryByText("Informe o seu nome completo")).not.toBeInTheDocument();
+    expect(nameField()).not.toHaveAttribute("aria-invalid", "true");
+  });
+
   it("does not call the API while moving through steps 1 and 2, with Enter or Continue", async () => {
     const user = userEvent.setup();
     let posts = 0;
