@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Select, TextField, type SelectOption } from "@shared/ui";
@@ -9,9 +9,14 @@ import { INVITABLE_ROLES } from "../lib/role-label";
 export interface AccessFiltersProps {
   value: AccessFilterValues;
   onChange: (next: AccessFilterValues) => void;
+  searchInputRef?: Ref<HTMLInputElement>;
 }
 
-export function AccessFilters({ value, onChange }: AccessFiltersProps): ReactElement {
+export function AccessFilters({
+  value,
+  onChange,
+  searchInputRef,
+}: AccessFiltersProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
 
   const roleOptions: SelectOption[] = [
@@ -39,6 +44,7 @@ export function AccessFilters({ value, onChange }: AccessFiltersProps): ReactEle
           placeholder={t("access.people.search.placeholder")}
           value={value.search}
           onChange={(search) => onChange({ ...value, search })}
+          inputRef={searchInputRef}
         />
       </div>
       <div className="w-45">

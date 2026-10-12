@@ -1,18 +1,23 @@
-import { useId, useState, type ReactElement } from "react";
+import { useId, useRef, useState, type ReactElement } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useListAccess } from "@api/generated";
+import { ListState } from "@shared/components/ListState";
 import { useDebounce } from "@shared/hooks/useDebounce";
-import { Alert, Button, Card, Pagination, Skeleton } from "@shared/ui";
+import { resolveListState } from "@shared/lib/list-state";
+import { Card, Pagination } from "@shared/ui";
 
+import personsIcon from "../../../assets/icons/persons.svg";
 import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
+import { PendingInvitesButton } from "../components/PendingInvitesButton";
 import { useCan } from "../hooks/useCan";
 import {
   ACCESS_PAGE_SIZE,
   EMPTY_ACCESS_FILTERS,
+  hasActiveFilters,
   SEARCH_DEBOUNCE_MS,
   toListAccessParams,
   type AccessFilterValues,
@@ -25,13 +30,22 @@ import {
 export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // Ações por linha (GUS-88) devem usar `useCan("access.manage")` e a regra de própria conta (decisão 23).
   const canInvite = useCan("invites.manage");
   const [filters, setFilters] = useState<AccessFilterValues>(EMPTY_ACCESS_FILTERS);
   const [page, setPage] = useState(1);
-  const search = useDebounce(filters.search, SEARCH_DEBOUNCE_MS);
+  const [isInviteOpen, setIsInviteOpen] = useState(false);
 
-  const query = useListAccess(toListAccessParams({ ...filters, search }, page), {
+  // Apagar a busca vale na hora: esperar o debounce manteria o termo antigo nos filtros aplicados.
+  const isSearchEmpty = filters.search.trim() === "";
+  const debouncedSearch = useDebounce(filters.search, isSearchEmpty ? 0 : SEARCH_DEBOUNCE_MS);
+  const appliedFilters: AccessFilterValues = {
+    ...filters,
+    search: isSearchEmpty ? "" : debouncedSearch,
+  };
+
+  const query = useListAccess(toListAccessParams(appliedFilters, page), {
     query: { placeholderData: keepPreviousData },
   });
 
@@ -40,11 +54,78 @@ export function AccessPage(): ReactElement {
     setPage(1);
   }
 
+  function clearFilters() {
+    onFiltersChange(EMPTY_ACCESS_FILTERS);
+    searchInputRef.current?.focus();
+  }
+
   const total = query.data?.total;
   const limit = query.data?.limit ?? ACCESS_PAGE_SIZE;
   const totalPages = Math.max(1, Math.ceil((total ?? 0) / limit));
   const cardTitle =
     total === undefined ? t("access.people.titlePending") : t("access.people.title", { total });
+
+  // O refetch de uma consulta em erro e sem dados volta a status "pending"; manter o painel de
+  // erro (botão em carregamento) evita desmontar o botão e perder o foco.
+  const isRetrying = query.isPending && query.isFetching && query.errorUpdateCount > 0;
+
+  const listState = resolveListState({
+    // Sem linhas, o placeholder não tem o que manter na tela e, lido com os filtros novos,
+    // mostraria o estado errado (vazio logo depois de Limpar filtros): espera no carregando.
+    isPending: (query.isPending && !isRetrying) || (query.isPlaceholderData && total === 0),
+    isError: query.isError || isRetrying,
+    total,
+    hasActiveFilters: hasActiveFilters(appliedFilters),
+  });
+
+  function renderListState(): ReactElement | null {
+    switch (listState) {
+      case "loading":
+        return <ListState variant="loading" title={t("access.people.loading")} />;
+      case "empty":
+        return (
+          <ListState
+            variant="empty"
+            title={t("access.people.states.empty.title")}
+            description={t("access.people.states.empty.description")}
+            icon={personsIcon}
+            action={
+              canInvite
+                ? {
+                    label: t("access.createInvite.trigger"),
+                    onPress: () => setIsInviteOpen(true),
+                  }
+                : undefined
+            }
+          />
+        );
+      case "noResults":
+        return (
+          <ListState
+            variant="noResults"
+            title={t("access.people.states.noResults.title")}
+            description={t("access.people.states.noResults.description")}
+            icon={personsIcon}
+            action={{ label: t("access.people.states.noResults.clear"), onPress: clearFilters }}
+          />
+        );
+      case "error":
+        return (
+          <ListState
+            variant="error"
+            title={t("access.people.states.error.title")}
+            description={t("access.people.states.error.description")}
+            action={{
+              label: t("access.people.states.error.retry"),
+              onPress: () => void query.refetch(),
+              isLoading: query.isFetching,
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  }
 
   return (
     // <Card> não expõe aria-labelledby/role próprios (shared/ui, GUS-86): a região fica aqui,
@@ -52,37 +133,37 @@ export function AccessPage(): ReactElement {
     <section aria-labelledby={titleId}>
       <Card
         title={<span id={titleId}>{cardTitle}</span>}
-        aside={canInvite ? <CreateInviteDialog /> : undefined}
+        aside={
+          canInvite ? (
+            <div className="flex flex-wrap gap-2">
+              <PendingInvitesButton />
+              <CreateInviteDialog isOpen={isInviteOpen} onOpenChange={setIsInviteOpen} />
+            </div>
+          ) : undefined
+        }
       >
-        <AccessFilters value={filters} onChange={onFiltersChange} />
+        <AccessFilters value={filters} onChange={onFiltersChange} searchInputRef={searchInputRef} />
 
         <hr className="my-1.5 border-tedi-divider" />
 
-        {query.isPending ? (
-          <div className="flex flex-col gap-2">
-            <p role="status">{t("access.people.loading")}</p>
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-          </div>
-        ) : query.isError ? (
-          <div className="flex flex-col items-start gap-3">
-            <Alert variant="error">{t("access.people.error")}</Alert>
-            <Button variant="secondary" onPress={() => void query.refetch()}>
-              {t("access.people.retry")}
-            </Button>
-          </div>
-        ) : (
-          <AccessTable rows={query.data.data} />
-        )}
+        <div
+          data-testid="access-list"
+          aria-busy={query.isPlaceholderData || undefined}
+          className={query.isPlaceholderData ? "opacity-75" : undefined}
+        >
+          <AccessTable rows={query.data?.data ?? []} />
+          {renderListState()}
+        </div>
 
-        {query.data && query.data.total > 0 ? (
+        {listState === null && query.data ? (
           <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
             <p aria-live="polite" className="text-xs text-muted">
-              {t("access.people.summary", {
-                shown: query.data.data.length,
-                total: query.data.total,
-              })}
+              {query.isPlaceholderData
+                ? t("access.people.loading")
+                : t("access.people.summary", {
+                    shown: query.data.data.length,
+                    total: query.data.total,
+                  })}
             </p>
             {totalPages > 1 ? (
               <Pagination

@@ -1,11 +1,13 @@
 import { http, HttpResponse } from "msw";
 
 import {
+  InviteListItemDtoStatus,
   InviteType,
   type AcceptInviteDto,
   type AccessResponseDto,
   type CreateInviteDto,
   type CreateInviteResponseDto,
+  type InviteListItemDto,
   type InviteResponseDto,
   type ListAccess200,
   type LoginDto,
@@ -210,6 +212,33 @@ export function listAccessHandler({
     if (error) return apiErrorResponse(error);
     const body: ListAccess200 = { data, page, limit, total: total ?? data.length };
     return HttpResponse.json(body);
+  });
+}
+
+export function buildInviteListItem(overrides: Partial<InviteListItemDto> = {}): InviteListItemDto {
+  return {
+    id: "01952ef7-0000-7000-8000-000000000020",
+    type: InviteType.access,
+    role: Role.member,
+    status: InviteListItemDtoStatus.pending,
+    createdAt: "2026-09-22T12:00:00.000Z",
+    expiresAt: "2026-09-24T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+interface ListInvitesHandlerOptions {
+  data?: InviteListItemDto[];
+  error?: ApiErrorOptions;
+  onCall?: (params: URLSearchParams) => void;
+}
+
+export function listInvitesHandler({ data = [], error, onCall }: ListInvitesHandlerOptions = {}) {
+  return http.get("*/invites", ({ request }) => {
+    onCall?.(new URL(request.url).searchParams);
+
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(data);
   });
 }
 

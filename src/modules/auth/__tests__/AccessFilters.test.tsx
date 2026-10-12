@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { createRef, useState } from "react";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -134,6 +134,21 @@ describe("AccessFilters", () => {
       role: "coordinator",
       status: "active",
     });
+  });
+
+  it("forwards searchInputRef to the search input", async () => {
+    const searchInputRef = createRef<HTMLInputElement>();
+    await renderWithProviders(
+      <AccessFilters
+        value={EMPTY_ACCESS_FILTERS}
+        onChange={vi.fn()}
+        searchInputRef={searchInputRef}
+      />,
+    );
+
+    expect(searchInputRef.current).toBe(
+      screen.getByRole("textbox", { name: "Buscar por nome ou RA" }),
+    );
   });
 
   it("does not submit the form when Enter is pressed in the search field", async () => {

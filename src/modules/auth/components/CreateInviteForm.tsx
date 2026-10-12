@@ -39,7 +39,7 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
     mutation: {
       // O token só existe na resposta desta mutação: não deve sobreviver ao desmonte do formulário.
       gcTime: 0,
-      // Nenhuma tela lista convites ainda; invalidar mantém o cache correto para quando existir.
+      // Atualiza a contagem de "Convites pendentes" da listagem de acessos.
       onSuccess: () => {
         void queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
       },

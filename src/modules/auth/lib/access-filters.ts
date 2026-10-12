@@ -30,6 +30,10 @@ export function isStatusFilter(value: string): value is StatusFilter {
   return value === "all" || value === "active" || value === "inactive";
 }
 
+export function hasActiveFilters(filters: AccessFilterValues): boolean {
+  return filters.search.trim() !== "" || filters.role !== "all" || filters.status !== "all";
+}
+
 export function toListAccessParams(filters: AccessFilterValues, page: number): ListAccessParams {
   return {
     page,

@@ -5,6 +5,7 @@ import { Role } from "@shared/lib/role";
 import {
   ACCESS_PAGE_SIZE,
   EMPTY_ACCESS_FILTERS,
+  hasActiveFilters,
   isRoleFilter,
   isStatusFilter,
   SEARCH_DEBOUNCE_MS,
@@ -59,6 +60,28 @@ describe("toListAccessParams", () => {
     expect(
       toListAccessParams(filters({ search: "Ana", role: Role.director, status: "active" }), 2),
     ).toEqual({ page: 2, limit: 12, search: "Ana", role: "director", enabled: true });
+  });
+});
+
+describe("hasActiveFilters", () => {
+  it("is false with the default filters", () => {
+    expect(hasActiveFilters(EMPTY_ACCESS_FILTERS)).toBe(false);
+  });
+
+  it("is false when the search is made only of spaces", () => {
+    expect(hasActiveFilters(filters({ search: "   " }))).toBe(false);
+  });
+
+  it("is true when there is a search text", () => {
+    expect(hasActiveFilters(filters({ search: "Ana" }))).toBe(true);
+  });
+
+  it("is true when a role is chosen", () => {
+    expect(hasActiveFilters(filters({ role: Role.director }))).toBe(true);
+  });
+
+  it("is true when a status is chosen", () => {
+    expect(hasActiveFilters(filters({ status: "inactive" }))).toBe(true);
   });
 });
 
