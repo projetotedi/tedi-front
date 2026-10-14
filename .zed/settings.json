@@ -20,5 +20,6 @@
       }
     }
   },
-  "file_scan_exclusions": ["**/node_modules", "**/dist", "**/.env"]
+  "project_panel": { "hide_gitignore": false },
+  "file_scan_exclusions": ["**/node_modules", "**/dist"]
 }
