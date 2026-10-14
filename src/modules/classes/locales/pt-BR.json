@@ -43,5 +43,19 @@
   "end": "Término",
   "capacity": "Vagas totais",
   "detailNotFound": "Turma não encontrada",
-  "backToList": "Voltar para turmas"
+  "backToList": "Voltar para turmas",
+  "editions": {
+    "2026-1": "1º semestre 2026",
+    "2026-2": "2º semestre 2026",
+    "2025-2": "2º semestre 2025",
+    "2025-1": "1º semestre 2025"
+  },
+  "courses": {
+    "phone": "Uso do celular",
+    "internet": "Internet",
+    "photo": "Fotografia digital",
+    "security": "Segurança digital",
+    "computer": "Computação básica"
+  },
+  "levels": { "beginner": "Iniciante", "intermediate": "Intermediário", "advanced": "Avançado" }
 }

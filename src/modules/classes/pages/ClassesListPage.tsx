@@ -36,18 +36,29 @@ export function ClassesListPage(): ReactElement {
   const [page, setPage] = useState(Number(params.get("page") ?? 1));
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<ClassRecord | null>(null);
-  const [failed, setFailed] = useState(false);
+  const [archiving, setArchiving] = useState<ClassRecord | null>(null);
+  const mockState = params.get("mockState");
 
   useEffect(() => {
-    const next = new URLSearchParams();
+    setSearch(params.get("search") ?? "");
+    setEdition(params.get("edition") ?? "");
+    setCourse(params.get("courseId") ?? "");
+    setLevel(params.get("level") ?? "");
+    setStatus(params.get("status") ?? "");
+    setPage(Math.max(1, Number(params.get("page") ?? 1)));
+  }, [params]);
+
+  useEffect(() => {
+    const next = new URLSearchParams(params);
+    ["search", "edition", "courseId", "level", "status", "page"].forEach((key) => next.delete(key));
     if (search) next.set("search", search);
     if (edition) next.set("edition", edition);
     if (course) next.set("courseId", course);
     if (level) next.set("level", level);
     if (status) next.set("status", status);
     if (page > 1) next.set("page", String(page));
-    setParams(next, { replace: true });
-  }, [search, edition, course, level, status, page, setParams]);
+    if (next.toString() !== params.toString()) setParams(next, { replace: true });
+  }, [search, edition, course, level, status, page, params, setParams]);
 
   const filtered = useMemo(
     () =>
@@ -88,7 +99,17 @@ export function ClassesListPage(): ReactElement {
       header: t("period"),
       render: (row) => (
         <span>
-          {row.start} – {row.end}
+          {new Date(`${row.start}T00:00:00`).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+          })}{" "}
+          -{" "}
+          {new Date(`${row.end}T00:00:00`).toLocaleDateString("pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "2-digit",
+          })}
         </span>
       ),
     },
@@ -124,12 +145,14 @@ export function ClassesListPage(): ReactElement {
         <div className="flex flex-wrap gap-2">
           <Button
             variant="secondary"
+            isIconOnly
+            aria-label={t("edit")}
             onPress={() => {
               setEditing(row);
               setDialog(true);
             }}
           >
-            {t("edit")}
+            <span aria-hidden="true">✎</span>
           </Button>
           {row.archived ? (
             <Button
@@ -145,11 +168,13 @@ export function ClassesListPage(): ReactElement {
           ) : (
             <Button
               variant="secondary"
+              isIconOnly
+              aria-label={t("archive")}
               onPress={() => {
-                setEditing(row);
+                setArchiving(row);
               }}
             >
-              {t("archive")}
+              <span aria-hidden="true">▤</span>
             </Button>
           )}
         </div>
@@ -216,10 +241,10 @@ export function ClassesListPage(): ReactElement {
               setPage(1);
             }}
             options={choices([
-              ["2026-1", "1º semestre 2026"],
-              ["2026-2", "2º semestre 2026"],
-              ["2025-2", "2º semestre 2025"],
-              ["2025-1", "1º semestre 2025"],
+              ["2026-1", t("editions.2026-1")],
+              ["2026-2", t("editions.2026-2")],
+              ["2025-2", t("editions.2025-2")],
+              ["2025-1", t("editions.2025-1")],
             ])}
           />
           <Select
@@ -230,11 +255,11 @@ export function ClassesListPage(): ReactElement {
               setPage(1);
             }}
             options={choices([
-              ["phone", "Uso do celular"],
-              ["internet", "Internet"],
-              ["photo", "Fotografia digital"],
-              ["security", "Segurança digital"],
-              ["computer", "Computação básica"],
+              ["phone", t("courses.phone")],
+              ["internet", t("courses.internet")],
+              ["photo", t("courses.photo")],
+              ["security", t("courses.security")],
+              ["computer", t("courses.computer")],
             ])}
           />
           <Select
@@ -245,9 +270,9 @@ export function ClassesListPage(): ReactElement {
               setPage(1);
             }}
             options={choices([
-              ["Iniciante", "Iniciante"],
-              ["Intermediário", "Intermediário"],
-              ["Avançado", "Avançado"],
+              ["Iniciante", t("levels.beginner")],
+              ["Intermediário", t("levels.intermediate")],
+              ["Avançado", t("levels.advanced")],
             ])}
           />
           <Select
@@ -267,19 +292,29 @@ export function ClassesListPage(): ReactElement {
           />
         </div>
         <hr className="my-3 border-tedi-divider" />
-        <DataTable
-          columns={columns}
-          rows={rows}
-          rowKey={(row) => row.id}
-          caption={t("title", { count: filtered.length })}
-        />
-        {failed ? (
+        {mockState === "loading" ? (
+          <ListState variant="loading" title={t("loading")} />
+        ) : mockState === "error" ? (
           <ListState
             variant="error"
             title={t("error")}
-            action={{ label: t("retry"), onPress: () => setFailed(false) }}
+            action={{
+              label: t("retry"),
+              onPress: () => {
+                const next = new URLSearchParams(params);
+                next.delete("mockState");
+                setParams(next);
+              },
+            }}
           />
-        ) : records.length === 0 ? (
+        ) : mockState === "empty" ||
+          (records.filter((r) => !r.archived).length === 0 &&
+            status !== "archived" &&
+            !search &&
+            !edition &&
+            !course &&
+            !level &&
+            !status) ? (
           <ListState
             variant="empty"
             title={t("empty")}
@@ -298,7 +333,14 @@ export function ClassesListPage(): ReactElement {
             title={t("noResults")}
             action={{ label: t("clear"), onPress: clear }}
           />
-        ) : null}
+        ) : (
+          <DataTable
+            columns={columns}
+            rows={rows}
+            rowKey={(row) => row.id}
+            caption={t("title", { count: filtered.length })}
+          />
+        )}
         {filtered.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
             <p className="text-base text-muted">
@@ -320,12 +362,21 @@ export function ClassesListPage(): ReactElement {
         {editing && (
           <Dialog
             isOpen={dialog}
-            onOpenChange={setDialog}
+            onOpenChange={(open) => {
+              setDialog(open);
+              if (!open) setEditing(null);
+            }}
             title={records.some((r) => r.id === editing.id) ? t("editTitle") : t("newTitle")}
             closeLabel={t("close")}
             footer={
               <>
-                <Button variant="secondary" onPress={() => setDialog(false)}>
+                <Button
+                  variant="secondary"
+                  onPress={() => {
+                    setDialog(false);
+                    setEditing(null);
+                  }}
+                >
                   {t("cancel")}
                 </Button>
                 <Button onPress={save}>{t("save")}</Button>
@@ -361,25 +412,25 @@ export function ClassesListPage(): ReactElement {
             </div>
           </Dialog>
         )}
-        {editing && !dialog && (
+        {archiving && (
           <Dialog
             isOpen={true}
             onOpenChange={(open) => {
-              if (!open) setEditing(null);
+              if (!open) setArchiving(null);
             }}
             title={t("archiveConfirm")}
             closeLabel={t("close")}
             footer={
               <>
-                <Button variant="secondary" onPress={() => setEditing(null)}>
+                <Button variant="secondary" onPress={() => setArchiving(null)}>
                   {t("cancel")}
                 </Button>
                 <Button
                   onPress={() => {
                     setRecords((all) =>
-                      all.map((r) => (r.id === editing.id ? { ...r, archived: true } : r)),
+                      all.map((r) => (r.id === archiving.id ? { ...r, archived: true } : r)),
                     );
-                    setEditing(null);
+                    setArchiving(null);
                   }}
                 >
                   {t("confirm")}
@@ -387,7 +438,7 @@ export function ClassesListPage(): ReactElement {
               </>
             }
           >
-            <p>{editing.name}</p>
+            <p>{archiving.name}</p>
           </Dialog>
         )}
       </Card>

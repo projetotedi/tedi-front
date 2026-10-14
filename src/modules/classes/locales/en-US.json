@@ -43,5 +43,19 @@
   "end": "End",
   "capacity": "Total seats",
   "detailNotFound": "Class not found",
-  "backToList": "Back to classes"
+  "backToList": "Back to classes",
+  "editions": {
+    "2026-1": "1st semester 2026",
+    "2026-2": "2nd semester 2026",
+    "2025-2": "2nd semester 2025",
+    "2025-1": "1st semester 2025"
+  },
+  "courses": {
+    "phone": "Using mobile phones",
+    "internet": "Internet",
+    "photo": "Digital photography",
+    "security": "Digital safety",
+    "computer": "Basic computing"
+  },
+  "levels": { "beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced" }
 }

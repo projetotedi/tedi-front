@@ -8,12 +8,9 @@ export const classesRoutes: RouteObject[] = [
   {
     path: "classes",
     handle: { title: "common:nav.classes" } satisfies RouteHandle,
-    element: (
-      <RequirePermission permission="classes.view">
-        <ClassesListPage />
-      </RequirePermission>
-    ),
+    element: <RequirePermission permission="classes.view" />,
     children: [
+      { index: true, element: <ClassesListPage /> },
       {
         path: ":classId",
         element: (
