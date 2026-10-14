@@ -13,7 +13,7 @@
   "seats": "Vagas",
   "actions": "Ações",
   "edit": "Editar",
-  "archive": "Excluir",
+  "archive": "Arquivar",
   "restore": "Restaurar",
   "loading": "Carregando turmas…",
   "empty": "Nenhuma turma ainda",
@@ -28,7 +28,7 @@
   "page": "Página {{page}}",
   "planned": "Planejada",
   "inProgress": "Em andamento",
-  "completed": "Concluída",
+  "completed": "Encerrada",
   "cancelled": "Cancelada",
   "newTitle": "Nova turma",
   "editTitle": "Editar turma",
@@ -45,13 +45,14 @@
   "detailNotFound": "Turma não encontrada",
   "backToList": "Voltar para turmas",
   "editions": {
-    "2026-1": "1º semestre 2026",
-    "2026-2": "2º semestre 2026",
-    "2025-2": "2º semestre 2025",
-    "2025-1": "1º semestre 2025"
+    "2026-1": "2026.1",
+    "2026-2": "2026.2",
+    "2025-2": "2025.2",
+    "2025-1": "2025.1",
+    "2024": "2024"
   },
   "courses": {
-    "phone": "Uso do celular",
+    "phone": "Smartphones no dia a dia",
     "internet": "Internet",
     "photo": "Fotografia digital",
     "security": "Segurança digital",

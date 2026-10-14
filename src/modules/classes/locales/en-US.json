@@ -13,7 +13,7 @@
   "seats": "Seats",
   "actions": "Actions",
   "edit": "Edit",
-  "archive": "Delete",
+  "archive": "Archive",
   "restore": "Restore",
   "loading": "Loading classes…",
   "empty": "No classes yet",
@@ -45,13 +45,14 @@
   "detailNotFound": "Class not found",
   "backToList": "Back to classes",
   "editions": {
-    "2026-1": "1st semester 2026",
-    "2026-2": "2nd semester 2026",
-    "2025-2": "2nd semester 2025",
-    "2025-1": "1st semester 2025"
+    "2026-1": "2026.1",
+    "2026-2": "2026.2",
+    "2025-2": "2025.2",
+    "2025-1": "2025.1",
+    "2024": "2024"
   },
   "courses": {
-    "phone": "Using mobile phones",
+    "phone": "Smartphones in daily life",
     "internet": "Internet",
     "photo": "Digital photography",
     "security": "Digital safety",

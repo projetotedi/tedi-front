@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
-import { Button, Card, Chip, Dialog, Pagination, Select, TextField } from "@shared/ui";
+import { Button, Card, Checkbox, Chip, Dialog, Pagination, Select, TextField } from "@shared/ui";
 import { initialClasses, type ClassRecord, type ClassStatus } from "../mocks/classes.mock";
 
 const PAGE_SIZE = 10;
@@ -28,53 +28,50 @@ export function ClassesListPage(): ReactElement {
   const { t } = useTranslation("classes");
   const [params, setParams] = useSearchParams();
   const [records, setRecords] = useState(initialClasses);
-  const [search, setSearch] = useState(params.get("search") ?? "");
-  const [edition, setEdition] = useState(params.get("edition") ?? "");
-  const [course, setCourse] = useState(params.get("courseId") ?? "");
-  const [level, setLevel] = useState(params.get("level") ?? "");
-  const [status, setStatus] = useState(params.get("status") ?? "");
-  const [page, setPage] = useState(Number(params.get("page") ?? 1));
+  const search = params.get("search") ?? "";
+  const edition = params.get("edition") ?? "";
+  const course = params.get("courseId") ?? "";
+  const level = params.get("level") ?? "";
+  const status = params.get("status") ?? "";
+  const statuses = status && status !== "archived" ? status.split(",") : [];
+  const page = Math.max(1, Number(params.get("page") ?? 1));
   const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<ClassRecord | null>(null);
   const [archiving, setArchiving] = useState<ClassRecord | null>(null);
   const mockState = params.get("mockState");
 
-  useEffect(() => {
-    setSearch(params.get("search") ?? "");
-    setEdition(params.get("edition") ?? "");
-    setCourse(params.get("courseId") ?? "");
-    setLevel(params.get("level") ?? "");
-    setStatus(params.get("status") ?? "");
-    setPage(Math.max(1, Number(params.get("page") ?? 1)));
-  }, [params]);
+  function updateParam(key: string, value: string, resetPage = true) {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        if (resetPage && key !== "page") next.delete("page");
+        return next;
+      },
+      { replace: true },
+    );
+  }
 
-  useEffect(() => {
+  function openCreate() {
     const next = new URLSearchParams(params);
-    ["search", "edition", "courseId", "level", "status", "page"].forEach((key) => next.delete(key));
-    if (search) next.set("search", search);
-    if (edition) next.set("edition", edition);
-    if (course) next.set("courseId", course);
-    if (level) next.set("level", level);
-    if (status) next.set("status", status);
-    if (page > 1) next.set("page", String(page));
-    if (next.toString() !== params.toString()) setParams(next, { replace: true });
-  }, [search, edition, course, level, status, page, params, setParams]);
+    next.delete("mockState");
+    setParams(next, { replace: true });
+    setEditing(blank(String(Date.now())));
+    setDialog(true);
+  }
 
-  const filtered = useMemo(
-    () =>
-      records.filter((item) => {
-        const q = search.trim().toLocaleLowerCase();
-        return (
-          item.archived === (status === "archived") &&
-          (!q || `${item.code} ${item.name} ${item.course}`.toLocaleLowerCase().includes(q)) &&
-          (!edition || item.editionId === edition) &&
-          (!course || item.courseId === course) &&
-          (!level || item.level === level) &&
-          (!status || status === "archived" || item.status === status)
-        );
-      }),
-    [records, search, edition, course, level, status],
-  );
+  const filtered = records.filter((item) => {
+    const q = search.trim().toLocaleLowerCase();
+    return (
+      item.archived === (status === "archived") &&
+      (!q || `${item.code} ${item.name} ${item.course}`.toLocaleLowerCase().includes(q)) &&
+      (!edition || item.editionId === edition) &&
+      (!course || item.courseId === course) &&
+      (!level || item.level === level) &&
+      (!statuses.length || statuses.includes(item.status))
+    );
+  });
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const statusLabels: Record<ClassStatus, string> = {
@@ -87,11 +84,12 @@ export function ClassesListPage(): ReactElement {
     {
       header: t("class"),
       render: (row) => (
-        <a className="font-semibold text-tedi-sky underline" href={`/classes/${row.id}`}>
+        <a
+          className="font-medium text-foreground hover:underline focus-visible:underline"
+          href={`/classes/${row.id}`}
+          title={`${row.code} · ${row.course}`}
+        >
           {row.name}
-          <span className="block text-sm font-normal text-muted">
-            {row.code} · {row.course}
-          </span>
         </a>
       ),
     },
@@ -152,7 +150,16 @@ export function ClassesListPage(): ReactElement {
               setDialog(true);
             }}
           >
-            <span aria-hidden="true">✎</span>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              className="size-5"
+            >
+              <path d="m15 5 4 4M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" />
+            </svg>
           </Button>
           {row.archived ? (
             <Button
@@ -174,7 +181,16 @@ export function ClassesListPage(): ReactElement {
                 setArchiving(row);
               }}
             >
-              <span aria-hidden="true">▤</span>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                className="size-5 text-danger"
+              >
+                <path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+              </svg>
             </Button>
           )}
         </div>
@@ -183,12 +199,16 @@ export function ClassesListPage(): ReactElement {
   ];
 
   function clear() {
-    setSearch("");
-    setEdition("");
-    setCourse("");
-    setLevel("");
-    setStatus("");
-    setPage(1);
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        ["search", "edition", "courseId", "level", "status", "page"].forEach((key) =>
+          next.delete(key),
+        );
+        return next;
+      },
+      { replace: true },
+    );
   }
   function save() {
     if (!editing) return;
@@ -210,50 +230,33 @@ export function ClassesListPage(): ReactElement {
       <Card
         title={
           <span id="classes-title">
-            {t("title", { count: records.filter((r) => !r.archived).length })}
+            {t("title", { count: mockState === "empty" ? 0 : filtered.length })}
           </span>
         }
-        aside={
-          <Button
-            onPress={() => {
-              setEditing(blank(String(Date.now())));
-              setDialog(true);
-            }}
-          >
-            {t("create")}
-          </Button>
-        }
+        aside={<Button onPress={openCreate}>{t("create")}</Button>}
       >
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <TextField
             label={t("search")}
             value={search}
-            onChange={(value) => {
-              setSearch(value);
-              setPage(1);
-            }}
+            onChange={(value) => updateParam("search", value)}
           />
           <Select
             label={t("edition")}
             value={edition}
-            onChange={(value) => {
-              setEdition(value);
-              setPage(1);
-            }}
+            onChange={(value) => updateParam("edition", value)}
             options={choices([
               ["2026-1", t("editions.2026-1")],
               ["2026-2", t("editions.2026-2")],
               ["2025-2", t("editions.2025-2")],
               ["2025-1", t("editions.2025-1")],
+              ["2024", t("editions.2024")],
             ])}
           />
           <Select
             label={t("course")}
             value={course}
-            onChange={(value) => {
-              setCourse(value);
-              setPage(1);
-            }}
+            onChange={(value) => updateParam("courseId", value)}
             options={choices([
               ["phone", t("courses.phone")],
               ["internet", t("courses.internet")],
@@ -265,33 +268,55 @@ export function ClassesListPage(): ReactElement {
           <Select
             label={t("level")}
             value={level}
-            onChange={(value) => {
-              setLevel(value);
-              setPage(1);
-            }}
+            onChange={(value) => updateParam("level", value)}
             options={choices([
               ["Iniciante", t("levels.beginner")],
               ["Intermediário", t("levels.intermediate")],
               ["Avançado", t("levels.advanced")],
             ])}
           />
-          <Select
-            label={t("status")}
-            value={status}
-            onChange={(value) => {
-              setStatus(value);
-              setPage(1);
-            }}
-            options={choices([
-              ["planned", t("planned")],
-              ["inProgress", t("inProgress")],
-              ["completed", t("completed")],
-              ["cancelled", t("cancelled")],
-              ["archived", t("archived")],
-            ])}
-          />
+          <details className="relative min-h-11">
+            <summary className="flex min-h-11 cursor-pointer items-center rounded-xl border border-tedi-divider bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2">
+              {t("status")}:{" "}
+              {status === "archived"
+                ? t("archived")
+                : statuses.length
+                  ? statuses.map((value) => statusLabels[value as ClassStatus]).join(", ")
+                  : t("all")}
+            </summary>
+            <div
+              className="absolute z-10 mt-1 w-full rounded-xl border border-tedi-divider bg-white p-3 shadow-lg"
+              role="group"
+              aria-label={t("status")}
+            >
+              {(Object.keys(statusLabels) as ClassStatus[]).map((value) => (
+                <Checkbox
+                  key={value}
+                  label={statusLabels[value]}
+                  isSelected={statuses.includes(value)}
+                  onChange={(checked) => {
+                    const selected = new Set(statuses);
+                    if (checked) selected.add(value);
+                    else selected.delete(value);
+                    updateParam("status", [...selected].join(","));
+                  }}
+                />
+              ))}
+              <Checkbox
+                label={t("archived")}
+                isSelected={status === "archived"}
+                onChange={(checked) => updateParam("status", checked ? "archived" : "")}
+              />
+            </div>
+          </details>
         </div>
         <hr className="my-3 border-tedi-divider" />
+        <DataTable
+          columns={columns}
+          rows={mockState || filtered.length === 0 ? [] : rows}
+          rowKey={(row) => row.id}
+          caption={t("title", { count: filtered.length })}
+        />
         {mockState === "loading" ? (
           <ListState variant="loading" title={t("loading")} />
         ) : mockState === "error" ? (
@@ -321,10 +346,7 @@ export function ClassesListPage(): ReactElement {
             description={t("emptyDescription")}
             action={{
               label: t("create"),
-              onPress: () => {
-                setEditing(blank(String(Date.now())));
-                setDialog(true);
-              },
+              onPress: openCreate,
             }}
           />
         ) : filtered.length === 0 ? (
@@ -333,14 +355,7 @@ export function ClassesListPage(): ReactElement {
             title={t("noResults")}
             action={{ label: t("clear"), onPress: clear }}
           />
-        ) : (
-          <DataTable
-            columns={columns}
-            rows={rows}
-            rowKey={(row) => row.id}
-            caption={t("title", { count: filtered.length })}
-          />
-        )}
+        ) : null}
         {filtered.length > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
             <p className="text-base text-muted">
@@ -350,7 +365,7 @@ export function ClassesListPage(): ReactElement {
               <Pagination
                 page={page}
                 totalPages={pages}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => updateParam("page", String(nextPage), false)}
                 label={t("actions")}
                 previousLabel={t("previous")}
                 nextLabel={t("next")}
