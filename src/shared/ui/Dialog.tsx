@@ -10,6 +10,7 @@ export interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   isDismissable?: boolean;
+  size?: "default" | "wide";
 }
 
 export function Dialog({
@@ -21,6 +22,7 @@ export function Dialog({
   children,
   footer,
   isDismissable = true,
+  size = "default",
 }: DialogProps): ReactElement {
   const descriptionId = useId();
 
@@ -34,7 +36,7 @@ export function Dialog({
       {/* O HeroUI ajusta o container ao conteúdo (`sm:w-fit`) e limita o diálogo a 448px: `sm:w-full` e `max-w-160` dão os 640px. */}
       <Modal.Container placement="center" className="sm:w-full">
         <Modal.Dialog
-          className="max-w-160"
+          className={size === "wide" ? "max-w-200" : "max-w-160"}
           aria-describedby={description ? descriptionId : undefined}
         >
           <Modal.CloseTrigger

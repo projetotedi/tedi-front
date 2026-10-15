@@ -2,11 +2,11 @@ import bookOpenIcon from "../assets/icons/book-open.svg";
 import bookmarkIcon from "../assets/icons/bookmark.svg";
 import calendarIcon from "../assets/icons/calendar.svg";
 import clockIcon from "../assets/icons/clock.svg";
-import graduationCapIcon from "../assets/icons/graduation-cap.svg";
 import personPlusIcon from "../assets/icons/person-plus.svg";
 import personIcon from "../assets/icons/person.svg";
 
 import { authMenuItems } from "@modules/auth";
+import { classesMenuItems } from "@modules/classes";
 import type { MenuItem } from "@shared/lib/menu";
 
 /**
@@ -23,12 +23,6 @@ export const prototypeMenuItems: MenuItem[] = [
     path: "/lesson-plans",
     permission: "catalog.view",
     icon: bookmarkIcon,
-  },
-  {
-    label: "common:nav.classes",
-    path: "/classes",
-    permission: "classes.view",
-    icon: graduationCapIcon,
   },
   {
     label: "common:nav.students",
@@ -53,7 +47,9 @@ export const prototypeMenuItems: MenuItem[] = [
  * por isso a inserção antes do último item de `prototypeMenuItems`, e não uma concatenação simples.
  */
 export const appMenuItems: MenuItem[] = [
-  ...prototypeMenuItems.slice(0, -1),
+  ...prototypeMenuItems.slice(0, 2),
+  ...classesMenuItems,
+  ...prototypeMenuItems.slice(2, -1),
   ...authMenuItems,
   ...prototypeMenuItems.slice(-1),
 ];
