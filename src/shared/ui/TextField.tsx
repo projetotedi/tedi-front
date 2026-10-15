@@ -2,7 +2,7 @@ import { Description, FieldError, Input, Label, TextField as HeroTextField } fro
 import type { ReactNode, Ref } from "react";
 
 export interface TextFieldProps {
-  label: string;
+  label: ReactNode;
   isLabelHidden?: boolean;
   value: string;
   onChange: (value: string) => void;
@@ -14,7 +14,8 @@ export interface TextFieldProps {
   isDisabled?: boolean;
   isRequired?: boolean;
   isReadOnly?: boolean;
-  type?: "text" | "password" | "email";
+  type?: "text" | "password" | "email" | "date";
+  list?: string;
   autoComplete?: string;
   "aria-describedby"?: string;
   inputRef?: Ref<HTMLInputElement>;
@@ -35,6 +36,7 @@ export function TextField({
   isRequired,
   isReadOnly,
   type = "text",
+  list,
   autoComplete,
   "aria-describedby": ariaDescribedBy,
   inputRef,
@@ -62,6 +64,7 @@ export function TextField({
         <Input
           ref={inputRef}
           placeholder={placeholder}
+          list={list}
           className={`min-h-11 text-base sm:text-base ${endContent ? "pe-12" : ""}`.trim()}
         />
         {endContent ? (

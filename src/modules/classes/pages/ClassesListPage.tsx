@@ -4,22 +4,33 @@ import { useTranslation } from "react-i18next";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
 import { Button, Card, Checkbox, Chip, Dialog, Pagination, Select, TextField } from "@shared/ui";
-import { initialClasses, type ClassRecord, type ClassStatus } from "../mocks/classes.mock";
+import chevronDownIcon from "@shared/assets/icons/chevron-down.svg";
+import pencilIcon from "@shared/assets/icons/pencil.svg";
+import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
+
+import { ClassFormDialog } from "../components/ClassFormDialog";
+import {
+  initialClasses,
+  mockCourses,
+  type ClassRecord,
+  type ClassStatus,
+} from "../mocks/classes.mock";
 
 const PAGE_SIZE = 10;
 const blank = (id: string): ClassRecord => ({
   id,
   code: "",
   name: "",
-  courseId: "phone",
-  course: "Uso do celular",
-  editionId: "2026-2",
-  edition: "2º semestre 2026",
+  courseId: "computer",
+  course: "Informática Básica",
+  editionId: "2026-1",
+  edition: "2026.1",
   level: "Iniciante",
-  start: "2026-08-01",
-  end: "2026-12-15",
+  start: "2026-03-03",
+  end: "2026-06-27",
+  location: "Laboratório 2 — Bloco B",
   enrolled: 0,
-  capacity: 20,
+  capacity: 15,
   status: "planned",
   archived: false,
 });
@@ -35,7 +46,6 @@ export function ClassesListPage(): ReactElement {
   const status = params.get("status") ?? "";
   const statuses = status && status !== "archived" ? status.split(",") : [];
   const page = Math.max(1, Number(params.get("page") ?? 1));
-  const [dialog, setDialog] = useState(false);
   const [editing, setEditing] = useState<ClassRecord | null>(null);
   const [archiving, setArchiving] = useState<ClassRecord | null>(null);
   const mockState = params.get("mockState");
@@ -58,7 +68,6 @@ export function ClassesListPage(): ReactElement {
     next.delete("mockState");
     setParams(next, { replace: true });
     setEditing(blank(String(Date.now())));
-    setDialog(true);
   }
 
   const filtered = records.filter((item) => {
@@ -83,6 +92,8 @@ export function ClassesListPage(): ReactElement {
   const columns: Column<ClassRecord>[] = [
     {
       header: t("class"),
+      headerClassName: "w-[49%]",
+      cellClassName: "w-[49%]",
       render: (row) => (
         <a
           className="font-medium text-foreground hover:underline focus-visible:underline"
@@ -95,6 +106,8 @@ export function ClassesListPage(): ReactElement {
     },
     {
       header: t("period"),
+      headerClassName: "w-[20%]",
+      cellClassName: "w-[20%] whitespace-nowrap",
       render: (row) => (
         <span>
           {new Date(`${row.start}T00:00:00`).toLocaleDateString("pt-BR", {
@@ -113,6 +126,8 @@ export function ClassesListPage(): ReactElement {
     },
     {
       header: t("seats"),
+      headerClassName: "w-[9%]",
+      cellClassName: "w-[9%] whitespace-nowrap",
       render: (row) => (
         <span>
           {row.enrolled}/{row.capacity}
@@ -121,11 +136,13 @@ export function ClassesListPage(): ReactElement {
     },
     {
       header: t("status"),
+      headerClassName: "w-[13%]",
+      cellClassName: "w-[13%]",
       render: (row) => (
         <Chip
           color={
-            row.status === "completed"
-              ? "success"
+            row.status === "completed" || row.archived
+              ? "default"
               : row.status === "cancelled"
                 ? "danger"
                 : row.status === "planned"
@@ -139,31 +156,24 @@ export function ClassesListPage(): ReactElement {
     },
     {
       header: t("actions"),
+      headerClassName: "w-[9%]",
+      cellClassName: "w-[9%]",
       render: (row) => (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex items-center gap-1">
           <Button
-            variant="secondary"
+            variant="ghost"
             isIconOnly
             aria-label={t("edit")}
+            isDisabled={row.archived}
             onPress={() => {
               setEditing(row);
-              setDialog(true);
             }}
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              className="size-5"
-            >
-              <path d="m15 5 4 4M4 20l4.2-.8L19 8.4a2.1 2.1 0 0 0-3-3L5.2 16.2 4 20Z" />
-            </svg>
+            <img src={pencilIcon} alt="" aria-hidden="true" width={16} height={16} />
           </Button>
           {row.archived ? (
             <Button
-              variant="secondary"
+              variant="ghost"
               onPress={() =>
                 setRecords((all) =>
                   all.map((r) => (r.id === row.id ? { ...r, archived: false } : r)),
@@ -174,23 +184,14 @@ export function ClassesListPage(): ReactElement {
             </Button>
           ) : (
             <Button
-              variant="secondary"
+              variant="ghost"
               isIconOnly
               aria-label={t("archive")}
               onPress={() => {
                 setArchiving(row);
               }}
             >
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                className="size-5 text-danger"
-              >
-                <path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" />
-              </svg>
+              <img src={trashBinIcon} alt="" aria-hidden="true" width={16} height={16} />
             </Button>
           )}
         </div>
@@ -210,24 +211,28 @@ export function ClassesListPage(): ReactElement {
       { replace: true },
     );
   }
-  function save() {
-    if (!editing) return;
+  function saveClass(savedClass: ClassRecord) {
     setRecords((all) =>
-      all.some((row) => row.id === editing.id)
-        ? all.map((row) => (row.id === editing.id ? editing : row))
-        : [editing, ...all],
+      all.some((row) => row.id === savedClass.id)
+        ? all.map((row) => (row.id === savedClass.id ? savedClass : row))
+        : [savedClass, ...all],
     );
-    setDialog(false);
     setEditing(null);
   }
-  const choices = (values: Array<[string, string]>) => [
+  const choices = (values: Array<{ id: string; label: string }>) => [
     { id: "", label: t("all") },
-    ...values.map(([id, label]) => ({ id, label })),
+    ...values,
   ];
+  const formatFilterValue = (label: string) => (selected: { label: string } | null) =>
+    `${label}: ${selected?.label.toLocaleLowerCase() ?? t("all").toLocaleLowerCase()}`;
 
   return (
-    <section aria-labelledby="classes-title">
+    <section
+      aria-labelledby="classes-title"
+      className="-mx-4 -my-6 min-h-[calc(100vh-8.75rem)] bg-sky-50 px-4 py-6 lg:-mx-10 lg:-my-8 lg:px-10 lg:py-8"
+    >
       <Card
+        className="min-h-[calc(100vh-9rem)] rounded-3xl"
         title={
           <span id="classes-title">
             {t("title", { count: mockState === "empty" ? 0 : filtered.length })}
@@ -235,197 +240,166 @@ export function ClassesListPage(): ReactElement {
         }
         aside={<Button onPress={openCreate}>{t("create")}</Button>}
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <TextField
-            label={t("search")}
-            value={search}
-            onChange={(value) => updateParam("search", value)}
-          />
-          <Select
-            label={t("edition")}
-            value={edition}
-            onChange={(value) => updateParam("edition", value)}
-            options={choices([
-              ["2026-1", t("editions.2026-1")],
-              ["2026-2", t("editions.2026-2")],
-              ["2025-2", t("editions.2025-2")],
-              ["2025-1", t("editions.2025-1")],
-              ["2024", t("editions.2024")],
-            ])}
-          />
-          <Select
-            label={t("course")}
-            value={course}
-            onChange={(value) => updateParam("courseId", value)}
-            options={choices([
-              ["phone", t("courses.phone")],
-              ["internet", t("courses.internet")],
-              ["photo", t("courses.photo")],
-              ["security", t("courses.security")],
-              ["computer", t("courses.computer")],
-            ])}
-          />
-          <Select
-            label={t("level")}
-            value={level}
-            onChange={(value) => updateParam("level", value)}
-            options={choices([
-              ["Iniciante", t("levels.beginner")],
-              ["Intermediário", t("levels.intermediate")],
-              ["Avançado", t("levels.advanced")],
-            ])}
-          />
-          <details className="relative min-h-11">
-            <summary className="flex min-h-11 cursor-pointer items-center rounded-xl border border-tedi-divider bg-white px-3 text-base focus-visible:outline-2 focus-visible:outline-offset-2">
-              {t("status")}:{" "}
-              {status === "archived"
-                ? t("archived")
-                : statuses.length
-                  ? statuses.map((value) => statusLabels[value as ClassStatus]).join(", ")
-                  : t("all")}
-            </summary>
-            <div
-              className="absolute z-10 mt-1 w-full rounded-xl border border-tedi-divider bg-white p-3 shadow-lg"
-              role="group"
-              aria-label={t("status")}
-            >
-              {(Object.keys(statusLabels) as ClassStatus[]).map((value) => (
+        <div className="flex min-h-[calc(100vh-15rem)] flex-col gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1.05fr_.95fr_1fr]">
+            <TextField
+              label={t("search")}
+              isLabelHidden
+              placeholder={t("searchPlaceholder")}
+              value={search}
+              onChange={(value) => updateParam("search", value)}
+            />
+            <Select
+              label={t("edition")}
+              isLabelHidden
+              value={edition}
+              onChange={(value) => updateParam("edition", value)}
+              formatValue={formatFilterValue(t("edition"))}
+              options={choices([
+                { id: "2026-1", label: t("editions.2026-1") },
+                { id: "2026-2", label: t("editions.2026-2") },
+                { id: "2025-2", label: t("editions.2025-2") },
+                { id: "2025-1", label: t("editions.2025-1") },
+                { id: "2024", label: t("editions.2024") },
+              ])}
+            />
+            <Select
+              label={t("course")}
+              isLabelHidden
+              value={course}
+              onChange={(value) => updateParam("courseId", value)}
+              formatValue={formatFilterValue(t("course"))}
+              options={choices(
+                mockCourses.map((item) => ({
+                  id: item.id,
+                  label: t(`courses.${item.localeKey}`),
+                })),
+              )}
+            />
+            <Select
+              label={t("level")}
+              isLabelHidden
+              value={level}
+              onChange={(value) => updateParam("level", value)}
+              formatValue={formatFilterValue(t("level"))}
+              options={choices([
+                { id: "Iniciante", label: t("levels.beginner") },
+                { id: "Intermediário", label: t("levels.intermediate") },
+                { id: "Avançado", label: t("levels.advanced") },
+              ])}
+            />
+            <details className="relative min-h-11">
+              <summary className="flex min-h-11 list-none cursor-pointer items-center justify-between rounded-xl border border-[var(--field-border)] bg-white px-3 text-base shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
+                <span>
+                  {t("status")}:{" "}
+                  {status === "archived"
+                    ? t("archived")
+                    : statuses.length
+                      ? statuses.map((value) => statusLabels[value as ClassStatus]).join(", ")
+                      : t("all").toLocaleLowerCase()}
+                </span>
+                <img src={chevronDownIcon} alt="" aria-hidden="true" width={16} height={16} />
+              </summary>
+              <div
+                className="absolute z-10 mt-1 w-full rounded-xl border border-[var(--field-border)] bg-white p-3 shadow-lg"
+                role="group"
+                aria-label={t("status")}
+              >
+                {(Object.keys(statusLabels) as ClassStatus[]).map((value) => (
+                  <Checkbox
+                    key={value}
+                    label={statusLabels[value]}
+                    isSelected={statuses.includes(value)}
+                    onChange={(checked) => {
+                      const selected = new Set(statuses);
+                      if (checked) selected.add(value);
+                      else selected.delete(value);
+                      updateParam("status", [...selected].join(","));
+                    }}
+                  />
+                ))}
                 <Checkbox
-                  key={value}
-                  label={statusLabels[value]}
-                  isSelected={statuses.includes(value)}
-                  onChange={(checked) => {
-                    const selected = new Set(statuses);
-                    if (checked) selected.add(value);
-                    else selected.delete(value);
-                    updateParam("status", [...selected].join(","));
-                  }}
+                  label={t("archived")}
+                  isSelected={status === "archived"}
+                  onChange={(checked) => updateParam("status", checked ? "archived" : "")}
                 />
-              ))}
-              <Checkbox
-                label={t("archived")}
-                isSelected={status === "archived"}
-                onChange={(checked) => updateParam("status", checked ? "archived" : "")}
-              />
-            </div>
-          </details>
-        </div>
-        <hr className="my-3 border-tedi-divider" />
-        <DataTable
-          columns={columns}
-          rows={mockState || filtered.length === 0 ? [] : rows}
-          rowKey={(row) => row.id}
-          caption={t("title", { count: filtered.length })}
-        />
-        {mockState === "loading" ? (
-          <ListState variant="loading" title={t("loading")} />
-        ) : mockState === "error" ? (
-          <ListState
-            variant="error"
-            title={t("error")}
-            action={{
-              label: t("retry"),
-              onPress: () => {
-                const next = new URLSearchParams(params);
-                next.delete("mockState");
-                setParams(next);
-              },
-            }}
-          />
-        ) : mockState === "empty" ||
-          (records.filter((r) => !r.archived).length === 0 &&
-            status !== "archived" &&
-            !search &&
-            !edition &&
-            !course &&
-            !level &&
-            !status) ? (
-          <ListState
-            variant="empty"
-            title={t("empty")}
-            description={t("emptyDescription")}
-            action={{
-              label: t("create"),
-              onPress: openCreate,
-            }}
-          />
-        ) : filtered.length === 0 ? (
-          <ListState
-            variant="noResults"
-            title={t("noResults")}
-            action={{ label: t("clear"), onPress: clear }}
-          />
-        ) : null}
-        {filtered.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
-            <p className="text-base text-muted">
-              {t("summary", { shown: rows.length, total: filtered.length })}
-            </p>
-            {pages > 1 && (
-              <Pagination
-                page={page}
-                totalPages={pages}
-                onPageChange={(nextPage) => updateParam("page", String(nextPage), false)}
-                label={t("actions")}
-                previousLabel={t("previous")}
-                nextLabel={t("next")}
-                pageLabel={(number) => t("page", { page: number })}
-              />
-            )}
+              </div>
+            </details>
           </div>
-        )}
-        {editing && (
-          <Dialog
-            isOpen={dialog}
-            onOpenChange={(open) => {
-              setDialog(open);
-              if (!open) setEditing(null);
-            }}
-            title={records.some((r) => r.id === editing.id) ? t("editTitle") : t("newTitle")}
-            closeLabel={t("close")}
-            footer={
-              <>
-                <Button
-                  variant="secondary"
-                  onPress={() => {
-                    setDialog(false);
-                    setEditing(null);
-                  }}
-                >
-                  {t("cancel")}
-                </Button>
-                <Button onPress={save}>{t("save")}</Button>
-              </>
-            }
-          >
-            <div className="grid gap-3">
-              <TextField
-                label={t("code")}
-                value={editing.code}
-                onChange={(value) => setEditing({ ...editing, code: value })}
-              />
-              <TextField
-                label={t("name")}
-                value={editing.name}
-                onChange={(value) => setEditing({ ...editing, name: value })}
-              />
-              <TextField
-                label={t("start")}
-                value={editing.start}
-                onChange={(value) => setEditing({ ...editing, start: value })}
-              />
-              <TextField
-                label={t("end")}
-                value={editing.end}
-                onChange={(value) => setEditing({ ...editing, end: value })}
-              />
-              <TextField
-                label={t("capacity")}
-                value={String(editing.capacity)}
-                onChange={(value) => setEditing({ ...editing, capacity: Number(value) })}
-              />
+          <hr className="border-tedi-divider" />
+          <DataTable
+            columns={columns}
+            rows={mockState || filtered.length === 0 ? [] : rows}
+            rowKey={(row) => row.id}
+            caption={t("title", { count: filtered.length })}
+          />
+          {mockState === "loading" ? (
+            <ListState variant="loading" title={t("loading")} />
+          ) : mockState === "error" ? (
+            <ListState
+              variant="error"
+              title={t("error")}
+              action={{
+                label: t("retry"),
+                onPress: () => {
+                  const next = new URLSearchParams(params);
+                  next.delete("mockState");
+                  setParams(next);
+                },
+              }}
+            />
+          ) : mockState === "empty" ||
+            (records.filter((r) => !r.archived).length === 0 &&
+              status !== "archived" &&
+              !search &&
+              !edition &&
+              !course &&
+              !level &&
+              !status) ? (
+            <ListState
+              variant="empty"
+              title={t("empty")}
+              description={t("emptyDescription")}
+              action={{
+                label: t("create"),
+                onPress: openCreate,
+              }}
+            />
+          ) : filtered.length === 0 ? (
+            <ListState
+              variant="noResults"
+              title={t("noResults")}
+              action={{ label: t("clear"), onPress: clear }}
+            />
+          ) : null}
+          {filtered.length > 0 && (
+            <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
+              <p className="text-base text-muted">
+                {t("summary", { shown: rows.length, total: filtered.length })}
+              </p>
+              {pages > 1 && (
+                <Pagination
+                  page={page}
+                  totalPages={pages}
+                  onPageChange={(nextPage) => updateParam("page", String(nextPage), false)}
+                  label={t("actions")}
+                  previousLabel={t("previous")}
+                  nextLabel={t("next")}
+                  pageLabel={(number) => t("page", { page: number })}
+                />
+              )}
             </div>
-          </Dialog>
+          )}
+        </div>
+        {editing && (
+          <ClassFormDialog
+            initialClass={editing}
+            isEditing={records.some((record) => record.id === editing.id)}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) setEditing(null);
+            }}
+            onSave={saveClass}
+          />
         )}
         {archiving && (
           <Dialog

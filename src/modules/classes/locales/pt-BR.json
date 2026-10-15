@@ -2,6 +2,7 @@
   "title": "Turmas ({{count}})",
   "create": "+ Nova turma",
   "search": "Buscar por código, turma ou curso",
+  "searchPlaceholder": "Buscar turma por nome...",
   "edition": "Edição",
   "course": "Curso",
   "level": "Nível",
@@ -33,15 +34,27 @@
   "newTitle": "Nova turma",
   "editTitle": "Editar turma",
   "name": "Nome da turma",
-  "code": "Código",
+  "code": "Código da turma",
   "save": "Salvar",
+  "saveClass": "Salvar turma",
+  "saveChanges": "Salvar alterações",
   "cancel": "Cancelar",
   "archiveConfirm": "Deseja arquivar esta turma?",
   "confirm": "Arquivar",
   "close": "Fechar",
-  "start": "Início",
-  "end": "Término",
+  "start": "Data de início",
+  "end": "Data de término",
+  "location": "Local",
   "capacity": "Vagas totais",
+  "form": {
+    "editionPlaceholder": "Ex.: 2026.1",
+    "errors": {
+      "required": "Campo obrigatório.",
+      "invalidEdition": "Informe a edição no formato 2026.1.",
+      "invalidPeriod": "A data de término deve ser igual ou posterior à data de início.",
+      "invalidCapacity": "Informe um número inteiro maior que zero."
+    }
+  },
   "detailNotFound": "Turma não encontrada",
   "backToList": "Voltar para turmas",
   "editions": {
@@ -56,7 +69,8 @@
     "internet": "Internet",
     "photo": "Fotografia digital",
     "security": "Segurança digital",
-    "computer": "Computação básica"
+    "computer": "Informática Básica",
+    "social": "Redes Sociais com Segurança"
   },
   "levels": { "beginner": "Iniciante", "intermediate": "Intermediário", "advanced": "Avançado" }
 }

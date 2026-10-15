@@ -1,5 +1,5 @@
 import { Description, FieldError, Label, ListBox, Select as HeroSelect } from "@heroui/react";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 
 import chevronDownUrl from "../assets/icons/chevron-down.svg";
 
@@ -9,7 +9,7 @@ export interface SelectOption {
 }
 
 export interface SelectProps {
-  label: string;
+  label: ReactNode;
   isLabelHidden?: boolean;
   options: SelectOption[];
   value: string | null;

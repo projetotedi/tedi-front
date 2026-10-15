@@ -2,6 +2,7 @@
   "title": "Classes ({{count}})",
   "create": "+ New class",
   "search": "Search by code, class or course",
+  "searchPlaceholder": "Search class by name...",
   "edition": "Edition",
   "course": "Course",
   "level": "Level",
@@ -33,15 +34,27 @@
   "newTitle": "New class",
   "editTitle": "Edit class",
   "name": "Class name",
-  "code": "Code",
+  "code": "Class code",
   "save": "Save",
+  "saveClass": "Save class",
+  "saveChanges": "Save changes",
   "cancel": "Cancel",
   "archiveConfirm": "Archive this class?",
   "confirm": "Archive",
   "close": "Close",
-  "start": "Start",
-  "end": "End",
+  "start": "Start date",
+  "end": "End date",
+  "location": "Location",
   "capacity": "Total seats",
+  "form": {
+    "editionPlaceholder": "e.g. 2026.1",
+    "errors": {
+      "required": "This field is required.",
+      "invalidEdition": "Enter the edition in the format 2026.1.",
+      "invalidPeriod": "The end date must be on or after the start date.",
+      "invalidCapacity": "Enter a whole number greater than zero."
+    }
+  },
   "detailNotFound": "Class not found",
   "backToList": "Back to classes",
   "editions": {
@@ -56,7 +69,8 @@
     "internet": "Internet",
     "photo": "Digital photography",
     "security": "Digital safety",
-    "computer": "Basic computing"
+    "computer": "Basic computing",
+    "social": "Social media safety"
   },
   "levels": { "beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced" }
 }

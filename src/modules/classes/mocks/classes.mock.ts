@@ -1,4 +1,31 @@
 export type ClassStatus = "planned" | "inProgress" | "completed" | "cancelled";
+
+export interface MockCourse {
+  id: string;
+  name: string;
+  level: string;
+  localeKey: string;
+}
+
+export const mockCourses: MockCourse[] = [
+  { id: "computer", name: "Informática Básica", level: "Iniciante", localeKey: "computer" },
+  {
+    id: "phone",
+    name: "Smartphones no dia a dia",
+    level: "Iniciante",
+    localeKey: "phone",
+  },
+  { id: "internet", name: "Internet", level: "Intermediário", localeKey: "internet" },
+  {
+    id: "social",
+    name: "Redes Sociais com Segurança",
+    level: "Intermediário",
+    localeKey: "social",
+  },
+  { id: "photo", name: "Fotografia digital", level: "Avançado", localeKey: "photo" },
+  { id: "security", name: "Segurança digital", level: "Intermediário", localeKey: "security" },
+];
+
 export interface ClassRecord {
   id: string;
   code: string;
@@ -10,6 +37,7 @@ export interface ClassRecord {
   level: string;
   start: string;
   end: string;
+  location?: string;
   enrolled: number;
   capacity: number;
   status: ClassStatus;
@@ -101,7 +129,7 @@ export const initialClasses: ClassRecord[] = [
     id: "6",
     code: "TUR-006",
     name: "Redes Sociais com Segurança — C",
-    courseId: "internet",
+    courseId: "social",
     course: "Redes Sociais com Segurança",
     editionId: "2026-2",
     edition: "2º semestre 2026",
@@ -165,7 +193,7 @@ export const initialClasses: ClassRecord[] = [
     id: "10",
     code: "TUR-010",
     name: "Redes Sociais com Segurança — A (2025)",
-    courseId: "internet",
+    courseId: "social",
     course: "Redes Sociais com Segurança",
     editionId: "2025-2",
     edition: "2º semestre 2025",
@@ -182,7 +210,7 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-011",
     name: "Mensagens e contatos",
     courseId: "phone",
-    course: "Uso do celular",
+    course: "Smartphones no dia a dia",
     editionId: "2025-1",
     edition: "1º semestre 2025",
     level: "Iniciante",

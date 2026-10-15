@@ -37,10 +37,14 @@ describe("classes list", () => {
     expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
     await user.clear(screen.getByRole("textbox", { name: "Buscar por código, turma ou curso" }));
     await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
-    await user.type(screen.getByRole("textbox", { name: "Código" }), "TUR-NEW");
-    await user.type(screen.getByRole("textbox", { name: "Nome da turma" }), "Turma de teste");
-    await user.click(screen.getByRole("button", { name: "Salvar" }));
-    expect(await screen.findByRole("link", { name: /Turma de teste/ })).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Nova turma" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Curso/ })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Edição" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Local")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Status/ })).toBeInTheDocument();
+    await user.type(screen.getByRole("textbox", { name: "Código da turma" }), "TUR-NEW");
+    await user.click(screen.getByRole("button", { name: "Salvar turma" }));
+    expect(await screen.findByRole("link", { name: "TUR-NEW" })).toBeInTheDocument();
   }, 10000);
 
   it("initializes the course filter from the URL and clears unmatched search", async () => {
@@ -74,11 +78,54 @@ describe("classes list", () => {
     renderPage();
     expect(screen.getByText("03/03/26 - 27/05/26")).toBeInTheDocument();
     await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
-    await user.clear(screen.getByRole("textbox", { name: "Nome da turma" }));
-    await user.type(screen.getByRole("textbox", { name: "Nome da turma" }), "Alteração descartada");
+    await user.clear(screen.getByRole("textbox", { name: "Código da turma" }));
+    await user.type(
+      screen.getByRole("textbox", { name: "Código da turma" }),
+      "ALTERACAO-DESCARTADA",
+    );
     await user.click(screen.getByRole("button", { name: "Cancelar" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.queryByText("Alteração descartada")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Turma 2026.2" })).toBeInTheDocument();
+  });
+
+  it("saves edits locally without changing the class name", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
+    fireEvent.change(screen.getByLabelText(/Data de início/), {
+      target: { value: "2026-03-04" },
+    });
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+    expect(await screen.findByText("04/03/26 - 27/05/26")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Turma 2026.2" })).toBeInTheDocument();
+  });
+
+  it("blocks a class whose end date is before its start date", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
+    await user.type(screen.getByRole("textbox", { name: "Código da turma" }), "INFO-NEW");
+    fireEvent.change(screen.getByLabelText(/Data de início/), {
+      target: { value: "2026-06-27" },
+    });
+    fireEvent.change(screen.getByLabelText(/Data de término/), {
+      target: { value: "2026-03-03" },
+    });
+    await user.click(screen.getByRole("button", { name: "Salvar turma" }));
+    expect(
+      await screen.findByText("A data de término deve ser igual ou posterior à data de início."),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "INFO-NEW" })).not.toBeInTheDocument();
+  });
+
+  it("uses two pages for twelve mock classes", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    expect(screen.getByRole("button", { name: "Página 2" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Página 3" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Página 2" }));
+    expect(screen.getByRole("link", { name: "Mensagens e contatos" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Turma 2026.2" })).not.toBeInTheDocument();
   });
 
   it("archives and restores a class without deleting it", async () => {
