@@ -21,6 +21,12 @@ jobs:
           node-version: 22
           cache: yarn
 
+      - name: Contrato OpenAPI × tedi-back (develop)
+        # Só avisa (::warning:: + resumo do job), nunca falha o build. Ver docs/ARCHITECTURE.md §5.
+        continue-on-error: true
+        timeout-minutes: 2
+        run: node scripts/check-openapi-drift.mjs
+
       - run: yarn install --frozen-lockfile
 
       - name: Lint
