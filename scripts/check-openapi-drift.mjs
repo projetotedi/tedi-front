@@ -127,6 +127,6 @@ try {
 } catch (error) {
   warning(
     "Contrato OpenAPI não verificado",
-    `Não foi possível comparar o contrato: ${error.message}`,
+    `Não foi possível comparar o contrato: ${error.message}${error.cause?.code ? ` (${error.cause.code})` : ""}`,
   );
 }

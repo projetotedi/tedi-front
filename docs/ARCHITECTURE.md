@@ -246,7 +246,7 @@ tedi-back                                       tedi-front
 1. muda DTO/controller
 2. yarn openapi:export → docs/openapi.json
 3. CI: openapi:check
-4. merge em develop (o template de PR do back pergunta: "Mudou o contrato? Abrir a sincronização no front")
+4. merge em develop (o template de PR do back tem a seção "Contrato da API": se mudou, abrir a sincronização no front)
 5. copiar docs/openapi.json da develop  ─────▶  openapi/openapi.json (manual)
    e rodar `yarn generate` + `yarn format`        src/api/generated/** regenerado
                                                6. CI: typecheck quebra se alguma tela usa campo que sumiu

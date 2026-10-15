@@ -8,9 +8,9 @@ import type { AcceptInviteDto } from "@api/generated/model";
  * (MemberRegistrationFormDto) e responde 400 VALIDATION_FAILED (campo `registration`) a este
  * corpo, sem consumir o convite. É o mesmo comportamento da develop antes desta sincronização.
  *
- * Exceção temporária e consciente à regra "nenhum tipo da API escrito à mão" (AGENTS.md):
- * é o único tipo de API escrito à mão no front, e `toAcceptInviteDto` é o único ponto em que ele
- * vira o DTO gerado.
+ * Tipo de requisição escrito à mão, de propósito e por pouco tempo: o AGENTS.md proíbe tipo de
+ * resposta escrito à mão, e o espírito da regra é que o contrato venha do Orval. É o único caso no
+ * front, e `toAcceptInviteDto` é o único ponto em que ele vira o DTO gerado.
  */
 export interface LegacyAcceptInviteBody {
   token: string;
@@ -25,8 +25,8 @@ export type AcceptInviteSubmission = AcceptInviteDto | LegacyAcceptInviteBody;
 
 /** TODO(GUS-120): sem o corpo legado, esta função some e o hook volta a receber `AcceptInviteDto`. */
 export function toAcceptInviteDto(submission: AcceptInviteSubmission): AcceptInviteDto {
-  if (!("ra" in submission)) return submission;
-  // Cast proposital: o corpo legado não é um AcceptInviteDto (não tem `registration`) e vai para a
-  // rede como está, sem mudança de comportamento. Ver o comentário de LegacyAcceptInviteBody.
-  return submission as AcceptInviteDto;
+  // O corpo legado já cabe no AcceptInviteDto (`registration` é opcional no tipo gerado) e vai para
+  // a rede como está, sem mudança de comportamento. O tipo próprio existe porque um literal com
+  // `name`, `ra` e `email` não passa na checagem de propriedades extras do DTO.
+  return submission;
 }
