@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { formatHours } from "@shared/lib/format";
-import { Card, Chip, type ChipProps } from "@shared/ui";
+import { Badge, Card, type BadgeProps } from "@shared/ui";
 
 import type { ProfileMock } from "../mocks/profile.mock";
 
@@ -11,7 +11,7 @@ interface HoursSummaryProps {
 
 interface Indicator {
   key: keyof ProfileMock["summaryMinutes"];
-  badge?: { label: string; color: NonNullable<ChipProps["color"]> };
+  badge?: { label: string; color: BadgeProps["tone"] };
 }
 
 const INDICATORS: Indicator[] = [
@@ -35,7 +35,7 @@ export function HoursSummary({ minutes }: HoursSummaryProps) {
               <p className="mt-1 text-3xl font-semibold">{formatHours(minutes[key])}</p>
               {badge && (
                 <div className="mt-2">
-                  <Chip color={badge.color}>{t(`profile.summary.badges.${badge.label}`)}</Chip>
+                  <Badge tone={badge.color}>{t(`profile.summary.badges.${badge.label}`)}</Badge>
                 </div>
               )}
             </Card>

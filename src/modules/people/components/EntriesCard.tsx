@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 import { DataTable } from "@shared/components/DataTable";
 import { formatHours } from "@shared/lib/format";
-import { Card, Chip } from "@shared/ui";
+import { Badge, Card } from "@shared/ui";
 
 import { formatDayMonth } from "../lib/format";
 import { ENTRY_STATUS_COLOR } from "../lib/status-colors";
@@ -48,9 +48,9 @@ export function EntriesCard({ entries }: EntriesCardProps) {
             {
               header: t("profile.entries.columns.status"),
               render: (entry) => (
-                <Chip color={ENTRY_STATUS_COLOR[entry.status]}>
+                <Badge tone={ENTRY_STATUS_COLOR[entry.status]}>
                   {t(`profile.entryStatus.${entry.status}`)}
-                </Chip>
+                </Badge>
               ),
             },
           ]}
