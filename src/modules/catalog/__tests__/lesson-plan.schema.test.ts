@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  ArchiveLessonPlanBody,
+  CreateLessonPlanBody,
+  UpdateLessonPlanBody,
+} from "@api/generated/zod/catalog/catalog";
+
+import {
   archiveLessonPlanFormSchema,
   buildEmptyFormValues,
   lessonPlanFormSchema,
@@ -329,5 +335,54 @@ describe("toArchiveBody", () => {
     expect(toArchiveBody({ reason: "  Conteúdo revisado.  " })).toEqual({
       reason: "Conteúdo revisado.",
     });
+  });
+});
+
+describe("form body against the generated contract schemas", () => {
+  const edgeCases: Array<[string, LessonPlanFormValues]> = [
+    ["a typical plan", validValues()],
+    ["the shortest plan", validValues({ hours: "", minutes: "1" })],
+    ["the longest duration", validValues({ hours: "24", minutes: "0" })],
+    [
+      "the longest texts",
+      validValues({
+        title: "a".repeat(200),
+        objective: "a".repeat(2000),
+        contents: Array.from({ length: 50 }, () => ({ value: "c".repeat(500) })),
+        materialUrl: `https://exemplo.com/${"a".repeat(479)}`,
+      }),
+    ],
+    ["empty objective and link", validValues({ objective: "", materialUrl: "" })],
+  ];
+
+  it.each(edgeCases)("%s passes the form schema and the contract schemas", (_label, values) => {
+    expect(lessonPlanFormSchema.safeParse(values).success).toBe(true);
+
+    const body = toLessonPlanBody(values);
+
+    expect(CreateLessonPlanBody.safeParse(body).success).toBe(true);
+    expect(UpdateLessonPlanBody.safeParse(body).success).toBe(true);
+  });
+
+  it("builds an archive body the contract accepts", () => {
+    expect(
+      ArchiveLessonPlanBody.safeParse(toArchiveBody({ reason: "a".repeat(500) })).success,
+    ).toBe(true);
+    expect(ArchiveLessonPlanBody.safeParse(toArchiveBody({ reason: "" }) ?? {}).success).toBe(true);
+  });
+
+  it("form limits are never looser than the contract", () => {
+    const overLimit = [
+      validValues({ title: "a".repeat(201) }),
+      validValues({ hours: "24", minutes: "1" }),
+      validValues({ objective: "a".repeat(2001) }),
+      validValues({ contents: [{ value: "a".repeat(501) }] }),
+      validValues({ materialUrl: `https://exemplo.com/${"a".repeat(481)}` }),
+    ];
+
+    for (const values of overLimit) {
+      expect(lessonPlanFormSchema.safeParse(values).success).toBe(false);
+      expect(CreateLessonPlanBody.safeParse(toLessonPlanBody(values)).success).toBe(false);
+    }
   });
 });
