@@ -32,5 +32,7 @@ export { StatusCard } from "./StatusCard";
 export type { StatusCardProps } from "./StatusCard";
 export { Stepper } from "./Stepper";
 export type { StepperProps } from "./Stepper";
+export { TextArea } from "./TextArea";
+export type { TextAreaProps } from "./TextArea";
 export { TextField } from "./TextField";
 export type { TextFieldProps } from "./TextField";
