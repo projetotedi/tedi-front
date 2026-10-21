@@ -1,0 +1,90 @@
+{
+  "title": "Lesson plans",
+  "newPlan": "+ New lesson plan",
+  "archived": "Archived",
+  "close": "Close",
+  "listPending": {
+    "title": "The lesson plans list is coming soon",
+    "description": "Registered plans will show up here."
+  },
+  "actions": {
+    "edit": "Edit lesson plan: {{title}}",
+    "archive": "Archive lesson plan: {{title}}",
+    "unarchive": "Reactivate plan",
+    "unarchiveFor": "Reactivate plan: {{title}}"
+  },
+  "form": {
+    "newTitle": "New lesson plan",
+    "editTitle": "Edit lesson plan",
+    "title": "Plan title",
+    "duration": "Expected duration",
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "durationHelp": "Counts toward the workload of the courses that use this plan.",
+    "contents": "Contents",
+    "contentsHelp": "List them in the order they will be taught.",
+    "content": "Content {{number}}",
+    "addContent": "+ Add content",
+    "moveUp": "Move content {{number}} up",
+    "moveDown": "Move content {{number}} down",
+    "removeContent": "Remove content {{number}}",
+    "contentMoved": "Content {{number}} moved to position {{position}} of {{total}}.",
+    "contentRemoved_one": "Content {{number}} removed. {{count}} content left.",
+    "contentRemoved_other": "Content {{number}} removed. {{count}} contents left.",
+    "contentsLimit": "Limit of {{contentsMax}} contents reached.",
+    "objective": "Objective",
+    "material": "Material link",
+    "materialHelp": "The system stores the link, not the file.",
+    "cancel": "Cancel",
+    "savePlan": "Save plan",
+    "saveChanges": "Save changes",
+    "saving": "Saving…",
+    "loading": "Loading the lesson plan…",
+    "retry": "Try again",
+    "errors": {
+      "titleRequired": "Enter the plan title.",
+      "titleTooLong": "The title can have at most {{titleMax}} characters.",
+      "hoursInvalid": "Enter the hours as whole numbers.",
+      "minutesInvalid": "Enter the minutes as a number from 0 to 59.",
+      "durationRequired": "The duration must be greater than zero.",
+      "durationTooLong": "The maximum duration is {{maxHours}} hours.",
+      "durationInvalid": "Enter a duration between 1 minute and {{maxHours}} hours.",
+      "contentRequired": "Fill in the content or remove this item.",
+      "contentTooLong": "Each content can have at most {{contentMax}} characters.",
+      "contentsRequired": "Add at least one content.",
+      "contentsTooMany": "Add at most {{contentsMax}} contents.",
+      "contentsServerInvalid": "Review the contents: each one needs text, with up to {{contentMax}} characters.",
+      "objectiveTooLong": "The objective can have at most {{objectiveMax}} characters.",
+      "materialUrlTooLong": "The link can have at most {{urlMax}} characters.",
+      "materialUrlInvalid": "Enter a valid link starting with http:// or https://.",
+      "serverInvalid": "Review this field and try again."
+    }
+  },
+  "archive": {
+    "title": "Archive lesson plan",
+    "warningTitle": "Archiving removes the plan from new sequences",
+    "warningDescription": "Courses and lessons that already use the plan stay as they are. Nothing is deleted (RN-27).",
+    "reason": "Reason (optional)",
+    "reasonExample": "Content revised in a new plan.",
+    "reasonHelp": "It is recorded in the plan history.",
+    "back": "Back",
+    "confirm": "Archive plan",
+    "confirming": "Archiving…",
+    "errors": {
+      "reasonTooLong": "The reason can have at most {{reasonMax}} characters."
+    }
+  },
+  "toast": {
+    "created": "Lesson plan created.",
+    "updated": "Lesson plan updated.",
+    "archived": "Lesson plan archived.",
+    "unarchived": "Lesson plan reactivated.",
+    "unarchiveFailed": "Could not reactivate the lesson plan. Try again."
+  },
+  "errors": {
+    "archived": "This lesson plan is archived and cannot be edited. Reactivate the plan to edit it.",
+    "notFound": "Lesson plan not found.",
+    "network": "Could not connect. Check your connection and try again.",
+    "unknown": "Could not complete the action. Try again."
+  }
+}

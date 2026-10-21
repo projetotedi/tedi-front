@@ -1,0 +1,90 @@
+{
+  "title": "Planos de aula",
+  "newPlan": "+ Novo plano de aula",
+  "archived": "Arquivado",
+  "close": "Fechar",
+  "listPending": {
+    "title": "A listagem de planos de aula chega em breve",
+    "description": "Os planos cadastrados aparecerão aqui."
+  },
+  "actions": {
+    "edit": "Editar plano de aula: {{title}}",
+    "archive": "Arquivar plano de aula: {{title}}",
+    "unarchive": "Reativar plano",
+    "unarchiveFor": "Reativar plano: {{title}}"
+  },
+  "form": {
+    "newTitle": "Novo plano de aula",
+    "editTitle": "Editar plano de aula",
+    "title": "Título do plano",
+    "duration": "Duração prevista",
+    "hours": "Horas",
+    "minutes": "Minutos",
+    "durationHelp": "Entra na carga horária dos cursos que usam este plano.",
+    "contents": "Conteúdos",
+    "contentsHelp": "Liste na ordem em que serão ensinados.",
+    "content": "Conteúdo {{number}}",
+    "addContent": "+ Adicionar conteúdo",
+    "moveUp": "Subir conteúdo {{number}}",
+    "moveDown": "Descer conteúdo {{number}}",
+    "removeContent": "Remover conteúdo {{number}}",
+    "contentMoved": "Conteúdo {{number}} movido para a posição {{position}} de {{total}}.",
+    "contentRemoved_one": "Conteúdo {{number}} removido. Resta {{count}} conteúdo.",
+    "contentRemoved_other": "Conteúdo {{number}} removido. Restam {{count}} conteúdos.",
+    "contentsLimit": "Limite de {{contentsMax}} conteúdos atingido.",
+    "objective": "Objetivo",
+    "material": "Link do material",
+    "materialHelp": "O sistema guarda o link, não o arquivo.",
+    "cancel": "Cancelar",
+    "savePlan": "Salvar plano",
+    "saveChanges": "Salvar alterações",
+    "saving": "Salvando…",
+    "loading": "Carregando o plano de aula…",
+    "retry": "Tentar de novo",
+    "errors": {
+      "titleRequired": "Informe o título do plano.",
+      "titleTooLong": "O título pode ter no máximo {{titleMax}} caracteres.",
+      "hoursInvalid": "Informe as horas com números inteiros.",
+      "minutesInvalid": "Informe os minutos com um número de 0 a 59.",
+      "durationRequired": "A duração deve ser maior que zero.",
+      "durationTooLong": "A duração máxima é de {{maxHours}} horas.",
+      "durationInvalid": "Informe uma duração entre 1 minuto e {{maxHours}} horas.",
+      "contentRequired": "Preencha o conteúdo ou remova este item.",
+      "contentTooLong": "Cada conteúdo pode ter no máximo {{contentMax}} caracteres.",
+      "contentsRequired": "Inclua ao menos um conteúdo.",
+      "contentsTooMany": "Inclua no máximo {{contentsMax}} conteúdos.",
+      "contentsServerInvalid": "Revise os conteúdos: cada um precisa de texto, com até {{contentMax}} caracteres.",
+      "objectiveTooLong": "O objetivo pode ter no máximo {{objectiveMax}} caracteres.",
+      "materialUrlTooLong": "O link pode ter no máximo {{urlMax}} caracteres.",
+      "materialUrlInvalid": "Informe um link válido, começando com http:// ou https://.",
+      "serverInvalid": "Revise este campo e tente de novo."
+    }
+  },
+  "archive": {
+    "title": "Arquivar plano de aula",
+    "warningTitle": "Arquivar tira o plano das novas sequências",
+    "warningDescription": "Cursos e aulas que já usam o plano continuam como estão. Nada é excluído (RN-27).",
+    "reason": "Motivo (opcional)",
+    "reasonExample": "Conteúdo revisado em um novo plano.",
+    "reasonHelp": "Fica registrado no histórico do plano.",
+    "back": "Voltar",
+    "confirm": "Arquivar plano",
+    "confirming": "Arquivando…",
+    "errors": {
+      "reasonTooLong": "O motivo pode ter no máximo {{reasonMax}} caracteres."
+    }
+  },
+  "toast": {
+    "created": "Plano de aula criado.",
+    "updated": "Plano de aula atualizado.",
+    "archived": "Plano de aula arquivado.",
+    "unarchived": "Plano de aula reativado.",
+    "unarchiveFailed": "Não foi possível reativar o plano de aula. Tente novamente."
+  },
+  "errors": {
+    "archived": "Este plano de aula está arquivado e não pode ser editado. Reative o plano para editar.",
+    "notFound": "Plano de aula não encontrado.",
+    "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+    "unknown": "Não foi possível concluir a ação. Tente novamente."
+  }
+}
