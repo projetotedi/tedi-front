@@ -20,7 +20,7 @@ export function ToastProvider({ regionLabel, closeLabel }: ToastProviderProps): 
 
         return (
           <HeroToast toast={queued} variant={variant}>
-            <HeroToast.Indicator variant={variant} />
+            <HeroToast.Indicator variant={variant} className="self-center" />
             <HeroToast.Content>
               <HeroToast.Title className="text-base">{title}</HeroToast.Title>
               {description ? (
