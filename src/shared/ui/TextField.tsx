@@ -14,6 +14,7 @@ export interface TextFieldProps {
   isDisabled?: boolean;
   isRequired?: boolean;
   isReadOnly?: boolean;
+  autoFocus?: boolean;
   type?: "text" | "password" | "email" | "date";
   list?: string;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
@@ -36,6 +37,7 @@ export function TextField({
   isDisabled,
   isRequired,
   isReadOnly,
+  autoFocus,
   type = "text",
   list,
   inputMode,
@@ -58,6 +60,7 @@ export function TextField({
       isDisabled={isDisabled}
       isRequired={isRequired}
       isReadOnly={isReadOnly}
+      autoFocus={autoFocus}
       isInvalid={Boolean(errorMessage)}
       validationBehavior="aria"
       aria-describedby={ariaDescribedBy}

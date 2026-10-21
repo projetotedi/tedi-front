@@ -19,6 +19,7 @@ export interface TextAreaProps {
   isDisabled?: boolean;
   isRequired?: boolean;
   isReadOnly?: boolean;
+  autoFocus?: boolean;
   rows?: number;
   "aria-describedby"?: string;
   inputRef?: Ref<HTMLTextAreaElement>;
@@ -36,6 +37,7 @@ export function TextArea({
   isDisabled,
   isRequired,
   isReadOnly,
+  autoFocus,
   rows = 4,
   "aria-describedby": ariaDescribedBy,
   inputRef,
@@ -51,6 +53,7 @@ export function TextArea({
       isDisabled={isDisabled}
       isRequired={isRequired}
       isReadOnly={isReadOnly}
+      autoFocus={autoFocus}
       isInvalid={Boolean(errorMessage)}
       validationBehavior="aria"
       aria-describedby={ariaDescribedBy}

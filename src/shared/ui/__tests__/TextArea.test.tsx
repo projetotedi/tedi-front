@@ -107,6 +107,12 @@ describe("TextArea", () => {
     );
   });
 
+  it("focuses the textarea on mount when autoFocus is set", () => {
+    render(<Harness autoFocus />);
+
+    expect(screen.getByLabelText("Motivo (opcional)")).toHaveFocus();
+  });
+
   it("disables the textarea", () => {
     render(<Harness isDisabled />);
 
