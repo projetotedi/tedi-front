@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { peopleRoutes } from "@modules/people";
+import { catalogRoutes } from "@modules/catalog";
 import { classesRoutes } from "@modules/classes";
 
 import { AppLayout } from "./layouts/AppLayout";
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
               // Após o login, a tela padrão é "Meu perfil".
               { index: true, element: <Navigate to="/profile" replace /> },
               ...peopleRoutes,
+              ...catalogRoutes,
               ...classesRoutes,
               ...prototypeRoutes,
               ...authProtectedRoutes,
