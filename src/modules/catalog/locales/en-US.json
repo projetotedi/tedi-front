@@ -44,8 +44,8 @@
     "errors": {
       "titleRequired": "Enter the plan title.",
       "titleTooLong": "The title can have at most {{titleMax}} characters.",
-      "hoursInvalid": "Enter the hours as whole numbers.",
-      "minutesInvalid": "Enter the minutes as a number from 0 to 59.",
+      "hoursInvalid": "Use whole numbers only.",
+      "minutesInvalid": "Enter minutes from 0 to 59.",
       "durationRequired": "The duration must be greater than zero.",
       "durationTooLong": "The maximum duration is {{maxHours}} hours.",
       "durationInvalid": "Enter a duration between 1 minute and {{maxHours}} hours.",

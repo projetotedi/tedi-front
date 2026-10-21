@@ -44,8 +44,8 @@
     "errors": {
       "titleRequired": "Informe o título do plano.",
       "titleTooLong": "O título pode ter no máximo {{titleMax}} caracteres.",
-      "hoursInvalid": "Informe as horas com números inteiros.",
-      "minutesInvalid": "Informe os minutos com um número de 0 a 59.",
+      "hoursInvalid": "Use apenas números inteiros.",
+      "minutesInvalid": "Informe minutos de 0 a 59.",
       "durationRequired": "A duração deve ser maior que zero.",
       "durationTooLong": "A duração máxima é de {{maxHours}} horas.",
       "durationInvalid": "Informe uma duração entre 1 minuto e {{maxHours}} horas.",

@@ -188,10 +188,21 @@ describe("LessonPlanFormDialog (create)", () => {
 
       await submit(user);
 
-      expect(
-        await screen.findByText("Informe os minutos com um número de 0 a 59."),
-      ).toBeInTheDocument();
+      expect(await screen.findByText("Informe minutos de 0 a 59.")).toBeInTheDocument();
       await waitFor(() => expect(textbox("Minutos")).toHaveFocus());
+    });
+
+    it("rejects hours that are not whole numbers and focuses the hours", async () => {
+      const user = userEvent.setup();
+      await renderCreate();
+      await user.type(textbox("Título do plano"), "Teclado");
+      await user.type(textbox("Horas"), "1,5");
+      await user.type(textbox("Conteúdo 1"), "Teclado e mouse");
+
+      await submit(user);
+
+      expect(await screen.findByText("Use apenas números inteiros.")).toBeInTheDocument();
+      await waitFor(() => expect(textbox("Horas")).toHaveFocus());
     });
 
     it("rejects more than 24 hours", async () => {

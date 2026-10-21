@@ -60,8 +60,8 @@ type PendingFocus =
 function RequiredLabel({ children }: { children: ReactNode }): ReactElement {
   return (
     <>
-      {children}{" "}
-      <span className="text-danger" aria-hidden="true">
+      {children}
+      <span className="ms-0.5 text-danger" aria-hidden="true">
         *
       </span>
     </>
@@ -230,7 +230,7 @@ function LessonPlanForm({
         control={control}
         render={({ field, fieldState }) => (
           <TextField
-            label={<RequiredLabel>{t("form.title")}</RequiredLabel>}
+            label={t("form.title")}
             value={field.value}
             onChange={field.onChange}
             onBlur={field.onBlur}
@@ -249,10 +249,10 @@ function LessonPlanForm({
         aria-describedby={durationHelpId}
         className="flex flex-col gap-2"
       >
-        <span id={durationLabelId} className="text-base text-foreground">
+        <span id={durationLabelId} className="text-base font-medium text-foreground">
           <RequiredLabel>{t("form.duration")}</RequiredLabel>
         </span>
-        <div className="grid max-w-md grid-cols-2 gap-4">
+        <div className="grid max-w-xl grid-cols-2 gap-4">
           <Controller
             name="hours"
             control={control}
@@ -299,7 +299,7 @@ function LessonPlanForm({
         aria-describedby={contentsHelpId}
         className="flex flex-col gap-2"
       >
-        <span id={contentsLabelId} className="text-base text-foreground">
+        <span id={contentsLabelId} className="text-base font-medium text-foreground">
           <RequiredLabel>{t("form.contents")}</RequiredLabel>
         </span>
         <p id={contentsHelpId} className="text-sm text-muted">
