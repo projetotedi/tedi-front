@@ -1,3 +1,5 @@
+export { Accordion } from "./Accordion";
+export type { AccordionProps, AccordionSection } from "./Accordion";
 export { Alert } from "./Alert";
 export type { AlertProps } from "./Alert";
 export { Avatar, getInitials } from "./Avatar";
