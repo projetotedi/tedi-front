@@ -30,8 +30,8 @@ export interface NavListProps {
 }
 
 /**
- * Altura de 44px e fonte de 16px (AGENTS.md; o Figma desenha 40px e 14px). O foco fica por
- * dentro (`ring-inset`) porque o painel do `Accordion` corta o que passa da borda.
+ * Item de 44px de altura e 16px de fonte, como no Figma da sidebar unificada e no AGENTS.md. O
+ * foco fica por dentro (`ring-inset`) porque o painel do `Accordion` corta o que passa da borda.
  */
 const ITEM_CLASSES = [
   "flex min-h-11 items-center gap-2.5 rounded-[10px] border-2 py-2 pr-3 pl-3.5",
