@@ -1,4 +1,6 @@
-import { NavLink } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+
+import { findActivePath } from "../lib/active-path";
 
 export interface NavListItem {
   /** Texto já traduzido. */
@@ -10,47 +12,89 @@ export interface NavListItem {
 
 export interface NavListProps {
   items: NavListItem[];
-  /** Nome acessível do `<nav>`. */
-  label: string;
-  /** Mensagem quando não há itens. */
-  emptyLabel: string;
+  /** Nome acessível do `<nav>`. Sem ele, a lista sai sem landmark, para caber dentro de outro `<nav>`. */
+  label?: string;
+  /** Mensagem quando não há itens. Sem ela, uma lista vazia não desenha nada. */
+  emptyLabel?: string;
+  /** Caminho do item atual (`null`: nenhum). Sem ele, vale o item que casa com a rota. */
+  activePath?: string | null;
+  /** Fica no `<nav>`; sem `label`, na lista. */
   id?: string;
+  /** Classes da lista (`<ul>`). */
+  className?: string;
   /** Chamado ao escolher um item (ex.: fechar o menu recolhível). */
   onNavigate?: () => void;
 }
 
 /**
- * Navegação vertical da sidebar. Usa o `NavLink` do react-router (item ativo com
- * `aria-current="page"`) em vez de um componente do HeroUI, que não tem navegação lateral.
- * O Figma desenha os itens com ~40px e texto de 14px; aqui ficam 44px e 16px (AGENTS.md).
+ * Altura de 44px e fonte de 16px (AGENTS.md; o Figma desenha 40px e 14px). O foco fica por
+ * dentro (`ring-inset`) porque o painel do `Accordion` corta o que passa da borda.
  */
-export function NavList({ items, label, emptyLabel, id, onNavigate }: NavListProps) {
-  return (
-    <nav id={id} aria-label={label}>
-      {items.length === 0 ? (
-        <p className="px-3 py-2">{emptyLabel}</p>
-      ) : (
-        <ul className="flex flex-col gap-1.5">
-          {items.map((item) => (
+const ITEM_CLASSES = [
+  "flex min-h-11 items-center gap-2.5 rounded-[10px] border-2 py-2 pr-3 pl-3.5",
+  "text-base text-foreground outline-hidden",
+  "focus-visible:ring-3 focus-visible:ring-tedi-focus-ring focus-visible:ring-inset",
+].join(" ");
+const IDLE_CLASSES = "border-transparent font-medium hover:bg-white/40";
+const CURRENT_CLASSES = "border-tedi-sidebar-accent bg-white font-semibold";
+
+/**
+ * Navegação vertical da sidebar. Só um item é o atual (`aria-current="page"`): o de caminho
+ * mais longo que casa com a rota, ou o `activePath` quando quem usa já decidiu. Usa `Link`
+ * em vez do `NavLink` do react-router, que marcaria `/lessons` e `/lessons/calendar` juntos e
+ * não deixa desligar o `aria-current`.
+ */
+export function NavList({
+  items,
+  label,
+  emptyLabel,
+  activePath,
+  id,
+  className = "",
+  onNavigate,
+}: NavListProps) {
+  const { pathname } = useLocation();
+
+  if (items.length === 0 && !emptyLabel) return null;
+
+  const currentPath =
+    activePath === undefined
+      ? findActivePath(
+          items.map((item) => item.path),
+          pathname,
+        )
+      : activePath;
+
+  const content =
+    items.length === 0 ? (
+      <p className="px-3 py-2">{emptyLabel}</p>
+    ) : (
+      <ul id={label ? undefined : id} className={`flex flex-col gap-1.5 ${className}`}>
+        {items.map((item) => {
+          const isCurrent = item.path === currentPath;
+
+          return (
             <li key={item.path}>
-              <NavLink
+              <Link
                 to={item.path}
                 onClick={onNavigate}
-                className={({ isActive }) =>
-                  [
-                    "flex min-h-11 items-center gap-2.5 rounded-xl px-3 py-2 text-base font-medium text-foreground",
-                    "outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2",
-                    isActive ? "bg-surface shadow-surface" : "hover:bg-white/50",
-                  ].join(" ")
-                }
+                aria-current={isCurrent ? "page" : undefined}
+                className={`${ITEM_CLASSES} ${isCurrent ? CURRENT_CLASSES : IDLE_CLASSES}`}
               >
                 {item.icon && <img src={item.icon} alt="" aria-hidden="true" className="size-6" />}
                 <span>{item.label}</span>
-              </NavLink>
+              </Link>
             </li>
-          ))}
-        </ul>
-      )}
+          );
+        })}
+      </ul>
+    );
+
+  return label ? (
+    <nav id={id} aria-label={label}>
+      {content}
     </nav>
+  ) : (
+    content
   );
 }

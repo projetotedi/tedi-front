@@ -56,4 +56,83 @@ describe("NavList", () => {
 
     expect(onNavigate).toHaveBeenCalledTimes(1);
   });
+
+  it("marks only the longest matching item as current", () => {
+    renderNav(
+      {
+        items: [
+          { label: "Aulas", path: "/lessons" },
+          { label: "Calendário", path: "/lessons/calendar" },
+        ],
+      },
+      "/lessons/calendar",
+    );
+
+    expect(screen.getByRole("link", { name: "Calendário" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Aulas" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("marks the parent item on a nested route", () => {
+    renderNav({}, "/classes/abc");
+
+    expect(screen.getByRole("link", { name: "Turmas" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("marks no item when the route matches none", () => {
+    renderNav({}, "/profile");
+
+    expect(screen.getAllByRole("link")).toHaveLength(2);
+    expect(screen.queryByRole("link", { current: "page" })).not.toBeInTheDocument();
+  });
+
+  it("uses activePath instead of the location when given", () => {
+    renderNav({ activePath: "/courses" }, "/classes");
+
+    expect(screen.getByRole("link", { name: "Cursos" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("link", { name: "Turmas" })).not.toHaveAttribute("aria-current");
+  });
+
+  it("marks no item when activePath is null", () => {
+    renderNav({ activePath: null }, "/classes");
+
+    expect(screen.queryByRole("link", { current: "page" })).not.toBeInTheDocument();
+  });
+
+  it("styles the current item apart from the others", () => {
+    renderNav({}, "/classes");
+
+    expect(screen.getByRole("link", { name: "Turmas" })).toHaveClass("bg-white", "font-semibold");
+    expect(screen.getByRole("link", { name: "Cursos" })).toHaveClass("font-medium");
+    expect(screen.getByRole("link", { name: "Cursos" })).not.toHaveClass("bg-white");
+  });
+
+  it("renders a bare list without a navigation landmark when no label is given", () => {
+    renderNav({ label: undefined, emptyLabel: undefined, id: "group-list", className: "trail" });
+
+    expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    const list = screen.getByRole("list");
+    expect(list).toHaveAttribute("id", "group-list");
+    expect(list).toHaveClass("trail");
+    expect(screen.getAllByRole("link")).toHaveLength(2);
+  });
+
+  it("puts the id on the navigation landmark when it has a label", () => {
+    renderNav({ id: "app-nav", className: "trail" });
+
+    expect(screen.getByRole("navigation", { name: "Menu principal" })).toHaveAttribute(
+      "id",
+      "app-nav",
+    );
+    expect(screen.getByRole("list")).not.toHaveAttribute("id");
+    expect(screen.getByRole("list")).toHaveClass("trail");
+  });
+
+  it("renders nothing when there are no items and no empty message", () => {
+    const { container } = renderNav({ items: [], emptyLabel: undefined });
+
+    expect(container).toBeEmptyDOMElement();
+  });
 });
