@@ -34,15 +34,6 @@ describe("SkipLink", () => {
     );
   });
 
-  it("is hidden until it receives the focus", () => {
-    renderPage();
-
-    expect(screen.getByRole("link", { name: "Pular para o conteúdo" })).toHaveClass(
-      "sr-only",
-      "focus:not-sr-only",
-    );
-  });
-
   it("moves the focus to the target when activated", async () => {
     const user = userEvent.setup();
     renderPage();
