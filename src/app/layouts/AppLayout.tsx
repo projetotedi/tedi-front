@@ -48,6 +48,9 @@ function SidebarTexture() {
  * (`handle.title` da rota) e o menu do perfil. Abaixo de 1024px a sidebar vira um Drawer
  * aberto pelo botão de menu. O primeiro Tab leva ao "Pular para o conteúdo", que move o foco
  * para o `<main>`; ele fica fora do `<aside>` (oculto no celular) para valer nos dois tamanhos.
+ * O `<main>` mostra o foco só com o teclado (`focus-visible`), com um anel de 3px por dentro
+ * (`ring-inset`) para não cortar nem deslocar o layout; o `tedi-focus-ring` dá 13,5:1 sobre o
+ * fundo da página.
  */
 export function AppLayout() {
   const { t } = useTranslation();
@@ -114,7 +117,7 @@ export function AppLayout() {
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          className="flex-1 px-4 py-6 outline-none lg:px-10 lg:py-8"
+          className="flex-1 px-4 py-6 outline-none focus-visible:ring-3 focus-visible:ring-tedi-focus-ring focus-visible:ring-inset lg:px-10 lg:py-8"
         >
           <div className="mx-auto w-full max-w-360">
             <Outlet />
