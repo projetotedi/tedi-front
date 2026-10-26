@@ -15,13 +15,23 @@
     "classes": "Classes",
     "students": "Students",
     "lessons": "Lessons",
+    "calendar": "Calendar",
     "enrollments": "Enrollments",
     "members": "Members and Planning",
-    "hours": "Hours bank"
+    "hours": "Hours bank",
+    "hoursReview": "Hours review",
+    "groups": {
+      "catalog": "Catalog",
+      "classes": "Classes",
+      "lessons": "Lessons",
+      "people": "People",
+      "hours": "Hours"
+    }
   },
   "layout": {
     "nav": "Main menu",
     "home": "TEDI, go to the home page",
+    "skipToContent": "Skip to content",
     "menu": {
       "open": "Open menu",
       "close": "Close menu",

@@ -119,6 +119,17 @@ describe("NavList", () => {
     expect(screen.getAllByRole("link")).toHaveLength(2);
   });
 
+  it("spaces the items by default and lets className decide the spacing", () => {
+    const { unmount } = renderNav();
+    expect(screen.getByRole("list")).toHaveClass("flex", "flex-col", "gap-1.5");
+    unmount();
+
+    renderNav({ className: "gap-1" });
+
+    expect(screen.getByRole("list")).toHaveClass("gap-1");
+    expect(screen.getByRole("list")).not.toHaveClass("gap-1.5");
+  });
+
   it("puts the id on the navigation landmark when it has a label", () => {
     renderNav({ id: "app-nav", className: "trail" });
 

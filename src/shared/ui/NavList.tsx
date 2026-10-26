@@ -20,7 +20,10 @@ export interface NavListProps {
   activePath?: string | null;
   /** Fica no `<nav>`; sem `label`, na lista. */
   id?: string;
-  /** Classes da lista (`<ul>`). */
+  /**
+   * Classes da lista (`<ul>`), que já é uma coluna. Sem elas, os itens ficam a 6px um do
+   * outro; quem passa as suas decide o espaçamento (duas classes `gap-*` brigariam).
+   */
   className?: string;
   /** Chamado ao escolher um item (ex.: fechar o menu recolhível). */
   onNavigate?: () => void;
@@ -50,7 +53,7 @@ export function NavList({
   emptyLabel,
   activePath,
   id,
-  className = "",
+  className = "gap-1.5",
   onNavigate,
 }: NavListProps) {
   const { pathname } = useLocation();
@@ -69,7 +72,7 @@ export function NavList({
     items.length === 0 ? (
       <p className="px-3 py-2">{emptyLabel}</p>
     ) : (
-      <ul id={label ? undefined : id} className={`flex flex-col gap-1.5 ${className}`}>
+      <ul id={label ? undefined : id} className={`flex flex-col ${className}`}>
         {items.map((item) => {
           const isCurrent = item.path === currentPath;
 
