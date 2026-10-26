@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
@@ -51,42 +52,85 @@ async function renderSidebar(role: Role) {
   return within(await screen.findByRole("navigation", { name: "Menu principal" }));
 }
 
-const labels = (nav: Awaited<ReturnType<typeof renderSidebar>>) =>
-  nav.getAllByRole("link").map((link: HTMLElement) => link.textContent);
+type SidebarNav = Awaited<ReturnType<typeof renderSidebar>>;
+
+/** Os links dos grupos fechados ficam fora da árvore de acessibilidade: abre todos antes de ler. */
+async function openAllGroups(nav: SidebarNav) {
+  for (const button of nav.getAllByRole("button")) {
+    if (button.getAttribute("aria-expanded") === "false") await userEvent.click(button);
+  }
+}
+
+const groupNames = (nav: SidebarNav) =>
+  nav.getAllByRole("button").map((button) => button.textContent);
+
+const linkNames = (nav: SidebarNav) => nav.getAllByRole("link").map((link) => link.textContent);
+
+/** Os itens de um grupo, lidos dentro do painel que o botão dele controla. */
+const itemsOf = (nav: SidebarNav, group: string) =>
+  within(nav.getByRole("group", { name: group }))
+    .getAllByRole("link")
+    .map((link) => link.textContent);
 
 describe("Sidebar by permission", () => {
-  it("member sees only Cursos, Planos de aula, Turmas, Alunos and Aulas", async () => {
+  it("member sees Catálogo, Turmas, Aulas and Pessoas with their items", async () => {
     const nav = await renderSidebar(Role.member);
 
-    expect(labels(nav)).toEqual(["Cursos", "Planos de aula", "Turmas", "Alunos", "Aulas"]);
-  });
+    expect(groupNames(nav)).toEqual(["Catálogo", "Turmas", "Aulas", "Pessoas"]);
 
-  it("member does not see Membros e Planejamento, Matrículas nor Banco de Horas", async () => {
-    const nav = await renderSidebar(Role.member);
+    await openAllGroups(nav);
 
-    expect(nav.queryByRole("link", { name: "Membros e Planejamento" })).not.toBeInTheDocument();
-    expect(nav.queryByRole("link", { name: "Matrículas" })).not.toBeInTheDocument();
-    expect(nav.queryByRole("link", { name: "Banco de Horas" })).not.toBeInTheDocument();
-  });
-
-  it("director sees every item except Membros e Planejamento (until GUS-109)", async () => {
-    const nav = await renderSidebar(Role.director);
-
-    expect(labels(nav)).toEqual([
+    expect(itemsOf(nav, "Catálogo")).toEqual(["Cursos", "Planos de aula"]);
+    expect(itemsOf(nav, "Turmas")).toEqual(["Turmas"]);
+    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário"]);
+    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos"]);
+    expect(linkNames(nav)).toEqual([
       "Cursos",
       "Planos de aula",
       "Turmas",
-      "Alunos",
       "Aulas",
-      "Matrículas",
-      "Banco de Horas",
+      "Calendário",
+      "Alunos",
     ]);
   });
 
-  it("coordinator sees every item", async () => {
+  it("member does not see the Horas group, Matrículas nor Membros", async () => {
+    const nav = await renderSidebar(Role.member);
+    await openAllGroups(nav);
+
+    expect(nav.queryByRole("button", { name: "Horas" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Matrículas" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Banco de horas" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Validação de horas" })).not.toBeInTheDocument();
+  });
+
+  it("director sees Horas with Banco de horas only", async () => {
+    const nav = await renderSidebar(Role.director);
+
+    expect(groupNames(nav)).toEqual(["Catálogo", "Turmas", "Aulas", "Pessoas", "Horas"]);
+
+    await openAllGroups(nav);
+
+    expect(itemsOf(nav, "Horas")).toEqual(["Banco de horas"]);
+    expect(itemsOf(nav, "Turmas")).toEqual(["Turmas", "Matrículas"]);
+    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos"]);
+    expect(nav.queryByRole("link", { name: "Validação de horas" })).not.toBeInTheDocument();
+    expect(nav.queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
+  });
+
+  it("coordinator sees the 5 groups with the 10 Figma items", async () => {
     const nav = await renderSidebar(Role.coordinator);
 
+    expect(groupNames(nav)).toEqual(["Catálogo", "Turmas", "Aulas", "Pessoas", "Horas"]);
+
+    await openAllGroups(nav);
+
     expect(nav.getAllByRole("link")).toHaveLength(appMenuItems.length);
-    expect(nav.getByRole("link", { name: "Membros e Planejamento" })).toBeInTheDocument();
+    expect(itemsOf(nav, "Catálogo")).toEqual(["Cursos", "Planos de aula"]);
+    expect(itemsOf(nav, "Turmas")).toEqual(["Turmas", "Matrículas"]);
+    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário"]);
+    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos", "Membros"]);
+    expect(itemsOf(nav, "Horas")).toEqual(["Banco de horas", "Validação de horas"]);
   });
 });
