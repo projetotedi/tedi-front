@@ -54,7 +54,7 @@ export function AppLayout() {
   const title = titleKey ? t(titleKey) : t("app.name");
   useDocumentTitle(titleKey ? `${title} · ${t("app.name")}` : t("app.name"));
 
-  const navItems = menu.map((item) => ({ label: t(item.label), path: item.path, icon: item.icon }));
+  const navItems = menu.map((item) => ({ label: t(item.label), path: item.path }));
   const nav = (id: string, onNavigate?: () => void) => (
     <NavList
       id={id}

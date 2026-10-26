@@ -1,10 +1,3 @@
-import bookOpenIcon from "../assets/icons/book-open.svg";
-import bookmarkIcon from "../assets/icons/bookmark.svg";
-import calendarIcon from "../assets/icons/calendar.svg";
-import clockIcon from "../assets/icons/clock.svg";
-import personPlusIcon from "../assets/icons/person-plus.svg";
-import personIcon from "../assets/icons/person.svg";
-
 import { authMenuItems } from "@modules/auth";
 import { classesMenuItems } from "@modules/classes";
 import type { MenuItem } from "@shared/lib/menu";
@@ -17,28 +10,28 @@ import type { MenuItem } from "@shared/lib/menu";
  * em `authMenuItems`.
  */
 export const prototypeMenuItems: MenuItem[] = [
-  { label: "common:nav.courses", path: "/courses", permission: "catalog.view", icon: bookOpenIcon },
+  { label: "common:nav.courses", path: "/courses", permission: "catalog.view", group: "catalog" },
   {
     label: "common:nav.lessonPlans",
     path: "/lesson-plans",
     permission: "catalog.view",
-    icon: bookmarkIcon,
+    group: "catalog",
   },
   {
     label: "common:nav.students",
     path: "/students",
     permission: "students.view",
-    icon: personIcon,
+    group: "people",
   },
-  { label: "common:nav.lessons", path: "/lessons", permission: "lessons.view", icon: calendarIcon },
+  { label: "common:nav.lessons", path: "/lessons", permission: "lessons.view", group: "lessons" },
   {
     label: "common:nav.enrollments",
     path: "/enrollments",
     permission: "enrollments.manage",
-    icon: personPlusIcon,
+    group: "classes",
   },
   // Último por ordem do Figma: "Membros e Planejamento" (authMenuItems) entra antes dele.
-  { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", icon: clockIcon },
+  { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", group: "hours" },
 ];
 
 /**

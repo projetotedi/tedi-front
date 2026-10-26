@@ -1,4 +1,3 @@
-import personsIcon from "../../assets/icons/persons.svg";
 import type { MenuItem } from "@shared/lib/menu";
 
 /**
@@ -16,6 +15,6 @@ export const authMenuItems: MenuItem[] = [
     label: "common:nav.members",
     path: "/members",
     permission: "access.manage",
-    icon: personsIcon,
+    group: "people",
   },
 ];
