@@ -11,6 +11,8 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   rows: T[];
   rowKey: (row: T) => string;
+  onRowClick?: (row: T) => void;
+  rowClassName?: string;
   /** Descrição da tabela para leitores de tela. */
   caption?: string;
   emptyMessage?: string;
@@ -30,6 +32,8 @@ export function DataTable<T>({
   columns,
   rows,
   rowKey,
+  onRowClick,
+  rowClassName,
   caption,
   emptyMessage,
   tableClassName,
@@ -60,7 +64,29 @@ export function DataTable<T>({
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)} className="border-t border-tedi-divider">
+              <tr
+                key={rowKey(row)}
+                className={joinClasses(
+                  "border-t border-tedi-divider",
+                  onRowClick &&
+                    "group cursor-pointer transition-colors hover:bg-tedi-info-subtle focus-within:bg-tedi-info-subtle",
+                  rowClassName,
+                )}
+                onClick={
+                  onRowClick
+                    ? (event) => {
+                        const target = event.target;
+                        if (
+                          target instanceof Element &&
+                          target.closest("a, button, input, select, textarea, [role='button']")
+                        ) {
+                          return;
+                        }
+                        onRowClick(row);
+                      }
+                    : undefined
+                }
+              >
                 {columns.map((column) => (
                   <td key={column.header} className={joinClasses(CELL_CLASS, column.cellClassName)}>
                     {column.render(row)}

@@ -15,6 +15,8 @@ describe("Badge", () => {
     ["info", "bg-tedi-badge"],
     ["highlight", "bg-tedi-highlight"],
     ["success", "bg-tedi-badge-success"],
+    ["warning", "bg-tedi-warning"],
+    ["danger", "bg-danger-soft"],
   ] as const)("applies the %s tone classes", (tone, expectedClass) => {
     render(<Badge tone={tone}>Rótulo</Badge>);
 

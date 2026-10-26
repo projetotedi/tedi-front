@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 import { DataTable } from "@shared/components/DataTable";
 import { formatHours } from "@shared/lib/format";
-import { Card, Chip } from "@shared/ui";
+import { Badge, Card } from "@shared/ui";
 
 import { formatMonthYear } from "../lib/format";
 import type { CategoryHours } from "../mocks/profile.mock";
@@ -54,10 +54,10 @@ export function CategoryHoursCard({ period, rows }: CategoryHoursCardProps) {
             header: t("profile.byCategory.columns.pending"),
             render: (row) =>
               Math.round(row.pendingMinutes) > 0 ? (
-                <Chip color="warning">
+                <Badge tone="warning">
                   <span aria-hidden="true">{formatHours(row.pendingMinutes)}</span>
                   <span className="sr-only">{pendingLabel(row.pendingMinutes)}</span>
-                </Chip>
+                </Badge>
               ) : (
                 <span className="text-muted">
                   <span aria-hidden="true">{t("profile.empty")}</span>
