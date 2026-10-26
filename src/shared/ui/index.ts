@@ -30,6 +30,8 @@ export { Select } from "./Select";
 export type { SelectOption, SelectProps } from "./Select";
 export { Skeleton } from "./Skeleton";
 export type { SkeletonProps } from "./Skeleton";
+export { SkipLink } from "./SkipLink";
+export type { SkipLinkProps } from "./SkipLink";
 export { StatusCard } from "./StatusCard";
 export type { StatusCardProps } from "./StatusCard";
 export { Stepper } from "./Stepper";
