@@ -14,16 +14,22 @@ import { SidebarBrand } from "./SidebarBrand";
 import { useExpandedMenuGroups } from "./useExpandedMenuGroups";
 
 /**
- * Trilho do Figma que liga os itens de um grupo aberto: barra vertical de 3px à esquerda e um
- * conector de 9px por item, só decoração. Com itens de 44px e 6px de respiro em cima (4px de
- * folga da linha do grupo e 2px do Figma), a barra começa 14px acima do centro do primeiro item
- * e termina na base do conector do último (a 23px da base da lista), fechando em "L".
+ * Trilho do Figma que liga os itens de um grupo aberto: uma barra vertical de 3px à esquerda e
+ * um conector de 9px por item, só decoração. Cada item desenha o seu conector, centrado na
+ * altura dele, e o seu trecho da barra, que avança meia folga (2px) para encostar no vizinho;
+ * assim o trilho acompanha itens mais altos (texto quebrado ou fonte maior). A barra começa
+ * 14px acima do centro do primeiro item e termina na base do conector do último, fechando em
+ * "L". As medidas estão em `rem`, como a altura dos itens, para manter o alinhamento quando a
+ * pessoa aumenta a fonte do navegador. O respiro de 6px em cima soma os 4px de folga da linha
+ * do grupo e os 2px do Figma; o painel do `Accordion` não pode ter padding próprio.
  */
 const TRAIL_CLASSES = [
   "relative gap-1 pt-1.5 pr-1.5 pb-0.5 pl-6",
-  "before:absolute before:top-3.5 before:bottom-[23px] before:left-2.5 before:w-[3px] before:bg-tedi-sidebar-accent",
-  "[&>li]:relative [&>li]:before:absolute [&>li]:before:top-1/2 [&>li]:before:-left-[11px]",
-  "[&>li]:before:h-0.5 [&>li]:before:w-[9px] [&>li]:before:-translate-y-1/2 [&>li]:before:bg-tedi-sidebar-accent",
+  "[&>li]:relative [&>li]:before:absolute [&>li]:before:top-1/2 [&>li]:before:-left-[0.6875rem]",
+  "[&>li]:before:h-0.5 [&>li]:before:w-[0.5625rem] [&>li]:before:-translate-y-1/2 [&>li]:before:bg-tedi-sidebar-accent",
+  "[&>li]:after:absolute [&>li]:after:-top-0.5 [&>li]:after:-bottom-0.5 [&>li]:after:-left-3.5",
+  "[&>li]:after:w-[0.1875rem] [&>li]:after:bg-tedi-sidebar-accent",
+  "[&>li:first-child]:after:top-[calc(50%-0.875rem)] [&>li:last-child]:after:bottom-[calc(50%-0.0625rem)]",
 ].join(" ");
 
 export interface SidebarProps {
