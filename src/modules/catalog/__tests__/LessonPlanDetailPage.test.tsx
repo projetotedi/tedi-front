@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { getGetLessonPlanQueryKey } from "@api/generated/catalog/catalog";
 import { Role } from "@shared/lib/role";
 
 import { catalogRoutes } from "../routes";
@@ -120,6 +121,42 @@ describe("LessonPlanDetailPage", () => {
         await screen.findByRole("heading", { name: /Planos de aula \(\d+\)/ }),
       ).toBeInTheDocument();
     });
+
+    it.each([
+      ["a word", "abc"],
+      ["the id of a mocked row of the list", "lesson-plan-04"],
+      ["a UUID with something after it", `${LESSON_PLAN_ID}-extra`],
+    ])(
+      "shows not found with a link to the list, without asking the API, for an id that is %s",
+      async (_label, id) => {
+        const onCall = vi.fn();
+        server.use(getLessonPlanHandler({ onCall }));
+        const user = userEvent.setup();
+        const { queryClient } = await renderRoutes(catalogRoutes, { route: `/lesson-plans/${id}` });
+
+        expect(
+          await screen.findByRole("heading", { name: "Plano de aula não encontrado" }),
+        ).toBeInTheDocument();
+        expect(screen.queryByRole("status")).not.toBeInTheDocument();
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Tentar de novo" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
+        expect(queryClient.getQueryState(getGetLessonPlanQueryKey(id))).toMatchObject({
+          status: "pending",
+          fetchStatus: "idle",
+        });
+        expect(onCall).not.toHaveBeenCalled();
+        const link = screen.getByRole("link", { name: "Voltar para planos de aula" });
+        expect(link).toHaveAttribute("href", "/lesson-plans");
+
+        await user.click(link);
+
+        expect(
+          await screen.findByRole("heading", { name: /Planos de aula \(\d+\)/ }),
+        ).toBeInTheDocument();
+        expect(onCall).not.toHaveBeenCalled();
+      },
+    );
 
     it("shows an error with retry when the plan cannot be loaded", async () => {
       server.use(getLessonPlanHandler({ networkError: true }));
