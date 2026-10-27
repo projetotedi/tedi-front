@@ -151,11 +151,10 @@ describe("LessonPlansPage", () => {
     );
   });
 
-  it("creates a plan through the API and shows the success toast", async () => {
+  it("creates a plan through the API, shows the success toast and opens its detail", async () => {
     const onCall = vi.fn();
-    server.use(
-      createLessonPlanHandler({ response: buildLessonPlan({ title: "Plano novo" }), onCall }),
-    );
+    const created = buildLessonPlan({ title: "Plano novo" });
+    server.use(createLessonPlanHandler({ response: created, onCall }));
     const user = userEvent.setup();
     await renderPage();
 
@@ -179,6 +178,7 @@ describe("LessonPlansPage", () => {
         materialUrl: null,
       },
     });
+    expect(screen.getByTestId("current-location").textContent).toBe(`/lesson-plans/${created.id}`);
   });
 
   it("keeps the API-backed create form open when required fields are invalid", async () => {
