@@ -277,7 +277,7 @@ export function BuildSequenceDialog({
                     isDisabled={index === 0}
                     onPress={() => move(index, -1)}
                   >
-                    <span aria-hidden="true" className="text-lg font-medium text-sky-800">
+                    <span aria-hidden="true" className="text-xl font-bold text-sky-800">
                       ↑
                     </span>
                   </Button>
@@ -289,7 +289,7 @@ export function BuildSequenceDialog({
                     isDisabled={index === draft.length - 1}
                     onPress={() => move(index, 1)}
                   >
-                    <span aria-hidden="true" className="text-lg font-medium text-sky-800">
+                    <span aria-hidden="true" className="text-xl font-bold text-sky-800">
                       ↓
                     </span>
                   </Button>

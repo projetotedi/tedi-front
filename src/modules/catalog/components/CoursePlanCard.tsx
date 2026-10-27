@@ -1,4 +1,4 @@
-import { useId, type ReactElement } from "react";
+import { useId, type ReactElement, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
@@ -18,6 +18,11 @@ export interface CoursePlanCardProps {
   /** An archived course keeps its sequence as it is (RN-27): Editar sequência turns off. */
   isArchived: boolean;
   onEditSequence: () => void;
+  /**
+   * The reason Editar sequência is off. A disabled button cannot take the focus back when the
+   * dialog that it opened closes, so the screen sends it to the reason instead.
+   */
+  archivedHintRef?: Ref<HTMLParagraphElement>;
 }
 
 /**
@@ -31,6 +36,7 @@ export function CoursePlanCard({
   sequence,
   isArchived,
   onEditSequence,
+  archivedHintRef,
 }: CoursePlanCardProps): ReactElement {
   const { t } = useTranslation("catalog");
   const canManage = useCan("courses.manage");
@@ -113,7 +119,12 @@ export function CoursePlanCard({
         <span aria-hidden="true">›</span>
       </Button>
       {isArchived ? (
-        <p id={archivedHintId} className="max-w-xs text-end text-sm text-muted">
+        <p
+          id={archivedHintId}
+          ref={archivedHintRef}
+          tabIndex={-1}
+          className="max-w-xs rounded-sm text-end text-sm text-muted outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+        >
           {t("course.plan.archivedHint")}
         </p>
       ) : null}

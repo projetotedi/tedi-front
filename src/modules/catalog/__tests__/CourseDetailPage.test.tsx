@@ -266,5 +266,23 @@ describe("CourseDetailPage", () => {
       ).toBeVisible();
       expect(tableTitles()).toHaveLength(4);
     });
+
+    it("sends the focus to the reason when the button that opened the dialog is off", async () => {
+      const user = userEvent.setup();
+      server.use(replaceCourseLessonPlansHandler({ error: COURSE_ARCHIVED_ERROR }));
+      await renderPage();
+
+      await user.click(editButton());
+      await user.click(dialogButton("Salvar sequência"));
+      await within(dialog()).findByRole("alert");
+      await user.click(dialogButton("Cancelar"));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() =>
+        expect(
+          screen.getByText("Curso arquivado: a sequência não pode ser alterada (RN-27)."),
+        ).toHaveFocus(),
+      );
+    });
   });
 });

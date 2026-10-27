@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -34,8 +34,17 @@ export function CourseDetailPage(): ReactElement {
   const { courseId = "" } = useParams();
   const [isEditing, setIsEditing] = useState(false);
   const [isArchived, setIsArchived] = useState(false);
+  const archivedHintRef = useRef<HTMLParagraphElement>(null);
+  const wasEditingRef = useRef(false);
   const sequenceQuery = useListCourseLessonPlans(courseId);
   const sequence = sequenceQuery.data;
+
+  useEffect(() => {
+    // The dialog gives the focus back to the button that opened it, but this one is off when the API
+    // said the course is archived (409) while the dialog was open: the focus goes to the reason.
+    if (wasEditingRef.current && !isEditing && isArchived) archivedHintRef.current?.focus();
+    wasEditingRef.current = isEditing;
+  }, [isEditing, isArchived]);
 
   if (sequenceQuery.isPending) return <LoadingPlaceholder label={t("course.loading")} />;
 
@@ -68,6 +77,7 @@ export function CourseDetailPage(): ReactElement {
         sequence={sequence}
         isArchived={isArchived}
         onEditSequence={() => setIsEditing(true)}
+        archivedHintRef={archivedHintRef}
       />
 
       {isEditing ? (
