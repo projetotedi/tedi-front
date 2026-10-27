@@ -54,7 +54,7 @@ export function LessonPlanDetailPage(): ReactElement {
             <p className="text-base text-muted">{t("detail.notFoundDescription")}</p>
             <Link
               to="/lesson-plans"
-              className="inline-flex min-h-11 items-center rounded-sm font-medium text-sky-800 underline underline-offset-2 outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+              className="-mx-1 inline-flex min-h-11 items-center rounded-sm px-1 font-medium text-sky-800 underline underline-offset-2 outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
             >
               {t("detail.backToList")}
             </Link>

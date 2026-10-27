@@ -31,14 +31,14 @@ export function LessonPlanUsageCard({ usedIn }: LessonPlanUsageCardProps): React
     },
     {
       header: t("detail.usage.columns.position"),
-      headerClassName: "whitespace-nowrap uppercase",
+      headerClassName: "uppercase md:whitespace-nowrap",
       cellClassName: "whitespace-nowrap",
       render: (item) =>
         t("detail.usage.position", { position: item.position, total: item.lessonPlanCount }),
     },
     {
       header: t("detail.usage.columns.category"),
-      headerClassName: "whitespace-nowrap uppercase",
+      headerClassName: "uppercase md:whitespace-nowrap",
       cellClassName: "whitespace-nowrap",
       render: (item) => t(`category.${item.category}`),
     },
