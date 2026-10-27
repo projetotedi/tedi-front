@@ -252,6 +252,17 @@ describe("CoursePlanCard", () => {
       );
     });
 
+    it("shows the reason of an archived course at 16px and in the text color, since it is the only explanation", async () => {
+      await renderCard({ isArchived: true });
+
+      const hint = screen.getByText("Curso arquivado: a sequência não pode ser alterada (RN-27).");
+
+      // A class assertion, on purpose: the criterion is about size and color (4.5:1 at least).
+      expect(hint).toHaveClass("text-base", "text-foreground");
+      expect(hint).not.toHaveClass("text-sm");
+      expect(hint).not.toHaveClass("text-muted");
+    });
+
     it("does not show the archived hint for a course that is not archived", async () => {
       await renderCard();
 

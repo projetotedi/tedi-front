@@ -20,7 +20,9 @@ export interface CoursePlanCardProps {
   onEditSequence: () => void;
   /**
    * The reason Editar sequência is off. A disabled button cannot take the focus back when the
-   * dialog that it opened closes, so the screen sends it to the reason instead.
+   * dialog that it opened closes, so the screen sends it to the reason instead. It is the only
+   * explanation of the button, so it is read at the base size (16px) and in the text color, not as
+   * the faded secondary text of the notes.
    */
   archivedHintRef?: Ref<HTMLParagraphElement>;
 }
@@ -123,7 +125,7 @@ export function CoursePlanCard({
           id={archivedHintId}
           ref={archivedHintRef}
           tabIndex={-1}
-          className="max-w-xs rounded-sm text-end text-sm text-muted outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+          className="max-w-sm rounded-sm text-end text-base text-foreground outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
         >
           {t("course.plan.archivedHint")}
         </p>
