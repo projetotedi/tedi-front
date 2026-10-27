@@ -2,12 +2,13 @@ import type { ReactElement } from "react";
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
+import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
 import { catalogMenuItems } from "../menu";
 import { catalogRoutes } from "../routes";
-import { buildMeUser } from "./handlers";
-import { renderRoutes, setupCatalogTestServer } from "./test-utils";
+import { buildMeUser, getLessonPlanHandler, LESSON_PLAN_ID } from "./handlers";
+import { renderRoutes, server, setupCatalogTestServer } from "./test-utils";
 
 setupCatalogTestServer();
 
@@ -64,5 +65,44 @@ describe("catalogRoutes", () => {
 
     expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /Planos de aula/ })).not.toBeInTheDocument();
+  });
+});
+
+describe("catalogRoutes (lesson plan detail)", () => {
+  const detailRoute = `/lesson-plans/${LESSON_PLAN_ID}`;
+
+  it("declares the detail title used by the topbar, and it is translated", async () => {
+    const detail = catalogRoutes[0]?.children?.find((child) => child.path === ":lessonPlanId");
+
+    expect(detail?.handle).toEqual({ title: "catalog:detail.routeTitle" });
+    expect(i18n.t("catalog:detail.routeTitle", { lng: "pt-BR" })).toBe("Plano de aula");
+    expect(i18n.t("catalog:detail.routeTitle", { lng: "en-US" })).toBe("Lesson plan");
+  });
+
+  it.each([
+    ["member", Role.member],
+    ["director", Role.director],
+    ["coordinator", Role.coordinator],
+  ])("the %s can open /lesson-plans/:id", async (_label, role) => {
+    server.use(getLessonPlanHandler());
+    await renderRoutes(catalogRoutes, { route: detailRoute, user: buildMeUser(role) });
+
+    expect(
+      await screen.findByRole("heading", { name: "Dados do plano de aula" }),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the forbidden page at /lesson-plans/:id to someone without catalog.view", async () => {
+    server.use(getLessonPlanHandler());
+    const user = buildMeUser(Role.member);
+    await renderRoutes(catalogRoutes, {
+      route: detailRoute,
+      user: { ...user, permissions: { ...user.permissions, "catalog.view": "none" } },
+    });
+
+    expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Dados do plano de aula" }),
+    ).not.toBeInTheDocument();
   });
 });

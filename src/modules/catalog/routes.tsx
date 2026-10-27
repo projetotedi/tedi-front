@@ -1,7 +1,7 @@
 import type { RouteObject } from "react-router-dom";
 import type { RouteHandle } from "@shared/lib/route-handle";
 import { RequirePermission } from "@modules/auth";
-import { ComingSoonPage } from "@app/pages/ComingSoonPage";
+import { LessonPlanDetailPage } from "./pages/LessonPlanDetailPage";
 import { LessonPlansPage } from "./pages/LessonPlansPage";
 
 export const catalogRoutes: RouteObject[] = [
@@ -14,7 +14,7 @@ export const catalogRoutes: RouteObject[] = [
       {
         path: ":lessonPlanId",
         handle: { title: "catalog:detail.routeTitle" } satisfies RouteHandle,
-        element: <ComingSoonPage />,
+        element: <LessonPlanDetailPage />,
       },
     ],
   },
