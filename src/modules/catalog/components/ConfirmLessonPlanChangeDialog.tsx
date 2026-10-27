@@ -87,7 +87,7 @@ export function ConfirmLessonPlanChangeDialog({
         </Alert>
 
         <section aria-labelledby={coursesTitleId} className="flex flex-col gap-2">
-          <h3 id={coursesTitleId} className="text-base font-semibold">
+          <h3 id={coursesTitleId} className="text-base font-semibold text-foreground">
             {t("confirmChange.coursesTitle")}
           </h3>
           <DataTable
@@ -101,10 +101,10 @@ export function ConfirmLessonPlanChangeDialog({
         <hr className="border-tedi-divider" />
 
         <section aria-labelledby={whatChangesId} className="flex flex-col gap-2">
-          <h3 id={whatChangesId} className="text-base font-semibold">
+          <h3 id={whatChangesId} className="text-base font-semibold text-foreground">
             {t("confirmChange.whatChanges")}
           </h3>
-          <p className="text-base">
+          <p className="text-base text-foreground">
             {t("confirmChange.durationChange", {
               current: formatHours(usage.currentDurationMinutes),
               next: formatHours(usage.newDurationMinutes),
