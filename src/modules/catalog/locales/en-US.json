@@ -180,6 +180,69 @@
     "confirm": "Save change",
     "saving": "Saving…"
   },
+  "course": {
+    "routeTitle": "Course",
+    "loading": "Loading the course plan…",
+    "notFoundTitle": "Course not found",
+    "notFoundDescription": "This course does not exist or was removed.",
+    "loadError": "Could not load the course plan. Try again.",
+    "plan": {
+      "title": "Course plan",
+      "columns": {
+        "position": "Order",
+        "lessonPlan": "Lesson plan",
+        "contents": "Contents",
+        "duration": "Expected duration",
+        "courseCount": "Used in",
+        "material": "Material"
+      },
+      "noMaterial": "No material",
+      "empty": "This course has no lesson plans in its sequence yet.",
+      "note": "The planned workload ({{workload}}) is the sum of the duration of the lesson plans — the system recalculates it by itself when a lesson plan or the makeup of the course changes. The same lesson plan can be part of other courses, with its own order in each one.",
+      "editSequence": "Edit sequence",
+      "archivedHint": "Archived course: the sequence cannot be changed (RN-27)."
+    },
+    "sequence": {
+      "title": "Build the course sequence",
+      "addLabel": "Add a lesson plan",
+      "addPlaceholder": "Choose a lesson plan",
+      "add": "Add",
+      "optionLabel": "{{title}} · {{duration}}",
+      "pickRequired": "Choose a lesson plan to add.",
+      "allAdded": "Every lesson plan of the catalog is already in the sequence.",
+      "limit": "The sequence can have at most {{max}} lesson plans.",
+      "listLabel": "Course sequence",
+      "listTitle_zero": "Course sequence — {{count}} lesson plans",
+      "listTitle_one": "Course sequence — {{count}} lesson plan",
+      "listTitle_other": "Course sequence — {{count}} lesson plans",
+      "empty": "The sequence is empty. Add lesson plans above.",
+      "itemSubtitle": "{{duration}} · lesson plan from the catalog",
+      "moveUp": "Move {{title}} up",
+      "moveDown": "Move {{title}} down",
+      "remove": "Remove",
+      "removeLabel": "Remove {{title}} from the sequence",
+      "drag": "Drag {{title}} to reorder",
+      "moved": "{{title}} moved to position {{position}} of {{total}}.",
+      "added": "{{title}} added at position {{position}} of {{total}}. Planned workload: {{workload}}.",
+      "removed_zero": "{{title}} removed. The sequence is now empty. Planned workload: {{workload}}.",
+      "removed_one": "{{title}} removed. {{count}} lesson plan left. Planned workload: {{workload}}.",
+      "removed_other": "{{title}} removed. {{count}} lesson plans left. Planned workload: {{workload}}.",
+      "workload": "Planned workload: {{workload}}",
+      "workloadHint": "Sum of the durations — recalculated automatically (RF-018)",
+      "cancel": "Cancel",
+      "save": "Save sequence",
+      "saving": "Saving…",
+      "errors": {
+        "duplicate": "A lesson plan cannot be in the sequence twice. Remove the repeated one and try again.",
+        "courseArchived": "This course is archived and its sequence cannot be changed.",
+        "planArchived": "One of the lesson plans is archived and cannot enter the sequence. Remove it and try again.",
+        "planNotFound": "One of the lesson plans was not found. Close this window, reload the page and try again.",
+        "courseNotFound": "This course no longer exists. Nothing was saved.",
+        "network": "Could not connect. Check your connection and try again.",
+        "unknown": "Could not save the sequence. Try again."
+      }
+    }
+  },
   "mock": {
     "objectives": {
       "lesson-plan-04": "Record, listen to, and send a WhatsApp audio message.",
@@ -204,7 +267,8 @@
     "updated": "Lesson plan updated.",
     "archived": "Lesson plan archived.",
     "unarchived": "Lesson plan reactivated.",
-    "unarchiveFailed": "Could not reactivate the lesson plan. Try again."
+    "unarchiveFailed": "Could not reactivate the lesson plan. Try again.",
+    "sequenceSaved": "Course sequence saved."
   },
   "errors": {
     "archived": "This lesson plan is archived and cannot be edited. Reactivate the plan to edit it.",
