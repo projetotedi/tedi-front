@@ -61,6 +61,9 @@ const dialog = () => screen.getByRole("dialog", { name: "Montar sequência do cu
 const button = (name: string | RegExp) => within(dialog()).getByRole("button", { name });
 const list = () => within(dialog()).getByRole("grid", { name: "Sequência do curso" });
 const announcement = () => within(dialog()).getByRole("status");
+/** The live region is emptied and filled one frame later (see `useLiveAnnouncement`), so it is waited for. */
+const expectAnnouncement = (text: string) =>
+  waitFor(() => expect(announcement()).toHaveTextContent(text));
 const workload = () => within(dialog()).getByText(/^Carga horária prevista:/).textContent;
 
 /**
@@ -203,7 +206,7 @@ describe("BuildSequenceDialog", () => {
       expect(
         within(dialog()).getByRole("heading", { name: "Sequência do curso — 5 planos" }),
       ).toBeInTheDocument();
-      expect(announcement()).toHaveTextContent(
+      await expectAnnouncement(
         "Fotos no celular adicionado na posição 5 de 5. Carga horária prevista: 8h30.",
       );
       expect(button("Adicionar")).toHaveFocus();
@@ -276,7 +279,7 @@ describe("BuildSequenceDialog", () => {
         "Reconhecendo golpes",
       ]);
       expect(workload()).toBe("Carga horária prevista: 5h30");
-      expect(announcement()).toHaveTextContent(
+      await expectAnnouncement(
         "Enviar um áudio no WhatsApp removido. Restam 3 planos. Carga horária prevista: 5h30.",
       );
       await waitFor(() =>
@@ -307,7 +310,7 @@ describe("BuildSequenceDialog", () => {
 
       await user.click(button("Remover Conhecendo o WhatsApp da sequência"));
 
-      expect(announcement()).toHaveTextContent(
+      await expectAnnouncement(
         "Conhecendo o WhatsApp removido. Resta 1 plano. Carga horária prevista: 1h30.",
       );
     });
@@ -320,7 +323,7 @@ describe("BuildSequenceDialog", () => {
 
       expect(rowTitles()).toEqual([]);
       expect(workload()).toBe("Carga horária prevista: 0h");
-      expect(announcement()).toHaveTextContent(
+      await expectAnnouncement(
         "Conhecendo o WhatsApp removido. A sequência ficou vazia. Carga horária prevista: 0h.",
       );
       const empty = within(dialog()).getByText(
@@ -343,15 +346,11 @@ describe("BuildSequenceDialog", () => {
         "Enviar um áudio no WhatsApp",
         "Reconhecendo golpes",
       ]);
-      expect(announcement()).toHaveTextContent(
-        "Senhas e privacidade movido para a posição 2 de 4.",
-      );
+      await expectAnnouncement("Senhas e privacidade movido para a posição 2 de 4.");
       await waitFor(() => expect(button("Mover Senhas e privacidade para cima")).toHaveFocus());
 
       await user.keyboard("{Enter}");
-      expect(announcement()).toHaveTextContent(
-        "Senhas e privacidade movido para a posição 1 de 4.",
-      );
+      await expectAnnouncement("Senhas e privacidade movido para a posição 1 de 4.");
     });
 
     it("moves a plan down with the keyboard, one press after the other, without losing the focus", async () => {
@@ -368,9 +367,7 @@ describe("BuildSequenceDialog", () => {
         "Conhecendo o WhatsApp",
         "Reconhecendo golpes",
       ]);
-      expect(announcement()).toHaveTextContent(
-        "Conhecendo o WhatsApp movido para a posição 3 de 4.",
-      );
+      await expectAnnouncement("Conhecendo o WhatsApp movido para a posição 3 de 4.");
       await waitFor(() => expect(button("Mover Conhecendo o WhatsApp para baixo")).toHaveFocus());
     });
 
@@ -451,6 +448,34 @@ describe("BuildSequenceDialog", () => {
         "Enviar um áudio no WhatsApp",
         "Senhas e privacidade",
       ]);
+    });
+
+    it("announces a move again when it is the same message as the last one, after a drag undid it", async () => {
+      const user = userEvent.setup();
+      await renderDialog();
+
+      await user.click(button("Mover Conhecendo o WhatsApp para baixo"));
+      await expectAnnouncement("Conhecendo o WhatsApp movido para a posição 2 de 4.");
+      // The drag brings the plan back to the top. React Aria announces it on its own, and the
+      // region of the dialog keeps the last message it had.
+      await dragTo(user, 1, /^Insert before 1\. Enviar um áudio no WhatsApp$/);
+      expect(rowTitles()[0]).toBe("Conhecendo o WhatsApp");
+      expect(announcement()).toHaveTextContent(
+        "Conhecendo o WhatsApp movido para a posição 2 de 4.",
+      );
+
+      // The same arrow again says the very same words. A live region is read when its text
+      // changes, so the text has to go away and come back.
+      const region = announcement();
+      const texts: string[] = [];
+      const observer = new MutationObserver(() => texts.push(region.textContent ?? ""));
+      observer.observe(region, { childList: true, characterData: true, subtree: true });
+      await user.click(button("Mover Conhecendo o WhatsApp para baixo"));
+
+      await waitFor(() =>
+        expect(texts).toEqual(["", "Conhecendo o WhatsApp movido para a posição 2 de 4."]),
+      );
+      observer.disconnect();
     });
 
     it("Esc cancels a keyboard drag and keeps the dialog open", async () => {

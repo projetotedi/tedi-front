@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useReplaceCourseLessonPlans } from "@api/generated/catalog/catalog";
 import type { CourseLessonPlansResponseDto } from "@api/generated/model";
 import { replaceCourseLessonPlansBodyLessonPlanIdsMax } from "@api/generated/zod/catalog/catalog";
+import { useLiveAnnouncement } from "@shared/hooks/useLiveAnnouncement";
 import { formatHours } from "@shared/lib/format";
 import { moveItem } from "@shared/lib/reorder";
 import { Alert, Badge, Button, Dialog, SortableList, toast } from "@shared/ui";
@@ -61,7 +62,7 @@ export function BuildSequenceDialog({
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const saved = useMemo(() => toSequenceItems(sequence), [sequence]);
   const [draft, setDraft] = useState<SequenceItem[]>(() => toSequenceItems(sequence));
-  const [announcement, setAnnouncement] = useState("");
+  const { message: announcement, announce } = useLiveAnnouncement();
   const [errorKind, setErrorKind] = useState<SequenceErrorKind | null>(null);
 
   const replaceSequence = useReplaceCourseLessonPlans({
@@ -134,7 +135,7 @@ export function BuildSequenceDialog({
   function add(item: SequenceItem) {
     const next = [...draft, item];
     changeDraft(next, null);
-    setAnnouncement(
+    announce(
       t("course.sequence.added", {
         title: item.title,
         position: next.length,
@@ -155,7 +156,7 @@ export function BuildSequenceDialog({
         ? { kind: "empty" }
         : { kind: "row", lessonPlanId: neighbour.lessonPlanId, action: "remove" },
     );
-    setAnnouncement(
+    announce(
       t("course.sequence.removed", {
         title: item.title,
         count: next.length,
@@ -176,7 +177,7 @@ export function BuildSequenceDialog({
       // At the edge the pressed arrow turns off: the focus goes to the other one.
       fallback: offset === -1 ? "down" : "up",
     });
-    setAnnouncement(
+    announce(
       t("course.sequence.moved", {
         title: item.title,
         position: position + 1,
