@@ -2,8 +2,8 @@ import * as zod from "zod";
 
 import {
   AcceptInviteBody,
-  acceptInviteBodyNameMax,
   acceptInviteBodyPasswordMin,
+  acceptInviteBodyRegistrationOneNameMax,
 } from "@api/generated/zod/auth/auth";
 
 const passwordFields = {
@@ -40,7 +40,7 @@ export const personalStepSchema = zod.object({
     .string()
     .trim()
     .min(1, { message: "invite.validation.nameRequired" })
-    .max(acceptInviteBodyNameMax, { message: "invite.validation.nameMax" }),
+    .max(acceptInviteBodyRegistrationOneNameMax, { message: "invite.validation.nameMax" }),
 });
 
 export type AcademicStepValues = zod.infer<typeof academicStepSchema>;
@@ -53,8 +53,8 @@ export const STEP_ONE_FIELDS = [
 ] as const satisfies readonly (keyof AcademicStepValues)[];
 export const STEP_TWO_FIELDS = ["name"] as const satisfies readonly (keyof PersonalStepValues)[];
 
-// No DTO, `name`, `ra` e `email` são opcionais e o back não os exige: só este schema os obriga.
-export const acceptInviteFormSchema = AcceptInviteBody.omit({ token: true })
+// TODO(GUS-120): o formulário ainda monta o corpo legado (LegacyAcceptInviteBody); `registration`, o formato novo do DTO, fica de fora até a GUS-120.
+export const acceptInviteFormSchema = AcceptInviteBody.omit({ token: true, registration: true })
   .extend({
     ...academicStepSchema.shape,
     ...personalStepSchema.shape,

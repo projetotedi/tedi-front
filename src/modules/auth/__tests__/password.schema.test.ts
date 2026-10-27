@@ -1,6 +1,5 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 
-import type { AcceptInviteDto } from "@api/generated/model";
 import { acceptInviteBodyPasswordMin } from "@api/generated/zod/auth/auth";
 
 import {
@@ -13,6 +12,7 @@ import {
   type AcceptInviteFormValues,
   type NewPasswordFormValues,
 } from "../schemas/password.schema";
+import type { LegacyAcceptInviteBody } from "../lib/legacy-accept-invite";
 
 const VALID_ACCESS_VALUES = {
   name: "Lucas Andrade Souza",
@@ -162,7 +162,8 @@ describe("acceptInviteFormSchema", () => {
     });
   });
 
-  it("has the fields of the AcceptInviteDto plus the confirmation, and no token", () => {
+  // TODO(GUS-120): volta a comparar com o AcceptInviteDto gerado.
+  it("has the fields of the legacy accept-invite body plus the confirmation, and no token", () => {
     expectTypeOf<AcceptInviteFormValues>().toEqualTypeOf<{
       name: string;
       ra: string;
@@ -171,7 +172,7 @@ describe("acceptInviteFormSchema", () => {
       passwordConfirmation: string;
     }>();
     expectTypeOf<Omit<AcceptInviteFormValues, "passwordConfirmation">>().toExtend<
-      Omit<AcceptInviteDto, "token">
+      Omit<LegacyAcceptInviteBody, "token">
     >();
     expect(Object.keys(acceptInviteFormSchema.shape).sort()).toEqual([
       "email",
