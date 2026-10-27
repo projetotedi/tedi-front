@@ -1,17 +1,21 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import { CourseStatus, type LessonPlanUsedInItemResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge, Card } from "@shared/ui";
+
+import { LINK_CLASSES } from "./link-classes";
 
 export interface LessonPlanUsageCardProps {
   usedIn: LessonPlanUsedInItemResponseDto[];
 }
 
 /**
- * The courses that have the plan in their sequence. There is no "Ver curso" action yet: the course
- * screen does not exist, and a link that goes nowhere would only confuse.
+ * The courses that have the plan in their sequence. The name of each one opens its plan
+ * (`/courses/:courseId`, GUS-130), the only part of the course screen that exists so far. There is
+ * no "Ver curso" action: that is the whole screen of the course, with its header and its classes.
  */
 export function LessonPlanUsageCard({ usedIn }: LessonPlanUsageCardProps): ReactElement {
   const { t } = useTranslation("catalog");
@@ -20,9 +24,12 @@ export function LessonPlanUsageCard({ usedIn }: LessonPlanUsageCardProps): React
     {
       header: t("detail.usage.columns.course"),
       headerClassName: "uppercase",
+      cellClassName: "py-0",
       render: (item) => (
-        <span className="flex flex-wrap items-center gap-2">
-          <span className="font-medium">{item.courseName}</span>
+        <span className="flex flex-wrap items-center gap-x-2">
+          <Link to={`/courses/${item.courseId}`} className={LINK_CLASSES}>
+            {item.courseName}
+          </Link>
           {item.courseStatus === CourseStatus.archived ? (
             <Badge tone="neutral">{t("detail.usage.archivedCourse")}</Badge>
           ) : null}

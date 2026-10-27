@@ -180,6 +180,71 @@
     "confirm": "Salvar alteração",
     "saving": "Salvando…"
   },
+  "course": {
+    "routeTitle": "Curso",
+    "loading": "Carregando o plano do curso…",
+    "notFoundTitle": "Curso não encontrado",
+    "notFoundDescription": "Este curso não existe ou foi removido.",
+    "loadError": "Não foi possível carregar o plano do curso. Tente novamente.",
+    "plan": {
+      "title": "Plano do curso",
+      "columns": {
+        "position": "Ordem",
+        "lessonPlan": "Plano de aula",
+        "contents": "Conteúdos",
+        "duration": "Duração prevista",
+        "courseCount": "Usado em",
+        "material": "Material"
+      },
+      "noMaterial": "Sem material",
+      "empty": "Este curso ainda não tem planos de aula na sequência.",
+      "note": "A carga horária prevista ({{workload}}) é a soma da duração dos planos — o sistema recalcula sozinho quando um plano ou a composição do curso muda. O mesmo plano de aula pode compor outros cursos, com ordem própria em cada um.",
+      "editSequence": "Editar sequência",
+      "archivedHint": "Curso arquivado: a sequência não pode ser alterada (RN-27)."
+    },
+    "sequence": {
+      "title": "Montar sequência do curso",
+      "addLabel": "Adicionar plano de aula",
+      "addPlaceholder": "Escolha um plano de aula",
+      "add": "Adicionar",
+      "optionLabel": "{{title}} · {{duration}}",
+      "pickRequired": "Escolha um plano de aula para adicionar.",
+      "optionsError": "Não foi possível carregar os planos de aula do catálogo. Tente de novo mais tarde.",
+      "allAdded": "Todos os planos de aula do catálogo já estão na sequência.",
+      "limit": "A sequência pode ter no máximo {{max}} planos de aula.",
+      "listLabel": "Sequência do curso",
+      "listTitle_zero": "Sequência do curso — {{count}} planos",
+      "listTitle_one": "Sequência do curso — {{count}} plano",
+      "listTitle_other": "Sequência do curso — {{count}} planos",
+      "empty": "A sequência está vazia. Adicione planos de aula acima.",
+      "itemLabel": "{{position}}. {{title}}",
+      "itemSubtitle": "{{duration}} · plano de aula do catálogo",
+      "moveUp": "Mover {{title}} para cima",
+      "moveDown": "Mover {{title}} para baixo",
+      "remove": "Remover",
+      "removeLabel": "Remover {{title}} da sequência",
+      "drag": "Arrastar {{title}} para reordenar",
+      "moved": "{{title}} movido para a posição {{position}} de {{total}}.",
+      "added": "{{title}} adicionado na posição {{position}} de {{total}}. Carga horária prevista: {{workload}}.",
+      "removed_zero": "{{title}} removido. A sequência ficou vazia. Carga horária prevista: {{workload}}.",
+      "removed_one": "{{title}} removido. Resta {{count}} plano. Carga horária prevista: {{workload}}.",
+      "removed_other": "{{title}} removido. Restam {{count}} planos. Carga horária prevista: {{workload}}.",
+      "workload": "Carga horária prevista: {{workload}}",
+      "workloadHint": "Soma das durações — recalculada automaticamente (RF-018)",
+      "cancel": "Cancelar",
+      "save": "Salvar sequência",
+      "saving": "Salvando…",
+      "errors": {
+        "duplicate": "Um plano de aula não pode aparecer duas vezes na sequência. Remova o repetido e tente de novo.",
+        "courseArchived": "Este curso está arquivado e a sequência não pode ser alterada.",
+        "planArchived": "Um dos planos de aula está arquivado e não pode entrar na sequência. Remova-o e tente de novo.",
+        "planNotFound": "Um dos planos de aula não foi encontrado. Feche esta janela, atualize a página e tente de novo.",
+        "courseNotFound": "Este curso não existe mais. Nada foi salvo.",
+        "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+        "unknown": "Não foi possível salvar a sequência. Tente novamente."
+      }
+    }
+  },
   "mock": {
     "objectives": {
       "lesson-plan-04": "Gravar, ouvir e enviar um áudio no WhatsApp.",
@@ -204,7 +269,8 @@
     "updated": "Plano de aula atualizado.",
     "archived": "Plano de aula arquivado.",
     "unarchived": "Plano de aula reativado.",
-    "unarchiveFailed": "Não foi possível reativar o plano de aula. Tente novamente."
+    "unarchiveFailed": "Não foi possível reativar o plano de aula. Tente novamente.",
+    "sequenceSaved": "Sequência do curso salva."
   },
   "errors": {
     "archived": "Este plano de aula está arquivado e não pode ser editado. Reative o plano para editar.",
