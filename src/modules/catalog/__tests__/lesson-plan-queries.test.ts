@@ -18,6 +18,11 @@ function createQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
 }
 
+/** Like the QueryClient of the app, which retries a query that failed with a 5xx or a network error. */
+function createRetryingQueryClient() {
+  return new QueryClient({ defaultOptions: { queries: { retry: 2, retryDelay: 0 } } });
+}
+
 describe("fetchLessonPlanUsage", () => {
   it("asks the usage of the plan with the new duration in the query string", async () => {
     const onCall = vi.fn();
@@ -43,13 +48,26 @@ describe("fetchLessonPlanUsage", () => {
     expect(result.courses).toHaveLength(2);
   });
 
-  it("rejects with the error of the API and does not retry", async () => {
-    const onCall = vi.fn();
-    server.use(getLessonPlanUsageHandler({ error: NOT_FOUND_ERROR, onCall }));
+  it("rejects with the error of the API", async () => {
+    server.use(getLessonPlanUsageHandler({ error: NOT_FOUND_ERROR }));
 
     await expect(
       fetchLessonPlanUsage(createQueryClient(), LESSON_PLAN_ID, 120),
     ).rejects.toMatchObject({ statusCode: 404, error: "LESSON_PLAN_NOT_FOUND" });
+  });
+
+  it("does not retry a failure, even when the QueryClient is set to retry queries", async () => {
+    const onCall = vi.fn();
+    server.use(
+      getLessonPlanUsageHandler({
+        error: { statusCode: 500, error: "INTERNAL_SERVER_ERROR" },
+        onCall,
+      }),
+    );
+
+    await expect(
+      fetchLessonPlanUsage(createRetryingQueryClient(), LESSON_PLAN_ID, 120),
+    ).rejects.toMatchObject({ statusCode: 500 });
     expect(onCall).toHaveBeenCalledTimes(1);
   });
 });
