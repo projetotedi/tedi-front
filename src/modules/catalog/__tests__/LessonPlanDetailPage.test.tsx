@@ -12,9 +12,12 @@ import {
   buildLessonPlan,
   buildLessonPlanDetail,
   buildMeUser,
+  COURSE_SMARTPHONES,
+  COURSE_SOCIAL_NETWORKS,
   getLessonPlanHandler,
   getLessonPlanUsageHandler,
   LESSON_PLAN_ID,
+  listCourseLessonPlansHandler,
   NOT_FOUND_ERROR,
   updateLessonPlanHandler,
 } from "./handlers";
@@ -368,12 +371,46 @@ describe("LessonPlanDetailPage", () => {
       expect(screen.queryByRole("table")).not.toBeInTheDocument();
     });
 
-    it("does not link to a course page that does not exist yet", async () => {
+    it("the course name links to /courses/:courseId", async () => {
       await renderDetail({ plan: buildInUseLessonPlanDetail() });
 
       const usage = card("Onde este plano é usado");
-      expect(within(usage).queryByRole("link")).not.toBeInTheDocument();
+      expect(within(usage).getAllByRole("link")).toHaveLength(2);
+      expect(
+        within(usage).getByRole("link", { name: "Redes Sociais com Segurança" }),
+      ).toHaveAttribute("href", `/courses/${COURSE_SOCIAL_NETWORKS.courseId}`);
+      expect(within(usage).getByRole("link", { name: "Smartphones no dia a dia" })).toHaveAttribute(
+        "href",
+        `/courses/${COURSE_SMARTPHONES.courseId}`,
+      );
+      expect(within(usage).getByRole("link", { name: "Smartphones no dia a dia" })).toHaveClass(
+        "min-h-11",
+      );
+      // The whole screen of the course ("Ver curso") is another task.
       expect(screen.queryByText("Ver curso")).not.toBeInTheDocument();
+    });
+
+    it("opens the plan of the course when its name is pressed", async () => {
+      const user = userEvent.setup();
+      server.use(listCourseLessonPlansHandler());
+      await renderDetail({ plan: buildInUseLessonPlanDetail() });
+
+      await user.click(
+        within(card("Onde este plano é usado")).getByRole("link", {
+          name: "Redes Sociais com Segurança",
+        }),
+      );
+
+      expect(await screen.findByRole("heading", { name: "Plano do curso" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Conhecendo o WhatsApp" })).toBeInTheDocument();
+    });
+
+    it("keeps the course name as the text of the cell, with the archived tag after it", async () => {
+      await renderDetail({ plan: buildInUseLessonPlanDetail() });
+
+      const archived = within(card("Onde este plano é usado")).getByText("Curso arquivado");
+
+      expect(archived.parentElement).toHaveTextContent("Smartphones no dia a diaCurso arquivado");
     });
   });
 

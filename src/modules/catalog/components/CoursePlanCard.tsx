@@ -11,19 +11,14 @@ import { DataTable, type Column } from "@shared/components/DataTable";
 import { formatHours } from "@shared/lib/format";
 import { Badge, Button, Card } from "@shared/ui";
 
+import { LINK_CLASSES } from "./link-classes";
+
 export interface CoursePlanCardProps {
   sequence: CourseLessonPlansResponseDto;
   /** An archived course keeps its sequence as it is (RN-27): Editar sequência turns off. */
   isArchived: boolean;
   onEditSequence: () => void;
 }
-
-/**
- * Same link as the plan detail and its cards. The 44px height is the target of the touch (the row
- * of the table is as tall as the link, so the cell of a link has no padding of its own).
- */
-const LINK_CLASSES =
-  "-mx-1 inline-flex min-h-11 items-center rounded-sm px-1 font-medium text-sky-800 underline underline-offset-2 outline-hidden focus-visible:ring-3 focus-visible:ring-focus";
 
 /**
  * "Plano do curso": the lesson plans of the course in order, with what the person needs to judge
