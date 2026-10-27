@@ -12,8 +12,11 @@ export interface SortableListProps<T> {
   items: readonly T[];
   /** Identificador estável do item; é o que o arrasto devolve em `onMove`. */
   getKey: (item: T) => string;
-  /** Texto do item para a navegação por digitação e para o arrasto (já traduzido). */
-  getTextValue: (item: T) => string;
+  /**
+   * Texto do item (já traduzido): é o nome da linha para leitores de tela, o texto levado pelo
+   * arrasto e a base da navegação por digitação. Por isso pode levar a posição ("2. Título").
+   */
+  getTextValue: (item: T, index: number) => string;
   /** Nome acessível da alça de arrasto do item, por exemplo "Arrastar X para reordenar" (já traduzido). */
   dragLabel: (item: T) => string;
   /** O item `key` foi solto na posição `toIndex` (índice final, pronto para `moveItem`). */
@@ -26,11 +29,12 @@ export interface SortableListProps<T> {
 /**
  * A linha em si: o fundo e o espaçamento do Figma (raio 10, `px-3 py-2.5`). O fundo é o
  * `surface-secondary` do tema, a superfície sutil mais próxima do `surface-subtle` do design.
- * O anel de foco aparece quando a linha ganha o foco pelo teclado (setas); os botões de dentro
- * desenham o próprio foco.
+ * O conteúdo quebra de linha quando falta largura (celular), em vez de espremer o texto. O anel
+ * de foco aparece quando a linha ganha o foco pelo teclado (setas); os botões de dentro desenham
+ * o próprio foco.
  */
 const ROW_CLASSES = [
-  "flex items-center gap-3 rounded-[10px] bg-surface-secondary px-3 py-2.5 outline-hidden",
+  "flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[10px] bg-surface-secondary px-3 py-2.5 outline-hidden",
   "data-[focus-visible]:ring-3 data-[focus-visible]:ring-focus",
   "data-[dragging]:opacity-60",
 ].join(" ");
@@ -72,7 +76,7 @@ export function SortableList<T>({
   renderEmptyState,
 }: SortableListProps<T>): ReactElement {
   const keys = items.map(getKey);
-  const textByKey = new Map(items.map((item) => [getKey(item), getTextValue(item)]));
+  const textByKey = new Map(items.map((item, index) => [getKey(item), getTextValue(item, index)]));
 
   const { dragAndDropHooks } = useDragAndDrop({
     getItems: (draggedKeys) =>
@@ -106,7 +110,7 @@ export function SortableList<T>({
         <GridListItem
           key={getKey(item)}
           id={getKey(item)}
-          textValue={getTextValue(item)}
+          textValue={getTextValue(item, index)}
           className={ROW_CLASSES}
         >
           <Button
