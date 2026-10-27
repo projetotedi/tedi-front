@@ -163,6 +163,94 @@ describe("SortableList", () => {
     });
   });
 
+  describe("Escape", () => {
+    function renderInsideDialogLike(onKeyDown: (key: string) => void) {
+      return render(
+        <div onKeyDown={(event) => onKeyDown(event.key)}>
+          <Harness />
+        </div>,
+      );
+    }
+
+    it("reaches what is around the list when it is pressed on a button of a row", async () => {
+      const user = userEvent.setup();
+      const onKeyDown = vi.fn();
+      renderInsideDialogLike(onKeyDown);
+
+      await user.tab();
+      await user.tab();
+      await user.tab();
+      expect(focusedName()).toBe("Remover Alfa");
+      onKeyDown.mockClear();
+      await user.keyboard("{Escape}");
+
+      expect(onKeyDown).toHaveBeenCalledExactlyOnceWith("Escape");
+    });
+
+    it("reaches what is around the list when it is pressed on the drag handle", async () => {
+      const user = userEvent.setup();
+      const onKeyDown = vi.fn();
+      renderInsideDialogLike(onKeyDown);
+
+      await user.tab();
+      await user.tab();
+      expect(focusedName()).toBe("Arrastar Alfa");
+      onKeyDown.mockClear();
+      await user.keyboard("{Escape}");
+
+      expect(onKeyDown).toHaveBeenCalledExactlyOnceWith("Escape");
+    });
+
+    it("reaches what is around the list when it is pressed on the row itself", async () => {
+      const user = userEvent.setup();
+      const onKeyDown = vi.fn();
+      renderInsideDialogLike(onKeyDown);
+
+      await user.tab();
+      expect(focusedName()).toBe("Alfa");
+      onKeyDown.mockClear();
+      await user.keyboard("{Escape}");
+
+      expect(onKeyDown).toHaveBeenCalledExactlyOnceWith("Escape");
+    });
+
+    it("does not forward the other keys: the list keeps them", async () => {
+      const user = userEvent.setup();
+      const onKeyDown = vi.fn();
+      renderInsideDialogLike(onKeyDown);
+
+      await user.tab();
+      await user.tab();
+      await user.tab();
+      onKeyDown.mockClear();
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("a");
+
+      expect(onKeyDown).not.toHaveBeenCalled();
+    });
+
+    it("only cancels the drag, and does not reach what is around the list, when it is pressed during a keyboard drag", async () => {
+      const user = userEvent.setup();
+      const onKeyDown = vi.fn();
+      const onMove = vi.fn();
+      render(
+        <div onKeyDown={(event) => onKeyDown(event.key)}>
+          <Harness onMove={onMove} />
+        </div>,
+      );
+
+      await user.tab();
+      await user.tab();
+      await user.keyboard("{Enter}");
+      await user.keyboard("{ArrowDown}");
+      onKeyDown.mockClear();
+      await user.keyboard("{Escape}");
+
+      expect(onKeyDown).not.toHaveBeenCalledWith("Escape");
+      expect(onMove).not.toHaveBeenCalled();
+    });
+  });
+
   describe("keyboard drag", () => {
     type User = ReturnType<typeof userEvent.setup>;
 

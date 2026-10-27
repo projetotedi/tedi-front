@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import type { KeyboardEvent, ReactElement, ReactNode } from "react";
 import { GridList, GridListItem } from "react-aria-components/GridList";
 import { DropIndicator, useDragAndDrop } from "react-aria-components/useDragAndDrop";
 
@@ -50,6 +50,27 @@ const DROP_INDICATOR_CLASSES = [
   "before:absolute before:inset-x-0 before:top-0 before:h-0.5 before:-translate-y-1/2 before:rounded-full",
   "data-[drop-target]:before:bg-focus",
 ].join(" ");
+
+/**
+ * Com `keyboardNavigationBehavior="tab"` o React Aria barra, na linha, toda tecla que nasce num
+ * botão de dentro dela (para a lista não reagir a setas e digitação vindas de um botão), e isso
+ * inclui o Esc: ele nunca chegaria ao diálogo que envolve a lista. Aqui o Esc é repassado: um novo
+ * evento sai do elemento que contém a lista, e o diálogo o recebe como se nada o tivesse barrado.
+ * O Esc que cancela um arrasto por teclado não passa por aqui (o React Aria o trata antes, no
+ * `document`).
+ */
+function forwardEscape(event: KeyboardEvent<HTMLElement>): void {
+  if (event.key !== "Escape" || event.defaultPrevented) return;
+
+  event.currentTarget.closest('[role="grid"]')?.parentElement?.dispatchEvent(
+    new KeyboardEvent("keydown", {
+      key: "Escape",
+      code: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+}
 
 /**
  * Lista ordenável por arrasto, sobre o `GridList` do React Aria (`useDragAndDrop`). Não conhece o
@@ -113,16 +134,19 @@ export function SortableList<T>({
           textValue={getTextValue(item, index)}
           className={ROW_CLASSES}
         >
-          <Button
-            slot="drag"
-            variant="ghost"
-            isIconOnly
-            aria-label={dragLabel(item)}
-            className="shrink-0 cursor-grab active:cursor-grabbing"
-          >
-            <img src={gripIconUrl} alt="" aria-hidden="true" width={16} height={16} />
-          </Button>
-          {renderItem(item, index)}
+          {/* `contents`: o wrapper não é uma caixa, as filhas continuam itens flex da linha. */}
+          <div className="contents" onKeyDown={forwardEscape}>
+            <Button
+              slot="drag"
+              variant="ghost"
+              isIconOnly
+              aria-label={dragLabel(item)}
+              className="shrink-0 cursor-grab active:cursor-grabbing"
+            >
+              <img src={gripIconUrl} alt="" aria-hidden="true" width={16} height={16} />
+            </Button>
+            {renderItem(item, index)}
+          </div>
         </GridListItem>
       ))}
     </GridList>
