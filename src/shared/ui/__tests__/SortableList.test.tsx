@@ -19,9 +19,15 @@ interface HarnessProps {
   items?: Item[];
   onMove?: (key: string, toIndex: number) => void;
   withEmptyState?: boolean;
+  isDisabled?: boolean;
 }
 
-function Harness({ items = ITEMS, onMove = () => {}, withEmptyState = false }: HarnessProps) {
+function Harness({
+  items = ITEMS,
+  onMove = () => {},
+  withEmptyState = false,
+  isDisabled,
+}: HarnessProps) {
   return (
     <SortableList
       aria-label="Fila"
@@ -30,6 +36,7 @@ function Harness({ items = ITEMS, onMove = () => {}, withEmptyState = false }: H
       getTextValue={(item) => item.name}
       dragLabel={(item) => `Arrastar ${item.name}`}
       onMove={onMove}
+      isDisabled={isDisabled}
       renderItem={(item, index) => (
         <>
           <span>{`${index + 1}. ${item.name}`}</span>
@@ -92,6 +99,90 @@ describe("SortableList", () => {
 
     expect(screen.getByText("Nada por aqui")).toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  describe("isDisabled", () => {
+    const rows = () => within(screen.getByRole("grid", { name: "Fila" })).getAllByRole("row");
+
+    it("lets the rows be dragged and the handles be used by default", () => {
+      render(<Harness />);
+
+      for (const row of rows()) expect(row).toHaveAttribute("draggable", "true");
+      for (const { name } of ITEMS) {
+        expect(screen.getByRole("button", { name: `Arrastar ${name}` })).toBeEnabled();
+      }
+    });
+
+    it("turns the drag off: the rows are not draggable and the handles are disabled", () => {
+      render(<Harness isDisabled />);
+
+      for (const row of rows()) expect(row).not.toHaveAttribute("draggable");
+      for (const { name } of ITEMS) {
+        expect(screen.getByRole("button", { name: `Arrastar ${name}` })).toBeDisabled();
+      }
+    });
+
+    it("turns the drag back on when it is enabled again", () => {
+      const { rerender } = render(<Harness isDisabled />);
+
+      rerender(<Harness isDisabled={false} />);
+
+      for (const row of rows()) expect(row).toHaveAttribute("draggable", "true");
+      expect(screen.getByRole("button", { name: "Arrastar Alfa" })).toBeEnabled();
+    });
+
+    it("does not disable what the rows draw: those buttons belong to who uses the list", () => {
+      render(<Harness isDisabled />);
+
+      expect(screen.getByRole("button", { name: "Remover Alfa" })).toBeEnabled();
+    });
+
+    it("Tab goes past the disabled handle, from the row to the button inside it", async () => {
+      const user = userEvent.setup();
+      render(<Harness isDisabled />);
+
+      await user.tab();
+      expect(focusedName()).toBe("Alfa");
+      await user.tab();
+      expect(focusedName()).toBe("Remover Alfa");
+    });
+
+    it("keeps the rows reachable with the arrow keys", async () => {
+      const user = userEvent.setup();
+      render(<Harness isDisabled />);
+
+      await user.tab();
+      await user.keyboard("{ArrowDown}");
+
+      expect(focusedName()).toBe("Beta");
+    });
+
+    it("starts no drag from the keyboard: no drop target ever shows up", async () => {
+      const user = userEvent.setup();
+      const onMove = vi.fn();
+      render(<Harness isDisabled onMove={onMove} />);
+
+      // Row, then the button inside it (the handle is skipped). Enter presses that button.
+      await user.tab();
+      await user.tab();
+      await user.keyboard("{Enter}");
+      await user.keyboard("{ArrowDown}");
+      await user.keyboard("{Enter}");
+
+      expect(screen.queryByRole("button", { name: /^Insert/ })).not.toBeInTheDocument();
+      expect(onMove).not.toHaveBeenCalled();
+    });
+
+    it("does not warn that the drag hooks changed between renders", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { rerender } = render(<Harness />);
+
+      rerender(<Harness isDisabled />);
+      rerender(<Harness isDisabled={false} />);
+
+      expect(warn).not.toHaveBeenCalled();
+      warn.mockRestore();
+    });
   });
 
   describe("keyboard navigation", () => {

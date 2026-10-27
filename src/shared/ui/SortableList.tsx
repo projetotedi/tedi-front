@@ -24,6 +24,12 @@ export interface SortableListProps<T> {
   /** Conteúdo da linha, à direita da alça de arrasto. Botões e links dentro dela entram na ordem de Tab. */
   renderItem: (item: T, index: number) => ReactNode;
   renderEmptyState?: () => ReactNode;
+  /**
+   * Desliga o arrasto: as linhas deixam de ser arrastáveis e as alças ficam desabilitadas, para
+   * quando a ordem não pode mudar (por exemplo, enquanto ela é salva). A lista continua navegável
+   * pelas setas. Os botões que `renderItem` desenha são de quem usa a lista: ela não os desabilita.
+   */
+  isDisabled?: boolean;
 }
 
 /**
@@ -85,6 +91,7 @@ function forwardEscape(event: KeyboardEvent<HTMLElement>): void {
  *   Tab percorre a alça e os botões da linha em foco, e o Tab seguinte sai da lista.
  * - Não há seleção: a lista só reordena. Quem precisa de uma alternativa ao arrasto (botões ↑ e ↓)
  *   a põe dentro de `renderItem`.
+ * - `isDisabled` desliga o arrasto sem tirar os hooks do `GridList`.
  */
 export function SortableList<T>({
   "aria-label": ariaLabel,
@@ -95,11 +102,16 @@ export function SortableList<T>({
   onMove,
   renderItem,
   renderEmptyState,
+  isDisabled = false,
 }: SortableListProps<T>): ReactElement {
   const keys = items.map(getKey);
   const textByKey = new Map(items.map((item, index) => [getKey(item), getTextValue(item, index)]));
 
   const { dragAndDropHooks } = useDragAndDrop({
+    // O React Aria repassa `isDisabled` ao estado do arrasto: a linha perde o `draggable` e a alça
+    // (`slot="drag"`) chega ao botão já desabilitada. Os hooks continuam os mesmos nos dois
+    // estados, que é o que ele pede (trocar de hooks entre renderizações dá aviso).
+    isDisabled,
     getItems: (draggedKeys) =>
       [...draggedKeys].map((key) => ({ "text/plain": textByKey.get(String(key)) ?? "" })),
     onReorder: ({ keys: draggedKeys, target }) => {
