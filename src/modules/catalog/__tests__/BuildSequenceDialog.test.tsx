@@ -829,7 +829,7 @@ describe("BuildSequenceDialog", () => {
       await waitFor(() => expect(alert.parentElement).toHaveFocus());
     });
 
-    it("takes the alert away when the draft changes, and again when saving is tried", async () => {
+    it("takes the alert away when the draft changes", async () => {
       const user = userEvent.setup();
       await failToSave(user, DUPLICATE_LESSON_PLAN_ERROR);
       await within(dialog()).findByRole("alert");
@@ -837,6 +837,28 @@ describe("BuildSequenceDialog", () => {
       await user.click(button("Remover Reconhecendo golpes da sequência"));
 
       expect(within(dialog()).queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("takes the alert away when saving is tried again, while the new request is on its way", async () => {
+      const user = userEvent.setup();
+      const deferred = createDeferred();
+      const onCall = vi.fn();
+      server.use(replaceCourseLessonPlansHandler({ error: DUPLICATE_LESSON_PLAN_ERROR, onCall }));
+      const { onClose } = await renderDialog();
+      await user.click(button("Salvar sequência"));
+      await within(dialog()).findByRole("alert");
+
+      // The draft stays as it was: only the new attempt makes the old answer go away.
+      server.use(replaceCourseLessonPlansHandler({ delay: deferred.promise, onCall }));
+      await user.click(button("Salvar sequência"));
+
+      expect(await screen.findByRole("button", { name: "Salvando…" })).toBeInTheDocument();
+      expect(within(dialog()).queryByRole("alert")).not.toBeInTheDocument();
+      expect(rowTitles()).toEqual(SEQUENCE_TITLES);
+
+      deferred.resolve();
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onCall).toHaveBeenCalledTimes(2);
     });
 
     it("lets the person fix the draft and save again", async () => {
