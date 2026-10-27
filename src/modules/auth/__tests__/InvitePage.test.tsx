@@ -3,11 +3,12 @@ import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { InviteType, type AcceptInviteDto } from "@api/generated/model";
+import { InviteType } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 import { AuthProvider } from "../AuthProvider";
 import { SLOW_NOTICE_DELAY_MS } from "../hooks/useSlowRequestNotice";
+import type { AcceptInviteSubmission } from "../lib/legacy-accept-invite";
 import { InvitePage } from "../pages/InvitePage";
 import {
   acceptInviteHandler,
@@ -169,7 +170,7 @@ describe("InvitePage with an access invite", () => {
 
   it("submits the full DTO and reaches /login through the success screen", async () => {
     const user = userEvent.setup();
-    const accepted: AcceptInviteDto[] = [];
+    const accepted: AcceptInviteSubmission[] = [];
     server.use(
       meHandler({ user: null }),
       getInviteHandler(),
@@ -201,7 +202,7 @@ describe("InvitePage with an access invite", () => {
 
   it("sends the name, the RA and the email without the spaces around them", async () => {
     const user = userEvent.setup();
-    const accepted: AcceptInviteDto[] = [];
+    const accepted: AcceptInviteSubmission[] = [];
     server.use(
       meHandler({ user: null }),
       getInviteHandler(),
@@ -294,7 +295,7 @@ describe("InvitePage with a password_reset invite", () => {
 
   it("sends only token and password on a password_reset invite", async () => {
     const user = userEvent.setup();
-    const accepted: AcceptInviteDto[] = [];
+    const accepted: AcceptInviteSubmission[] = [];
     server.use(
       meHandler({ user: null }),
       getInviteHandler({ invite: PASSWORD_RESET_INVITE }),
@@ -1174,7 +1175,7 @@ describe("InvitePage errors from the API", () => {
 
   it("clears the RA-in-use error when the RA is edited and lets the person try again", async () => {
     const user = userEvent.setup();
-    const accepted: AcceptInviteDto[] = [];
+    const accepted: AcceptInviteSubmission[] = [];
     server.use(
       meHandler({ user: null }),
       getInviteHandler(),
@@ -1200,7 +1201,7 @@ describe("InvitePage errors from the API", () => {
 
     await screen.findByRole("heading", { name: "Cadastro concluído!" });
     expect(accepted).toHaveLength(1);
-    expect(accepted[0]?.ra).toBe(`${RA}9`);
+    expect(accepted[0]).toMatchObject({ ra: `${RA}9` });
   });
 
   it.each([
@@ -1438,7 +1439,7 @@ describe("InvitePage accessibility", () => {
 
   it("is operable by keyboard only, from step 1 to the success screen", async () => {
     const user = userEvent.setup();
-    const accepted: AcceptInviteDto[] = [];
+    const accepted: AcceptInviteSubmission[] = [];
     server.use(
       meHandler({ user: null }),
       getInviteHandler(),

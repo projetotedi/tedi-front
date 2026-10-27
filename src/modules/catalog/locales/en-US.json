@@ -104,7 +104,82 @@
     }
   },
   "close": "Close",
-  "detailComingSoon": "Lesson plan details",
+  "detail": {
+    "routeTitle": "Lesson plan",
+    "loading": "Loading the lesson plan…",
+    "notFoundTitle": "Lesson plan not found",
+    "notFoundDescription": "This lesson plan does not exist or was removed. Go back to the list and pick another one.",
+    "backToList": "Back to lesson plans",
+    "loadError": "Could not load the lesson plan. Try again.",
+    "editPlan": "Edit plan",
+    "tags": {
+      "duration": "{{duration}} expected",
+      "hasMaterial": "With material"
+    },
+    "data": {
+      "title": "Lesson plan data",
+      "fields": {
+        "title": "Title",
+        "expectedDuration": "Expected duration",
+        "status": "Status",
+        "contents": "Contents",
+        "material": "Material",
+        "objective": "Objective",
+        "createdBy": "Created by",
+        "updatedAt": "Last change"
+      },
+      "createdByValue": "{{name}} — {{date}}",
+      "unknownPerson": "Not informed",
+      "empty": "—",
+      "opensInNewTab": "(opens in a new tab)"
+    },
+    "usage": {
+      "title": "Where this plan is used",
+      "columns": {
+        "course": "Course",
+        "position": "Order in the course",
+        "category": "Category"
+      },
+      "position": "{{position}} of {{total}}",
+      "archivedCourse": "Archived course",
+      "empty": "This plan is not part of any course yet.",
+      "note": "Changing this plan changes the catalog of the courses above. Classes already in progress do not change: they keep the copy of the title and the objective made when the lessons were generated (RN-18)."
+    },
+    "classes": {
+      "title": "Classes that already used this plan",
+      "empty": "The class history shows up here when the lessons module is available."
+    },
+    "beforeChange": {
+      "title": "Before changing",
+      "affectedCourses": "Affected courses"
+    },
+    "history": {
+      "title": "History"
+    }
+  },
+  "category": {
+    "basic": "Basic",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "confirmChange": {
+    "title": "Confirm the plan change",
+    "warningTitle_one": "This plan is used in {{count}} course",
+    "warningTitle_other": "This plan is used in {{count}} courses",
+    "warningDescription": "The change applies to the catalog and to the classes created from now on. Classes in progress keep the content that was already generated.",
+    "coursesTitle": "Courses that use this plan",
+    "columns": {
+      "course": "Course",
+      "currentWorkload": "Current workload",
+      "newWorkload": "New workload"
+    },
+    "position": "Item {{position}} of {{total}}",
+    "whatChanges": "What changes",
+    "durationChange": "Expected duration: {{current}} → {{next}}. The workload of each course is recalculated.",
+    "back": "Back",
+    "confirm": "Save change",
+    "saving": "Saving…"
+  },
   "mock": {
     "objectives": {
       "lesson-plan-04": "Record, listen to, and send a WhatsApp audio message.",
