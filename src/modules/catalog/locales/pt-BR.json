@@ -104,7 +104,82 @@
     }
   },
   "close": "Fechar",
-  "detailComingSoon": "Detalhe do plano de aula",
+  "detail": {
+    "routeTitle": "Plano de aula",
+    "loading": "Carregando o plano de aula…",
+    "notFoundTitle": "Plano de aula não encontrado",
+    "notFoundDescription": "Este plano de aula não existe ou foi removido. Volte para a listagem e escolha outro.",
+    "backToList": "Voltar para planos de aula",
+    "loadError": "Não foi possível carregar o plano de aula. Tente novamente.",
+    "editPlan": "Editar plano",
+    "tags": {
+      "duration": "{{duration}} previstos",
+      "hasMaterial": "Com material"
+    },
+    "data": {
+      "title": "Dados do plano de aula",
+      "fields": {
+        "title": "Título",
+        "expectedDuration": "Duração prevista",
+        "status": "Situação",
+        "contents": "Conteúdos",
+        "material": "Material",
+        "objective": "Objetivo",
+        "createdBy": "Criado por",
+        "updatedAt": "Última alteração"
+      },
+      "createdByValue": "{{name}} — {{date}}",
+      "unknownPerson": "Não informado",
+      "empty": "—",
+      "opensInNewTab": "(abre em nova aba)"
+    },
+    "usage": {
+      "title": "Onde este plano é usado",
+      "columns": {
+        "course": "Curso",
+        "position": "Ordem no curso",
+        "category": "Categoria"
+      },
+      "position": "{{position}} de {{total}}",
+      "archivedCourse": "Curso arquivado",
+      "empty": "Este plano ainda não faz parte de nenhum curso.",
+      "note": "Alterar este plano muda o catálogo dos cursos acima. As turmas já em andamento não mudam: elas guardam a cópia do título e do objetivo feita na geração das aulas (RN-18)."
+    },
+    "classes": {
+      "title": "Turmas que já usaram este plano",
+      "empty": "O histórico de turmas aparece aqui quando o módulo de aulas estiver disponível."
+    },
+    "beforeChange": {
+      "title": "Antes de alterar",
+      "affectedCourses": "Cursos afetados"
+    },
+    "history": {
+      "title": "Histórico"
+    }
+  },
+  "category": {
+    "basic": "Básico",
+    "intermediate": "Intermediário",
+    "advanced": "Avançado"
+  },
+  "confirmChange": {
+    "title": "Confirmar alteração do plano",
+    "warningTitle_one": "Este plano é usado em {{count}} curso",
+    "warningTitle_other": "Este plano é usado em {{count}} cursos",
+    "warningDescription": "A alteração vale para o catálogo e para as turmas criadas daqui em diante. As turmas em andamento continuam com o conteúdo que já foi gerado.",
+    "coursesTitle": "Cursos que usam este plano",
+    "columns": {
+      "course": "Curso",
+      "currentWorkload": "Carga atual",
+      "newWorkload": "Carga nova"
+    },
+    "position": "Item {{position}} de {{total}}",
+    "whatChanges": "O que muda",
+    "durationChange": "Duração prevista: {{current}} → {{next}}. A carga horária de cada curso é recalculada.",
+    "back": "Voltar",
+    "confirm": "Salvar alteração",
+    "saving": "Salvando…"
+  },
   "mock": {
     "objectives": {
       "lesson-plan-04": "Gravar, ouvir e enviar um áudio no WhatsApp.",

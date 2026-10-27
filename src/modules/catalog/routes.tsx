@@ -13,7 +13,7 @@ export const catalogRoutes: RouteObject[] = [
       { index: true, element: <LessonPlansPage /> },
       {
         path: ":lessonPlanId",
-        handle: { title: "catalog:detailComingSoon" } satisfies RouteHandle,
+        handle: { title: "catalog:detail.routeTitle" } satisfies RouteHandle,
         element: <ComingSoonPage />,
       },
     ],
