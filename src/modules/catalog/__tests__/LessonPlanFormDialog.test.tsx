@@ -3,7 +3,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { getGetLessonPlanQueryKey } from "@api/generated/catalog/catalog";
+import { getGetLessonPlanQueryKey, useGetLessonPlan } from "@api/generated/catalog/catalog";
 
 import { LessonPlanFormDialog } from "../components/LessonPlanFormDialog";
 import {
@@ -896,6 +896,55 @@ describe("LessonPlanFormDialog (edit)", () => {
       );
       expect(screen.queryByRole("textbox", { name: "Título do plano" })).not.toBeInTheDocument();
       expect(button("Salvar alterações")).toBeDisabled();
+    });
+
+    it("waits for the latest plan when another screen already holds an older copy in the cache", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ title: "Versão antiga" }) }),
+      );
+      const user = userEvent.setup();
+
+      function Screen() {
+        const cached = useGetLessonPlan(LESSON_PLAN_ID);
+        const [isOpen, setIsOpen] = useState(false);
+        return (
+          <>
+            <p>{cached.data?.title}</p>
+            <button type="button" onClick={() => setIsOpen(true)}>
+              Abrir edição
+            </button>
+            {isOpen ? (
+              <LessonPlanFormDialog
+                mode="edit"
+                lessonPlanId={LESSON_PLAN_ID}
+                onClose={() => setIsOpen(false)}
+              />
+            ) : null}
+          </>
+        );
+      }
+
+      await renderWithProviders(<Screen />);
+      await screen.findByText("Versão antiga");
+      const deferred = createDeferred();
+      server.use(
+        getLessonPlanHandler({
+          response: buildLessonPlanDetail({ title: "Versão nova" }),
+          delay: deferred.promise,
+        }),
+      );
+
+      await user.click(screen.getByRole("button", { name: "Abrir edição" }));
+
+      expect(await screen.findByRole("status")).toHaveTextContent("Carregando o plano de aula…");
+      expect(screen.queryByRole("textbox", { name: "Título do plano" })).not.toBeInTheDocument();
+      expect(button("Salvar alterações")).toBeDisabled();
+
+      deferred.resolve();
+      expect(await screen.findByRole("textbox", { name: "Título do plano" })).toHaveValue(
+        "Versão nova",
+      );
+      expect(button("Salvar alterações")).toBeEnabled();
     });
 
     it("always shows the latest data when the dialog is opened again", async () => {

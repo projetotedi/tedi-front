@@ -517,8 +517,14 @@ export function LessonPlanFormDialog(props: LessonPlanFormDialogProps): ReactEle
     query: { enabled: lessonPlanId !== null, staleTime: 0, gcTime: 0, refetchOnMount: "always" },
   });
   const plan = planQuery.data;
+  // The screen under this dialog (the plan detail) may already hold the plan in the cache, and that
+  // copy can be minutes old. The form waits for the refetch of this dialog, so it never starts from
+  // older data than the plan that decides whether a change needs the confirmation.
+  const isWaitingForPlan =
+    lessonPlanId !== null &&
+    (planQuery.isPending || (planQuery.isFetching && !planQuery.isFetchedAfterMount));
   const isArchived = plan !== undefined && plan.archivedAt !== null;
-  const isReady = lessonPlanId === null || (plan !== undefined && !isArchived);
+  const isReady = lessonPlanId === null || (!isWaitingForPlan && plan !== undefined && !isArchived);
   const initialValues = useMemo(() => (plan ? toFormValues(plan) : buildEmptyFormValues()), [plan]);
 
   function handleSaved(saved: LessonPlanResponseDto) {
@@ -528,7 +534,7 @@ export function LessonPlanFormDialog(props: LessonPlanFormDialogProps): ReactEle
 
   function renderBody(): ReactElement {
     if (lessonPlanId !== null) {
-      if (planQuery.isPending) return <LoadingPlaceholder label={t("form.loading")} />;
+      if (isWaitingForPlan) return <LoadingPlaceholder label={t("form.loading")} />;
 
       if (plan === undefined) {
         return (
