@@ -117,7 +117,7 @@ export function AppLayout() {
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          className="flex-1 px-4 py-6 outline-none focus-visible:ring-3 focus-visible:ring-tedi-focus-ring focus-visible:ring-inset lg:px-10 lg:py-8"
+          className="flex-1 bg-sky-50 px-4 py-6 outline-none focus-visible:ring-3 focus-visible:ring-tedi-focus-ring focus-visible:ring-inset lg:px-10 lg:py-8"
         >
           <div className="mx-auto w-full max-w-360">
             <Outlet />

@@ -5,6 +5,7 @@ import graduationCapIcon from "../assets/icons/graduation-cap.svg";
 import personIcon from "../assets/icons/person.svg";
 
 import { authMenuItems } from "@modules/auth";
+import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
 import type { MenuGroup, MenuItem } from "@shared/lib/menu";
 
@@ -31,12 +32,6 @@ export const appMenuGroups: MenuGroup[] = [
 export const prototypeMenuItems: MenuItem[] = [
   { label: "common:nav.courses", path: "/courses", permission: "catalog.view", group: "catalog" },
   {
-    label: "common:nav.lessonPlans",
-    path: "/lesson-plans",
-    permission: "catalog.view",
-    group: "catalog",
-  },
-  {
     label: "common:nav.enrollments",
     path: "/enrollments",
     permission: "enrollments.manage",
@@ -61,11 +56,13 @@ export const prototypeMenuItems: MenuItem[] = [
 
 /**
  * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale
- * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, e Membros
- * (`authMenuItems`) depois de Alunos, como no Figma.
+ * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Planos de
+ * aula (`catalogMenuItems`) depois de Cursos, e Membros (`authMenuItems`) depois de Alunos,
+ * como no Figma.
  */
 export const appMenuItems: MenuItem[] = [
   ...classesMenuItems,
   ...prototypeMenuItems,
+  ...catalogMenuItems,
   ...authMenuItems,
 ];

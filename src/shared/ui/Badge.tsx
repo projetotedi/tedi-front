@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export interface BadgeProps {
-  tone: "neutral" | "info" | "highlight" | "success";
+  tone: "neutral" | "info" | "highlight" | "success" | "warning" | "danger";
   children: ReactNode;
 }
 
@@ -10,6 +10,8 @@ const TONES = {
   info: "bg-tedi-badge text-tedi-badge-foreground",
   highlight: "bg-tedi-highlight text-tedi-highlight-foreground",
   success: "bg-tedi-badge-success text-tedi-badge-success-foreground",
+  warning: "bg-tedi-warning text-tedi-warning-foreground",
+  danger: "bg-danger-soft text-danger-soft-foreground",
 } as const;
 
 export function Badge({ tone, children }: BadgeProps) {

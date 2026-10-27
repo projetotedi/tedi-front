@@ -1,17 +1,17 @@
-import type { ChipProps } from "@shared/ui";
+import type { BadgeProps } from "@shared/ui";
 
 import type { AccountStatus, EntryStatus } from "../mocks/profile.mock";
 
-type ChipColor = NonNullable<ChipProps["color"]>;
+type BadgeTone = BadgeProps["tone"];
 
-export const ACCOUNT_STATUS_COLOR: Record<AccountStatus, ChipColor> = {
+export const ACCOUNT_STATUS_COLOR: Record<AccountStatus, BadgeTone> = {
   active: "success",
-  inactive: "default",
+  inactive: "neutral",
 };
 
-export const ENTRY_STATUS_COLOR: Record<EntryStatus, ChipColor> = {
+export const ENTRY_STATUS_COLOR: Record<EntryStatus, BadgeTone> = {
   approved: "success",
-  adjusted: "accent",
+  adjusted: "info",
   pending: "warning",
   rejected: "danger",
 };
