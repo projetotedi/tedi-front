@@ -16,13 +16,15 @@ export interface LessonPlanPickerProps {
   /** The draft already has the most plans the API accepts. */
   isAtLimit: boolean;
   onAdd: (item: SequenceItem) => void;
+  /** The draft cannot change now (the dialog is saving it): the select and Adicionar are off. */
+  isDisabled?: boolean;
 }
 
 /**
  * "Adicionar plano de aula": a select with the lesson plans that are not in the draft yet and the
  * Adicionar button. The button is never disabled for lack of a choice: pressing it with nothing
  * chosen shows the error of the field, so the focus stays on the button after each add. It is
- * disabled only at the limit of the sequence, and then the text says why.
+ * disabled at the limit of the sequence, and then the text says why, and while the dialog saves.
  */
 export function LessonPlanPicker({
   courseId,
@@ -30,6 +32,7 @@ export function LessonPlanPicker({
   draft,
   isAtLimit,
   onAdd,
+  isDisabled = false,
 }: LessonPlanPickerProps): ReactElement {
   const { t } = useTranslation("catalog");
   const { options, isPending, isError } = useLessonPlanOptions(courseId);
@@ -45,7 +48,7 @@ export function LessonPlanPicker({
   const allAdded = t("course.sequence.allAdded");
 
   function add() {
-    if (isAtLimit) return;
+    if (isAtLimit || isDisabled) return;
     if (chosen === null) {
       setIsChoiceMissing(true);
       return;
@@ -81,7 +84,7 @@ export function LessonPlanPicker({
               setChosenId(lessonPlanId);
               setIsChoiceMissing(false);
             }}
-            isDisabled={isPending || isError || isEmpty}
+            isDisabled={isDisabled || isPending || isError || isEmpty}
             description={isEmpty ? allAdded : undefined}
             errorMessage={errorMessage()}
           />
@@ -89,7 +92,7 @@ export function LessonPlanPicker({
         {/* `sm:mt-8`: the height of the label (24px) and its gap (8px), so the button lines up with the select, not with its message. */}
         <Button
           variant="secondary"
-          isDisabled={isAtLimit}
+          isDisabled={isAtLimit || isDisabled}
           onPress={add}
           className="self-start sm:mt-8"
         >

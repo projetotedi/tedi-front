@@ -38,10 +38,17 @@ interface HarnessProps {
   saved?: SequenceItem[];
   initialDraft?: SequenceItem[];
   isAtLimit?: boolean;
+  isDisabled?: boolean;
   onAdd?: (item: SequenceItem) => void;
 }
 
-function Harness({ saved = SEQUENCE, initialDraft = SEQUENCE, isAtLimit, onAdd }: HarnessProps) {
+function Harness({
+  saved = SEQUENCE,
+  initialDraft = SEQUENCE,
+  isAtLimit,
+  isDisabled,
+  onAdd,
+}: HarnessProps) {
   const [draft, setDraft] = useState(initialDraft);
 
   return (
@@ -50,11 +57,26 @@ function Harness({ saved = SEQUENCE, initialDraft = SEQUENCE, isAtLimit, onAdd }
       saved={saved}
       draft={draft}
       isAtLimit={isAtLimit ?? false}
+      isDisabled={isDisabled}
       onAdd={(item) => {
         setDraft((current) => [...current, item]);
         onAdd?.(item);
       }}
     />
+  );
+}
+
+/** The same picker with a button that locks it, as the dialog does while it saves. */
+function LockableHarness({ onAdd }: { onAdd: (item: SequenceItem) => void }) {
+  const [isLocked, setIsLocked] = useState(false);
+
+  return (
+    <>
+      <button type="button" onClick={() => setIsLocked((current) => !current)}>
+        Travar
+      </button>
+      <Harness isDisabled={isLocked} onAdd={onAdd} />
+    </>
   );
 }
 
@@ -215,6 +237,41 @@ describe("LessonPlanPicker", () => {
     expect(
       screen.getByText("A sequência pode ter no máximo 100 planos de aula."),
     ).toBeInTheDocument();
+  });
+
+  it("turns the select and Adicionar off, with no other message, while the dialog saves", async () => {
+    const user = userEvent.setup();
+    const onAdd = vi.fn();
+    await renderWithProviders(<Harness isDisabled onAdd={onAdd} />);
+
+    expect(trigger()).toBeDisabled();
+    expect(addButton()).toBeDisabled();
+    await user.click(addButton());
+
+    expect(onAdd).not.toHaveBeenCalled();
+    expect(screen.queryByText("Escolha um plano de aula para adicionar.")).not.toBeInTheDocument();
+    expect(screen.queryByText(/já estão na sequência/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/no máximo 100/)).not.toBeInTheDocument();
+  });
+
+  it("works again once it is unlocked", async () => {
+    const user = userEvent.setup();
+    const onAdd = vi.fn();
+    await renderWithProviders(<LockableHarness onAdd={onAdd} />);
+
+    await user.click(screen.getByRole("button", { name: "Travar" }));
+    expect(trigger()).toBeDisabled();
+    expect(addButton()).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Travar" }));
+
+    expect(trigger()).toBeEnabled();
+    expect(addButton()).toBeEnabled();
+    await openOptions(user);
+    await user.click(screen.getByRole("option", { name: "Fotos no celular · 1h30" }));
+    await user.click(addButton());
+    expect(onAdd).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ lessonPlanId: "lesson-plan-07" }),
+    );
   });
 
   it("shows no limit text below the limit", async () => {

@@ -563,11 +563,59 @@ describe("BuildSequenceDialog", () => {
       );
       expect(button("Cancelar")).toBeDisabled();
       expect(button("Fechar")).toBeDisabled();
+      // What is on the screen is what was sent, so the picker and every row are locked too.
+      expect(button(/Adicionar plano de aula/)).toBeDisabled();
+      expect(button("Adicionar")).toBeDisabled();
+      for (const title of SEQUENCE_TITLES) {
+        expect(button(`Arrastar ${title} para reordenar`)).toBeDisabled();
+        expect(button(`Mover ${title} para cima`)).toBeDisabled();
+        expect(button(`Mover ${title} para baixo`)).toBeDisabled();
+        expect(button(`Remover ${title} da sequência`)).toBeDisabled();
+      }
+      for (const row of within(list()).getAllByRole("row")) {
+        expect(row).not.toHaveAttribute("draggable");
+      }
       await user.keyboard("{Escape}");
       expect(onClose).not.toHaveBeenCalled();
 
       deferred.resolve();
       await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    });
+
+    it("does not let the draft change while the request is on its way, so what is saved is what is shown", async () => {
+      const user = userEvent.setup();
+      const deferred = createDeferred();
+      const onCall = vi.fn();
+      server.use(replaceCourseLessonPlansHandler({ delay: deferred.promise, onCall }));
+      const { queryClient, onClose } = await renderDialog();
+
+      await user.click(button("Salvar sequência"));
+      await screen.findByRole("button", { name: "Salvando…" });
+      await user.click(button("Mover Senhas e privacidade para cima"));
+      await user.click(button("Mover Conhecendo o WhatsApp para baixo"));
+      await user.click(button("Remover Reconhecendo golpes da sequência"));
+      await user.click(button("Adicionar"));
+
+      expect(rowTitles()).toEqual(SEQUENCE_TITLES);
+      expect(workload()).toBe("Carga horária prevista: 7h");
+      deferred.resolve();
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onCall).toHaveBeenCalledExactlyOnceWith({
+        id: COURSE_ID,
+        body: {
+          lessonPlanIds: [
+            buildSequenceItem().lessonPlanId,
+            "lesson-plan-04",
+            "lesson-plan-05",
+            "lesson-plan-06",
+          ],
+        },
+      });
+      expect(
+        queryClient.getQueryData<CourseLessonPlansResponseDto>(
+          getListCourseLessonPlansQueryKey(COURSE_ID),
+        )?.items,
+      ).toHaveLength(4);
     });
 
     it("sends the request once even if Salvar sequência is pressed again", async () => {
@@ -729,6 +777,22 @@ describe("BuildSequenceDialog", () => {
       );
       expect(rowTitles()[1]).toBe("Senhas e privacidade");
       expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("unlocks the picker, the arrows, Remover and the handles when the save fails", async () => {
+      const user = userEvent.setup();
+      await failToSave(user, DUPLICATE_LESSON_PLAN_ERROR);
+      await within(dialog()).findByRole("alert");
+
+      expect(button(/Adicionar plano de aula/)).toBeEnabled();
+      expect(button("Adicionar")).toBeEnabled();
+      expect(button("Arrastar Senhas e privacidade para reordenar")).toBeEnabled();
+      expect(button("Mover Senhas e privacidade para cima")).toBeEnabled();
+      expect(button("Mover Senhas e privacidade para baixo")).toBeEnabled();
+      expect(button("Remover Senhas e privacidade da sequência")).toBeEnabled();
+      // The edges of the list stay off, as before.
+      expect(button("Mover Conhecendo o WhatsApp para cima")).toBeDisabled();
+      expect(button("Mover Reconhecendo golpes para baixo")).toBeDisabled();
     });
 
     it("moves the focus to the alert, so that it is read and in view", async () => {

@@ -40,7 +40,9 @@ type PendingFocus =
  * the picker to add one, a way to take one out, the order changed by dragging or with the arrow
  * buttons of each row (the keyboard path) and the planned workload recalculated as the draft
  * changes. Nothing is saved until Salvar sequência, which sends the whole list in one `PUT`;
- * Cancelar, Esc and the backdrop throw the draft away.
+ * Cancelar, Esc and the backdrop throw the draft away. While the `PUT` is on its way the whole
+ * dialog is locked (picker, arrows, Remover, drag): a change made then would not be in what was
+ * sent, and the answer, which closes the dialog, would throw it away without saying so.
  *
  * The dialog does not use React Hook Form: there is no field to type, so there is nothing to
  * validate. The errors of the `PUT` (a repeated plan, an archived course...) show as an alert and
@@ -223,6 +225,7 @@ export function BuildSequenceDialog({
           draft={draft}
           isAtLimit={draft.length >= replaceCourseLessonPlansBodyLessonPlanIdsMax}
           onAdd={add}
+          isDisabled={isSaving}
         />
 
         <div className="flex flex-col gap-3">
@@ -238,6 +241,7 @@ export function BuildSequenceDialog({
             }
             dragLabel={(item) => t("course.sequence.drag", { title: item.title })}
             onMove={drop}
+            isDisabled={isSaving}
             renderEmptyState={() => (
               <p
                 id={emptyId}
@@ -274,7 +278,7 @@ export function BuildSequenceDialog({
                     variant="ghost"
                     isIconOnly
                     aria-label={t("course.sequence.moveUp", { title: item.title })}
-                    isDisabled={index === 0}
+                    isDisabled={isSaving || index === 0}
                     onPress={() => move(index, -1)}
                   >
                     <span aria-hidden="true" className="text-xl font-bold text-sky-800">
@@ -286,7 +290,7 @@ export function BuildSequenceDialog({
                     variant="ghost"
                     isIconOnly
                     aria-label={t("course.sequence.moveDown", { title: item.title })}
-                    isDisabled={index === draft.length - 1}
+                    isDisabled={isSaving || index === draft.length - 1}
                     onPress={() => move(index, 1)}
                   >
                     <span aria-hidden="true" className="text-xl font-bold text-sky-800">
@@ -298,6 +302,7 @@ export function BuildSequenceDialog({
                     variant="ghost"
                     aria-label={t("course.sequence.removeLabel", { title: item.title })}
                     className="text-danger"
+                    isDisabled={isSaving}
                     onPress={() => remove(index)}
                   >
                     {t("course.sequence.remove")}
