@@ -17,8 +17,8 @@ export const authRoutes: RouteObject[] = [
 
 /**
  * Rotas autenticadas do módulo, montadas sob AppLayout em app/router.tsx.
- * `/members` é o item "Membros e Planejamento" do protótipo do Figma: a gestão de acessos
- * (GUS-87) é a tela real por trás dele, não uma rota separada.
+ * `/members` é o item "Membros" do grupo Pessoas do menu: a gestão de acessos (GUS-87) é a
+ * tela real por trás dele, não uma rota separada.
  */
 export const authProtectedRoutes: RouteObject[] = [
   {

@@ -4,4 +4,6 @@ import { afterEach } from "vitest";
 
 afterEach(() => {
   cleanup();
+  // O estado da sidebar (grupos abertos) vive no sessionStorage e não pode vazar entre testes.
+  sessionStorage.clear();
 });

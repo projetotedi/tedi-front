@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, Navigate, RouterProvider } from "react-router-dom";
 import { describe, expect, it } from "vitest";
@@ -16,6 +16,13 @@ import { AppLayout } from "../layouts/AppLayout";
 import { prototypeRoutes } from "../prototype-routes";
 
 setupAuthTestServer();
+
+/** Os links dos grupos fechados ficam fora da árvore de acessibilidade: abre todos antes de ler. */
+async function openAllGroups(container: HTMLElement) {
+  for (const button of within(container).getAllByRole("button")) {
+    if (button.getAttribute("aria-expanded") === "false") await userEvent.click(button);
+  }
+}
 
 async function renderApp(user: MeResponseDto, route = "/") {
   await i18n.changeLanguage("pt-BR");
@@ -60,33 +67,29 @@ async function renderApp(user: MeResponseDto, route = "/") {
 }
 
 describe("AppLayout", () => {
-  it("shows Membros e Planejamento to the coordinator", async () => {
+  it("shows Membros to the coordinator", async () => {
     const { nav } = await renderApp(buildMeUser({ role: Role.coordinator }));
+    await openAllGroups(nav);
 
-    expect(within(nav).getByRole("link", { name: "Membros e Planejamento" })).toHaveAttribute(
-      "href",
-      "/members",
-    );
+    expect(within(nav).getByRole("link", { name: "Membros" })).toHaveAttribute("href", "/members");
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
   });
 
-  it("hides Membros e Planejamento from the director but keeps Banco de Horas", async () => {
+  it("hides Membros from the director but keeps Banco de horas", async () => {
     const { nav } = await renderApp(buildMeUser({ role: Role.director }));
+    await openAllGroups(nav);
 
-    expect(within(nav).getByRole("link", { name: "Banco de Horas" })).toBeInTheDocument();
-    expect(
-      within(nav).queryByRole("link", { name: "Membros e Planejamento" }),
-    ).not.toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Banco de horas" })).toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
   });
 
-  it("hides Membros e Planejamento and Banco de Horas from the member", async () => {
+  it("hides Membros and Banco de horas from the member", async () => {
     const { nav } = await renderApp(buildMeUser({ role: Role.member }));
+    await openAllGroups(nav);
 
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
-    expect(
-      within(nav).queryByRole("link", { name: "Membros e Planejamento" }),
-    ).not.toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Banco de Horas" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Banco de horas" })).not.toBeInTheDocument();
   });
 
   it.each([
@@ -146,7 +149,8 @@ describe("AppLayout", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/profile"));
   });
 
-  it("collapses the menu behind an accessible button on small screens", async () => {
+  it("collapses the grouped menu into an accessible drawer", async () => {
+    const user = userEvent.setup();
     await renderApp(buildMeUser({ role: Role.coordinator }));
 
     const button = screen.getByRole("button", { name: "Abrir menu" });
@@ -160,14 +164,80 @@ describe("AppLayout", () => {
     expect(drawer).toHaveAttribute("id", "app-menu");
     expect(button).toHaveAttribute("aria-expanded", "true");
 
-    await userEvent.click(within(drawer).getByRole("link", { name: "Membros e Planejamento" }));
+    // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer.
+    const people = within(drawer).getByRole("button", { name: "Pessoas" });
+    expect(people).toHaveAttribute("aria-expanded", "false");
+    for (let presses = 0; document.activeElement !== people && presses < 10; presses += 1) {
+      await user.tab();
+    }
+    expect(people).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(people).toHaveAttribute("aria-expanded", "true");
+
+    await user.click(within(drawer).getByRole("link", { name: "Membros" }));
 
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Menu principal" })).not.toBeInTheDocument(),
     );
+    expect(screen.getByRole("heading", { level: 1, name: "Membros" })).toBeInTheDocument();
+  });
+
+  it("first Tab focuses the skip link and Enter focuses #main-content", async () => {
+    const user = userEvent.setup();
+    await renderApp(buildMeUser({ role: Role.coordinator }));
+
+    await user.tab();
+
+    const skipLink = screen.getByRole("link", { name: "Pular para o conteúdo" });
+    expect(skipLink).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+
+    const main = screen.getByRole("main");
+    expect(main).toHaveFocus();
+    expect(main).toHaveAttribute("id", "main-content");
+  });
+
+  it("opens the group of the route and marks its item in the sidebar", async () => {
+    const { nav } = await renderApp(buildMeUser({ role: Role.coordinator }), "/lessons/calendar");
+
     expect(
-      screen.getByRole("heading", { level: 1, name: "Membros e Planejamento" }),
+      await screen.findByRole("heading", { level: 1, name: "Calendário" }),
     ).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "Aulas" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(within(nav).getByRole("link", { name: "Calendário" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(within(nav).getByRole("button", { name: "Catálogo" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+  });
+
+  it("opens the group of the route the user navigates to", async () => {
+    const { nav, router } = await renderApp(buildMeUser({ role: Role.coordinator }), "/profile");
+    expect(within(nav).getByRole("button", { name: "Horas" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+
+    await act(() => router.navigate("/hours/review"));
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Validação de horas" }),
+    ).toBeInTheDocument();
+    expect(within(nav).getByRole("button", { name: "Horas" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(within(nav).getByRole("link", { name: "Validação de horas" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 
   it("shows the coming soon page for prototype areas", async () => {
@@ -177,13 +247,19 @@ describe("AppLayout", () => {
     expect(screen.getByText(/ainda está em construção/)).toBeInTheDocument();
   });
 
-  it("blocks Banco de Horas for a member even through the URL", async () => {
+  it("blocks Banco de horas for a member even through the URL", async () => {
     await renderApp(buildMeUser({ role: Role.member }), "/hours");
 
     expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
   });
 
-  it("blocks Membros e Planejamento for a member even through the URL", async () => {
+  it("blocks Validação de horas for the director even through the URL", async () => {
+    await renderApp(buildMeUser({ role: Role.director }), "/hours/review");
+
+    expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
+  });
+
+  it("blocks Membros for a member even through the URL", async () => {
     await renderApp(buildMeUser({ role: Role.member }), "/members");
 
     expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();

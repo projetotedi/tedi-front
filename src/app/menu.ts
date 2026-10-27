@@ -1,50 +1,68 @@
 import bookOpenIcon from "../assets/icons/book-open.svg";
 import calendarIcon from "../assets/icons/calendar.svg";
 import clockIcon from "../assets/icons/clock.svg";
-import personPlusIcon from "../assets/icons/person-plus.svg";
+import graduationCapIcon from "../assets/icons/graduation-cap.svg";
 import personIcon from "../assets/icons/person.svg";
 
 import { authMenuItems } from "@modules/auth";
 import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
-import type { MenuItem } from "@shared/lib/menu";
+import type { MenuGroup, MenuItem } from "@shared/lib/menu";
+
+/**
+ * Domínios do menu lateral, na ordem de exibição do Figma. Rótulo e ícone moram aqui: um
+ * módulo só diz em qual `group` o seu item entra (`MenuItem.group`), sem mexer no layout.
+ */
+export const appMenuGroups: MenuGroup[] = [
+  { id: "catalog", label: "common:nav.groups.catalog", icon: bookOpenIcon },
+  { id: "classes", label: "common:nav.groups.classes", icon: graduationCapIcon },
+  { id: "lessons", label: "common:nav.groups.lessons", icon: calendarIcon },
+  { id: "people", label: "common:nav.groups.people", icon: personIcon },
+  { id: "hours", label: "common:nav.groups.hours", icon: clockIcon },
+];
 
 /**
  * Itens do protótipo do Figma cujos módulos ainda não existem; levam à página "Em breve"
  * (rotas em `prototypeRoutes`, com o mesmo `RequirePermission` do item). Quando um módulo
  * nascer, ele exporta o próprio `<modulo>MenuItems` e substitui a linha correspondente aqui.
- * "Membros e Planejamento" já saiu daqui: é a tela de gestão de acessos do `auth` (GUS-87),
- * em `authMenuItems`.
+ * "Membros" já saiu daqui: é a tela de gestão de acessos do `auth` (GUS-87), em `authMenuItems`.
+ * Calendário (`/lessons/calendar`) e Validação de horas (`/hours/review`) são caminhos
+ * provisórios; o módulo dono confirma quando nascer.
  */
 export const prototypeMenuItems: MenuItem[] = [
-  { label: "common:nav.courses", path: "/courses", permission: "catalog.view", icon: bookOpenIcon },
-  {
-    label: "common:nav.students",
-    path: "/students",
-    permission: "students.view",
-    icon: personIcon,
-  },
-  { label: "common:nav.lessons", path: "/lessons", permission: "lessons.view", icon: calendarIcon },
+  { label: "common:nav.courses", path: "/courses", permission: "catalog.view", group: "catalog" },
   {
     label: "common:nav.enrollments",
     path: "/enrollments",
     permission: "enrollments.manage",
-    icon: personPlusIcon,
+    group: "classes",
   },
-  // Último por ordem do Figma: "Membros e Planejamento" (authMenuItems) entra antes dele.
-  { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", icon: clockIcon },
+  { label: "common:nav.lessons", path: "/lessons", permission: "lessons.view", group: "lessons" },
+  {
+    label: "common:nav.calendar",
+    path: "/lessons/calendar",
+    permission: "lessons.view",
+    group: "lessons",
+  },
+  { label: "common:nav.students", path: "/students", permission: "students.view", group: "people" },
+  { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", group: "hours" },
+  {
+    label: "common:nav.hoursReview",
+    path: "/hours/review",
+    permission: "hours.review",
+    group: "hours",
+  },
 ];
 
 /**
- * Menu lateral completo, na ordem de exibição do Figma. "Membros e Planejamento"
- * (`authMenuItems`) entra entre Matrículas e Banco de Horas, onde o desenho o posiciona —
- * por isso a inserção antes do último item de `prototypeMenuItems`, e não uma concatenação simples.
+ * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale
+ * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Planos de
+ * aula (`catalogMenuItems`) depois de Cursos, e Membros (`authMenuItems`) depois de Alunos,
+ * como no Figma.
  */
 export const appMenuItems: MenuItem[] = [
-  ...prototypeMenuItems.slice(0, 1),
-  ...catalogMenuItems,
   ...classesMenuItems,
-  ...prototypeMenuItems.slice(1, -1),
+  ...prototypeMenuItems,
+  ...catalogMenuItems,
   ...authMenuItems,
-  ...prototypeMenuItems.slice(-1),
 ];

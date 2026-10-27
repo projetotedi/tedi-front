@@ -17,7 +17,7 @@ import { prototypeRoutes } from "../prototype-routes";
 setupAuthTestServer();
 
 describe("login writes the permissions to the session cache", () => {
-  it("member signs in, the sidebar hides Banco de Horas and /auth/me is not requested again", async () => {
+  it("member signs in, the sidebar hides the Horas group and /auth/me is not requested again", async () => {
     await i18n.changeLanguage("pt-BR");
     let meCalls = 0;
     server.use(
@@ -70,8 +70,13 @@ describe("login writes the permissions to the session cache", () => {
 
     const nav = await screen.findByRole("navigation", { name: "Menu principal" });
     await waitFor(() => expect(router.state.location.pathname).toBe("/profile"));
+    expect(within(nav).queryByRole("button", { name: "Horas" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Banco de horas" })).not.toBeInTheDocument();
+
+    // /profile não pertence a nenhum grupo: Cursos só aparece depois de abrir Catálogo.
+    expect(within(nav).queryByRole("link", { name: "Cursos" })).not.toBeInTheDocument();
+    await user.click(within(nav).getByRole("button", { name: "Catálogo" }));
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Banco de Horas" })).not.toBeInTheDocument();
     expect(meCalls).toBe(1);
   });
 });
