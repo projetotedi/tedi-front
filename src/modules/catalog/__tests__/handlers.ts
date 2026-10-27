@@ -1,13 +1,18 @@
 import { http, HttpResponse } from "msw";
 
-import type {
-  ApiFieldErrorDto,
-  ArchiveDto,
-  CreateLessonPlanDto,
-  LessonPlanResponseDto,
-  MeResponseDto,
-  PermissionsDto,
-  UpdateLessonPlanDto,
+import {
+  CourseCategory,
+  CourseStatus,
+  LessonPlanUsageStatus,
+  type ApiFieldErrorDto,
+  type ArchiveDto,
+  type CreateLessonPlanDto,
+  type LessonPlanDetailDto,
+  type LessonPlanResponseDto,
+  type LessonPlanUsageResponseDto,
+  type MeResponseDto,
+  type PermissionsDto,
+  type UpdateLessonPlanDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
@@ -81,6 +86,102 @@ export function buildArchivedLessonPlan(
   });
 }
 
+export const LESSON_PLAN_CREATOR_NAME = "Beatriz Nunes";
+
+/** Response of `GET /lesson-plans/:id`: the `buildLessonPlan` plan, unused, with its creator. */
+export function buildLessonPlanDetail(
+  overrides: Partial<LessonPlanDetailDto> = {},
+): LessonPlanDetailDto {
+  const plan = buildLessonPlan();
+
+  return {
+    ...plan,
+    status: LessonPlanUsageStatus.unused,
+    createdBy: { id: plan.createdById, name: LESSON_PLAN_CREATOR_NAME },
+    usedIn: [],
+    ...overrides,
+  };
+}
+
+export function buildArchivedLessonPlanDetail(
+  overrides: Partial<LessonPlanDetailDto> = {},
+): LessonPlanDetailDto {
+  return buildLessonPlanDetail({
+    archivedAt: "2026-10-10T13:00:00.000Z",
+    archivedById: "01952ef7-0000-7000-8000-000000000001",
+    archiveReason: "Conteúdo revisado em um novo plano.",
+    ...overrides,
+  });
+}
+
+export const COURSE_SOCIAL_NETWORKS = {
+  courseId: "01952ef7-0000-7000-8000-0000000000c1",
+  courseName: "Redes Sociais com Segurança",
+} as const;
+
+export const COURSE_SMARTPHONES = {
+  courseId: "01952ef7-0000-7000-8000-0000000000c2",
+  courseName: "Smartphones no dia a dia",
+} as const;
+
+/** A plan used by two courses: an active one (2 of 4, intermediate) and an archived one (4 of 5, basic). */
+export function buildInUseLessonPlanDetail(
+  overrides: Partial<LessonPlanDetailDto> = {},
+): LessonPlanDetailDto {
+  return buildLessonPlanDetail({
+    status: LessonPlanUsageStatus.in_use,
+    usedIn: [
+      {
+        ...COURSE_SOCIAL_NETWORKS,
+        category: CourseCategory.intermediate,
+        position: 2,
+        lessonPlanCount: 4,
+        courseStatus: CourseStatus.active,
+      },
+      {
+        ...COURSE_SMARTPHONES,
+        category: CourseCategory.basic,
+        position: 4,
+        lessonPlanCount: 5,
+        courseStatus: CourseStatus.archived,
+      },
+    ],
+    ...overrides,
+  });
+}
+
+/**
+ * Response of `GET /lesson-plans/:id/usage` for the two courses of `buildInUseLessonPlanDetail`.
+ * The workloads are fixed on purpose and cannot be derived from the plan duration
+ * (425 -> 455 and 510 -> 540): whoever shows "7h05" and "7h35" is reading the API answer, not adding.
+ */
+export function buildLessonPlanUsage(
+  overrides: Partial<LessonPlanUsageResponseDto> = {},
+): LessonPlanUsageResponseDto {
+  return {
+    lessonPlanId: LESSON_PLAN_ID,
+    currentDurationMinutes: 90,
+    newDurationMinutes: 120,
+    courses: [
+      {
+        ...COURSE_SOCIAL_NETWORKS,
+        position: 2,
+        lessonPlanCount: 4,
+        currentWorkloadMinutes: 425,
+        newWorkloadMinutes: 455,
+      },
+      {
+        ...COURSE_SMARTPHONES,
+        position: 4,
+        lessonPlanCount: 5,
+        currentWorkloadMinutes: 510,
+        newWorkloadMinutes: 540,
+      },
+    ],
+    ...overrides,
+  };
+}
+
 export interface ApiErrorOptions {
   statusCode: number;
   error: string;
@@ -114,8 +215,8 @@ function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptio
   );
 }
 
-interface HandlerOptions<TCall> {
-  response?: LessonPlanResponseDto;
+interface HandlerOptions<TCall, TResponse = LessonPlanResponseDto> {
+  response?: TResponse;
   error?: ApiErrorOptions;
   networkError?: boolean;
   delay?: Promise<void>;
@@ -138,6 +239,12 @@ interface ArchiveCall {
 
 interface IdCall {
   id: string;
+}
+
+interface UsageCall {
+  id: string;
+  /** `null` when the request does not send `expectedDurationMinutes`. */
+  expectedDurationMinutes: number | null;
 }
 
 async function readBody<TBody>(request: Request): Promise<TBody | undefined> {
@@ -163,14 +270,35 @@ export function createLessonPlanHandler({
 }
 
 export function getLessonPlanHandler({
-  response = buildLessonPlan(),
+  response = buildLessonPlanDetail(),
   error,
   networkError = false,
   delay,
   onCall,
-}: HandlerOptions<IdCall> = {}) {
+}: HandlerOptions<IdCall, LessonPlanDetailDto> = {}) {
   return http.get("*/lesson-plans/:id", async ({ params }) => {
     onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export function getLessonPlanUsageHandler({
+  response = buildLessonPlanUsage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<UsageCall, LessonPlanUsageResponseDto> = {}) {
+  return http.get("*/lesson-plans/:id/usage", async ({ request, params }) => {
+    const expectedDuration = new URL(request.url).searchParams.get("expectedDurationMinutes");
+    onCall?.({
+      id: String(params.id),
+      expectedDurationMinutes: expectedDuration === null ? null : Number(expectedDuration),
+    });
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();

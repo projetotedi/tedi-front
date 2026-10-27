@@ -8,8 +8,9 @@ import { getGetLessonPlanQueryKey } from "@api/generated/catalog/catalog";
 import { LessonPlanFormDialog } from "../components/LessonPlanFormDialog";
 import {
   ARCHIVED_ERROR,
-  buildArchivedLessonPlan,
+  buildArchivedLessonPlanDetail,
   buildLessonPlan,
+  buildLessonPlanDetail,
   createLessonPlanHandler,
   getLessonPlanHandler,
   LESSON_PLAN_ID,
@@ -440,7 +441,7 @@ describe("LessonPlanFormDialog (create)", () => {
     it("stops adding at 50 contents and says why", async () => {
       const fortyNineContents = Array.from({ length: 49 }, (_, index) => `Conteúdo ${index + 1}`);
       server.use(
-        getLessonPlanHandler({ response: buildLessonPlan({ contents: fortyNineContents }) }),
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ contents: fortyNineContents }) }),
       );
       const user = userEvent.setup();
       await renderEdit();
@@ -799,7 +800,7 @@ describe("LessonPlanFormDialog (edit)", () => {
     it("opens the form already filled with the plan", async () => {
       server.use(
         getLessonPlanHandler({
-          response: buildLessonPlan({
+          response: buildLessonPlanDetail({
             title: "Navegador e busca",
             objective: "Pesquisar com segurança.",
             expectedDurationMinutes: 135,
@@ -826,7 +827,9 @@ describe("LessonPlanFormDialog (edit)", () => {
 
     it("leaves the objective and the link empty when the plan has none", async () => {
       server.use(
-        getLessonPlanHandler({ response: buildLessonPlan({ objective: null, materialUrl: null }) }),
+        getLessonPlanHandler({
+          response: buildLessonPlanDetail({ objective: null, materialUrl: null }),
+        }),
       );
       await renderEdit();
 
@@ -880,7 +883,7 @@ describe("LessonPlanFormDialog (edit)", () => {
     });
 
     it("does not offer the form for an archived plan", async () => {
-      server.use(getLessonPlanHandler({ response: buildArchivedLessonPlan() }));
+      server.use(getLessonPlanHandler({ response: buildArchivedLessonPlanDetail() }));
       await renderEdit();
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -891,7 +894,9 @@ describe("LessonPlanFormDialog (edit)", () => {
     });
 
     it("always shows the latest data when the dialog is opened again", async () => {
-      server.use(getLessonPlanHandler({ response: buildLessonPlan({ title: "Primeira versão" }) }));
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ title: "Primeira versão" }) }),
+      );
       const user = userEvent.setup();
 
       function Harness() {
@@ -918,7 +923,9 @@ describe("LessonPlanFormDialog (edit)", () => {
       );
       await user.click(button("Cancelar"));
 
-      server.use(getLessonPlanHandler({ response: buildLessonPlan({ title: "Segunda versão" }) }));
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ title: "Segunda versão" }) }),
+      );
       await user.click(screen.getByRole("button", { name: "Abrir de novo" }));
 
       expect(await screen.findByRole("textbox", { name: "Título do plano" })).toHaveValue(
