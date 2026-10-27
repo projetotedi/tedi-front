@@ -50,7 +50,9 @@ describe("catalogRoutes", () => {
   ])("the %s can open /lesson-plans", async (_label, role) => {
     await renderRoutes(catalogRoutes, { route: "/lesson-plans", user: buildMeUser(role) });
 
-    expect(await screen.findByRole("heading", { name: "Planos de aula" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /Planos de aula \(\d+\)/ }),
+    ).toBeInTheDocument();
   });
 
   it("shows the forbidden page to someone without catalog.view", async () => {
@@ -61,6 +63,6 @@ describe("catalogRoutes", () => {
     });
 
     expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Planos de aula" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: /Planos de aula/ })).not.toBeInTheDocument();
   });
 });

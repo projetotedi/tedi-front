@@ -1,8 +1,8 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
-import { peopleRoutes } from "@modules/people";
 import { catalogRoutes } from "@modules/catalog";
+import { peopleRoutes } from "@modules/people";
 import { classesRoutes } from "@modules/classes";
 
 import { AppLayout } from "./layouts/AppLayout";

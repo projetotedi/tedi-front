@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http, HttpResponse } from "msw";
+import { useLocation } from "react-router-dom";
 import { describe, expect, it, vi } from "vitest";
 
 import { Role } from "@shared/lib/role";
@@ -11,140 +11,218 @@ import { renderWithProviders, server, setupCatalogTestServer } from "./test-util
 
 setupCatalogTestServer();
 
-const newPlanButton = () => screen.queryByRole("button", { name: "+ Novo plano de aula" });
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="current-location">{`${location.pathname}${location.search}`}</output>;
+}
+
+async function renderPage(route = "/lesson-plans", user = buildMeUser(Role.coordinator)) {
+  return renderWithProviders(
+    <>
+      <LessonPlansPage />
+      <LocationProbe />
+    </>,
+    { route, user },
+  );
+}
 
 describe("LessonPlansPage", () => {
-  describe("permissions", () => {
-    it.each([
-      ["coordinator", Role.coordinator],
-      ["director", Role.director],
-    ])("the %s sees + Novo plano de aula", async (_label, role) => {
-      await renderWithProviders(<LessonPlansPage />, { user: buildMeUser(role) });
+  it("renders the GUS-171 mocked rows, filters, columns and pagination summary", async () => {
+    await renderPage();
 
-      expect(newPlanButton()).toBeInTheDocument();
-    });
+    expect(await screen.findByRole("heading", { name: "Planos de aula (14)" })).toBeInTheDocument();
+    expect(screen.getByRole("table")).toHaveAccessibleName("Planos de aula (14)");
+    expect(screen.getByRole("columnheader", { name: "PLANO DE AULA" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "TURMAS QUE JÁ USARAM" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Enviar um áudio no WhatsApp" })).toBeInTheDocument();
+    expect(screen.getByText("4 turmas")).toBeInTheDocument();
+    expect(
+      screen.getAllByLabelText("Contagem de turmas disponível quando o módulo de aulas existir"),
+    ).toHaveLength(2);
+    expect(screen.getByText("Mostrando 7 de 14 planos de aula")).toBeInTheDocument();
+  });
 
-    it("the member does not see the buttons to create, edit and archive", async () => {
-      await renderWithProviders(<LessonPlansPage />, { user: buildMeUser(Role.member) });
+  it("filters fixture rows by title and mirrors the search in the URL", async () => {
+    const user = userEvent.setup();
+    await renderPage();
 
-      expect(screen.getByRole("heading", { name: "Planos de aula" })).toBeInTheDocument();
-      expect(newPlanButton()).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Novo plano de aula/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Arquivar/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    });
+    const search = screen.getByRole("textbox", { name: "Buscar plano de aula por título" });
+    await user.type(search, "AUDIO");
 
-    it("hides the creation entry points whenever the permission is missing, whatever the profile", async () => {
-      const user = buildMeUser(Role.coordinator);
-      await renderWithProviders(<LessonPlansPage />, {
-        user: { ...user, permissions: { ...user.permissions, "lessonPlans.manage": "none" } },
-      });
+    expect(screen.getByRole("link", { name: "Enviar um áudio no WhatsApp" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Conhecendo o computador" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("current-location").textContent).toContain("search=AUDIO");
+  });
 
-      expect(newPlanButton()).not.toBeInTheDocument();
+  it("applies content, duration and usage filters from the URL", async () => {
+    await renderPage("/lesson-plans?content=C%C3%A2mera+e+fotos&usage=unused");
+    expect(screen.getByRole("link", { name: "Fotos no celular" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Navegando na internet" })).not.toBeInTheDocument();
+
+    await renderPage("/lesson-plans?minDuration=121");
+    expect(screen.getByRole("link", { name: "Reconhecendo golpes" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Teclado, mouse e janelas" }),
+    ).not.toBeInTheDocument();
+
+    await renderPage("/lesson-plans?usage=archived");
+    expect(screen.getByRole("link", { name: "Noções de segurança digital" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Enviar um áudio no WhatsApp" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("resets the page when a filter changes and persists pagination in the URL", async () => {
+    const user = userEvent.setup();
+    await renderPage("/lesson-plans?page=2");
+
+    await user.type(
+      screen.getByRole("textbox", { name: "Buscar plano de aula por título" }),
+      "internet",
+    );
+    expect(screen.getByTestId("current-location").textContent).toContain("search=internet");
+    expect(screen.getByTestId("current-location").textContent).not.toContain("page=2");
+
+    await user.clear(screen.getByRole("textbox", { name: "Buscar plano de aula por título" }));
+    await user.click(screen.getByRole("button", { name: "Página 2" }));
+    expect(screen.getByTestId("current-location").textContent).toBe("/lesson-plans?page=2");
+    expect(screen.getByRole("link", { name: "Mapas e localização" })).toBeInTheDocument();
+  });
+
+  it("shows no-results and clears filters", async () => {
+    const user = userEvent.setup();
+    await renderPage("/lesson-plans?search=plano-inexistente&content=Conte%C3%BAdo+fantasma");
+
+    expect(screen.getByRole("heading", { name: "Nada encontrado" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+    expect(screen.getByRole("link", { name: "Conhecendo o computador" })).toBeInTheDocument();
+    expect(screen.getByTestId("current-location").textContent).toBe("/lesson-plans");
+  });
+
+  it.each([
+    ["empty", "Nenhum plano de aula ainda"],
+    ["loading", "Carregando planos de aula…"],
+    ["error", "Não foi possível carregar os planos de aula"],
+  ])("shows the %s mock state", async (mockState, expectedText) => {
+    await renderPage(`/lesson-plans?mockState=${mockState}`);
+    expect(screen.getByText(expectedText)).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "PLANO DE AULA" })).toBeInTheDocument();
+  });
+
+  it("retries the mock error state", async () => {
+    const user = userEvent.setup();
+    await renderPage("/lesson-plans?mockState=error");
+
+    await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
+
+    expect(screen.getByRole("link", { name: "Conhecendo o computador" })).toBeInTheDocument();
+  });
+
+  it.each([
+    ["coordinator", Role.coordinator],
+    ["director", Role.director],
+  ])("the %s sees the API-backed create action", async (_label, role) => {
+    await renderPage("/lesson-plans", buildMeUser(role));
+    expect(screen.getByRole("button", { name: "+ Novo plano de aula" })).toBeInTheDocument();
+  });
+
+  it("the member does not see create, edit or archive actions", async () => {
+    await renderPage("/lesson-plans", buildMeUser(Role.member));
+
+    expect(screen.queryByRole("button", { name: "+ Novo plano de aula" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Editar plano de aula:/ })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Arquivar plano de aula:/ }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("opens and cancels the API-backed create form", async () => {
+    const user = userEvent.setup();
+    await renderPage();
+
+    await user.click(screen.getByRole("button", { name: "+ Novo plano de aula" }));
+    expect(await screen.findByRole("dialog", { name: "Novo plano de aula" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "+ Novo plano de aula" })).toHaveFocus(),
+    );
+  });
+
+  it("creates a plan through the API and shows the success toast", async () => {
+    const onCall = vi.fn();
+    server.use(
+      createLessonPlanHandler({ response: buildLessonPlan({ title: "Plano novo" }), onCall }),
+    );
+    const user = userEvent.setup();
+    await renderPage();
+
+    await user.click(screen.getByRole("button", { name: "+ Novo plano de aula" }));
+    await screen.findByRole("dialog", { name: "Novo plano de aula" });
+    await user.type(screen.getByRole("textbox", { name: "Título do plano" }), "Plano novo");
+    await user.type(screen.getByRole("textbox", { name: "Horas" }), "1");
+    await user.type(screen.getByRole("textbox", { name: "Minutos" }), "30");
+    await user.type(screen.getByRole("textbox", { name: "Conteúdo 1" }), "Teclado e mouse");
+
+    await user.click(screen.getByRole("button", { name: "Salvar plano" }));
+
+    expect(await screen.findByText("Plano de aula criado.")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(onCall).toHaveBeenCalledWith({
+      body: {
+        title: "Plano novo",
+        objective: null,
+        expectedDurationMinutes: 90,
+        contents: ["Teclado e mouse"],
+        materialUrl: null,
+      },
     });
   });
 
-  describe("content", () => {
-    it("shows the Planos de aula card with the notice that the list is coming", async () => {
-      await renderWithProviders(<LessonPlansPage />);
+  it("keeps the API-backed create form open when required fields are invalid", async () => {
+    const user = userEvent.setup();
+    await renderPage();
 
-      const region = screen.getByRole("region", { name: "Planos de aula" });
-      expect(within(region).getByRole("heading", { name: "Planos de aula" })).toBeInTheDocument();
-      expect(
-        within(region).getByRole("heading", {
-          name: "A listagem de planos de aula chega em breve",
-        }),
-      ).toBeInTheDocument();
-      expect(
-        within(region).getByText("Os planos cadastrados aparecerão aqui."),
-      ).toBeInTheDocument();
-    });
+    await user.click(screen.getByRole("button", { name: "+ Novo plano de aula" }));
+    await screen.findByRole("dialog", { name: "Novo plano de aula" });
+    await user.click(screen.getByRole("button", { name: "Salvar plano" }));
 
-    it("does not request a list: the listing is not part of this screen yet", async () => {
-      const onList = vi.fn();
-      server.use(
-        http.get("*/lesson-plans", () => {
-          onList();
-          return HttpResponse.json([]);
-        }),
-      );
-
-      await renderWithProviders(<LessonPlansPage />);
-
-      expect(screen.getByRole("region", { name: "Planos de aula" })).toBeInTheDocument();
-      expect(onList).not.toHaveBeenCalled();
-    });
+    expect(await screen.findByText("Informe o título do plano.")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Novo plano de aula" })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole("textbox", { name: "Título do plano" })).toHaveFocus(),
+    );
   });
 
-  describe("creating a plan", () => {
-    it("opens the Novo plano de aula dialog from the button", async () => {
-      const user = userEvent.setup();
-      await renderWithProviders(<LessonPlansPage />);
+  it("opens and closes mock edit/archive previews without sending API mutations", async () => {
+    const user = userEvent.setup();
+    await renderPage();
 
-      await user.click(newPlanButton()!);
+    const row = screen.getByRole("row", { name: /Enviar um áudio no WhatsApp/ });
+    await user.click(within(row).getByRole("button", { name: /Editar plano de aula:/ }));
+    expect(screen.getByRole("dialog", { name: "Editar plano de aula" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
-      expect(await screen.findByRole("dialog", { name: "Novo plano de aula" })).toBeInTheDocument();
-    });
+    await user.click(within(row).getByRole("button", { name: /Arquivar plano de aula:/ }));
+    expect(screen.getByRole("dialog", { name: "Arquivar plano de aula" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Arquivar plano" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
 
-    it("Cancelar goes back to the page and gives the focus back to the button", async () => {
-      const onCall = vi.fn();
-      server.use(createLessonPlanHandler({ onCall }));
-      const user = userEvent.setup();
-      await renderWithProviders(<LessonPlansPage />);
-      await user.click(newPlanButton()!);
-      await screen.findByRole("dialog", { name: "Novo plano de aula" });
+  it("navigates from a row cell but keeps material links and actions separate", async () => {
+    const user = userEvent.setup();
+    await renderPage();
+    const row = screen.getByRole("row", { name: /Enviar um áudio no WhatsApp/ });
 
-      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    await user.click(
+      within(row).getByRole("link", { name: "Abrir material de Enviar um áudio no WhatsApp" }),
+    );
+    expect(screen.getByTestId("current-location").textContent).toBe("/lesson-plans");
 
-      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-      await waitFor(() => expect(newPlanButton()).toHaveFocus());
-      expect(onCall).not.toHaveBeenCalled();
-    });
-
-    it("creates a plan, shows the toast and goes back to the page", async () => {
-      const onCall = vi.fn();
-      server.use(
-        createLessonPlanHandler({ response: buildLessonPlan({ title: "Plano novo" }), onCall }),
-      );
-      const user = userEvent.setup();
-      await renderWithProviders(<LessonPlansPage />);
-      await user.click(newPlanButton()!);
-      await screen.findByRole("dialog", { name: "Novo plano de aula" });
-      await user.type(screen.getByRole("textbox", { name: "Título do plano" }), "Plano novo");
-      await user.type(screen.getByRole("textbox", { name: "Horas" }), "1");
-      await user.type(screen.getByRole("textbox", { name: "Minutos" }), "30");
-      await user.type(screen.getByRole("textbox", { name: "Conteúdo 1" }), "Teclado e mouse");
-
-      await user.click(screen.getByRole("button", { name: "Salvar plano" }));
-
-      expect(await screen.findByText("Plano de aula criado.")).toBeInTheDocument();
-      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      expect(onCall).toHaveBeenCalledWith({
-        body: {
-          title: "Plano novo",
-          objective: null,
-          expectedDurationMinutes: 90,
-          contents: ["Teclado e mouse"],
-          materialUrl: null,
-        },
-      });
-      expect(screen.getByRole("heading", { name: "Planos de aula" })).toBeInTheDocument();
-    });
-
-    it("keeps the dialog open with the field errors when the form is invalid", async () => {
-      const user = userEvent.setup();
-      await renderWithProviders(<LessonPlansPage />);
-      await user.click(newPlanButton()!);
-      await screen.findByRole("dialog", { name: "Novo plano de aula" });
-
-      await user.click(screen.getByRole("button", { name: "Salvar plano" }));
-
-      expect(await screen.findByText("Informe o título do plano.")).toBeInTheDocument();
-      expect(screen.getByRole("dialog", { name: "Novo plano de aula" })).toBeInTheDocument();
-      await waitFor(() =>
-        expect(screen.getByRole("textbox", { name: "Título do plano" })).toHaveFocus(),
-      );
-    });
+    await user.click(within(row).getByText("WhatsApp: mensagens e áudios"));
+    expect(screen.getByTestId("current-location").textContent).toBe("/lesson-plans/lesson-plan-04");
   });
 });

@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
-import { Button, Card, Checkbox, Chip, Dialog, Pagination, Select, TextField } from "@shared/ui";
+import { Badge, Button, Card, Checkbox, Dialog, Pagination, Select, TextField } from "@shared/ui";
 import chevronDownIcon from "@shared/assets/icons/chevron-down.svg";
 import pencilIcon from "@shared/assets/icons/pencil.svg";
 import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
@@ -139,19 +139,19 @@ export function ClassesListPage(): ReactElement {
       headerClassName: "w-[13%]",
       cellClassName: "w-[13%]",
       render: (row) => (
-        <Chip
-          color={
+        <Badge
+          tone={
             row.status === "completed" || row.archived
-              ? "default"
+              ? "neutral"
               : row.status === "cancelled"
                 ? "danger"
                 : row.status === "planned"
                   ? "warning"
-                  : "accent"
+                  : "info"
           }
         >
           {row.archived ? t("archived") : statusLabels[row.status]}
-        </Chip>
+        </Badge>
       ),
     },
     {
