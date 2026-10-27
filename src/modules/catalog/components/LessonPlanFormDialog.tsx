@@ -11,6 +11,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -199,7 +200,9 @@ function LessonPlanForm({
     const callbacks = {
       onSuccess: (plan: LessonPlanResponseDto) => onSaved(plan),
       onError: (error: unknown) => {
-        setPendingChange(null);
+        // The confirmation traps the focus while it is open. Close it first, so that the focus that
+        // `handleError` sends to the invalid field or to the alert is not pulled back into it.
+        flushSync(() => setPendingChange(null));
         handleError(error);
       },
       onSettled: stopSaving,

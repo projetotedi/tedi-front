@@ -1322,9 +1322,11 @@ describe("LessonPlanFormDialog (edit, RF-017)", () => {
 
       await user.click(within(dialog).getByRole("button", { name: "Salvar alteração" }));
 
-      expect(await screen.findByRole("alert")).toHaveTextContent(
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(
         "Este plano de aula está arquivado e não pode ser editado. Reative o plano para editar.",
       );
+      await waitFor(() => expect(alert.parentElement).toHaveFocus());
       expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
       expect(screen.getByRole("dialog", { name: "Editar plano de aula" })).toBeInTheDocument();
       expect(textbox("Horas")).toHaveValue("2");
