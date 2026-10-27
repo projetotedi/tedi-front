@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { queryClient } from "@api/query-client";
+import { ToastProvider } from "@shared/ui";
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -14,5 +16,12 @@ interface AppProvidersProps {
  * import em main.tsx.
  */
 export function AppProviders({ children }: AppProvidersProps) {
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  const { t } = useTranslation();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      {children}
+      <ToastProvider regionLabel={t("toast.region")} closeLabel={t("toast.close")} />
+    </QueryClientProvider>
+  );
 }

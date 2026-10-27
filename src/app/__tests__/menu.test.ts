@@ -36,6 +36,30 @@ describe("app menu", () => {
     ]);
   });
 
+  it("takes lesson plans from the catalog module instead of the prototype", () => {
+    expect(prototypeMenuItems.map((item) => item.path)).not.toContain("/lesson-plans");
+    expect(prototypeRoutes.map((route) => route.path)).not.toContain("lesson-plans");
+    expect(appMenuItems).toContainEqual(
+      expect.objectContaining({
+        path: "/lesson-plans",
+        permission: "catalog.view",
+        group: "catalog",
+      }),
+    );
+  });
+
+  it("takes lesson plans from the catalog module, not from the prototype", () => {
+    expect(prototypeMenuItems.map((item) => item.path)).not.toContain("/lesson-plans");
+    expect(prototypeRoutes.map((route) => route.path)).not.toContain("lesson-plans");
+    expect(appMenuItems).toContainEqual(
+      expect.objectContaining({
+        path: "/lesson-plans",
+        permission: "catalog.view",
+        group: "catalog",
+      }),
+    );
+  });
+
   it("keeps every item in a listed group", () => {
     const grouped = groupMenuItems(appMenuItems, appMenuGroups).flatMap((section) => section.items);
 

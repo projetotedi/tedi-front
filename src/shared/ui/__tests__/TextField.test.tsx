@@ -117,6 +117,18 @@ describe("TextField", () => {
     expect(input).toHaveAttribute("autocomplete", "current-password");
   });
 
+  it("applies the inputMode so mobile keyboards offer the digits", () => {
+    render(<Harness inputMode="numeric" />);
+
+    expect(screen.getByLabelText("Matrícula (RA)")).toHaveAttribute("inputmode", "numeric");
+  });
+
+  it("focuses the input on mount when autoFocus is set", () => {
+    render(<Harness autoFocus />);
+
+    expect(screen.getByLabelText("Matrícula (RA)")).toHaveFocus();
+  });
+
   it("renders an email input so mobile keyboards offer the at sign", () => {
     render(<Harness type="email" autoComplete="email" />);
 

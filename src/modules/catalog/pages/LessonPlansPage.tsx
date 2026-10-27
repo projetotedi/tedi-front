@@ -11,8 +11,9 @@ import pencilIcon from "@shared/assets/icons/pencil.svg";
 import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 import graduationCapIcon from "../../../assets/icons/graduation-cap.svg";
 
-import { ArchiveLessonPlanDialog } from "../components/ArchiveLessonPlanDialog";
+import { MockArchiveLessonPlanDialog } from "../components/MockArchiveLessonPlanDialog";
 import { LessonPlanFormDialog } from "../components/LessonPlanFormDialog";
+import { MockLessonPlanFormDialog } from "../components/MockLessonPlanFormDialog";
 import {
   DURATION_FILTERS,
   filterLessonPlans,
@@ -23,15 +24,14 @@ import {
 import { MOCK_LESSON_PLANS, type LessonPlanMock } from "../mocks/lesson-plans.mock";
 
 const PAGE_SIZE = 7;
-const NEW_PLAN_PREVIEW = MOCK_LESSON_PLANS.find((plan) => plan.id === "lesson-plan-04") ?? null;
 
 export function LessonPlansPage(): ReactElement {
   const { t } = useTranslation("catalog");
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const canManage = useCan("lessonPlans.manage");
-  const [formMode, setFormMode] = useState<"create" | "edit" | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<LessonPlanMock | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState<LessonPlanMock | null>(null);
   const [archivingPlan, setArchivingPlan] = useState<LessonPlanMock | null>(null);
 
   const search = params.get("search") ?? "";
@@ -78,13 +78,7 @@ export function LessonPlansPage(): ReactElement {
   }
 
   function openCreateDialog() {
-    setSelectedPlan(NEW_PLAN_PREVIEW);
-    setFormMode("create");
-  }
-
-  function closeFormDialog() {
-    setFormMode(null);
-    setSelectedPlan(null);
+    setIsCreateOpen(true);
   }
 
   const contentOptions = [...new Set(MOCK_LESSON_PLANS.flatMap((plan) => plan.contents))].sort(
@@ -179,7 +173,7 @@ export function LessonPlansPage(): ReactElement {
       ),
     },
     {
-      header: t("actions").toLocaleUpperCase(),
+      header: t("actionsHeader").toLocaleUpperCase(),
       headerClassName: "w-[10%]",
       cellClassName: "w-[10%]",
       render: (plan) =>
@@ -191,8 +185,7 @@ export function LessonPlansPage(): ReactElement {
                 isIconOnly
                 aria-label={t("edit", { title: plan.title })}
                 onPress={() => {
-                  setSelectedPlan(plan);
-                  setFormMode("edit");
+                  setEditingPlan(plan);
                 }}
               >
                 <img src={pencilIcon} alt="" aria-hidden="true" width={16} height={16} />
@@ -331,7 +324,7 @@ export function LessonPlansPage(): ReactElement {
                 page={currentPage}
                 totalPages={totalPages}
                 onPageChange={(nextPage) => updateParams({ page: String(nextPage) }, false)}
-                label={t("actions")}
+                label={t("actionsHeader")}
                 previousLabel={t("previous")}
                 nextLabel={t("next")}
                 pageLabel={(number) => t("page", { page: number })}
@@ -340,11 +333,17 @@ export function LessonPlansPage(): ReactElement {
           </div>
         </div>
 
-        {formMode && (
-          <LessonPlanFormDialog mode={formMode} plan={selectedPlan} onClose={closeFormDialog} />
-        )}
+        {isCreateOpen ? (
+          <LessonPlanFormDialog mode="create" onClose={() => setIsCreateOpen(false)} />
+        ) : null}
+        {editingPlan ? (
+          <MockLessonPlanFormDialog plan={editingPlan} onClose={() => setEditingPlan(null)} />
+        ) : null}
         {archivingPlan && (
-          <ArchiveLessonPlanDialog plan={archivingPlan} onClose={() => setArchivingPlan(null)} />
+          <MockArchiveLessonPlanDialog
+            plan={archivingPlan}
+            onClose={() => setArchivingPlan(null)}
+          />
         )}
       </Card>
     </section>

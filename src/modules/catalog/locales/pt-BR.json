@@ -25,8 +25,8 @@
   "classesCountUnavailable": "Contagem de turmas disponível quando o módulo de aulas existir",
   "material": "Material",
   "status": "Situação",
-  "actions": "Ações",
   "openMaterial": "Abrir material de {{title}}",
+  "openMaterialLabel": "Abrir",
   "edit": "Editar plano de aula: {{title}}",
   "archiveAction": "Arquivar plano de aula: {{title}}",
   "summary": "Mostrando {{shown}} de {{total}} planos de aula",
@@ -39,12 +39,13 @@
   "clearFilters": "Limpar filtros",
   "loading": "Carregando planos de aula…",
   "error": "Não foi possível carregar os planos de aula",
+  "errorDescription": "Tente novamente. Se o problema continuar, procure o suporte.",
   "retry": "Tentar de novo",
   "form": {
     "newTitle": "Novo plano de aula",
     "editTitle": "Editar plano de aula",
     "title": "Título do plano",
-    "duration": "Duração prevista (h)",
+    "duration": "Duração prevista",
     "durationHelp": "Entra na carga horária dos cursos que usam este plano.",
     "contents": "Conteúdos",
     "objective": "Objetivo",
@@ -53,17 +54,54 @@
     "materialHelp": "O sistema guarda o link, não o arquivo.",
     "cancel": "Cancelar",
     "savePlan": "Salvar plano",
-    "saveChanges": "Salvar alterações"
+    "saveChanges": "Salvar alterações",
+    "hours": "Horas",
+    "minutes": "Minutos",
+    "contentsHelp": "Liste na ordem em que serão ensinados.",
+    "content": "Conteúdo {{number}}",
+    "addContent": "+ Adicionar conteúdo",
+    "moveUp": "Subir conteúdo {{number}}",
+    "moveDown": "Descer conteúdo {{number}}",
+    "removeContent": "Remover conteúdo {{number}}",
+    "contentMoved": "Conteúdo {{number}} movido para a posição {{position}} de {{total}}.",
+    "contentRemoved_one": "Conteúdo {{number}} removido. Resta {{count}} conteúdo.",
+    "contentRemoved_other": "Conteúdo {{number}} removido. Restam {{count}} conteúdos.",
+    "contentsLimit": "Limite de {{contentsMax}} conteúdos atingido.",
+    "saving": "Salvando…",
+    "loading": "Carregando o plano de aula…",
+    "retry": "Tentar de novo",
+    "errors": {
+      "titleRequired": "Informe o título do plano.",
+      "titleTooLong": "O título pode ter no máximo {{titleMax}} caracteres.",
+      "hoursInvalid": "Use apenas números inteiros.",
+      "minutesInvalid": "Informe minutos de 0 a 59.",
+      "durationRequired": "A duração deve ser maior que zero.",
+      "durationTooLong": "A duração máxima é de {{maxHours}} horas.",
+      "durationInvalid": "Informe uma duração entre 1 minuto e {{maxHours}} horas.",
+      "contentRequired": "Preencha o conteúdo ou remova este item.",
+      "contentTooLong": "Cada conteúdo pode ter no máximo {{contentMax}} caracteres.",
+      "contentsRequired": "Inclua ao menos um conteúdo.",
+      "contentsTooMany": "Inclua no máximo {{contentsMax}} conteúdos.",
+      "contentsServerInvalid": "Revise os conteúdos: cada um precisa de texto, com até {{contentMax}} caracteres.",
+      "objectiveTooLong": "O objetivo pode ter no máximo {{objectiveMax}} caracteres.",
+      "materialUrlTooLong": "O link pode ter no máximo {{urlMax}} caracteres.",
+      "materialUrlInvalid": "Informe um link válido, começando com http:// ou https://.",
+      "serverInvalid": "Revise este campo e tente de novo."
+    }
   },
   "archive": {
     "title": "Arquivar plano de aula",
     "warningTitle": "Arquivar tira o plano das novas sequências",
-    "warningDescription": "Cursos e aulas que já usam o plano continuam com esta versão. Nada é excluído (RN-27).",
+    "warningDescription": "Cursos e aulas que já usam o plano continuam como estão. Nada é excluído (RN-27).",
     "reason": "Motivo (opcional)",
     "reasonExample": "Conteúdo revisado em um novo plano.",
     "reasonHelp": "Fica registrado no histórico do plano.",
     "back": "Voltar",
-    "confirm": "Arquivar plano"
+    "confirm": "Arquivar plano",
+    "confirming": "Arquivando…",
+    "errors": {
+      "reasonTooLong": "O motivo pode ter no máximo {{reasonMax}} caracteres."
+    }
   },
   "close": "Fechar",
   "detailComingSoon": "Detalhe do plano de aula",
@@ -74,5 +112,29 @@
       "lesson-plan-03": "Pesquisar informações e navegar na internet com segurança.",
       "lesson-plan-05": "Criar senhas seguras e proteger informações pessoais."
     }
+  },
+  "actionsHeader": "Ações",
+  "listPending": {
+    "title": "A listagem de planos de aula chega em breve",
+    "description": "Os planos cadastrados aparecerão aqui."
+  },
+  "actions": {
+    "edit": "Editar plano de aula: {{title}}",
+    "archive": "Arquivar plano de aula: {{title}}",
+    "unarchive": "Reativar plano",
+    "unarchiveFor": "Reativar plano: {{title}}"
+  },
+  "toast": {
+    "created": "Plano de aula criado.",
+    "updated": "Plano de aula atualizado.",
+    "archived": "Plano de aula arquivado.",
+    "unarchived": "Plano de aula reativado.",
+    "unarchiveFailed": "Não foi possível reativar o plano de aula. Tente novamente."
+  },
+  "errors": {
+    "archived": "Este plano de aula está arquivado e não pode ser editado. Reative o plano para editar.",
+    "notFound": "Plano de aula não encontrado.",
+    "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+    "unknown": "Não foi possível concluir a ação. Tente novamente."
   }
 }

@@ -1,5 +1,5 @@
 import { Description, FieldError, Input, Label, TextField as HeroTextField } from "@heroui/react";
-import type { ReactNode, Ref } from "react";
+import type { InputHTMLAttributes, ReactNode, Ref } from "react";
 
 export interface TextFieldProps {
   label: ReactNode;
@@ -14,8 +14,10 @@ export interface TextFieldProps {
   isDisabled?: boolean;
   isRequired?: boolean;
   isReadOnly?: boolean;
+  autoFocus?: boolean;
   type?: "text" | "password" | "email" | "date";
   list?: string;
+  inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   autoComplete?: string;
   "aria-describedby"?: string;
   inputRef?: Ref<HTMLInputElement>;
@@ -35,8 +37,10 @@ export function TextField({
   isDisabled,
   isRequired,
   isReadOnly,
+  autoFocus,
   type = "text",
   list,
+  inputMode,
   autoComplete,
   "aria-describedby": ariaDescribedBy,
   inputRef,
@@ -51,10 +55,12 @@ export function TextField({
       onChange={onChange}
       onBlur={onBlur}
       type={type}
+      inputMode={inputMode}
       autoComplete={autoComplete}
       isDisabled={isDisabled}
       isRequired={isRequired}
       isReadOnly={isReadOnly}
+      autoFocus={autoFocus}
       isInvalid={Boolean(errorMessage)}
       validationBehavior="aria"
       aria-describedby={ariaDescribedBy}
