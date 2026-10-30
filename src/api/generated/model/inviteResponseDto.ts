@@ -5,11 +5,14 @@
  * Documentação da API do projeto TEDI
  * OpenAPI spec version: 0.1.0
  */
+import type { DepartmentResponseDto } from "./departmentResponseDto.ts";
 import type { InvitePersonDto } from "./invitePersonDto.ts";
 import type { InviteType } from "./inviteType.ts";
 import type { Role } from "./role.ts";
 
 export interface InviteResponseDto {
+  /** Departments the person may pick in the registration form, ordered by name. Always [] for password_reset. */
+  departments: DepartmentResponseDto[];
   expiresAt: string;
   /**
    * Account owner. Only on password_reset invites; always null on access invites.

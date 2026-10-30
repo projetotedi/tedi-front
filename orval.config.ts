@@ -6,7 +6,8 @@ import { defineConfig } from "orval";
  * Entrada: openapi/openapi.json — cópia versionada do docs/openapi.json da tedi-back.
  * Saída:   src/api/generated/** — versionado, nunca editado à mão.
  *
- * Fluxo (manual; não existe workflow de sync): quando a API muda o contrato, copiar
+ * Fluxo manual (não existe workflow que copie o contrato; a CI só avisa quando a cópia diverge da develop do back,
+ * ver docs/ARCHITECTURE.md §5): quando a API muda o contrato, copiar
  * docs/openapi.json da tedi-back para openapi/openapi.json e rodar `yarn generate` e `yarn format` (o JSON do back não
  * passa no format:check).
  */
