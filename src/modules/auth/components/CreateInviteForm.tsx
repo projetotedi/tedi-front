@@ -107,13 +107,13 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
           inputRef={linkRef}
         />
         <Button autoFocus aria-describedby={validityId} onPress={() => void copyLink(url)}>
-          {t("access.createInvite.copy")}
+          {t("access.generatedLink.copy")}
         </Button>
         <Alert variant="info">
           {copyStatus === "copied"
-            ? t("access.createInvite.copied")
+            ? t("access.generatedLink.copied")
             : copyStatus === "fallback"
-              ? t("access.createInvite.copyFallback")
+              ? t("access.generatedLink.copyFallback")
               : null}
         </Alert>
         <Alert
@@ -124,7 +124,7 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
           {t("access.createInvite.validityTitle")}
         </Alert>
         <div className="flex justify-end">
-          <Button onPress={onDone}>{t("access.createInvite.done")}</Button>
+          <Button onPress={onDone}>{t("access.generatedLink.done")}</Button>
         </div>
       </div>
     );
