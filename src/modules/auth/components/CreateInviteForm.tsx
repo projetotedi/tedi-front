@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type FormEvent, type ReactElement } from "react";
+import { useId, useRef, type FormEvent, type ReactElement } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
@@ -8,11 +8,12 @@ import { getListInvitesQueryKey, useCreateInvite } from "@api/generated";
 import type { CreateInviteDto } from "@api/generated/model";
 import { CreateInviteBody } from "@api/generated/zod/auth/auth";
 import { Role } from "@shared/lib/role";
-import { Alert, Button, Select, TextField } from "@shared/ui";
+import { Alert, Button, Select } from "@shared/ui";
 
 import { INVITE_VALIDITY_HOURS } from "../lib/invite-validity";
 import { toRequestErrorKey } from "../lib/request-error";
 import { INVITABLE_ROLES } from "../lib/role-label";
+import { GeneratedLink } from "./GeneratedLink";
 
 export interface CreateInviteFormProps {
   onDone: () => void;
@@ -20,15 +21,10 @@ export interface CreateInviteFormProps {
   onPendingChange?: (isPending: boolean) => void;
 }
 
-type CopyStatus = "idle" | "copied" | "fallback";
-
 export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
   const queryClient = useQueryClient();
   const errorId = useId();
-  const validityId = useId();
-  const linkRef = useRef<HTMLInputElement>(null);
-  const [copyStatus, setCopyStatus] = useState<CopyStatus>("idle");
 
   const { control, handleSubmit } = useForm<CreateInviteDto>({
     resolver: zodResolver(CreateInviteBody),
@@ -75,23 +71,17 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
     void handleSubmit(submitRole)(event);
   }
 
-  async function copyLink(url: string) {
-    try {
-      if (!navigator.clipboard) throw new Error("Clipboard API unavailable");
-      await navigator.clipboard.writeText(url);
-      setCopyStatus("copied");
-    } catch {
-      linkRef.current?.focus();
-      linkRef.current?.select();
-      setCopyStatus("fallback");
-    }
-  }
-
   if (createInvite.isSuccess) {
     const { url, role } = createInvite.data;
 
     return (
-      <div className="flex flex-col gap-5">
+      <GeneratedLink
+        url={url}
+        linkLabel={t("access.createInvite.link.label")}
+        validityTitle={t("access.createInvite.validityTitle")}
+        validityDescription={t("access.createInvite.validity", { hours: INVITE_VALIDITY_HOURS })}
+        onDone={onDone}
+      >
         <Select
           label={t("access.createInvite.role.label")}
           options={roleOptions}
@@ -99,34 +89,7 @@ export function CreateInviteForm({ onDone, onPendingChange }: CreateInviteFormPr
           onChange={() => {}}
           isDisabled
         />
-        <TextField
-          label={t("access.createInvite.link.label")}
-          value={url}
-          onChange={() => {}}
-          isReadOnly
-          inputRef={linkRef}
-        />
-        <Button autoFocus aria-describedby={validityId} onPress={() => void copyLink(url)}>
-          {t("access.generatedLink.copy")}
-        </Button>
-        <Alert variant="info">
-          {copyStatus === "copied"
-            ? t("access.generatedLink.copied")
-            : copyStatus === "fallback"
-              ? t("access.generatedLink.copyFallback")
-              : null}
-        </Alert>
-        <Alert
-          variant="warning"
-          id={validityId}
-          description={t("access.createInvite.validity", { hours: INVITE_VALIDITY_HOURS })}
-        >
-          {t("access.createInvite.validityTitle")}
-        </Alert>
-        <div className="flex justify-end">
-          <Button onPress={onDone}>{t("access.generatedLink.done")}</Button>
-        </div>
-      </div>
+      </GeneratedLink>
     );
   }
 
