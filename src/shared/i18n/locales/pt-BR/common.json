@@ -15,13 +15,23 @@
     "classes": "Turmas",
     "students": "Alunos",
     "lessons": "Aulas",
+    "calendar": "Calendário",
     "enrollments": "Matrículas",
-    "members": "Membros e Planejamento",
-    "hours": "Banco de Horas"
+    "members": "Membros",
+    "hours": "Banco de horas",
+    "hoursReview": "Validação de horas",
+    "groups": {
+      "catalog": "Catálogo",
+      "classes": "Turmas",
+      "lessons": "Aulas",
+      "people": "Pessoas",
+      "hours": "Horas"
+    }
   },
   "layout": {
     "nav": "Menu principal",
     "home": "TEDI, ir para o início",
+    "skipToContent": "Pular para o conteúdo",
     "menu": {
       "open": "Abrir menu",
       "close": "Fechar menu",
@@ -35,5 +45,9 @@
   },
   "comingSoon": {
     "description": "Esta área ainda está em construção e chega em breve."
+  },
+  "toast": {
+    "region": "Notificações",
+    "close": "Fechar notificação"
   }
 }

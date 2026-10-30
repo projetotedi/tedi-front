@@ -4,17 +4,20 @@ import { Outlet, useMatches } from "react-router-dom";
 
 import { useDocumentTitle } from "@shared/hooks/useDocumentTitle";
 import { findRouteTitle } from "@shared/lib/route-handle";
-import { Button, Drawer, NavList } from "@shared/ui";
+import { Button, Drawer, SkipLink } from "@shared/ui";
 
 import texture1 from "../../assets/sidebar-texture/texture-1.svg";
 import texture2 from "../../assets/sidebar-texture/texture-2.svg";
 import texture3 from "../../assets/sidebar-texture/texture-3.svg";
 import texture4 from "../../assets/sidebar-texture/texture-4.svg";
+import { appMenuGroups } from "../menu";
 import { useAppMenu } from "../useAppMenu";
 import { ProfileMenu } from "./ProfileMenu";
-import { SidebarBrand } from "./SidebarBrand";
+import { Sidebar } from "./Sidebar";
 
 const MOBILE_MENU_ID = "app-menu";
+/** Destino do "Pular para o conteúdo"; o `<main>` recebe o foco programático (`tabIndex={-1}`). */
+const MAIN_CONTENT_ID = "main-content";
 
 /** Camadas da textura de ondas do Figma (posição e tamanho do componente "Sidebar TEDI"). */
 const TEXTURE_LAYERS = [
@@ -40,9 +43,14 @@ function SidebarTexture() {
 }
 
 /**
- * Casca da área autenticada (Figma "Telas · Conta"): sidebar azul com a marca e o menu
- * filtrado pelo perfil; topbar com o título da página (`handle.title` da rota) e o menu
- * do perfil. Abaixo de 1024px a sidebar vira um Drawer aberto pelo botão de menu.
+ * Casca da área autenticada (Figma "Telas · Conta"): sidebar azul de 300px com a marca e o
+ * menu agrupado por domínio (`Sidebar`), filtrado pelo perfil; topbar com o título da página
+ * (`handle.title` da rota) e o menu do perfil. Abaixo de 1024px a sidebar vira um Drawer
+ * aberto pelo botão de menu. O primeiro Tab leva ao "Pular para o conteúdo", que move o foco
+ * para o `<main>`; ele fica fora do `<aside>` (oculto no celular) para valer nos dois tamanhos.
+ * O `<main>` mostra o foco só com o teclado (`focus-visible`), com um anel de 3px por dentro
+ * (`ring-inset`) para não cortar nem deslocar o layout; o `tedi-focus-ring` dá 13,5:1 sobre o
+ * fundo da página.
  */
 export function AppLayout() {
   const { t } = useTranslation();
@@ -54,25 +62,13 @@ export function AppLayout() {
   const title = titleKey ? t(titleKey) : t("app.name");
   useDocumentTitle(titleKey ? `${title} · ${t("app.name")}` : t("app.name"));
 
-  const navItems = menu.map((item) => ({ label: t(item.label), path: item.path, icon: item.icon }));
-  const nav = (id: string, onNavigate?: () => void) => (
-    <NavList
-      id={id}
-      items={navItems}
-      label={t("layout.nav")}
-      emptyLabel={t("layout.menu.empty")}
-      onNavigate={onNavigate}
-    />
-  );
-
   return (
     <div className="min-h-screen bg-background text-base text-foreground lg:flex">
-      <aside className="relative hidden w-70 shrink-0 flex-col gap-4 overflow-hidden border-r border-tedi-sky-border bg-tedi-sky px-4 pt-7 pb-6 lg:flex">
+      <SkipLink targetId={MAIN_CONTENT_ID} label={t("layout.skipToContent")} />
+
+      <aside className="relative hidden w-75 shrink-0 flex-col gap-4 overflow-hidden border-r border-tedi-sky-border bg-tedi-sky px-4 pt-7 pb-6 lg:flex">
         <SidebarTexture />
-        <div className="relative flex flex-col gap-4">
-          <SidebarBrand />
-          {nav("app-sidebar-nav")}
-        </div>
+        <Sidebar navId="app-sidebar-nav" items={menu} groups={appMenuGroups} />
       </aside>
 
       <Drawer
@@ -83,10 +79,12 @@ export function AppLayout() {
         closeLabel={t("layout.menu.close")}
         className="bg-tedi-sky"
       >
-        <div className="flex flex-col gap-4">
-          <SidebarBrand />
-          {nav("app-drawer-nav", () => setMenuOpen(false))}
-        </div>
+        <Sidebar
+          navId="app-drawer-nav"
+          items={menu}
+          groups={appMenuGroups}
+          onNavigate={() => setMenuOpen(false)}
+        />
       </Drawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -116,7 +114,11 @@ export function AppLayout() {
           </div>
           <ProfileMenu />
         </header>
-        <main className="flex-1 px-4 py-6 lg:px-10 lg:py-8">
+        <main
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
+          className="flex-1 bg-sky-50 px-4 py-6 outline-none focus-visible:ring-3 focus-visible:ring-tedi-focus-ring focus-visible:ring-inset lg:px-10 lg:py-8"
+        >
           <div className="mx-auto w-full max-w-360">
             <Outlet />
           </div>

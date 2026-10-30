@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-import { Button, Card, Chip } from "@shared/ui";
+import { Badge, Button, Card, Chip } from "@shared/ui";
 
 import { formatDate } from "../lib/format";
 import { ACCOUNT_STATUS_COLOR } from "../lib/status-colors";
@@ -39,7 +39,7 @@ export function ProfileHeaderCard({
               <Chip color="accent">{roleLabel}</Chip>
             </li>
             <li>
-              <Chip color={ACCOUNT_STATUS_COLOR[status]}>{t(`profile.status.${status}`)}</Chip>
+              <Badge tone={ACCOUNT_STATUS_COLOR[status]}>{t(`profile.status.${status}`)}</Badge>
             </li>
             {ra && (
               <li>

@@ -12,9 +12,13 @@ describe("authMenuItems", () => {
     }
   });
 
-  it("shows Membros e Planejamento only with access.manage", () => {
+  it("shows Membros only with access.manage", () => {
     expect(authMenuItems).toContainEqual(
-      expect.objectContaining({ path: "/members", permission: "access.manage" }),
+      expect.objectContaining({
+        path: "/members",
+        permission: "access.manage",
+        group: "people",
+      }),
     );
   });
 });

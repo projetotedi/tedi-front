@@ -269,6 +269,44 @@ export const RejectMemberRegistrationResponse = zod.object({
   volunteerTermUrl: zod.string().nullable(),
 });
 
+export const listMembersQueryLimitMax = 100;
+
+export const listMembersQuerySearchMax = 100;
+
+export const ListMembersQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listMembersQueryLimitMax).optional(),
+  search: zod.string().max(listMembersQuerySearchMax).optional().describe("Search by name or RA"),
+  role: zod.enum(["member", "director", "coordinator", "superadmin"]).optional(),
+  departmentId: zod.uuid().optional(),
+  registrationStatus: zod.enum(["pending", "approved", "rejected"]).optional(),
+  enabled: zod.boolean().optional(),
+});
+
+export const ListMembersResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      accessEnabled: zod.boolean(),
+      department: zod
+        .object({
+          id: zod.uuid(),
+          name: zod.string(),
+        })
+        .nullable(),
+      id: zod.uuid(),
+      joinedAt: zod.iso.date().nullable(),
+      mainFunction: zod.string().nullable(),
+      name: zod.string(),
+      ra: zod.string().nullable(),
+      registrationStatus: zod.union([zod.enum(["pending", "approved", "rejected"]), zod.null()]),
+      role: zod.union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()]),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
 export const createStudentBodyAccessibilityNeedDefault = `none`;
 export const createStudentBodyClassNeedsMax = 500;
 

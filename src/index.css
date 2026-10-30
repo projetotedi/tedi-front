@@ -18,6 +18,13 @@
   --color-tedi-sky-border: #79b5d6;
   --color-tedi-brand-muted: #334155;
 
+  /* Menu agrupado da sidebar (Figma "Sidebar TEDI", GUS-109). Acento: bordas do grupo aberto e do item atual, trilho, chevron e "Pular para o conteúdo"; #123b54 dá 6,4:1 sobre tedi-sky e 11,8:1 sobre branco. */
+  --color-tedi-sidebar-accent: #123b54;
+  /* Fundo do grupo aberto: o texto #18181b sobre ele dá 6,9:1 e o acento, 4,6:1. */
+  --color-tedi-sidebar-group-open: #6aa9cf;
+  /* Anel de foco da sidebar: #0b2b3f dá 7,9:1 sobre tedi-sky e 5,7:1 sobre o grupo aberto. */
+  --color-tedi-focus-ring: #0b2b3f;
+
   /* Badge/status neutro (papel Membro, acesso Inativo): 6,7:1. */
   --color-tedi-neutral: #efeff0;
   --color-tedi-neutral-foreground: #52525b;

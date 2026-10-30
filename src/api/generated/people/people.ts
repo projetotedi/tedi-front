@@ -30,6 +30,8 @@ import type {
   DepartmentResponseDto,
   ListMemberRegistrations200,
   ListMemberRegistrationsParams,
+  ListMembers200,
+  ListMembersParams,
   MemberRegistrationResponseDto,
   RejectMemberRegistrationDto,
   StudentDetailDto,
@@ -738,6 +740,131 @@ export const useRejectMemberRegistration = <TError = ApiErrorDto, TContext = unk
 > => {
   return useMutation(getRejectMemberRegistrationMutationOptions(options), queryClient);
 };
+export const getListMembersUrl = (params?: ListMembersParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/members?${stringifiedParams}` : `/members`;
+};
+
+export const listMembers = async (
+  params?: ListMembersParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListMembers200> => {
+  return httpClient<ListMembers200>(getListMembersUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMembersQueryKey = (params?: ListMembersParams) => {
+  return [`/members`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMembersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListMembersParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMembersQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMembers>>> = ({ signal }) =>
+    listMembers(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMembers>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListMembersQueryResult = NonNullable<Awaited<ReturnType<typeof listMembers>>>;
+export type ListMembersQueryError = ApiErrorDto;
+
+export function useListMembers<
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ApiErrorDto,
+>(
+  params: undefined | ListMembersParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMembers>>,
+          TError,
+          Awaited<ReturnType<typeof listMembers>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListMembers<
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListMembersParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listMembers>>,
+          TError,
+          Awaited<ReturnType<typeof listMembers>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListMembers<
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListMembersParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListMembers<
+  TData = Awaited<ReturnType<typeof listMembers>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListMembersParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listMembers>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListMembersQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getCreateStudentUrl = () => {
   return `/students`;
 };
