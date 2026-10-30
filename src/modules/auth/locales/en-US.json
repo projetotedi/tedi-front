@@ -184,7 +184,6 @@
         "status": "Status",
         "actions": "Actions"
       },
-      "rowActions": "Actions for {{name}}",
       "actions": {
         "edit": "Edit {{name}}",
         "editTooltip": "Edit",
