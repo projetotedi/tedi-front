@@ -134,4 +134,34 @@ describe("Alert", () => {
 
     expect(container).toBeEmptyDOMElement();
   });
+
+  it("danger variant is static (no alert role)", () => {
+    render(
+      <Alert variant="danger" description="O histórico de aulas continua.">
+        A pessoa deixa de entrar no sistema
+      </Alert>,
+    );
+
+    expect(screen.getByText("A pessoa deixa de entrar no sistema")).toBeInTheDocument();
+    expect(screen.getByText("O histórico de aulas continua.")).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("danger variant keeps the red look of the error variant and passes the id through", () => {
+    const { container } = render(
+      <Alert variant="danger" id="disable-warning">
+        Aviso
+      </Alert>,
+    );
+
+    const box = container.querySelector("#disable-warning");
+    expect(box).toHaveClass("border-danger", "bg-danger-soft");
+  });
+
+  it("renders nothing for an empty danger alert", () => {
+    const { container } = render(<Alert variant="danger">{null}</Alert>);
+
+    expect(container).toBeEmptyDOMElement();
+  });
 });

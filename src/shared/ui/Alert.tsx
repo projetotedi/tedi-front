@@ -4,16 +4,19 @@ import type { ReactNode } from "react";
 export interface AlertProps {
   /**
    * `info` fica sempre montado e vazio: leitores de tela não anunciam uma região viva que nasce
-   * preenchida. `warning` é estática (sem `role` nem região viva): nasce já preenchida junto com
-   * o conteúdo que ela avisa, e o anúncio vem do foco que se move para perto dela.
+   * preenchida. `warning` e `danger` são estáticas (sem `role` nem região viva): nascem já
+   * preenchidas junto com o conteúdo que avisam, e o anúncio vem do foco que se move para perto
+   * delas. `danger` tem o visual de `error`, mas é aviso permanente de uma ação destrutiva
+   * (ex.: "Desativar acesso"), não uma falha: quem avisa de falha é `error`, que anuncia na hora.
    */
-  variant: "error" | "info" | "warning";
+  variant: "danger" | "error" | "info" | "warning";
   children?: ReactNode;
   description?: ReactNode;
   id?: string;
 }
 
 const VARIANTS = {
+  danger: { status: "danger", className: "border border-danger bg-danger-soft" },
   error: { status: "danger", className: "border border-danger bg-danger-soft" },
   info: { status: "accent", className: "border border-accent bg-accent-soft" },
   warning: {
@@ -29,7 +32,7 @@ function isEmpty(children: ReactNode): boolean {
 export function Alert({ variant, children, description, id }: AlertProps) {
   const { status, className } = VARIANTS[variant];
   const isError = variant === "error";
-  const isStatic = variant === "warning";
+  const isStatic = variant === "warning" || variant === "danger";
 
   const box = isEmpty(children) ? null : (
     <HeroAlert

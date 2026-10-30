@@ -10,8 +10,15 @@ export interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   isDismissable?: boolean;
-  size?: "default" | "wide";
+  /** `default` 640px, `wide` 800px (listas), `extraWide` 1040px (edição em duas colunas). */
+  size?: "default" | "wide" | "extraWide";
 }
+
+const SIZE_CLASSES = {
+  default: "max-w-160",
+  wide: "max-w-200",
+  extraWide: "max-w-260",
+} as const;
 
 export function Dialog({
   isOpen,
@@ -36,7 +43,7 @@ export function Dialog({
       {/* O HeroUI ajusta o container ao conteúdo (`sm:w-fit`) e limita o diálogo a 448px: `sm:w-full` e `max-w-160` dão os 640px. */}
       <Modal.Container placement="center" className="sm:w-full">
         <Modal.Dialog
-          className={size === "wide" ? "max-w-200" : "max-w-160"}
+          className={SIZE_CLASSES[size]}
           aria-describedby={description ? descriptionId : undefined}
         >
           <Modal.CloseTrigger
