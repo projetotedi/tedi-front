@@ -2,11 +2,12 @@ import { useRef, type ReactElement } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-import { getListInvitesQueryKey, useCreatePasswordReset } from "@api/generated";
+import { useCreatePasswordReset } from "@api/generated";
 import type { AccessResponseDto } from "@api/generated/model";
 import { Button, Dialog } from "@shared/ui";
 
 import { toAccessActionErrorKey } from "../lib/access-action-error";
+import { invalidatePendingInvites } from "../lib/access-queries";
 import { INVITE_VALIDITY_HOURS } from "../lib/invite-validity";
 import { ActionError } from "./ActionError";
 import { GeneratedLink } from "./GeneratedLink";
@@ -34,7 +35,7 @@ export function PasswordResetDialog({ access, onClose }: PasswordResetDialogProp
       gcTime: 0,
       // O link novo é um convite pendente: a contagem de "Convites pendentes" sobe.
       onSuccess: () => {
-        void queryClient.invalidateQueries({ queryKey: getListInvitesQueryKey() });
+        void invalidatePendingInvites(queryClient);
       },
     },
   });
