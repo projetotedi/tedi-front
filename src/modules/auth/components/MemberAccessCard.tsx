@@ -27,6 +27,11 @@ export interface MemberAccessCardProps {
 
 type OpenDialog = "reset" | "disable" | null;
 
+// Pílula do Figma. O botão do HeroUI tem altura fixa e `whitespace-nowrap`: aos 16px, "Gerar link de
+// redefinição de senha" não cabe nos 254px úteis do card e vazaria da pílula; aqui o rótulo quebra
+// e a altura cresce (o mínimo de 44px continua valendo).
+const ACTION_BUTTON_CLASS = "h-auto rounded-3xl py-2 text-center whitespace-normal md:h-auto";
+
 /**
  * Card "Acesso ao sistema" da edição do membro: perfil de acesso, link de redefinição de senha e
  * desativar (ou reativar) o acesso. Quem decide mostrá-lo é a permissão `access.manage`, não este
@@ -114,7 +119,7 @@ export function MemberAccessCard({
       <Button
         variant="tertiary"
         fullWidth
-        className="rounded-3xl"
+        className={ACTION_BUTTON_CLASS}
         onPress={() => setOpenDialog("reset")}
       >
         {t("access.memberAccess.resetPassword")}
@@ -123,7 +128,7 @@ export function MemberAccessCard({
       <Button
         variant={access.accessEnabled ? "danger-soft" : "secondary"}
         fullWidth
-        className="rounded-3xl"
+        className={ACTION_BUTTON_CLASS}
         isDisabled={isOwnAccount || isSaving}
         isLoading={isEnabling}
         aria-describedby={isOwnAccount ? ownAccountHintId : undefined}

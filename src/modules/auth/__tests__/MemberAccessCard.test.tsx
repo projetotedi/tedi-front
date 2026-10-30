@@ -106,6 +106,19 @@ describe("MemberAccessCard", () => {
       expect(disable).toHaveClass("button--danger-soft", "min-h-11", "button--full-width");
     });
 
+    it("lets a long label wrap inside the 288px card instead of overflowing the pill", async () => {
+      await renderCard();
+
+      for (const button of [
+        resetButton(),
+        screen.getByRole("button", { name: "Desativar acesso" }),
+      ]) {
+        expect(button).toHaveClass("h-auto", "whitespace-normal", "min-h-11");
+        expect(button.className).not.toContain("md:h-9");
+        expect(button.className).not.toContain("whitespace-nowrap");
+      }
+    });
+
     it("offers Membro, Diretor and Coordenadora, never a superadmin option", async () => {
       const user = userEvent.setup();
       await renderCard();
