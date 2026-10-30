@@ -19,7 +19,7 @@ export function MemberSummary({ access }: MemberSummaryProps): ReactElement {
 
   return (
     <div className="rounded-xl bg-tedi-surface-subtle px-4 py-3.5">
-      <p className="text-base font-semibold">
+      <p className="text-base font-semibold text-foreground">
         {ra
           ? t("access.memberSummary.identity", { name: access.name, ra })
           : t("access.memberSummary.identityNoRa", { name: access.name })}

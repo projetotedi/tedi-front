@@ -284,7 +284,9 @@ export function createInviteHandler({
 }
 
 interface UpdateAccessHandlerOptions<Body> {
-  /** Resposta do PATCH; sem ela, devolve a pessoa do `id` com o campo alterado pelo corpo. */
+  /** A pessoa que o back devolve, já com o campo alterado pelo corpo; sem ela, uma pessoa padrão com o `id` da rota. */
+  person?: AccessResponseDto;
+  /** Resposta do PATCH pronta, no lugar da montada a partir de `person`. */
   response?: AccessResponseDto;
   error?: ApiErrorOptions;
   networkError?: boolean;
@@ -294,6 +296,7 @@ interface UpdateAccessHandlerOptions<Body> {
 
 // PATCH /access/:id/role (perfil). Não confundir com GET /access (lista) nem com /enabled.
 export function updateAccessRoleHandler({
+  person,
   response,
   error,
   networkError = false,
@@ -308,12 +311,13 @@ export function updateAccessRoleHandler({
 
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response ?? buildAccess({ id, role: body.role }));
+    return HttpResponse.json(response ?? { ...(person ?? buildAccess({ id })), role: body.role });
   });
 }
 
 // PATCH /access/:id/enabled (ativar/desativar o acesso).
 export function updateAccessEnabledHandler({
+  person,
   response,
   error,
   networkError = false,
@@ -328,7 +332,9 @@ export function updateAccessEnabledHandler({
 
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response ?? buildAccess({ id, accessEnabled: body.enabled }));
+    return HttpResponse.json(
+      response ?? { ...(person ?? buildAccess({ id })), accessEnabled: body.enabled },
+    );
   });
 }
 

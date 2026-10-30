@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -7,18 +7,15 @@ import { getListAccessQueryKey } from "@api/generated";
 import type { AccessResponseDto, MeResponseDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { AuthProvider } from "../AuthProvider";
 import { MemberAccessCard } from "../components/MemberAccessCard";
-import { useAuth } from "../hooks/useAuth";
 import { toAssignableRole } from "../lib/role-label";
 import {
   buildAccess,
   buildMeUser,
   createPasswordResetHandler,
-  meHandler,
   updateAccessEnabledHandler,
 } from "./handlers";
-import { renderWithProviders, server, setupAuthTestServer } from "./test-utils";
+import { renderSignedIn, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
 
@@ -49,15 +46,6 @@ interface HarnessProps {
   onAccessChange?: (updated: AccessResponseDto) => void;
 }
 
-/**
- * O card só existe com a sessão carregada (a rota exige permissão antes de renderizar a página).
- * Montá-lo antes disso trocaria a dica da própria conta de lugar depois do primeiro render.
- */
-function WhenSignedIn({ children }: { children: ReactNode }) {
-  const { status } = useAuth();
-  return status === "authenticated" ? <>{children}</> : null;
-}
-
 /** O pai real (`EditMemberDialog`) guarda a pessoa e o perfil escolhido; aqui o mesmo, mínimo. */
 function Harness({ initial, isSaving = false, onAccessChange }: HarnessProps) {
   const [access, setAccess] = useState(initial);
@@ -85,14 +73,7 @@ async function renderCard(
     me = buildMeUser({ id: ME_ID, role: Role.coordinator }),
     ...rest
   } = options;
-  server.use(meHandler({ user: me }));
-  const view = await renderWithProviders(
-    <AuthProvider>
-      <WhenSignedIn>
-        <Harness initial={access} {...rest} />
-      </WhenSignedIn>
-    </AuthProvider>,
-  );
+  const view = await renderSignedIn(<Harness initial={access} {...rest} />, me);
   await screen.findByRole("region", { name: "Acesso ao sistema" });
   return view;
 }

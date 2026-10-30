@@ -97,7 +97,7 @@ export function MemberAccessCard({
       aria-labelledby={titleId}
       className="flex flex-col gap-3 rounded-xl border border-tedi-border-subtle bg-tedi-surface-subtle p-4"
     >
-      <h3 id={titleId} className="text-base font-semibold">
+      <h3 id={titleId} className="text-base font-semibold text-foreground">
         {t("access.memberAccess.title")}
       </h3>
 

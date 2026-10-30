@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { cleanup, render } from "@testing-library/react";
 import { setupServer } from "msw/node";
@@ -8,9 +8,13 @@ import { afterAll, afterEach, beforeAll } from "vitest";
 import i18n from "@shared/i18n";
 import { toast, ToastProvider } from "@shared/ui";
 
+import type { MeResponseDto } from "@api/generated/model";
+
 import { AuthProvider } from "../AuthProvider";
+import { useAuth } from "../hooks/useAuth";
 // Registra o namespace "auth" no i18n (efeito colateral do import da API pública do módulo).
 import "../index";
+import { buildMeUser, meHandler } from "./handlers";
 
 export const server = setupServer();
 
@@ -87,4 +91,24 @@ export async function renderRoutes(
   );
 
   return { ...view, router, queryClient };
+}
+
+function WhenSignedIn({ children }: { children: ReactNode }) {
+  const { status } = useAuth();
+  return status === "authenticated" ? <>{children}</> : null;
+}
+
+/**
+ * Renderiza `ui` sob o `AuthProvider` só depois de a sessão (`GET /auth/me`) carregar. Telas que
+ * dependem de `useAuth`/`useCan` já nascem com a identidade certa, como no app (a rota exige a
+ * permissão antes de renderizar a página); montá-las antes trocaria controles depois do 1º render.
+ * Quem chama espera pelo conteúdo com `findBy*`.
+ */
+export async function renderSignedIn(ui: ReactElement, user: MeResponseDto = buildMeUser()) {
+  server.use(meHandler({ user }));
+  return renderWithProviders(
+    <AuthProvider>
+      <WhenSignedIn>{ui}</WhenSignedIn>
+    </AuthProvider>,
+  );
 }
