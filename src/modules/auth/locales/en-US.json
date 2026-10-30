@@ -317,6 +317,7 @@
     },
     "pendingInvites": {
       "title": "Pending invites ({{count}})",
+      "titlePending": "Pending invites",
       "description": "Registration links that have been generated and have not been used or expired yet.",
       "caption": "Invites waiting to be used",
       "columns": {
@@ -328,6 +329,7 @@
       "passwordReset": "Password reset",
       "revoke": "Revoke",
       "revokeFor": "Revoke the {{role}} invite generated on {{date}}",
+      "revokeForPasswordReset": "Revoke the password reset link generated on {{date}}",
       "empty": "No pending invites.",
       "notice": "Revoking invalidates the link right away; anyone who opens it will see “This link is no longer valid”. Used or expired invites leave this list.",
       "close": "Close",
@@ -336,6 +338,7 @@
       "confirm": {
         "title": "Revoke invite",
         "body": "{{role}} invite generated on {{date}}. The link stops working right away and cannot be restored.",
+        "bodyPasswordReset": "Password reset link generated on {{date}}. The link stops working right away and cannot be restored.",
         "confirm": "Revoke",
         "confirming": "Revoking…",
         "back": "Back"

@@ -22,3 +22,12 @@ export function toAccessActionErrorKey(error: unknown): AccessActionErrorKey {
   if (code === "NOT_FOUND") return "notFound";
   return toRequestErrorKey(error);
 }
+
+/**
+ * Como `toAccessActionErrorKey`, para revogar um convite: aqui um 404 quer dizer que o convite não
+ * existe mais, não que o acesso sumiu.
+ */
+export function toInviteActionErrorKey(error: unknown): AccessActionErrorKey {
+  const key = toAccessActionErrorKey(error);
+  return key === "notFound" ? "inviteGone" : key;
+}

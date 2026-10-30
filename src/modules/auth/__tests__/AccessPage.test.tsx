@@ -264,7 +264,7 @@ describe("AccessPage", () => {
 
     const pending = await screen.findByRole("button", { name: "Convites pendentes (2)" });
     const create = screen.getByRole("button", { name: "Gerar link de cadastro" });
-    expect(pending).toBeDisabled();
+    expect(pending).toBeEnabled();
     expect(pending.parentElement).toBe(create.parentElement);
     expect(pending.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });

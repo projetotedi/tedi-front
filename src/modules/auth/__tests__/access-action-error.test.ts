@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { toAccessActionErrorKey } from "../lib/access-action-error";
+import { toAccessActionErrorKey, toInviteActionErrorKey } from "../lib/access-action-error";
 
 function apiError(statusCode: number, error: string) {
   return { statusCode, error, message: error };
@@ -51,5 +51,18 @@ describe("toAccessActionErrorKey", () => {
         message: "LAST_COORDINATOR",
       }),
     ).toBe("unknown");
+  });
+});
+
+describe("toInviteActionErrorKey", () => {
+  it("a 404 means the invite is gone, not that the access is", () => {
+    expect(toInviteActionErrorKey(apiError(404, "NOT_FOUND"))).toBe("inviteGone");
+  });
+
+  it("keeps the other mappings", () => {
+    expect(toInviteActionErrorKey(apiError(409, "INVITE_ALREADY_USED"))).toBe("inviteGone");
+    expect(toInviteActionErrorKey(apiError(409, "INVITE_ALREADY_REVOKED"))).toBe("inviteGone");
+    expect(toInviteActionErrorKey(new TypeError("Failed to fetch"))).toBe("network");
+    expect(toInviteActionErrorKey(apiError(500, "INTERNAL_SERVER_ERROR"))).toBe("unknown");
   });
 });

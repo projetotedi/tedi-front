@@ -317,6 +317,7 @@
     },
     "pendingInvites": {
       "title": "Convites pendentes ({{count}})",
+      "titlePending": "Convites pendentes",
       "description": "Links de cadastro gerados que ainda não foram usados nem venceram.",
       "caption": "Convites pendentes de uso",
       "columns": {
@@ -328,6 +329,7 @@
       "passwordReset": "Redefinição de senha",
       "revoke": "Revogar",
       "revokeFor": "Revogar convite de {{role}} gerado em {{date}}",
+      "revokeForPasswordReset": "Revogar link de redefinição de senha gerado em {{date}}",
       "empty": "Nenhum convite pendente.",
       "notice": "Revogar invalida o link na hora; quem abrir verá “Este link não é mais válido”. Convites usados ou vencidos saem desta lista.",
       "close": "Fechar",
@@ -336,6 +338,7 @@
       "confirm": {
         "title": "Revogar convite",
         "body": "Convite de {{role}} gerado em {{date}}. O link deixa de valer na hora e não pode ser reativado.",
+        "bodyPasswordReset": "Link de redefinição de senha gerado em {{date}}. O link deixa de valer na hora e não pode ser reativado.",
         "confirm": "Revogar",
         "confirming": "Revogando…",
         "back": "Voltar"
