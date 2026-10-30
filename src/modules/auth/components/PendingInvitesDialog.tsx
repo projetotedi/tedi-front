@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useListInvites } from "@api/generated";
@@ -26,6 +26,19 @@ export function PendingInvitesDialog({
   const { t, i18n } = useTranslation(["auth", "common"]);
   const { data, isPending, isError } = useListInvites({ status: ListInvitesStatus.pending });
   const [revoking, setRevoking] = useState<InviteListItemDto | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const refocusAfterRevokeRef = useRef(false);
+
+  // Revogar tira da lista a linha cujo botão acabou de receber o foco de volta: sem isto o foco cairia
+  // no body. Com a lista já recarregada, ele vai para o modal, que lê o título com a nova contagem.
+  useEffect(() => {
+    if (!refocusAfterRevokeRef.current) return;
+    refocusAfterRevokeRef.current = false;
+    const dialog = contentRef.current?.closest<HTMLElement>('[role="dialog"]');
+    if (dialog && (document.activeElement === document.body || !document.activeElement)) {
+      dialog.focus();
+    }
+  }, [data]);
 
   function roleLabel(invite: InviteListItemDto): string {
     if (invite.type === InviteType.password_reset) return t("access.pendingInvites.passwordReset");
@@ -69,7 +82,10 @@ export function PendingInvitesDialog({
                   date: dateTime(invite.createdAt),
                 })
           }
-          onPress={() => setRevoking(invite)}
+          onPress={() => {
+            refocusAfterRevokeRef.current = false;
+            setRevoking(invite);
+          }}
         >
           {t("access.pendingInvites.revoke")}
         </Button>
@@ -94,7 +110,7 @@ export function PendingInvitesDialog({
           <Button onPress={() => onOpenChange(false)}>{t("access.pendingInvites.close")}</Button>
         }
       >
-        <div className="flex flex-col gap-4">
+        <div ref={contentRef} className="flex flex-col gap-4">
           {data ? (
             <DataTable
               columns={columns}
@@ -114,7 +130,15 @@ export function PendingInvitesDialog({
         </div>
       </Dialog>
 
-      {revoking ? <RevokeInviteDialog invite={revoking} onClose={() => setRevoking(null)} /> : null}
+      {revoking ? (
+        <RevokeInviteDialog
+          invite={revoking}
+          onClose={() => setRevoking(null)}
+          onRevoked={() => {
+            refocusAfterRevokeRef.current = true;
+          }}
+        />
+      ) : null}
     </>
   );
 }

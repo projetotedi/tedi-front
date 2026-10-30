@@ -260,6 +260,20 @@ describe("PendingInvitesDialog", () => {
       ).toBeInTheDocument();
     });
 
+    it("after revoking, the focus goes to the list dialog instead of being lost with the removed row", async () => {
+      useStatefulInvites([MEMBER_INVITE, DIRECTOR_INVITE]);
+      const user = userEvent.setup();
+      await renderWithProviders(<PendingInvitesButton />);
+      const dialog = await openDialog(user, 2);
+
+      await user.click(within(dialog).getAllByRole("button", { name: /^Revogar convite/ })[0]!);
+      const confirmation = await screen.findByRole("dialog", { name: "Revogar convite" });
+      await user.click(within(confirmation).getByRole("button", { name: "Revogar" }));
+
+      const updated = await screen.findByRole("dialog", { name: "Convites pendentes (1)" });
+      await waitFor(() => expect(updated).toHaveFocus());
+    });
+
     it("revoking a password reset link asks with its own wording", async () => {
       const { revoked } = useStatefulInvites([RESET_INVITE]);
       const user = userEvent.setup();

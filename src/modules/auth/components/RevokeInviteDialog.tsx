@@ -14,13 +14,19 @@ import { invalidatePendingInvites } from "../lib/access-queries";
 export interface RevokeInviteDialogProps {
   invite: InviteListItemDto;
   onClose: () => void;
+  /** Chamado quando o convite foi revogado, antes de `onClose`. */
+  onRevoked?: () => void;
 }
 
 /**
  * Confirma a revogação de um convite pendente (convite de cadastro ou link de redefinição de
  * senha). Revogar invalida o link na hora e não tem volta. Quem usa o monta só enquanto está aberto.
  */
-export function RevokeInviteDialog({ invite, onClose }: RevokeInviteDialogProps): ReactElement {
+export function RevokeInviteDialog({
+  invite,
+  onClose,
+  onRevoked,
+}: RevokeInviteDialogProps): ReactElement {
   const { t, i18n } = useTranslation(["auth", "common"]);
   const queryClient = useQueryClient();
 
@@ -29,6 +35,7 @@ export function RevokeInviteDialog({ invite, onClose }: RevokeInviteDialogProps)
       onSuccess: () => {
         void invalidatePendingInvites(queryClient);
         toast.success(t("access.toast.inviteRevoked"));
+        onRevoked?.();
         onClose();
       },
       onError: (error) => {
