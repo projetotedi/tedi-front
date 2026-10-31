@@ -150,11 +150,29 @@ describe("MemberAccessCard", () => {
       expect(roleSelect()).toHaveTextContent("Coordenadora");
     });
 
-    it("disables the role select and Desativar acesso while the edit is saving", async () => {
+    it("disables the role select, the reset link and Desativar acesso while the edit is saving", async () => {
       await renderCard({ isSaving: true });
 
       expect(roleSelect()).toBeDisabled();
+      expect(resetButton()).toBeDisabled();
       expect(screen.getByRole("button", { name: "Desativar acesso" })).toBeDisabled();
+    });
+
+    it("pressing the reset link while the edit is saving opens nothing", async () => {
+      const onCall = vi.fn();
+      server.use(createPasswordResetHandler({ onCall }));
+      const user = userEvent.setup();
+      await renderCard({ isSaving: true });
+
+      await user.click(resetButton());
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(onCall).not.toHaveBeenCalled();
+    });
+
+    it("keeps the reset link enabled when the edit is not saving", async () => {
+      await renderCard({ isSaving: false });
+
       expect(resetButton()).toBeEnabled();
     });
   });
@@ -187,6 +205,13 @@ describe("MemberAccessCard", () => {
       expect(
         await screen.findByRole("dialog", { name: "Link de redefinição de senha" }),
       ).toBeInTheDocument();
+    });
+
+    it("own account: the reset link is blocked only while the edit is saving", async () => {
+      const own = buildAccess({ id: ME_ID, name: "Ana Coordenadora", role: Role.coordinator });
+      await renderCard({ access: own, isSaving: true });
+
+      expect(resetButton()).toBeDisabled();
     });
 
     it("someone else's account shows no explanation and nothing disabled", async () => {

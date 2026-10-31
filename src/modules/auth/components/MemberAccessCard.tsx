@@ -21,7 +21,10 @@ export interface MemberAccessCardProps {
   onRoleChange: (role: AssignableRole) => void;
   /** Recebe a pessoa depois de desativar ou reativar o acesso, para a edição se atualizar. */
   onAccessChange: (updated: AccessResponseDto) => void;
-  /** A edição está salvando o perfil: o select fica travado até a resposta. */
+  /**
+   * A edição está salvando o perfil: o select e as ações (link de redefinição, desativar e
+   * reativar) ficam travados até a resposta, que fecha a edição inteira.
+   */
   isSaving: boolean;
 }
 
@@ -116,10 +119,14 @@ export function MemberAccessCard({
         description={isOwnAccount ? t("access.memberAccess.ownAccount") : undefined}
       />
 
+      {/* Na própria conta continua liberado (o back permite); só trava enquanto a edição salva: o
+          sucesso do salvamento fecha a edição e desmontaria o diálogo, e o link gerado nesse
+          intervalo (válido por 48 h) se perderia sem ninguém vê-lo. */}
       <Button
         variant="secondary"
         fullWidth
         className={ACTION_BUTTON_CLASS}
+        isDisabled={isSaving}
         onPress={() => setOpenDialog("reset")}
       >
         {t("access.memberAccess.resetPassword")}

@@ -10,6 +10,7 @@ import { EditMemberDialog } from "../components/EditMemberDialog";
 import {
   buildAccess,
   buildMeUser,
+  createPasswordResetHandler,
   updateAccessEnabledHandler,
   updateAccessRoleHandler,
 } from "./handlers";
@@ -284,6 +285,51 @@ describe("EditMemberDialog", () => {
       deferred.resolve();
       await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
       expect(onCall).toHaveBeenCalledTimes(1);
+    });
+
+    it("blocks the reset link and Desativar acesso while the PATCH is in flight, so no link is generated just before the save closes the edition", async () => {
+      const deferred = createDeferred();
+      const resetCall = vi.fn();
+      server.use(
+        updateAccessRoleHandler({ delay: deferred.promise }),
+        createPasswordResetHandler({ onCall: resetCall }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderDialog();
+
+      await chooseRole(user, "Diretor");
+      await user.click(saveButton());
+      await screen.findByRole("button", { name: "Salvando…" });
+
+      const resetButton = screen.getByRole("button", {
+        name: "Gerar link de redefinição de senha",
+      });
+      expect(resetButton).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Desativar acesso" })).toBeDisabled();
+      await user.click(resetButton);
+      expect(
+        screen.queryByRole("dialog", { name: "Link de redefinição de senha" }),
+      ).not.toBeInTheDocument();
+
+      deferred.resolve();
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(resetCall).not.toHaveBeenCalled();
+    });
+
+    it("releases the reset link and Desativar acesso again when the save fails", async () => {
+      server.use(updateAccessRoleHandler({ networkError: true }));
+      const user = userEvent.setup();
+      const { onClose } = await renderDialog();
+
+      await chooseRole(user, "Diretor");
+      await user.click(saveButton());
+      await screen.findByRole("alert");
+
+      expect(onClose).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole("button", { name: "Gerar link de redefinição de senha" }),
+      ).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Desativar acesso" })).toBeEnabled();
     });
   });
 
