@@ -77,7 +77,7 @@ export function AccessTable({
     },
     {
       header: t("access.people.columns.actions"),
-      headerClassName: "w-[112px] uppercase",
+      headerClassName: "w-[104px] uppercase",
       render: (row) => (
         // Ícones de 16px dentro de botões de 44px (alvo de toque): o Figma desenha só o ícone.
         <div className="flex gap-1">

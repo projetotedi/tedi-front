@@ -65,7 +65,7 @@ export function DisableAccessDialog({
       onCancel={onClose}
     >
       <MemberSummary access={access} />
-      <Alert variant="danger">{t("access.disableAccess.warning")}</Alert>
+      <Alert variant="danger" description={t("access.disableAccess.warning")} />
       <p className="text-base text-muted">{t("access.disableAccess.note")}</p>
     </ConfirmDialog>
   );

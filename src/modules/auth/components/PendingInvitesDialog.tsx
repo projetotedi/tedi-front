@@ -110,7 +110,7 @@ export function PendingInvitesDialog({
           <Button onPress={() => onOpenChange(false)}>{t("access.pendingInvites.close")}</Button>
         }
       >
-        <div ref={contentRef} className="flex flex-col gap-4">
+        <div ref={contentRef} className="flex flex-col gap-4 pt-2">
           {data ? (
             <DataTable
               columns={columns}
@@ -126,7 +126,7 @@ export function PendingInvitesDialog({
           ) : isError ? (
             <Alert variant="error">{t("access.pendingInvites.error")}</Alert>
           ) : null}
-          <Alert variant="warning">{t("access.pendingInvites.notice")}</Alert>
+          <Alert variant="warning" description={t("access.pendingInvites.notice")} />
         </div>
       </Dialog>
 

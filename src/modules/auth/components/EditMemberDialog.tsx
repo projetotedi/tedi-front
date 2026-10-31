@@ -102,7 +102,7 @@ export function EditMemberDialog({ member, onClose }: EditMemberDialogProps): Re
         </>
       }
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 pt-2">
         <ActionError message={errorMessage} />
         <div
           aria-busy={isPending}

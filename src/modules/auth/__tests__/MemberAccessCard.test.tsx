@@ -101,7 +101,8 @@ describe("MemberAccessCard", () => {
     it("keeps every control at 44px and full width, with the danger-soft look for Desativar acesso", async () => {
       await renderCard();
 
-      expect(resetButton()).toHaveClass("min-h-11", "button--full-width");
+      // Secundário (soft accent), como no Figma: o `tertiary` herdaria o cinza do corpo do modal.
+      expect(resetButton()).toHaveClass("button--secondary", "min-h-11", "button--full-width");
       const disable = screen.getByRole("button", { name: "Desativar acesso" });
       expect(disable).toHaveClass("button--danger-soft", "min-h-11", "button--full-width");
     });

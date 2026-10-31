@@ -117,7 +117,7 @@ export function MemberAccessCard({
       />
 
       <Button
-        variant="tertiary"
+        variant="secondary"
         fullWidth
         className={ACTION_BUTTON_CLASS}
         onPress={() => setOpenDialog("reset")}
