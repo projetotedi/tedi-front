@@ -8,6 +8,9 @@ export interface AlertProps {
    * preenchidas junto com o conteúdo que avisam, e o anúncio vem do foco que se move para perto
    * delas. `danger` tem o visual de `error`, mas é aviso permanente de uma ação destrutiva
    * (ex.: "Desativar acesso"), não uma falha: quem avisa de falha é `error`, que anuncia na hora.
+   *
+   * O texto principal é `children` (título, em destaque) e `description` é o complemento. Um aviso
+   * de uma frase ou parágrafo longo pode vir só em `description`, sem título, em peso normal.
    */
   variant: "danger" | "error" | "info" | "warning";
   children?: ReactNode;
@@ -15,10 +18,21 @@ export interface AlertProps {
   id?: string;
 }
 
+// A cor do texto vai na caixa e a descrição a herda: o `text-muted` do HeroUI (#71717a) dá 4,3:1 sobre
+// o âmbar e 3,8:1 sobre o rosa (mínimo 4,5:1); #a43532 sobre o rosa dá 5,3:1.
 const VARIANTS = {
-  danger: { status: "danger", className: "border border-danger bg-danger-soft" },
-  error: { status: "danger", className: "border border-danger bg-danger-soft" },
-  info: { status: "accent", className: "border border-accent bg-accent-soft" },
+  danger: {
+    status: "danger",
+    className: "border border-danger bg-danger-soft text-danger-soft-foreground",
+  },
+  error: {
+    status: "danger",
+    className: "border border-danger bg-danger-soft text-danger-soft-foreground",
+  },
+  info: {
+    status: "accent",
+    className: "border border-accent bg-accent-soft text-accent-soft-foreground",
+  },
   warning: {
     status: "warning",
     className: "border border-tedi-warning-foreground bg-tedi-warning text-tedi-warning-foreground",
@@ -34,22 +48,28 @@ export function Alert({ variant, children, description, id }: AlertProps) {
   const isError = variant === "error";
   const isStatic = variant === "warning" || variant === "danger";
 
-  const box = isEmpty(children) ? null : (
-    <HeroAlert
-      id={isError || isStatic ? id : undefined}
-      status={status}
-      role={isError ? "alert" : undefined}
-      className={`rounded-xl ${className}`}
-    >
-      <HeroAlert.Indicator aria-hidden="true" />
-      <HeroAlert.Content>
-        <HeroAlert.Title className="text-base">{children}</HeroAlert.Title>
-        {description ? (
-          <HeroAlert.Description className="text-base">{description}</HeroAlert.Description>
-        ) : null}
-      </HeroAlert.Content>
-    </HeroAlert>
-  );
+  const hasTitle = !isEmpty(children);
+  const hasDescription = !isEmpty(description);
+
+  const box =
+    !hasTitle && !hasDescription ? null : (
+      <HeroAlert
+        id={isError || isStatic ? id : undefined}
+        status={status}
+        role={isError ? "alert" : undefined}
+        className={`rounded-xl ${className}`}
+      >
+        <HeroAlert.Indicator aria-hidden="true" />
+        <HeroAlert.Content>
+          {hasTitle ? <HeroAlert.Title className="text-base">{children}</HeroAlert.Title> : null}
+          {hasDescription ? (
+            <HeroAlert.Description className="text-base text-inherit">
+              {description}
+            </HeroAlert.Description>
+          ) : null}
+        </HeroAlert.Content>
+      </HeroAlert>
+    );
 
   if (isError || isStatic) return box;
 

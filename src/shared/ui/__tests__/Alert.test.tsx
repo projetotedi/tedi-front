@@ -164,4 +164,50 @@ describe("Alert", () => {
 
     expect(container).toBeEmptyDOMElement();
   });
+
+  it.each([["danger"], ["warning"]] as const)(
+    "a %s alert can carry only a description, in regular weight and with no title",
+    (variant) => {
+      const { container } = render(<Alert variant={variant} description="Só o complemento." />);
+
+      expect(screen.getByText("Só o complemento.")).toBeInTheDocument();
+      expect(container.querySelector("[data-slot='alert-title']")).toBeNull();
+      expect(container.querySelector("[data-slot='alert-description']")).toHaveClass("text-base");
+    },
+  );
+
+  it("keeps an info region empty when it has neither title nor description", () => {
+    render(<Alert variant="info" description={null} />);
+
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("fills the info region when it only has a description", () => {
+    render(<Alert variant="info" description="Link copiado." />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Link copiado.");
+  });
+
+  it("the description follows the colour of the alert instead of the muted grey (4.5:1)", () => {
+    const { container } = render(
+      <Alert variant="warning" description="O link vale por 48 horas.">
+        Guarde este link agora
+      </Alert>,
+    );
+
+    const description = container.querySelector("[data-slot='alert-description']");
+    expect(description).toHaveClass("text-inherit");
+    expect(description).not.toHaveClass("text-muted");
+  });
+
+  it.each([
+    ["danger", "text-danger-soft-foreground"],
+    ["error", "text-danger-soft-foreground"],
+    ["info", "text-accent-soft-foreground"],
+    ["warning", "text-tedi-warning-foreground"],
+  ] as const)("the %s alert sets its own text colour (%s)", (variant, textClass) => {
+    const { container } = render(<Alert variant={variant}>Aviso</Alert>);
+
+    expect(container.querySelector("[data-slot='alert-root']")).toHaveClass(textClass);
+  });
 });
