@@ -9,10 +9,12 @@ import * as zod from "zod";
 
 export const listAccessQueryLimitMax = 100;
 
+export const listAccessQuerySearchMax = 100;
+
 export const ListAccessQueryParams = zod.object({
   page: zod.number().min(1).optional(),
   limit: zod.number().min(1).max(listAccessQueryLimitMax).optional(),
-  search: zod.string().optional().describe("Search by name or RA"),
+  search: zod.string().max(listAccessQuerySearchMax).optional().describe("Search by name or RA"),
   role: zod.enum(["member", "director", "coordinator", "superadmin"]).optional(),
   enabled: zod.boolean().optional(),
 });
@@ -78,15 +80,119 @@ export const UpdateAccessRoleResponse = zod.object({
   role: zod.union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()]),
 });
 
-export const acceptInviteBodyNameMax = 200;
-
 export const acceptInviteBodyPasswordMin = 8;
 
+export const acceptInviteBodyRegistrationOneAddressMax = 200;
+
+export const acceptInviteBodyRegistrationOneCityMax = 100;
+
+export const acceptInviteBodyRegistrationOneClassNameMax = 50;
+
+export const acceptInviteBodyRegistrationOneCourseMax = 100;
+
+export const acceptInviteBodyRegistrationOneInstitutionalEmailMax = 200;
+
+export const acceptInviteBodyRegistrationOneNameMax = 200;
+
+export const acceptInviteBodyRegistrationOnePersonalEmailMax = 200;
+
+export const acceptInviteBodyRegistrationOneRaMax = 20;
+
+export const acceptInviteBodyRegistrationOneSemesterMax = 20;
+
+export const acceptInviteBodyRegistrationOneVolunteerTermUrlMax = 500;
+
 export const AcceptInviteBody = zod.object({
-  email: zod.string().optional(),
-  name: zod.string().max(acceptInviteBodyNameMax).optional(),
   password: zod.string().min(acceptInviteBodyPasswordMin),
-  ra: zod.string().optional(),
+  registration: zod
+    .object({
+      address: zod.string().max(acceptInviteBodyRegistrationOneAddressMax).nullish(),
+      birthDate: zod.iso
+        .date()
+        .describe("YYYY-MM-DD, between 1900-01-01 and today (America/Sao_Paulo)."),
+      city: zod.string().max(acceptInviteBodyRegistrationOneCityMax).nullish(),
+      className: zod
+        .string()
+        .max(acceptInviteBodyRegistrationOneClassNameMax)
+        .describe("Class (turma) at the university."),
+      course: zod.string().max(acceptInviteBodyRegistrationOneCourseMax),
+      cpf: zod
+        .string()
+        .describe("Digits only after normalization. Visible only to coordination (RNF-14)."),
+      departmentId: zod
+        .uuid()
+        .nullish()
+        .describe(
+          "Suggestion of the person; coordination decides on approval. Pick one of `departments` from GET /auth/invites/:token.",
+        ),
+      institutionalEmail: zod
+        .string()
+        .max(acceptInviteBodyRegistrationOneInstitutionalEmailMax)
+        .describe("Trimmed and lower-cased."),
+      name: zod.string().max(acceptInviteBodyRegistrationOneNameMax),
+      personalEmail: zod
+        .string()
+        .max(acceptInviteBodyRegistrationOnePersonalEmailMax)
+        .describe(
+          "Trimmed and lower-cased. Stored as the e-mail of the person. Unique among people.",
+        ),
+      phone: zod
+        .string()
+        .describe(
+          "Formatting is stripped; stored as 10 to 13 digits (DDD, optional country code).",
+        ),
+      ra: zod
+        .string()
+        .max(acceptInviteBodyRegistrationOneRaMax)
+        .describe("Trimmed and lower-cased. It is the login (RN-09)."),
+      semester: zod.int().min(1).max(acceptInviteBodyRegistrationOneSemesterMax),
+      state: zod
+        .union([
+          zod
+            .enum([
+              "AC",
+              "AL",
+              "AP",
+              "AM",
+              "BA",
+              "CE",
+              "DF",
+              "ES",
+              "GO",
+              "MA",
+              "MT",
+              "MS",
+              "MG",
+              "PA",
+              "PB",
+              "PR",
+              "PE",
+              "PI",
+              "RJ",
+              "RN",
+              "RS",
+              "RO",
+              "RR",
+              "SC",
+              "SP",
+              "SE",
+              "TO",
+            ])
+            .describe("Federative unit (UF). Upper-cased."),
+          zod.null(),
+        ])
+        .optional()
+        .describe("Federative unit (UF). Upper-cased."),
+      volunteerTermUrl: zod
+        .string()
+        .max(acceptInviteBodyRegistrationOneVolunteerTermUrlMax)
+        .nullish()
+        .describe("Link to the volunteer term in Drive (RF-011). HTTPS only."),
+    })
+    .optional()
+    .describe(
+      "Member registration (RF-004). Required for access invites; ignored for password_reset.",
+    ),
   token: zod.string(),
 });
 
@@ -97,6 +203,16 @@ export const GetInviteParams = zod.object({
 });
 
 export const GetInviteResponse = zod.object({
+  departments: zod
+    .array(
+      zod.object({
+        id: zod.uuid(),
+        name: zod.string(),
+      }),
+    )
+    .describe(
+      "Departments the person may pick in the registration form, ordered by name. Always [] for password_reset.",
+    ),
   expiresAt: zod.iso.datetime({ offset: true }),
   person: zod
     .object({
