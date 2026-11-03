@@ -14,11 +14,13 @@ export interface AlertProps {
 }
 
 const VARIANTS = {
-  error: { status: "danger", className: "border border-danger bg-danger-soft" },
-  info: { status: "accent", className: "border border-accent bg-accent-soft" },
+  error: { status: "danger", className: "border border-danger bg-danger-soft", description: "" },
+  info: { status: "accent", className: "border border-accent bg-accent-soft", description: "" },
   warning: {
     status: "warning",
     className: "border border-tedi-warning-foreground bg-tedi-warning text-tedi-warning-foreground",
+    // The HeroUI description is `text-muted`, 4.3:1 on the yellow background; the warning color is 6.4:1.
+    description: "text-tedi-warning-foreground",
   },
 } as const;
 
@@ -27,7 +29,7 @@ function isEmpty(children: ReactNode): boolean {
 }
 
 export function Alert({ variant, children, description, id }: AlertProps) {
-  const { status, className } = VARIANTS[variant];
+  const { status, className, description: descriptionClassName } = VARIANTS[variant];
   const isError = variant === "error";
   const isStatic = variant === "warning";
 
@@ -42,7 +44,9 @@ export function Alert({ variant, children, description, id }: AlertProps) {
       <HeroAlert.Content>
         <HeroAlert.Title className="text-base">{children}</HeroAlert.Title>
         {description ? (
-          <HeroAlert.Description className="text-base">{description}</HeroAlert.Description>
+          <HeroAlert.Description className={`text-base ${descriptionClassName}`.trim()}>
+            {description}
+          </HeroAlert.Description>
         ) : null}
       </HeroAlert.Content>
     </HeroAlert>

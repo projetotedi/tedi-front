@@ -19,6 +19,7 @@ export type ListAccessParams = {
   limit?: number;
   /**
    * Search by name or RA
+   * @maxLength 100
    */
   search?: string;
   role?: Role;
