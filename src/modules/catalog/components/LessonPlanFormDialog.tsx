@@ -11,6 +11,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import { Controller, useFieldArray, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -19,7 +20,12 @@ import {
   useGetLessonPlan,
   useUpdateLessonPlan,
 } from "@api/generated/catalog/catalog";
-import type { LessonPlanResponseDto } from "@api/generated/model";
+import type {
+  CreateLessonPlanDto,
+  LessonPlanDetailDto,
+  LessonPlanResponseDto,
+  LessonPlanUsageResponseDto,
+} from "@api/generated/model";
 import chevronDownIcon from "@shared/assets/icons/chevron-down.svg";
 import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 import { Alert, Button, Dialog, Skeleton, TextArea, TextField, toast } from "@shared/ui";
@@ -30,7 +36,8 @@ import {
   toSubmitError,
   type SubmitErrorKind,
 } from "../lib/api-form-errors";
-import { invalidateLessonPlans } from "../lib/lesson-plan-queries";
+import { fetchLessonPlanUsage, invalidateLessonPlans } from "../lib/lesson-plan-queries";
+import { needsUsageConfirmation } from "../lib/lesson-plan-usage";
 import {
   buildEmptyFormValues,
   LESSON_PLAN_LIMITS,
@@ -39,6 +46,7 @@ import {
   toLessonPlanBody,
   type LessonPlanFormValues,
 } from "../schemas/lesson-plan.schema";
+import { ConfirmLessonPlanChangeDialog } from "./ConfirmLessonPlanChangeDialog";
 
 const MIN_CONTENTS = 1;
 
@@ -81,9 +89,19 @@ function LoadingPlaceholder({ label }: { label: string }): ReactElement {
   );
 }
 
+/** What the RF-017 check needs to know about the plan being edited. */
+type CurrentPlan = Pick<LessonPlanDetailDto, "status" | "expectedDurationMinutes">;
+
+/** A change that waits for the person to confirm it, with the usage that justified asking. */
+interface PendingChange {
+  data: CreateLessonPlanDto;
+  usage: LessonPlanUsageResponseDto;
+}
+
 interface LessonPlanFormProps {
   formId: string;
   lessonPlanId: string | null;
+  currentPlan: CurrentPlan | null;
   initialValues: LessonPlanFormValues;
   onPendingChange: (isPending: boolean) => void;
   onSaved: (plan: LessonPlanResponseDto) => void;
@@ -92,6 +110,7 @@ interface LessonPlanFormProps {
 function LessonPlanForm({
   formId,
   lessonPlanId,
+  currentPlan,
   initialValues,
   onPendingChange,
   onSaved,
@@ -104,6 +123,7 @@ function LessonPlanForm({
   const pendingFocusRef = useRef<PendingFocus | null>(null);
   const [submitError, setSubmitError] = useState<SubmitErrorKind | null>(null);
   const [announcement, setAnnouncement] = useState("");
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(null);
 
   const { control, handleSubmit, setError, setFocus } = useForm<LessonPlanFormValues>({
     resolver: zodResolver(lessonPlanFormSchema),
@@ -164,24 +184,75 @@ function LessonPlanForm({
     setSubmitError(result.kind);
   }
 
-  function save(values: LessonPlanFormValues) {
-    if (isPending || inFlightRef.current) return;
+  function startSaving() {
     inFlightRef.current = true;
     setSubmitError(null);
     onPendingChange(true);
+  }
 
-    const data = toLessonPlanBody(values);
+  function stopSaving() {
+    inFlightRef.current = false;
+    onPendingChange(false);
+  }
+
+  /** Sends the plan. The caller already holds the double-submit guard (`startSaving`). */
+  function submit(data: CreateLessonPlanDto) {
     const callbacks = {
       onSuccess: (plan: LessonPlanResponseDto) => onSaved(plan),
-      onError: handleError,
-      onSettled: () => {
-        inFlightRef.current = false;
-        onPendingChange(false);
+      onError: (error: unknown) => {
+        // The confirmation traps the focus while it is open. Close it first, so that the focus that
+        // `handleError` sends to the invalid field or to the alert is not pulled back into it.
+        flushSync(() => setPendingChange(null));
+        handleError(error);
       },
+      onSettled: stopSaving,
     };
 
     if (lessonPlanId === null) createPlan.mutate({ data }, callbacks);
     else updatePlan.mutate({ id: lessonPlanId, data }, callbacks);
+  }
+
+  /**
+   * RF-017: a plan that courses use and whose duration changed asks the API what the change does to
+   * each course and waits for the person to confirm. Failing to ask blocks the save (the person
+   * would be confirming blind); a plan that turns out to be in no course is saved right away.
+   */
+  async function save(values: LessonPlanFormValues) {
+    if (isPending || inFlightRef.current) return;
+    startSaving();
+
+    const data = toLessonPlanBody(values);
+
+    if (
+      lessonPlanId !== null &&
+      currentPlan !== null &&
+      needsUsageConfirmation(currentPlan, data.expectedDurationMinutes)
+    ) {
+      try {
+        const usage = await fetchLessonPlanUsage(
+          queryClient,
+          lessonPlanId,
+          data.expectedDurationMinutes,
+        );
+        if (usage.courses.length > 0) {
+          setPendingChange({ data, usage });
+          stopSaving();
+          return;
+        }
+      } catch (error) {
+        handleError(error);
+        stopSaving();
+        return;
+      }
+    }
+
+    submit(data);
+  }
+
+  function confirmPendingChange() {
+    if (pendingChange === null || isPending || inFlightRef.current) return;
+    startSaving();
+    submit(pendingChange.data);
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -422,6 +493,15 @@ function LessonPlanForm({
           <Alert variant="error">{t(`errors.${submitError}`)}</Alert>
         </div>
       ) : null}
+
+      {pendingChange !== null ? (
+        <ConfirmLessonPlanChangeDialog
+          usage={pendingChange.usage}
+          isSaving={updatePlan.isPending}
+          onConfirm={confirmPendingChange}
+          onBack={() => setPendingChange(null)}
+        />
+      ) : null}
     </form>
   );
 }
@@ -437,8 +517,14 @@ export function LessonPlanFormDialog(props: LessonPlanFormDialogProps): ReactEle
     query: { enabled: lessonPlanId !== null, staleTime: 0, gcTime: 0, refetchOnMount: "always" },
   });
   const plan = planQuery.data;
+  // The screen under this dialog (the plan detail) may already hold the plan in the cache, and that
+  // copy can be minutes old. The form waits for the refetch of this dialog, so it never starts from
+  // older data than the plan that decides whether a change needs the confirmation.
+  const isWaitingForPlan =
+    lessonPlanId !== null &&
+    (planQuery.isPending || (planQuery.isFetching && !planQuery.isFetchedAfterMount));
   const isArchived = plan !== undefined && plan.archivedAt !== null;
-  const isReady = lessonPlanId === null || (plan !== undefined && !isArchived);
+  const isReady = lessonPlanId === null || (!isWaitingForPlan && plan !== undefined && !isArchived);
   const initialValues = useMemo(() => (plan ? toFormValues(plan) : buildEmptyFormValues()), [plan]);
 
   function handleSaved(saved: LessonPlanResponseDto) {
@@ -448,7 +534,7 @@ export function LessonPlanFormDialog(props: LessonPlanFormDialogProps): ReactEle
 
   function renderBody(): ReactElement {
     if (lessonPlanId !== null) {
-      if (planQuery.isPending) return <LoadingPlaceholder label={t("form.loading")} />;
+      if (isWaitingForPlan) return <LoadingPlaceholder label={t("form.loading")} />;
 
       if (plan === undefined) {
         return (
@@ -473,6 +559,7 @@ export function LessonPlanFormDialog(props: LessonPlanFormDialogProps): ReactEle
         key={lessonPlanId ?? "new"}
         formId={formId}
         lessonPlanId={lessonPlanId}
+        currentPlan={plan ?? null}
         initialValues={initialValues}
         onPendingChange={setIsSubmitting}
         onSaved={handleSaved}
