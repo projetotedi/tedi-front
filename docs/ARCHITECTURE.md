@@ -264,13 +264,16 @@ tedi-back                                       tedi-front
 1. muda DTO/controller
 2. yarn openapi:export → docs/openapi.json
 3. CI: openapi:check
-4. merge em develop
-5. copiar docs/openapi.json aqui  ───────────▶  openapi/openapi.json (manual)
+4. merge em develop (o template de PR do back tem a seção "Contrato da API": se mudou, abrir a sincronização no front)
+5. copiar docs/openapi.json da develop  ─────▶  openapi/openapi.json (manual)
    e rodar `yarn generate` + `yarn format`        src/api/generated/** regenerado
                                                6. CI: typecheck quebra se alguma tela usa campo que sumiu
+                                               7. CI: aviso "Contrato OpenAPI desatualizado" enquanto openapi/openapi.json divergir da develop do back
 ```
 
-O passo 5 é manual: não existe workflow `openapi.yml` nem skill de sync. No PowerShell: `Copy-Item ..\tedi-back\docs\openapi.json openapi\openapi.json; yarn generate; yarn format`. O `yarn format` é necessário porque o JSON copiado do back não passa no `format:check`. O PR do front que muda o contrato carrega a cópia de `openapi/openapi.json` e entra depois do PR do back.
+O passo 5 continua manual: nenhum workflow copia o contrato. Mas a CI do front avisa quando ele foi esquecido. O passo `Contrato OpenAPI × tedi-back (develop)` do `ci.yml` roda `scripts/check-openapi-drift.mjs`, que baixa `https://raw.githubusercontent.com/projetotedi/tedi-back/develop/docs/openapi.json` (repositório público, sem token) e compara com `openapi/openapi.json` de forma semântica (`operationId`s e `components.schemas`, sem contar a formatação do oxfmt). Se divergir, o job mostra um `::warning::` com as operações que faltam, sobram ou mudaram, e o resumo do job traz a tabela com as operações e os schemas. **O aviso nunca falha o build.** Se o download falhar, aparece "Contrato OpenAPI não verificado".
+
+Para conferir localmente: `yarn openapi:drift`. Para sincronizar (Git Bash): `curl -fsSL https://raw.githubusercontent.com/projetotedi/tedi-back/develop/docs/openapi.json -o openapi/openapi.json && yarn generate && yarn format`. No PowerShell, use `curl.exe` em vez de `curl` e nunca `>` para gravar o JSON (ele sai em UTF-16 ou com BOM e quebra o `JSON.parse`). Não copie do clone local do back sem conferir que ele está na `develop`. O `yarn format` é necessário porque o JSON copiado do back não passa no `format:check`. O PR do front que muda o contrato carrega a cópia de `openapi/openapi.json` e entra depois do PR do back.
 
 Configuração em `orval.config.ts`: `mode: "tags-split"` (um arquivo por tag = um por módulo do back), `client: "react-query"`, `httpClient: "fetch"` com mutator `src/api/http-client.ts`, e um segundo output `client: "zod"`.
 
