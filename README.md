@@ -46,7 +46,7 @@ cp ../tedi-back/docs/openapi.json openapi/openapi.json
 yarn generate                             # regenera src/api/generated/
 ```
 
-Commite o `openapi/openapi.json` e o `src/api/generated/` junto com a tela que usa o endpoint novo. Se depois do `generate` o `yarn typecheck` quebrar, é a API avisando que o contrato mudou.
+Commite o `openapi/openapi.json` e o `src/api/generated/` junto com a tela que usa o endpoint novo. Se depois do `generate` o `yarn typecheck` quebrar, é a API avisando que o contrato mudou. A CI avisa (sem falhar) quando `openapi/openapi.json` diverge do contrato da develop do back; para conferir localmente, `yarn openapi:drift`.
 
 Enquanto a API ainda não publica o `openapi.json`, `openapi/` fica vazio e o `yarn generate` não roda.
 

@@ -5,13 +5,12 @@
  * Documentação da API do projeto TEDI
  * OpenAPI spec version: 0.1.0
  */
+import type { MemberRegistrationFormDto } from "./memberRegistrationFormDto.ts";
 
 export interface AcceptInviteDto {
-  email?: string;
-  /** @maxLength 200 */
-  name?: string;
   /** @minLength 8 */
   password: string;
-  ra?: string;
+  /** Member registration (RF-004). Required for access invites; ignored for password_reset. */
+  registration?: MemberRegistrationFormDto;
   token: string;
 }

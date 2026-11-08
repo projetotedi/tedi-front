@@ -24,18 +24,23 @@ const VARIANTS = {
   danger: {
     status: "danger",
     className: "border border-danger bg-danger-soft text-danger-soft-foreground",
+    description: "text-inherit",
   },
   error: {
     status: "danger",
     className: "border border-danger bg-danger-soft text-danger-soft-foreground",
+    description: "text-inherit",
   },
   info: {
     status: "accent",
     className: "border border-accent bg-accent-soft text-accent-soft-foreground",
+    description: "text-inherit",
   },
   warning: {
     status: "warning",
     className: "border border-tedi-warning-foreground bg-tedi-warning text-tedi-warning-foreground",
+    // A descrição do HeroUI é `text-muted`, 4,3:1 sobre o amarelo; a cor do aviso dá 6,4:1.
+    description: "text-tedi-warning-foreground",
   },
 } as const;
 
@@ -44,7 +49,7 @@ function isEmpty(children: ReactNode): boolean {
 }
 
 export function Alert({ variant, children, description, id }: AlertProps) {
-  const { status, className } = VARIANTS[variant];
+  const { status, className, description: descriptionClassName } = VARIANTS[variant];
   const isError = variant === "error";
   const isStatic = variant === "warning" || variant === "danger";
 
@@ -63,7 +68,7 @@ export function Alert({ variant, children, description, id }: AlertProps) {
         <HeroAlert.Content>
           {hasTitle ? <HeroAlert.Title className="text-base">{children}</HeroAlert.Title> : null}
           {hasDescription ? (
-            <HeroAlert.Description className="text-base text-inherit">
+            <HeroAlert.Description className={`text-base ${descriptionClassName}`}>
               {description}
             </HeroAlert.Description>
           ) : null}

@@ -129,6 +129,18 @@ describe("Alert", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 
+  it("paints the description of a warning with the warning color, since the muted gray is below 4.5:1 on the yellow", () => {
+    render(
+      <Alert variant="warning" description="O link vale por 48 horas.">
+        Guarde este link agora
+      </Alert>,
+    );
+
+    expect(screen.getByText("O link vale por 48 horas.")).toHaveClass(
+      "text-tedi-warning-foreground",
+    );
+  });
+
   it("renders nothing for an empty warning", () => {
     const { container } = render(<Alert variant="warning">{null}</Alert>);
 
@@ -188,17 +200,20 @@ describe("Alert", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Link copiado.");
   });
 
-  it("the description follows the colour of the alert instead of the muted grey (4.5:1)", () => {
-    const { container } = render(
-      <Alert variant="warning" description="O link vale por 48 horas.">
-        Guarde este link agora
-      </Alert>,
-    );
+  it.each(["danger", "error", "info"] as const)(
+    "the description of a %s alert follows the colour of the alert instead of the muted grey (4.5:1)",
+    (variant) => {
+      const { container } = render(
+        <Alert variant={variant} description="O histórico de aulas continua.">
+          Aviso
+        </Alert>,
+      );
 
-    const description = container.querySelector("[data-slot='alert-description']");
-    expect(description).toHaveClass("text-inherit");
-    expect(description).not.toHaveClass("text-muted");
-  });
+      const description = container.querySelector("[data-slot='alert-description']");
+      expect(description).toHaveClass("text-inherit");
+      expect(description).not.toHaveClass("text-muted");
+    },
+  );
 
   it.each([
     ["danger", "text-danger-soft-foreground"],

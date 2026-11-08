@@ -3,7 +3,6 @@ import { http, HttpResponse } from "msw";
 import {
   InviteListItemDtoStatus,
   InviteType,
-  type AcceptInviteDto,
   type AccessResponseDto,
   type CreateInviteDto,
   type CreateInviteResponseDto,
@@ -18,6 +17,7 @@ import {
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
+import type { AcceptInviteSubmission } from "../lib/legacy-accept-invite";
 import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
 
 /**
@@ -115,6 +115,7 @@ export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteR
     role: Role.member,
     expiresAt: "2026-09-22T12:00:00.000Z",
     person: null,
+    departments: [],
     ...overrides,
   };
 }
@@ -148,7 +149,8 @@ interface AcceptInviteHandlerOptions {
   error?: ApiErrorOptions;
   networkError?: boolean;
   delay?: Promise<void>;
-  onCall?: (body: AcceptInviteDto) => void;
+  // TODO(GUS-120): volta a ser AcceptInviteDto.
+  onCall?: (body: AcceptInviteSubmission) => void;
 }
 
 export function acceptInviteHandler({
@@ -158,7 +160,7 @@ export function acceptInviteHandler({
   onCall,
 }: AcceptInviteHandlerOptions = {}) {
   return http.post("*/auth/invites/accept", async ({ request }) => {
-    onCall?.((await request.json()) as AcceptInviteDto);
+    onCall?.((await request.json()) as AcceptInviteSubmission);
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();

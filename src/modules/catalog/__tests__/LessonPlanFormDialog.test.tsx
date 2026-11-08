@@ -3,15 +3,21 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { getGetLessonPlanQueryKey } from "@api/generated/catalog/catalog";
+import { getGetLessonPlanQueryKey, useGetLessonPlan } from "@api/generated/catalog/catalog";
 
 import { LessonPlanFormDialog } from "../components/LessonPlanFormDialog";
 import {
   ARCHIVED_ERROR,
-  buildArchivedLessonPlan,
+  buildArchivedLessonPlanDetail,
+  buildInUseLessonPlanDetail,
   buildLessonPlan,
+  buildLessonPlanDetail,
+  buildLessonPlanUsage,
+  COURSE_SMARTPHONES,
+  COURSE_SOCIAL_NETWORKS,
   createLessonPlanHandler,
   getLessonPlanHandler,
+  getLessonPlanUsageHandler,
   LESSON_PLAN_ID,
   NOT_FOUND_ERROR,
   updateLessonPlanHandler,
@@ -440,7 +446,7 @@ describe("LessonPlanFormDialog (create)", () => {
     it("stops adding at 50 contents and says why", async () => {
       const fortyNineContents = Array.from({ length: 49 }, (_, index) => `Conteúdo ${index + 1}`);
       server.use(
-        getLessonPlanHandler({ response: buildLessonPlan({ contents: fortyNineContents }) }),
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ contents: fortyNineContents }) }),
       );
       const user = userEvent.setup();
       await renderEdit();
@@ -799,7 +805,7 @@ describe("LessonPlanFormDialog (edit)", () => {
     it("opens the form already filled with the plan", async () => {
       server.use(
         getLessonPlanHandler({
-          response: buildLessonPlan({
+          response: buildLessonPlanDetail({
             title: "Navegador e busca",
             objective: "Pesquisar com segurança.",
             expectedDurationMinutes: 135,
@@ -826,7 +832,9 @@ describe("LessonPlanFormDialog (edit)", () => {
 
     it("leaves the objective and the link empty when the plan has none", async () => {
       server.use(
-        getLessonPlanHandler({ response: buildLessonPlan({ objective: null, materialUrl: null }) }),
+        getLessonPlanHandler({
+          response: buildLessonPlanDetail({ objective: null, materialUrl: null }),
+        }),
       );
       await renderEdit();
 
@@ -880,7 +888,7 @@ describe("LessonPlanFormDialog (edit)", () => {
     });
 
     it("does not offer the form for an archived plan", async () => {
-      server.use(getLessonPlanHandler({ response: buildArchivedLessonPlan() }));
+      server.use(getLessonPlanHandler({ response: buildArchivedLessonPlanDetail() }));
       await renderEdit();
 
       expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -890,8 +898,59 @@ describe("LessonPlanFormDialog (edit)", () => {
       expect(button("Salvar alterações")).toBeDisabled();
     });
 
+    it("waits for the latest plan when another screen already holds an older copy in the cache", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ title: "Versão antiga" }) }),
+      );
+      const user = userEvent.setup();
+
+      function Screen() {
+        const cached = useGetLessonPlan(LESSON_PLAN_ID);
+        const [isOpen, setIsOpen] = useState(false);
+        return (
+          <>
+            <p>{cached.data?.title}</p>
+            <button type="button" onClick={() => setIsOpen(true)}>
+              Abrir edição
+            </button>
+            {isOpen ? (
+              <LessonPlanFormDialog
+                mode="edit"
+                lessonPlanId={LESSON_PLAN_ID}
+                onClose={() => setIsOpen(false)}
+              />
+            ) : null}
+          </>
+        );
+      }
+
+      await renderWithProviders(<Screen />);
+      await screen.findByText("Versão antiga");
+      const deferred = createDeferred();
+      server.use(
+        getLessonPlanHandler({
+          response: buildLessonPlanDetail({ title: "Versão nova" }),
+          delay: deferred.promise,
+        }),
+      );
+
+      await user.click(screen.getByRole("button", { name: "Abrir edição" }));
+
+      expect(await screen.findByRole("status")).toHaveTextContent("Carregando o plano de aula…");
+      expect(screen.queryByRole("textbox", { name: "Título do plano" })).not.toBeInTheDocument();
+      expect(button("Salvar alterações")).toBeDisabled();
+
+      deferred.resolve();
+      expect(await screen.findByRole("textbox", { name: "Título do plano" })).toHaveValue(
+        "Versão nova",
+      );
+      expect(button("Salvar alterações")).toBeEnabled();
+    });
+
     it("always shows the latest data when the dialog is opened again", async () => {
-      server.use(getLessonPlanHandler({ response: buildLessonPlan({ title: "Primeira versão" }) }));
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ title: "Primeira versão" }) }),
+      );
       const user = userEvent.setup();
 
       function Harness() {
@@ -918,7 +977,9 @@ describe("LessonPlanFormDialog (edit)", () => {
       );
       await user.click(button("Cancelar"));
 
-      server.use(getLessonPlanHandler({ response: buildLessonPlan({ title: "Segunda versão" }) }));
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail({ title: "Segunda versão" }) }),
+      );
       await user.click(screen.getByRole("button", { name: "Abrir de novo" }));
 
       expect(await screen.findByRole("textbox", { name: "Título do plano" })).toHaveValue(
@@ -1061,6 +1122,460 @@ describe("LessonPlanFormDialog (edit)", () => {
         await screen.findByText("Informe um link válido, começando com http:// ou https://."),
       ).toBeInTheDocument();
       await waitFor(() => expect(textbox("Link do material")).toHaveFocus());
+    });
+  });
+});
+
+describe("LessonPlanFormDialog (edit, RF-017)", () => {
+  const CONFIRMATION = "Confirmar alteração do plano";
+
+  async function changeDuration(user: UserEvent, hours: string, minutes: string) {
+    const hoursField = await screen.findByRole("textbox", { name: "Horas" });
+    await user.clear(hoursField);
+    await user.type(hoursField, hours);
+    await user.clear(textbox("Minutos"));
+    await user.type(textbox("Minutos"), minutes);
+  }
+
+  async function saveChanges(user: UserEvent) {
+    await user.click(button("Salvar alterações"));
+  }
+
+  const confirmation = () => screen.findByRole("dialog", { name: CONFIRMATION });
+
+  describe("a plan in use whose duration changed", () => {
+    it("asks the usage with the new duration and shows the confirmation before saving", async () => {
+      const onUsage = vi.fn();
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ onCall: onUsage }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+
+      const dialog = await confirmation();
+      expect(onUsage).toHaveBeenCalledTimes(1);
+      expect(onUsage).toHaveBeenCalledWith({ id: LESSON_PLAN_ID, expectedDurationMinutes: 120 });
+      expect(within(dialog).getByText("Este plano é usado em 2 cursos")).toBeInTheDocument();
+      expect(onUpdate).not.toHaveBeenCalled();
+    });
+
+    it("shows the new workload of each course, as the API sent it, before saving", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler(),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+
+      const dialog = await confirmation();
+      const social = within(dialog).getByRole("row", {
+        name: new RegExp(COURSE_SOCIAL_NETWORKS.courseName),
+      });
+      const smartphones = within(dialog).getByRole("row", {
+        name: new RegExp(COURSE_SMARTPHONES.courseName),
+      });
+      expect(
+        within(social)
+          .getAllByRole("cell")
+          .slice(1)
+          .map((cell) => cell.textContent),
+      ).toEqual(["7h05", "7h35"]);
+      expect(
+        within(smartphones)
+          .getAllByRole("cell")
+          .slice(1)
+          .map((cell) => cell.textContent),
+      ).toEqual(["8h30", "9h"]);
+    });
+
+    it("saves only after the confirmation, with the data that was typed, then closes", async () => {
+      const onUpdate = vi.fn();
+      const updated = buildLessonPlan({ expectedDurationMinutes: 120 });
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler({ response: updated, onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose, onSaved } = await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      const dialog = await confirmation();
+
+      await user.click(within(dialog).getByRole("button", { name: "Salvar alteração" }));
+
+      expect(await screen.findByText("Plano de aula atualizado.")).toBeInTheDocument();
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+      expect(onUpdate.mock.calls[0]?.[0]).toMatchObject({
+        id: LESSON_PLAN_ID,
+        body: { title: "Teclado, mouse e janelas", expectedDurationMinutes: 120 },
+      });
+      expect(onSaved).toHaveBeenCalledWith(updated);
+    });
+
+    it("Voltar keeps everything that was typed and sends nothing", async () => {
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await user.type(await screen.findByRole("textbox", { name: "Título do plano" }), " v2");
+      await user.click(button("+ Adicionar conteúdo"));
+      await user.type(textbox("Conteúdo 3"), "Atalhos do teclado");
+      await user.type(textbox("Objetivo"), " Com calma.");
+      await changeDuration(user, "2", "15");
+      await saveChanges(user);
+      const dialog = await confirmation();
+
+      await user.click(within(dialog).getByRole("button", { name: "Voltar" }));
+
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument(),
+      );
+      expect(screen.getByRole("dialog", { name: "Editar plano de aula" })).toBeInTheDocument();
+      expect(textbox("Título do plano")).toHaveValue("Teclado, mouse e janelas v2");
+      expect(textbox("Horas")).toHaveValue("2");
+      expect(textbox("Minutos")).toHaveValue("15");
+      expect(contentValues()).toEqual([
+        "Teclado e mouse",
+        "Janelas do sistema",
+        "Atalhos do teclado",
+      ]);
+      expect(textbox("Objetivo")).toHaveValue(
+        "Familiarizar o aluno com o teclado, o mouse e o uso básico das janelas. Com calma.",
+      );
+      expect(onUpdate).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("gives the focus back to the form after Voltar", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      const dialog = await confirmation();
+
+      await user.click(within(dialog).getByRole("button", { name: "Voltar" }));
+
+      await waitFor(() => expect(button("Salvar alterações")).toHaveFocus());
+    });
+
+    it("lets the person save again after Voltar, asking the usage again", async () => {
+      const onUsage = vi.fn();
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ onCall: onUsage }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      await user.click(within(await confirmation()).getByRole("button", { name: "Voltar" }));
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument(),
+      );
+
+      await saveChanges(user);
+      await user.click(
+        within(await confirmation()).getByRole("button", { name: "Salvar alteração" }),
+      );
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+      expect(onUsage).toHaveBeenCalledTimes(2);
+    });
+
+    it("Escape on the confirmation works like Voltar, and keeps the form open", async () => {
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      await confirmation();
+
+      await user.keyboard("{Escape}");
+
+      await waitFor(() =>
+        expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument(),
+      );
+      expect(screen.getByRole("dialog", { name: "Editar plano de aula" })).toBeInTheDocument();
+      expect(textbox("Horas")).toHaveValue("2");
+      expect(onClose).not.toHaveBeenCalled();
+      expect(onUpdate).not.toHaveBeenCalled();
+    });
+
+    it("shows the saving state on the confirmation, which cannot be dismissed meanwhile", async () => {
+      const deferred = createDeferred();
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler({ delay: deferred.promise, onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      const dialog = await confirmation();
+
+      await user.click(within(dialog).getByRole("button", { name: "Salvar alteração" }));
+
+      expect(await within(dialog).findByRole("button", { name: "Salvando…" })).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Voltar" })).toBeDisabled();
+      await user.keyboard("{Escape}");
+      await user.click(within(dialog).getByRole("button", { name: "Fechar" }));
+      await user.click(within(dialog).getByRole("button", { name: "Salvando…" }));
+      expect(screen.getByRole("dialog", { name: CONFIRMATION })).toBeInTheDocument();
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+
+      deferred.resolve();
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onUpdate).toHaveBeenCalledTimes(1);
+    });
+
+    it("goes back to the form with the error when the plan was archived before confirming", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler({ error: ARCHIVED_ERROR }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      const dialog = await confirmation();
+
+      await user.click(within(dialog).getByRole("button", { name: "Salvar alteração" }));
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(
+        "Este plano de aula está arquivado e não pode ser editado. Reative o plano para editar.",
+      );
+      await waitFor(() => expect(alert.parentElement).toHaveFocus());
+      expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
+      expect(screen.getByRole("dialog", { name: "Editar plano de aula" })).toBeInTheDocument();
+      expect(textbox("Horas")).toHaveValue("2");
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
+    it("goes back to the form with the field error when the server rejects the data after confirming", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+        updateLessonPlanHandler({
+          error: VALIDATION_ERROR([{ field: "materialUrl", message: "materialUrl must be a URL" }]),
+        }),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+      await saveChanges(user);
+      const dialog = await confirmation();
+
+      await user.click(within(dialog).getByRole("button", { name: "Salvar alteração" }));
+
+      expect(
+        await screen.findByText("Informe um link válido, começando com http:// ou https://."),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
+      await waitFor(() => expect(textbox("Link do material")).toHaveFocus());
+    });
+  });
+
+  describe("when the confirmation is not needed", () => {
+    it("saves directly when the duration did not change, even for a plan in use", async () => {
+      const onUsage = vi.fn();
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ onCall: onUsage }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await user.type(await screen.findByRole("textbox", { name: "Título do plano" }), " v2");
+
+      await saveChanges(user);
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onUsage).not.toHaveBeenCalled();
+      expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
+    });
+
+    it("saves directly a plan that no course uses, even with a new duration", async () => {
+      const onUsage = vi.fn();
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ onCall: onUsage }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+      expect(onUpdate.mock.calls[0]?.[0].body.expectedDurationMinutes).toBe(120);
+      expect(onUsage).not.toHaveBeenCalled();
+      expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
+    });
+
+    it("saves directly when the API says that no course uses the plan any more", async () => {
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ response: buildLessonPlanUsage({ courses: [] }) }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+
+      await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
+    });
+
+    it("does not ask the usage when creating a plan", async () => {
+      const onUsage = vi.fn();
+      server.use(createLessonPlanHandler(), getLessonPlanUsageHandler({ onCall: onUsage }));
+      const user = userEvent.setup();
+      const { onClose } = await renderCreate();
+      await fillRequiredFields(user);
+
+      await submit(user);
+
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onUsage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("when the usage cannot be asked", () => {
+    it("shows the error, does not save and lets the person try again", async () => {
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ networkError: true }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent(
+        "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      );
+      await waitFor(() => expect(alert.parentElement).toHaveFocus());
+      expect(screen.queryByRole("dialog", { name: CONFIRMATION })).not.toBeInTheDocument();
+      expect(onUpdate).not.toHaveBeenCalled();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(button("Salvar alterações")).toBeEnabled();
+      expect(textbox("Horas")).toHaveValue("2");
+
+      server.use(getLessonPlanUsageHandler());
+      await saveChanges(user);
+
+      expect(await confirmation()).toBeInTheDocument();
+      expect(screen.queryByText(/Não foi possível conectar/)).not.toBeInTheDocument();
+    });
+
+    it("shows that the plan was not found when the usage says so", async () => {
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ error: NOT_FOUND_ERROR }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Plano de aula não encontrado.");
+      expect(onUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("while the usage is being asked", () => {
+    it("shows the saving state and ignores a second Salvar", async () => {
+      const deferred = createDeferred();
+      const onUsage = vi.fn();
+      const onUpdate = vi.fn();
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler({ delay: deferred.promise, onCall: onUsage }),
+        updateLessonPlanHandler({ onCall: onUpdate }),
+      );
+      const user = userEvent.setup();
+      const { onClose } = await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+      expect(await screen.findByRole("button", { name: "Salvando…" })).toBeInTheDocument();
+      expect(button("Cancelar")).toBeDisabled();
+      await user.click(button("Salvando…"));
+      await user.keyboard("{Enter}");
+      await user.keyboard("{Escape}");
+
+      expect(onClose).not.toHaveBeenCalled();
+      deferred.resolve();
+      expect(await confirmation()).toBeInTheDocument();
+      expect(onUsage).toHaveBeenCalledTimes(1);
+      expect(onUpdate).not.toHaveBeenCalled();
+    });
+
+    it("frees the form again once the confirmation is open", async () => {
+      server.use(
+        getLessonPlanHandler({ response: buildInUseLessonPlanDetail() }),
+        getLessonPlanUsageHandler(),
+      );
+      const user = userEvent.setup();
+      await renderEdit();
+      await changeDuration(user, "2", "0");
+
+      await saveChanges(user);
+      await confirmation();
+      await user.click(
+        within(screen.getByRole("dialog", { name: CONFIRMATION })).getByRole("button", {
+          name: "Voltar",
+        }),
+      );
+
+      await waitFor(() => expect(button("Salvar alterações")).toBeEnabled());
+      expect(button("Cancelar")).toBeEnabled();
     });
   });
 });

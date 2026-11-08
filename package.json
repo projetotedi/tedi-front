@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:cov": "vitest run --coverage",
     "generate": "orval",
+    "openapi:drift": "node scripts/check-openapi-drift.mjs",
     "depcruise": "depcruise src --config .dependency-cruiser.cjs"
   },
   "dependencies": {

@@ -334,7 +334,11 @@ export function LessonPlansPage(): ReactElement {
         </div>
 
         {isCreateOpen ? (
-          <LessonPlanFormDialog mode="create" onClose={() => setIsCreateOpen(false)} />
+          <LessonPlanFormDialog
+            mode="create"
+            onClose={() => setIsCreateOpen(false)}
+            onSaved={(plan) => navigate(`/lesson-plans/${plan.id}`)}
+          />
         ) : null}
         {editingPlan ? (
           <MockLessonPlanFormDialog plan={editingPlan} onClose={() => setEditingPlan(null)} />

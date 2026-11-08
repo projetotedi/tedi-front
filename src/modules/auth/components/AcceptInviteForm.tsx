@@ -132,6 +132,7 @@ export function AcceptInviteForm({
 
   function submitRegistration(values: AcceptInviteFormValues) {
     // Campo a campo, nunca `...values`: a confirmação da senha não vai para a rede.
+    // TODO(GUS-120): ainda o corpo legado (LegacyAcceptInviteBody); o back da develop exige `registration`.
     acceptance.submit({
       token,
       name: values.name,

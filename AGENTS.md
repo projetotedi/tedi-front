@@ -36,6 +36,7 @@ Use Yarn.
 - `yarn lint`: oxlint. `yarn format` / `yarn format:check`: oxfmt.
 - `yarn depcruise`: verifica as regras de fronteira entre módulos (`.dependency-cruiser.cjs`).
 - `yarn generate`: roda o Orval. Exige `openapi/openapi.json` (copiado de `docs/openapi.json` da API).
+- `yarn openapi:drift`: compara `openapi/openapi.json` com o contrato da develop do back (só avisa).
 
 ## Estilo de Código e Convenções de Nomenclatura
 
@@ -70,7 +71,7 @@ Use Yarn.
 
 ## Diretrizes de Commit e Pull Request
 
-- Fluxo de branches: `feature/* → develop → staging → main`. O CI (`.github/workflows/ci.yml`) roda em push/PR para `main`, `staging` e `develop`: install → lint → format:check → typecheck → depcruise → test → build.
+- Fluxo de branches: `feature/* → develop → staging → main`. O CI (`.github/workflows/ci.yml`) roda em push/PR para `main`, `staging` e `develop`: install → lint → format:check → typecheck → depcruise → test → build, mais um passo que só **avisa** quando `openapi/openapi.json` diverge do `docs/openapi.json` da develop do back (`scripts/check-openapi-drift.mjs`).
 - Usar o template em `.github/pull_request_template.md` (em português): Resumo, Impacto funcional, Migração (normalmente "Não houve migration" neste repo), Validações, Observações.
 
 ## Dicas de Segurança e Configuração

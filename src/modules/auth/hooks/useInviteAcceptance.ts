@@ -1,7 +1,6 @@
 import { useRef } from "react";
 
 import { useAcceptInvite } from "@api/generated";
-import type { AcceptInviteDto } from "@api/generated/model";
 
 import {
   toAcceptFieldError,
@@ -9,6 +8,7 @@ import {
   type InviteConflictField,
   type InviteErrorKey,
 } from "../lib/invite-error";
+import { toAcceptInviteDto, type AcceptInviteSubmission } from "../lib/legacy-accept-invite";
 import { useSlowRequestNotice } from "./useSlowRequestNotice";
 
 export interface UseInviteAcceptanceOptions {
@@ -46,11 +46,12 @@ export function useInviteAcceptance({
   // forma assíncrona, então dois envios seguidos (duplo clique, Enter repetido) passariam os dois.
   const inFlightRef = useRef(false);
 
-  function submit(data: AcceptInviteDto) {
+  function submit(data: AcceptInviteSubmission) {
     if (isBusy || inFlightRef.current) return;
     inFlightRef.current = true;
     accept.mutate(
-      { data },
+      // TODO(GUS-120): conversão do corpo legado; ver lib/legacy-accept-invite.ts.
+      { data: toAcceptInviteDto(data) },
       {
         onSettled: () => {
           inFlightRef.current = false;
