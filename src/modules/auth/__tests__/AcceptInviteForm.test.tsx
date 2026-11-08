@@ -708,6 +708,24 @@ describe("AcceptInviteForm CPF and phone", () => {
     expect(asInput(phoneField()).selectionStart).toBe(12);
   });
 
+  it("does not reuse an old cursor position on the next keystroke after a rejected character", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+    await goToPersonalStep(user);
+    await user.type(cpfField(), "5299822");
+
+    // Uma letra no meio é descartada pela máscara e o texto não muda.
+    await user.type(cpfField(), "x", { initialSelectionStart: 3, initialSelectionEnd: 3 });
+    expect(cpfField()).toHaveValue("529.982.2");
+
+    // A pessoa volta ao fim e segue digitando: os dígitos têm de cair no fim.
+    await user.type(cpfField(), "47");
+
+    expect(cpfField()).toHaveValue("529.982.247");
+    expect(asInput(cpfField()).selectionStart).toBe("529.982.247".length);
+  });
+
   it("does not move the cursor when the person types at the end", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());

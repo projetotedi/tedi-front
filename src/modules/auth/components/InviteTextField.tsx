@@ -74,8 +74,13 @@ export function InviteTextField({
 
   function handleChange(typed: string) {
     const value = format ? format(typed) : typed;
+    // Zera o pedido de antes: sem uma nova renderização o efeito não roda, e um cursor velho
+    // seria aplicado na digitação seguinte.
+    pendingCaretRef.current = null;
     const caret = inputRef.current?.selectionStart ?? null;
-    if (value !== typed && caret !== null && caret < typed.length) {
+    // `value !== field.value`: só há nova renderização (e texto reescrito na tela) se o valor muda.
+    const isRewritten = value !== typed && value !== field.value;
+    if (isRewritten && caret !== null && caret < typed.length) {
       pendingCaretRef.current = caretAfterDigits(value, onlyDigits(typed.slice(0, caret)).length);
     }
     field.onChange(value);
