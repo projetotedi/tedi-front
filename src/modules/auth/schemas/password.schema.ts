@@ -6,17 +6,20 @@ import {
   acceptInviteBodyRegistrationOneNameMax,
 } from "@api/generated/zod/auth/auth";
 
-const passwordFields = {
+export const passwordFields = {
   password: zod
     .string()
     .min(acceptInviteBodyPasswordMin, { message: "invite.validation.passwordMin" }),
   passwordConfirmation: zod.string(),
 };
 
-function passwordsMatch(values: { password: string; passwordConfirmation: string }): boolean {
+export function passwordsMatch(values: {
+  password: string;
+  passwordConfirmation: string;
+}): boolean {
   return values.password === values.passwordConfirmation;
 }
-const passwordMismatch = {
+export const passwordMismatch = {
   message: "invite.validation.passwordMismatch",
   path: ["passwordConfirmation"],
 };
