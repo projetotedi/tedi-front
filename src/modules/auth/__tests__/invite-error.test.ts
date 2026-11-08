@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  toAcceptFieldError,
-  toInviteErrorKey,
-  toRegistrationFieldErrors,
-} from "../lib/invite-error";
+import { toInviteErrorKey, toRegistrationFieldErrors } from "../lib/invite-error";
 import { FORM_FIELD_ORDER } from "../schemas/accept-invite-form.schema";
 
 function apiError(statusCode: number, error?: string, details?: unknown) {
@@ -100,23 +96,6 @@ describe("toInviteErrorKey", () => {
   ])("falls back to unknown for %s", (_label, error) => {
     expect(toInviteErrorKey(error)).toBe("unknown");
   });
-});
-
-describe("toAcceptFieldError", () => {
-  it("points RA_ALREADY_IN_USE at the RA field", () => {
-    expect(toAcceptFieldError("raInUse")).toBe("ra");
-  });
-
-  it("points EMAIL_ALREADY_IN_USE at the email field", () => {
-    expect(toAcceptFieldError("emailInUse")).toBe("email");
-  });
-
-  it.each(["invalidInvite", "network", "unknown"] as const)(
-    "does not point %s at any field",
-    (key) => {
-      expect(toAcceptFieldError(key)).toBeNull();
-    },
-  );
 });
 
 describe("toRegistrationFieldErrors", () => {

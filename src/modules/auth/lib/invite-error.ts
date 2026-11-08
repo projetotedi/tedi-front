@@ -10,8 +10,6 @@ export type InviteErrorKey =
   | "network"
   | "unknown";
 
-export type InviteConflictField = "ra" | "email";
-
 export function toInviteErrorKey(error: unknown): InviteErrorKey {
   const { statusCode, error: code } = readApiErrorShape(error);
 
@@ -23,12 +21,6 @@ export function toInviteErrorKey(error: unknown): InviteErrorKey {
   if (error instanceof TypeError) return "network";
   if (typeof statusCode === "number" && GATEWAY_STATUS_CODES.has(statusCode)) return "network";
   return "unknown";
-}
-
-export function toAcceptFieldError(key: InviteErrorKey): InviteConflictField | null {
-  if (key === "raInUse") return "ra";
-  if (key === "emailInUse") return "email";
-  return null;
 }
 
 /** Um erro do servidor ligado a um campo: o nome dele no formulário e a chave do texto (namespace `auth`). */
