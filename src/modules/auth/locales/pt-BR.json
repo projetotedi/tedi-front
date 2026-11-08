@@ -184,7 +184,12 @@
         "status": "Status",
         "actions": "Ações"
       },
-      "rowActions": "Ações de {{name}}",
+      "actions": {
+        "edit": "Editar {{name}}",
+        "editTooltip": "Editar",
+        "deactivateMember": "Inativar {{name}}",
+        "deactivateTooltip": "Inativar membro"
+      },
       "status": {
         "active": "Ativo",
         "inactive": "Inativo"
@@ -246,16 +251,112 @@
       "link": {
         "label": "Link de cadastro"
       },
-      "copy": "Copiar link",
-      "copied": "Link copiado.",
-      "copyFallback": "Não foi possível copiar automaticamente. O link foi selecionado: use Ctrl+C (ou Cmd+C) para copiar.",
       "validityTitle": "Copie o link agora",
       "validity": "Este link vale por {{hours}} horas e só pode ser usado uma vez. Ele não será mostrado de novo.",
-      "done": "Concluir",
       "errors": {
         "network": "Não foi possível conectar",
         "unknown": "Não foi possível gerar o convite. Tente novamente."
       }
+    },
+    "generatedLink": {
+      "copy": "Copiar link",
+      "copied": "Link copiado.",
+      "copyFallback": "Não foi possível copiar automaticamente. O link foi selecionado: use Ctrl+C (ou Cmd+C) para copiar.",
+      "done": "Concluir"
+    },
+    "editMember": {
+      "title": "Editar membro",
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "save": "Salvar alterações",
+      "saving": "Salvando…",
+      "dataTitle": "Dados do membro",
+      "summary": {
+        "name": "Nome",
+        "ra": "RA",
+        "email": "E-mail"
+      }
+    },
+    "memberAccess": {
+      "title": "Acesso ao sistema",
+      "role": {
+        "label": "Perfil de acesso"
+      },
+      "resetPassword": "Gerar link de redefinição de senha",
+      "disable": "Desativar acesso",
+      "enable": "Reativar acesso",
+      "enabling": "Reativando…",
+      "ownAccount": "Você não pode alterar a própria conta"
+    },
+    "memberSummary": {
+      "identity": "{{name}} · RA {{ra}}",
+      "identityNoRa": "{{name}}",
+      "currentRole": "Perfil atual: {{role}}"
+    },
+    "passwordReset": {
+      "title": "Link de redefinição de senha",
+      "description": "Gera um link de uso único para a pessoa criar uma nova senha.",
+      "generate": "Gerar link",
+      "generating": "Gerando…",
+      "back": "Voltar",
+      "close": "Fechar",
+      "link": {
+        "label": "Link gerado"
+      },
+      "validityTitle": "Copie o link agora",
+      "validity": "Vale por {{hours}} horas e só pode ser usado uma vez. Envie à pessoa por um canal seguro. O link não aparece de novo depois de fechar."
+    },
+    "disableAccess": {
+      "title": "Desativar acesso",
+      "warning": "A pessoa deixa de entrar no sistema. Se estiver com o TEDI aberto, é desconectada na próxima ação. O histórico de aulas, presenças e horas continua. Para registrar a saída do projeto com data, use Inativar membro.",
+      "note": "Você não pode desativar a própria conta nem a última coordenação ativa. O acesso pode ser reativado depois em Editar membro › Acesso ao sistema.",
+      "back": "Voltar",
+      "confirm": "Desativar acesso",
+      "confirming": "Desativando…",
+      "close": "Fechar"
+    },
+    "pendingInvites": {
+      "title": "Convites pendentes ({{count}})",
+      "titlePending": "Convites pendentes",
+      "description": "Links de cadastro gerados que ainda não foram usados nem venceram.",
+      "caption": "Convites pendentes de uso",
+      "columns": {
+        "role": "Perfil",
+        "createdAt": "Gerado em",
+        "expiresAt": "Vence em",
+        "actions": "Ações"
+      },
+      "passwordReset": "Redefinição de senha",
+      "revoke": "Revogar",
+      "revokeFor": "Revogar convite de {{role}} gerado em {{date}}",
+      "revokeForPasswordReset": "Revogar link de redefinição de senha gerado em {{date}}",
+      "empty": "Nenhum convite pendente.",
+      "notice": "Revogar invalida o link na hora; quem abrir verá “Este link não é mais válido”. Convites usados ou vencidos saem desta lista.",
+      "close": "Fechar",
+      "loading": "Carregando convites…",
+      "error": "Não foi possível carregar os convites. Feche e abra de novo.",
+      "confirm": {
+        "title": "Revogar convite",
+        "body": "Convite de {{role}} gerado em {{date}}. O link deixa de valer na hora e não pode ser reativado.",
+        "bodyPasswordReset": "Link de redefinição de senha gerado em {{date}}. O link deixa de valer na hora e não pode ser reativado.",
+        "confirm": "Revogar",
+        "confirming": "Revogando…",
+        "back": "Voltar"
+      }
+    },
+    "actionErrors": {
+      "lastCoordinator": "Esta é a última coordenação ativa. Promova outra pessoa a Coordenação antes de alterar o perfil ou desativar este acesso.",
+      "ownAccount": "Você não pode alterar a própria conta.",
+      "notFound": "Este acesso não existe mais. Atualize a lista.",
+      "inviteGone": "Este convite já foi usado, revogado ou não existe mais.",
+      "network": "Não foi possível conectar. Tente de novo.",
+      "unknown": "Não foi possível concluir. Tente de novo."
+    },
+    "toast": {
+      "roleUpdated": "Perfil de {{name}} alterado para {{role}}.",
+      "accessDisabled": "Acesso de {{name}} desativado.",
+      "accessEnabled": "Acesso de {{name}} reativado.",
+      "inviteRevoked": "Convite revogado."
     }
   }
 }

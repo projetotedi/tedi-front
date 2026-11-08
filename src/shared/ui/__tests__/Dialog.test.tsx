@@ -38,6 +38,34 @@ describe("Dialog", () => {
     expect(screen.getByRole("dialog", { name: "Gerar convite" })).toHaveClass("max-w-160");
   });
 
+  it("wide size renders 800px wide", () => {
+    render(
+      <Dialog isOpen onOpenChange={() => {}} title="Convites" closeLabel="Fechar" size="wide">
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Convites" })).toHaveClass("max-w-200");
+  });
+
+  it("extraWide size renders 1040px wide", () => {
+    render(
+      <Dialog
+        isOpen
+        onOpenChange={() => {}}
+        title="Editar membro"
+        closeLabel="Fechar"
+        size="extraWide"
+      >
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "Editar membro" });
+    expect(dialog).toHaveClass("max-w-260");
+    expect(dialog).not.toHaveClass("max-w-160");
+  });
+
   it("close button calls onOpenChange(false)", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

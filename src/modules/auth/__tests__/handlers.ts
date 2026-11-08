@@ -11,6 +11,9 @@ import {
   type ListAccess200,
   type LoginDto,
   type MeResponseDto,
+  type PasswordResetResponseDto,
+  type UpdateAccessEnabledDto,
+  type UpdateAccessRoleDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
@@ -279,5 +282,120 @@ export function createInviteHandler({
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
     return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+interface UpdateAccessHandlerOptions<Body> {
+  /** A pessoa que o back devolve, já com o campo alterado pelo corpo; sem ela, uma pessoa padrão com o `id` da rota. */
+  person?: AccessResponseDto;
+  /** Resposta do PATCH pronta, no lugar da montada a partir de `person`. */
+  response?: AccessResponseDto;
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (id: string, body: Body) => void;
+}
+
+// PATCH /access/:id/role (perfil). Não confundir com GET /access (lista) nem com /enabled.
+export function updateAccessRoleHandler({
+  person,
+  response,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: UpdateAccessHandlerOptions<UpdateAccessRoleDto> = {}) {
+  return http.patch("*/access/:id/role", async ({ params, request }) => {
+    const id = String(params.id);
+    const body = (await request.json()) as UpdateAccessRoleDto;
+    onCall?.(id, body);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response ?? { ...(person ?? buildAccess({ id })), role: body.role });
+  });
+}
+
+// PATCH /access/:id/enabled (ativar/desativar o acesso).
+export function updateAccessEnabledHandler({
+  person,
+  response,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: UpdateAccessHandlerOptions<UpdateAccessEnabledDto> = {}) {
+  return http.patch("*/access/:id/enabled", async ({ params, request }) => {
+    const id = String(params.id);
+    const body = (await request.json()) as UpdateAccessEnabledDto;
+    onCall?.(id, body);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(
+      response ?? { ...(person ?? buildAccess({ id })), accessEnabled: body.enabled },
+    );
+  });
+}
+
+export function buildPasswordResetResponse(
+  overrides: Partial<PasswordResetResponseDto> = {},
+): PasswordResetResponseDto {
+  return {
+    expiresAt: "2026-09-24T12:00:00.000Z",
+    url: "https://tedi.example/reset-password?token=plain-text-reset-token",
+    ...overrides,
+  };
+}
+
+interface CreatePasswordResetHandlerOptions {
+  response?: PasswordResetResponseDto;
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (id: string) => void;
+}
+
+// POST /access/:id/password-reset → 201 { url, expiresAt }.
+export function createPasswordResetHandler({
+  response = buildPasswordResetResponse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: CreatePasswordResetHandlerOptions = {}) {
+  return http.post("*/access/:id/password-reset", async ({ params }) => {
+    onCall?.(String(params.id));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+interface RevokeInviteHandlerOptions {
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  delay?: Promise<void>;
+  onCall?: (id: string) => void;
+}
+
+// DELETE /invites/:id → 204.
+export function revokeInviteHandler({
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: RevokeInviteHandlerOptions = {}) {
+  return http.delete("*/invites/:id", async ({ params }) => {
+    onCall?.(String(params.id));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return new HttpResponse(null, { status: 204 });
   });
 }

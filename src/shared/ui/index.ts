@@ -44,3 +44,5 @@ export { TextField } from "./TextField";
 export type { TextFieldProps } from "./TextField";
 export { toast, ToastProvider } from "./Toast";
 export type { ToastOptions, ToastProviderProps } from "./Toast";
+export { Tooltip } from "./Tooltip";
+export type { TooltipProps } from "./Tooltip";
