@@ -5,17 +5,17 @@ export const MIN_BIRTH_DATE = "1900-01-01";
 const TIME_ZONE = "America/Sao_Paulo";
 const ISO_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-const todayFormatter = new Intl.DateTimeFormat("en-US", {
-  timeZone: TIME_ZONE,
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
 /** "Hoje" em America/Sao_Paulo, como YYYY-MM-DD (que ordena como texto). `now` existe para os testes. */
 export function todayInSaoPaulo(now: Date = new Date()): string {
+  // Criado a cada chamada, e não ao importar o módulo: um ambiente sem o fuso derrubaria a tela toda.
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
   const parts = Object.fromEntries(
-    todayFormatter.formatToParts(now).map((part) => [part.type, part.value]),
+    formatter.formatToParts(now).map((part) => [part.type, part.value]),
   );
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
