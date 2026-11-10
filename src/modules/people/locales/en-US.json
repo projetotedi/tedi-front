@@ -103,6 +103,7 @@
       "other": "Other"
     },
     "empty": "—",
-    "notProvided": "Not provided"
+    "notProvided": "Not provided",
+    "hoursUnavailable": "The hours bank arrives with the hours module."
   }
 }

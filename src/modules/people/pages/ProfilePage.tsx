@@ -51,7 +51,9 @@ export function ProfilePage() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_27.5rem]">
         <div className="flex min-w-0 flex-col gap-6">
           <EntriesCard entries={profile.entries} />
-          <CategoryHoursCard period={profile.categoryPeriod} rows={profile.hoursByCategory} />
+          <CategoryHoursCard
+            byCategory={{ period: profile.categoryPeriod, rows: profile.hoursByCategory }}
+          />
         </div>
 
         <div className="flex min-w-0 flex-col gap-6">

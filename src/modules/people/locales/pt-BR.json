@@ -107,6 +107,7 @@
       "other": "Outros"
     },
     "empty": "—",
-    "notProvided": "Não informado"
+    "notProvided": "Não informado",
+    "hoursUnavailable": "O banco de horas chega com o módulo de horas."
   }
 }
