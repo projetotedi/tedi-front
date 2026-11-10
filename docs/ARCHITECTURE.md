@@ -214,7 +214,7 @@ export { PersonPicker } from "./components/PersonPicker"; // usado por classes e
 
 `classes` importa `PersonPicker` de `@modules/people`, nunca de `@modules/people/components/...`.
 
-Após o login, `/` redireciona para `/profile` ("Meu perfil", módulo `people`).
+Após o login, `/` redireciona para `/profile` ("Meu perfil", módulo `people`). A tela lê o cadastro de quem está logado com `useGetMyProfile` (`GET /members/me`, GUS-122). Campo sem valor aparece como "—" (regra única do `DetailsCard`; o leitor de tela lê "Não informado"), e o cadastro sai do cache quando a página desmonta (`gcTime: 0`), para que outra pessoa que entre na mesma aba não o veja. Os cards de horas ficam em estado vazio (recebem `null`) até a GUS-163 trazer o banco de horas.
 
 **i18n.** Um namespace por módulo, registrado com `registerModuleLocales("people", { "pt-BR": ptBR, "en-US": enUS })` no `index.ts` do módulo. Nos componentes, `useTranslation("people")`.
 
