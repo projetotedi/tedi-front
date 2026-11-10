@@ -102,6 +102,7 @@
       "event": "Event",
       "other": "Other"
     },
-    "empty": "—"
+    "empty": "—",
+    "notProvided": "Not provided"
   }
 }

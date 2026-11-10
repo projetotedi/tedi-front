@@ -106,6 +106,7 @@
       "event": "Evento",
       "other": "Outros"
     },
-    "empty": "—"
+    "empty": "—",
+    "notProvided": "Não informado"
   }
 }
