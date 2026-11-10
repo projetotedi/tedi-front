@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatDate,
-  formatDateTime,
   formatDayMonth,
   formatInstant,
   formatMonthYear,
@@ -16,10 +15,6 @@ describe("profile date formatting", () => {
 
   it("shows day and month for table rows", () => {
     expect(formatDayMonth("2026-03-14", "pt-BR")).toBe("14/03");
-  });
-
-  it("shows date and time", () => {
-    expect(formatDateTime("2026-03-14T09:12", "pt-BR")).toBe("14/03/2026, 09:12");
   });
 
   it("shows a capitalised month and year", () => {

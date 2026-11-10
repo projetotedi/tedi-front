@@ -22,13 +22,6 @@ export function formatDayMonth(value: string, locale: string): string {
   );
 }
 
-/** "14/03/2026, 09:12" em pt-BR. */
-export function formatDateTime(value: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }).format(
-    parseLocal(value),
-  );
-}
-
 /**
  * "20/10/2026, 10:00" in pt-BR, from a real instant (`format: date-time`, ending in `Z`).
  * Without `timeZone` it uses the browser's, which matters because the API returns UTC.

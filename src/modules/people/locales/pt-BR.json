@@ -1,7 +1,9 @@
 {
   "profile": {
     "title": "Meu perfil",
-    "mockNotice": "Dados de exemplo: horas, lançamentos e cadastro ainda não vêm do sistema.",
+    "loading": "Carregando o seu perfil…",
+    "loadError": "Não foi possível carregar o seu perfil. Tente novamente.",
+    "retry": "Tentar de novo",
     "chips": {
       "ra": "RA {{ra}}",
       "since": "Desde {{date}}"
@@ -73,13 +75,16 @@
       "title": "Dados acadêmicos e institucionais",
       "ra": "RA",
       "department": "Departamento",
+      "mainFunction": "Função principal",
       "course": "Curso da faculdade",
       "className": "Turma",
       "semester": "Período",
       "semesterValue": "{{count}}º",
       "institutionalEmail": "E-mail institucional",
       "cpf": "CPF",
-      "volunteerTerm": "Termo de voluntariado"
+      "volunteerTerm": "Termo de voluntariado",
+      "volunteerTermLink": "Abrir o termo",
+      "opensInNewTab": "(abre em nova aba)"
     },
     "account": {
       "title": "Conta e acesso",
