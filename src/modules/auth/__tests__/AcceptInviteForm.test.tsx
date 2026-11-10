@@ -1766,8 +1766,12 @@ describe("AcceptInviteForm accessibility", () => {
     await user.tab();
     expect(departmentTrigger()).toHaveFocus();
     await user.keyboard("{Enter}");
+    await screen.findByRole("listbox");
     await user.keyboard("{ArrowDown}{Enter}");
     expect(departmentTrigger()).toHaveTextContent("Pedagogia");
+    // O React Aria devolve o foco ao botão num quadro depois de fechar a lista. Sem esperar, o Tab
+    // sai do `body` e cai no primeiro campo da página (acontece com a máquina carregada).
+    await waitFor(() => expect(departmentTrigger()).toHaveFocus());
     await user.tab();
     expect(volunteerTermUrlField()).toHaveFocus();
     await user.tab();
