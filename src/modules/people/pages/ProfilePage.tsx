@@ -56,7 +56,8 @@ export function ProfilePage() {
 
   if (profileQuery.isPending) return <ProfileLoading label={t("profile.loading")} />;
 
-  // A 401 never gets here: the AuthProvider already sends the person to the sign in screen.
+  // A 401 also lands here, but the AuthProvider handles it (`tedi:unauthorized`) and sends the
+  // person to the sign in screen, so this alert may only flash before the redirect.
   if (profile === undefined) {
     return (
       <div className="flex flex-col items-start gap-3">
