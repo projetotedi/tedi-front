@@ -2,30 +2,11 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 
 import { acceptInviteBodyPasswordMin } from "@api/generated/zod/auth/auth";
 
-import {
-  academicStepSchema,
-  acceptInviteFormSchema,
-  newPasswordFormSchema,
-  personalStepSchema,
-  STEP_ONE_FIELDS,
-  STEP_TWO_FIELDS,
-  type AcceptInviteFormValues,
-  type NewPasswordFormValues,
-} from "../schemas/password.schema";
-import type { LegacyAcceptInviteBody } from "../lib/legacy-accept-invite";
+import { acceptInviteFormSchema } from "../schemas/accept-invite-form.schema";
+import { newPasswordFormSchema, type NewPasswordFormValues } from "../schemas/password.schema";
 
-const VALID_ACCESS_VALUES = {
-  name: "Lucas Andrade Souza",
-  ra: "202600117",
-  email: "lucas@instituicao.edu.br",
-  password: "senha-segura-1",
-  passwordConfirmation: "senha-segura-1",
-};
-
-type Schema = typeof acceptInviteFormSchema | typeof newPasswordFormSchema;
-
-function messagesFor(schema: Schema, values: unknown): Record<string, string[]> {
-  const result = schema.safeParse(values);
+function messagesFor(values: unknown): Record<string, string[]> {
+  const result = newPasswordFormSchema.safeParse(values);
   if (result.success) return {};
 
   const messages: Record<string, string[]> = {};
@@ -35,170 +16,6 @@ function messagesFor(schema: Schema, values: unknown): Record<string, string[]> 
   }
   return messages;
 }
-
-describe("acceptInviteFormSchema", () => {
-  it("accepts a complete payload", () => {
-    expect(acceptInviteFormSchema.safeParse(VALID_ACCESS_VALUES).success).toBe(true);
-  });
-
-  it("requires the name", () => {
-    expect(messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, name: "" })).toEqual({
-      name: ["invite.validation.nameRequired"],
-    });
-  });
-
-  it("treats a name of only spaces as empty", () => {
-    expect(messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, name: "   " })).toEqual({
-      name: ["invite.validation.nameRequired"],
-    });
-  });
-
-  it("rejects a name longer than the contract allows", () => {
-    expect(
-      messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, name: "a".repeat(201) }),
-    ).toEqual({ name: ["invite.validation.nameMax"] });
-    expect(
-      acceptInviteFormSchema.safeParse({ ...VALID_ACCESS_VALUES, name: "a".repeat(200) }).success,
-    ).toBe(true);
-  });
-
-  it("requires the RA", () => {
-    expect(messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, ra: "" })).toEqual({
-      ra: ["invite.validation.raRequired"],
-    });
-    expect(messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, ra: "  " })).toEqual({
-      ra: ["invite.validation.raRequired"],
-    });
-  });
-
-  it.each(["", "   ", "sem-arroba", "lucas@", "lucas@instituicao"])(
-    "rejects the email %j with the single email message",
-    (email) => {
-      expect(messagesFor(acceptInviteFormSchema, { ...VALID_ACCESS_VALUES, email })).toEqual({
-        email: ["invite.validation.emailInvalid"],
-      });
-    },
-  );
-
-  it("trims the name, the RA and the email in the validated output", () => {
-    const result = acceptInviteFormSchema.safeParse({
-      ...VALID_ACCESS_VALUES,
-      name: "  Lucas Andrade Souza ",
-      ra: " 202600117 ",
-      email: " lucas@instituicao.edu.br ",
-    });
-
-    expect(result.success).toBe(true);
-    expect(result.data).toMatchObject({
-      name: "Lucas Andrade Souza",
-      ra: "202600117",
-      email: "lucas@instituicao.edu.br",
-    });
-  });
-
-  it("rejects a password shorter than 8 characters", () => {
-    const shortPassword = "1234567";
-
-    expect(
-      messagesFor(acceptInviteFormSchema, {
-        ...VALID_ACCESS_VALUES,
-        password: shortPassword,
-        passwordConfirmation: shortPassword,
-      }),
-    ).toEqual({ password: ["invite.validation.passwordMin"] });
-  });
-
-  it("takes the password minimum from the generated contract", () => {
-    expect(acceptInviteBodyPasswordMin).toBe(8);
-
-    const atLimit = "1".repeat(acceptInviteBodyPasswordMin);
-    const belowLimit = "1".repeat(acceptInviteBodyPasswordMin - 1);
-    const withPassword = (password: string) => ({
-      ...VALID_ACCESS_VALUES,
-      password,
-      passwordConfirmation: password,
-    });
-
-    expect(acceptInviteFormSchema.safeParse(withPassword(atLimit)).success).toBe(true);
-    expect(acceptInviteFormSchema.safeParse(withPassword(belowLimit)).success).toBe(false);
-  });
-
-  it("rejects a confirmation different from the password, on the confirmation field", () => {
-    expect(
-      messagesFor(acceptInviteFormSchema, {
-        ...VALID_ACCESS_VALUES,
-        passwordConfirmation: "outra-senha-1",
-      }),
-    ).toEqual({ passwordConfirmation: ["invite.validation.passwordMismatch"] });
-  });
-
-  it("reports a short password and a different confirmation at the same time", () => {
-    expect(
-      messagesFor(acceptInviteFormSchema, {
-        ...VALID_ACCESS_VALUES,
-        password: "1234567",
-        passwordConfirmation: "12345678",
-      }),
-    ).toEqual({
-      password: ["invite.validation.passwordMin"],
-      passwordConfirmation: ["invite.validation.passwordMismatch"],
-    });
-  });
-
-  it("reports every empty field at once", () => {
-    expect(
-      messagesFor(acceptInviteFormSchema, {
-        name: "",
-        ra: "",
-        email: "",
-        password: "",
-        passwordConfirmation: "",
-      }),
-    ).toEqual({
-      name: ["invite.validation.nameRequired"],
-      ra: ["invite.validation.raRequired"],
-      email: ["invite.validation.emailInvalid"],
-      password: ["invite.validation.passwordMin"],
-    });
-  });
-
-  // TODO(GUS-120): volta a comparar com o AcceptInviteDto gerado.
-  it("has the fields of the legacy accept-invite body plus the confirmation, and no token", () => {
-    expectTypeOf<AcceptInviteFormValues>().toEqualTypeOf<{
-      name: string;
-      ra: string;
-      email: string;
-      password: string;
-      passwordConfirmation: string;
-    }>();
-    expectTypeOf<Omit<AcceptInviteFormValues, "passwordConfirmation">>().toExtend<
-      Omit<LegacyAcceptInviteBody, "token">
-    >();
-    expect(Object.keys(acceptInviteFormSchema.shape).sort()).toEqual([
-      "email",
-      "name",
-      "password",
-      "passwordConfirmation",
-      "ra",
-    ]);
-  });
-});
-
-describe("the steps of the registration form", () => {
-  it("lists the fields of step 1 as the keys of the academic step schema", () => {
-    expect([...STEP_ONE_FIELDS].sort()).toEqual(Object.keys(academicStepSchema.shape).sort());
-  });
-
-  it("lists the fields of step 2 as the keys of the personal step schema", () => {
-    expect([...STEP_TWO_FIELDS].sort()).toEqual(Object.keys(personalStepSchema.shape).sort());
-  });
-
-  it("splits every form field into exactly one step", () => {
-    const stepFields = [...STEP_ONE_FIELDS, ...STEP_TWO_FIELDS, "password", "passwordConfirmation"];
-
-    expect(stepFields.sort()).toEqual(Object.keys(acceptInviteFormSchema.shape).sort());
-  });
-});
 
 describe("newPasswordFormSchema", () => {
   it("accepts a password and the same confirmation", () => {
@@ -211,21 +28,42 @@ describe("newPasswordFormSchema", () => {
   });
 
   it("rejects a password shorter than 8 characters", () => {
+    expect(messagesFor({ password: "1234567", passwordConfirmation: "1234567" })).toEqual({
+      password: ["invite.validation.passwordMin"],
+    });
+  });
+
+  it("takes the password minimum from the generated contract", () => {
+    expect(acceptInviteBodyPasswordMin).toBe(8);
+
+    const withPassword = (password: string) => ({ password, passwordConfirmation: password });
     expect(
-      messagesFor(newPasswordFormSchema, { password: "1234567", passwordConfirmation: "1234567" }),
-    ).toEqual({ password: ["invite.validation.passwordMin"] });
+      newPasswordFormSchema.safeParse(withPassword("1".repeat(acceptInviteBodyPasswordMin)))
+        .success,
+    ).toBe(true);
+    expect(
+      newPasswordFormSchema.safeParse(withPassword("1".repeat(acceptInviteBodyPasswordMin - 1)))
+        .success,
+    ).toBe(false);
   });
 
   it("rejects a confirmation different from the password, on the confirmation field", () => {
     expect(
-      messagesFor(newPasswordFormSchema, {
+      messagesFor({
         password: "nova-senha-1",
         passwordConfirmation: "nova-senha-2",
       }),
     ).toEqual({ passwordConfirmation: ["invite.validation.passwordMismatch"] });
   });
 
-  it("does not ask for name, RA or email", () => {
+  it("reports a short password and a different confirmation at the same time", () => {
+    expect(messagesFor({ password: "1234567", passwordConfirmation: "12345678" })).toEqual({
+      password: ["invite.validation.passwordMin"],
+      passwordConfirmation: ["invite.validation.passwordMismatch"],
+    });
+  });
+
+  it("does not ask for name, RA or e-mail", () => {
     expectTypeOf<NewPasswordFormValues>().toEqualTypeOf<{
       password: string;
       passwordConfirmation: string;
@@ -234,5 +72,12 @@ describe("newPasswordFormSchema", () => {
       "password",
       "passwordConfirmation",
     ]);
+  });
+
+  it("shares the password rules with the last step of the registration form", () => {
+    for (const shape of [newPasswordFormSchema.shape, acceptInviteFormSchema.shape]) {
+      expect(shape.password).toBe(newPasswordFormSchema.shape.password);
+      expect(shape.passwordConfirmation).toBe(newPasswordFormSchema.shape.passwordConfirmation);
+    }
   });
 });

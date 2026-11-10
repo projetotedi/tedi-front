@@ -72,7 +72,7 @@
       "description": "Comece pelos seus dados acadêmicos. O RA informado será o seu usuário de acesso ao sistema."
     },
     "personalStep": {
-      "description": "Agora, seus dados pessoais."
+      "description": "Agora, seus dados pessoais. A coordenação confere o cadastro antes de liberar o acesso."
     },
     "passwordStep": {
       "description": "Último passo: crie a senha que você vai usar para entrar no sistema.",
@@ -86,9 +86,52 @@
         "label": "RA",
         "hint": "Você vai entrar no sistema com este RA."
       },
-      "email": {
+      "institutionalEmail": {
         "label": "E-mail institucional"
       },
+      "course": {
+        "label": "Curso da faculdade"
+      },
+      "semester": {
+        "label": "Período",
+        "hint": "Use um número de {{semesterMin}} a {{semesterMax}}."
+      },
+      "className": {
+        "label": "Turma da faculdade"
+      },
+      "departmentId": {
+        "label": "Departamento",
+        "placeholder": "Selecione o departamento"
+      },
+      "volunteerTermUrl": {
+        "label": "Link do termo de voluntariado",
+        "hint": "Link do Google Drive com o termo assinado. O sistema guarda só o link."
+      },
+      "birthDate": {
+        "label": "Data de nascimento"
+      },
+      "cpf": {
+        "label": "CPF",
+        "placeholder": "456.789.123-00"
+      },
+      "phone": {
+        "label": "Telefone",
+        "placeholder": "(11) 98123-4567"
+      },
+      "personalEmail": {
+        "label": "E-mail pessoal"
+      },
+      "address": {
+        "label": "Endereço"
+      },
+      "city": {
+        "label": "Cidade"
+      },
+      "state": {
+        "label": "Estado (UF)",
+        "placeholder": "Selecione o estado"
+      },
+      "noneOption": "Não informar",
       "password": {
         "label": "Senha",
         "hint": "Mínimo de 8 caracteres.",
@@ -111,9 +154,9 @@
       "goToLogin": "Ir para o login",
       "retry": "Tentar de novo"
     },
-    "success": {
-      "title": "Cadastro concluído!",
-      "description": "Agora você já pode entrar com o seu RA ({{ra}}) e a senha que acabou de criar."
+    "submitted": {
+      "title": "Cadastro enviado!",
+      "description": "A coordenação vai conferir os seus dados. Assim que o cadastro for aprovado, você entra com o seu RA ({{ra}}) e a senha que acabou de criar."
     },
     "invalid": {
       "title": "Este link não é mais válido",
@@ -122,15 +165,39 @@
     "slowNotice": "Conectando ao servidor, isso pode levar até um minuto",
     "errors": {
       "raInUse": "Este RA já está em uso",
-      "emailInUse": "Este e-mail já está em uso",
+      "emailInUse": "Este e-mail pessoal já está em uso",
+      "departmentNotFound": "Este departamento não está mais disponível. Escolha outro.",
+      "invalidData": "Algum dado não foi aceito pelo servidor. Volte às etapas anteriores, confira as informações e tente de novo.",
       "network": "Não foi possível conectar",
       "unknown": "Não foi possível enviar o cadastro. Tente novamente."
     },
     "validation": {
       "nameRequired": "Informe o seu nome completo",
-      "nameMax": "O nome deve ter no máximo 200 caracteres",
+      "nameMax": "O nome deve ter no máximo {{nameMax}} caracteres",
       "raRequired": "Informe o seu RA",
-      "emailInvalid": "Informe um e-mail válido",
+      "raMax": "O RA deve ter no máximo {{raMax}} caracteres",
+      "institutionalEmailRequired": "Informe o seu e-mail institucional",
+      "institutionalEmailInvalid": "Informe um e-mail institucional válido",
+      "courseRequired": "Informe o seu curso",
+      "courseMax": "O curso deve ter no máximo {{courseMax}} caracteres",
+      "semesterRequired": "Informe o seu período",
+      "semesterInvalid": "Informe um período de {{semesterMin}} a {{semesterMax}}",
+      "classNameRequired": "Informe a sua turma",
+      "classNameMax": "A turma deve ter no máximo {{classNameMax}} caracteres",
+      "departmentInvalid": "Escolha um departamento da lista",
+      "volunteerTermUrlInvalid": "Informe um link que comece com https://",
+      "volunteerTermUrlMax": "O link deve ter no máximo {{volunteerTermUrlMax}} caracteres",
+      "birthDateRequired": "Informe a sua data de nascimento",
+      "birthDateInvalid": "Informe uma data de nascimento válida, entre 01/01/1900 e hoje",
+      "cpfRequired": "Informe o seu CPF",
+      "cpfInvalid": "Informe um CPF válido, com 11 números",
+      "phoneRequired": "Informe o seu telefone",
+      "phoneInvalid": "Informe o telefone com DDD, com 10 ou 11 números",
+      "personalEmailRequired": "Informe o seu e-mail pessoal",
+      "personalEmailInvalid": "Informe um e-mail pessoal válido",
+      "addressMax": "O endereço deve ter no máximo {{addressMax}} caracteres",
+      "cityMax": "A cidade deve ter no máximo {{cityMax}} caracteres",
+      "stateInvalid": "Escolha um estado da lista",
       "passwordMin": "A senha deve ter no mínimo 8 caracteres",
       "passwordMismatch": "As senhas não são iguais"
     },
