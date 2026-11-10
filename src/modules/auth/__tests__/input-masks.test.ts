@@ -95,6 +95,59 @@ describe("formatPhone", () => {
   });
 });
 
+// O 55 é o DDI do Brasil e também o DDD do interior do Rio Grande do Sul (Santa Maria, Uruguaiana...).
+describe("formatPhone with the area code 55", () => {
+  const PHONE_55 = "(55) 99123-4567";
+
+  it("drops the extra digit typed at the end and keeps the area code", () => {
+    expect(formatPhone("(55) 99123-45678", PHONE_55)).toBe(PHONE_55);
+  });
+
+  it("keeps the area code and cuts the excess when the digit is typed in the middle", () => {
+    expect(formatPhone("(55) 998123-4567", PHONE_55)).toBe("(55) 99812-3456");
+  });
+
+  it("keeps the area code when the digit is typed before the parenthesis", () => {
+    expect(formatPhone("5(55) 99123-4567", PHONE_55)).toBe("(55) 59912-3456");
+  });
+
+  it("keeps the area code when the digits are typed one at a time, past the 11th", () => {
+    let field = "";
+    for (const digit of "559912345678") field = formatPhone(`${field}${digit}`, field);
+
+    expect(field).toBe(PHONE_55);
+  });
+
+  it("does not read a text that already starts with the mask as a number with country code", () => {
+    expect(formatPhone("(55) 99123-45678")).toBe(PHONE_55);
+    expect(formatPhone("(55) 99123456789", "(55) 9")).toBe(PHONE_55);
+  });
+
+  it.each(["+55 55 99123-4567", "+5555991234567", "5555991234567", "55 55 99123-4567"])(
+    "takes the pasted %j as an international number and keeps the area code 55",
+    (pasted) => {
+      expect(formatPhone(pasted)).toBe(PHONE_55);
+      expect(formatPhone(pasted, "")).toBe(PHONE_55);
+    },
+  );
+
+  it("reads as a paste a text that grows by more than one digit at once", () => {
+    expect(formatPhone("5555991234567", "(11) 9")).toBe(PHONE_55);
+  });
+
+  it("keeps a landline pasted with the country code and the area code 55", () => {
+    expect(formatPhone("555533334444")).toBe("(55) 3333-4444");
+  });
+
+  it("takes a pasted number of 11 digits as national", () => {
+    expect(formatPhone("55991234567")).toBe(PHONE_55);
+  });
+
+  it("still drops the extra digit typed after another area code", () => {
+    expect(formatPhone("(11) 98123-45678", "(11) 98123-4567")).toBe("(11) 98123-4567");
+  });
+});
+
 describe("caretAfterDigits", () => {
   it("returns the position right after the n-th digit", () => {
     expect(caretAfterDigits("529.982.247-25", 3)).toBe(3);

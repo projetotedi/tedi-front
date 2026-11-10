@@ -26,8 +26,12 @@ export interface InviteTextFieldProps {
   type?: "text" | "email" | "date";
   inputMode?: TextFieldProps["inputMode"];
   autoComplete: string;
-  /** Máscara aplicada a cada digitação: o valor que o formulário guarda já sai formatado. */
-  format?: (value: string) => string;
+  /**
+   * Máscara aplicada a cada digitação: o valor que o formulário guarda já sai formatado. Recebe o
+   * texto novo e o que o campo tinha antes (o telefone precisa dele para distinguir uma colagem de
+   * um dígito digitado).
+   */
+  format?: (value: string, previous: string) => string;
   isRequired?: boolean;
   isDisabled: boolean;
 }
@@ -73,7 +77,7 @@ export function InviteTextField({
   });
 
   function handleChange(typed: string) {
-    const value = format ? format(typed) : typed;
+    const value = format ? format(typed, field.value) : typed;
     // Zera o pedido de antes: sem uma nova renderização o efeito não roda, e um cursor velho
     // seria aplicado na digitação seguinte.
     pendingCaretRef.current = null;

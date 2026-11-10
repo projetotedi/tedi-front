@@ -672,6 +672,61 @@ describe("AcceptInviteForm CPF and phone", () => {
     expect(phoneField()).toHaveValue("(11) 98123-4567");
   });
 
+  it("keeps the area code 55 when one more digit is typed, and sends that phone to the API", async () => {
+    const user = userEvent.setup();
+    const accepted: AcceptInviteDto[] = [];
+    server.use(
+      meHandler({ user: null }),
+      getInviteHandler(),
+      acceptInviteHandler({ onCall: (body) => accepted.push(body) }),
+    );
+    await openAccessInvite();
+    await goToPersonalStep(user);
+    await fillPersonalStep(user, { phone: "55991234567" });
+    expect(phoneField()).toHaveValue("(55) 99123-4567");
+
+    // Um dígito a mais no fim: o excesso é descartado e o 55 continua sendo o DDD, não o DDI.
+    await user.type(phoneField(), "8");
+
+    expect(phoneField()).toHaveValue("(55) 99123-4567");
+
+    await user.click(continueButton());
+    await passwordHeading();
+    await fillPasswords(user);
+    await user.click(submitButton());
+
+    await screen.findByRole("heading", { name: SENT_TITLE });
+    expect(accepted).toHaveLength(1);
+    expect(accepted[0].registration?.phone).toBe("55991234567");
+  });
+
+  it("keeps the area code 55 and the cursor when the extra digit is typed in the middle", async () => {
+    const user = userEvent.setup();
+    server.use(meHandler({ user: null }), getInviteHandler());
+    await openAccessInvite();
+    await goToPersonalStep(user);
+    await pasteInto(user, phoneField(), "55991234567");
+
+    await user.type(phoneField(), "8", { initialSelectionStart: 7, initialSelectionEnd: 7 });
+
+    expect(phoneField()).toHaveValue("(55) 99812-3456");
+    expect(asInput(phoneField()).selectionStart).toBe(8);
+  });
+
+  it.each(["+55 55 99123-4567", "5555991234567"])(
+    "reads the pasted %s as the phone with the area code 55",
+    async (pasted) => {
+      const user = userEvent.setup();
+      server.use(meHandler({ user: null }), getInviteHandler());
+      await openAccessInvite();
+      await goToPersonalStep(user);
+
+      await pasteInto(user, phoneField(), pasted);
+
+      expect(phoneField()).toHaveValue("(55) 99123-4567");
+    },
+  );
+
   it("keeps the cursor after the digit being typed when the mask rewrites the CPF", async () => {
     const user = userEvent.setup();
     server.use(meHandler({ user: null }), getInviteHandler());
