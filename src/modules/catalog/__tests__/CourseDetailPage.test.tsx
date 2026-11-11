@@ -211,9 +211,7 @@ describe("CourseDetailPage", () => {
       const classes = card("Turmas deste curso");
 
       expect(
-        within(classes).getByText(
-          "As turmas deste curso aparecem aqui quando a consulta de turmas por curso estiver disponível.",
-        ),
+        within(classes).getByText("As turmas deste curso vão aparecer aqui em breve."),
       ).toBeInTheDocument();
       expect(within(classes).queryByRole("link")).not.toBeInTheDocument();
       expect(within(classes).queryByRole("table")).not.toBeInTheDocument();
