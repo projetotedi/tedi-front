@@ -3,14 +3,15 @@ import { useTranslation } from "react-i18next";
 import { formatHours } from "@shared/lib/format";
 import { Badge, Card, type BadgeProps } from "@shared/ui";
 
-import type { ProfileMock } from "../mocks/profile.mock";
+import type { HoursSummaryMinutes } from "../lib/hours";
 
 interface HoursSummaryProps {
-  minutes: ProfileMock["summaryMinutes"];
+  /** `null` while there is no hours bank: the card shows an empty state instead of numbers. */
+  minutes: HoursSummaryMinutes | null;
 }
 
 interface Indicator {
-  key: keyof ProfileMock["summaryMinutes"];
+  key: keyof HoursSummaryMinutes;
   badge?: { label: string; color: BadgeProps["tone"] };
 }
 
@@ -24,6 +25,16 @@ const INDICATORS: Indicator[] = [
 /** Os quatro indicadores de horas do topo do perfil. */
 export function HoursSummary({ minutes }: HoursSummaryProps) {
   const { t } = useTranslation("people");
+
+  if (minutes === null) {
+    return (
+      <section aria-label={t("profile.summary.title")}>
+        <Card>
+          <p className="text-base text-muted">{t("profile.hoursUnavailable")}</p>
+        </Card>
+      </section>
+    );
+  }
 
   return (
     <section aria-label={t("profile.summary.title")}>

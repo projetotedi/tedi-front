@@ -63,6 +63,7 @@ export * from "./memberRegistrationStatus.ts";
 export * from "./meResponseDto.ts";
 export * from "./meResponseDtoEmail.ts";
 export * from "./meResponseDtoRa.ts";
+export * from "./myProfileResponseDto.ts";
 export * from "./passwordResetResponseDto.ts";
 export * from "./permissionsDto.ts";
 export * from "./personRefDto.ts";

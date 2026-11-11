@@ -1,7 +1,9 @@
 {
   "profile": {
     "title": "My profile",
-    "mockNotice": "Sample data: hours, entries and registration details do not come from the system yet.",
+    "loading": "Loading your profile…",
+    "loadError": "We could not load your profile. Please try again.",
+    "retry": "Try again",
     "chips": {
       "ra": "RA {{ra}}",
       "since": "Since {{date}}"
@@ -69,13 +71,16 @@
       "title": "Academic and institutional details",
       "ra": "RA",
       "department": "Department",
+      "mainFunction": "Main function",
       "course": "Degree",
       "className": "Class",
       "semester": "Semester",
       "semesterValue": "{{count}}",
       "institutionalEmail": "Institutional email",
       "cpf": "CPF",
-      "volunteerTerm": "Volunteer agreement"
+      "volunteerTerm": "Volunteer agreement",
+      "volunteerTermLink": "Open the term",
+      "opensInNewTab": "(opens in a new tab)"
     },
     "account": {
       "title": "Account and access",
@@ -102,6 +107,8 @@
       "event": "Event",
       "other": "Other"
     },
-    "empty": "—"
+    "empty": "—",
+    "notProvided": "Not provided",
+    "hoursUnavailable": "The hours bank arrives with the hours module."
   }
 }
