@@ -186,6 +186,7 @@
     "notFoundTitle": "Course not found",
     "notFoundDescription": "This course does not exist or was removed.",
     "loadError": "Could not load the course. Try again.",
+    "empty": "—",
     "notInformed": "Not provided",
     "status": {
       "active": "Active",

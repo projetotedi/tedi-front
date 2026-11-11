@@ -11,7 +11,7 @@ export function EmptyValue(): ReactElement {
 
   return (
     <>
-      <span aria-hidden="true">{t("detail.data.empty")}</span>
+      <span aria-hidden="true">{t("course.empty")}</span>
       <span className="sr-only">{t("course.notInformed")}</span>
     </>
   );
