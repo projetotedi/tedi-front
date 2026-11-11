@@ -49,6 +49,8 @@ async function renderDetail({
 }
 
 interface RenderWithCopyOptions {
+  /** The plan on screen, the one that gets duplicated. */
+  original?: DetailPlan;
   role?: Role;
   route?: string;
 }
@@ -58,10 +60,11 @@ interface RenderWithCopyOptions {
  * is found with `hidden: true` because a form opened by `?edit=1` hides it from the accessibility tree.
  */
 async function renderWithCopy({
+  original = buildLessonPlanDetail(),
   role = Role.coordinator,
   route = DETAIL_ROUTE,
 }: RenderWithCopyOptions = {}) {
-  server.use(getLessonPlansByIdHandler([buildLessonPlanDetail(), buildLessonPlanCopyDetail()]));
+  server.use(getLessonPlansByIdHandler([original, buildLessonPlanCopyDetail()]));
   const view = await renderRoutes(catalogRoutes, { route, user: buildMeUser(role) });
   await screen.findByRole("heading", { name: "Dados do plano de aula", hidden: true });
   return view;
@@ -264,15 +267,10 @@ describe("LessonPlanDetailPage", () => {
     it("offers Duplicar plano to the coordinator, after Editar plano", async () => {
       await renderDetail({ role: Role.coordinator });
 
+      const edit = screen.getByRole("button", { name: "Editar plano" });
       const duplicate = screen.getByRole("button", { name: "Duplicar plano" });
       expect(duplicate).toBeEnabled();
-      const actions = duplicate.parentElement;
-      if (!(actions instanceof HTMLElement)) throw new Error("No actions group in the header");
-      expect(
-        within(actions)
-          .getAllByRole("button")
-          .map((button) => button.textContent),
-      ).toEqual(["Editar plano", "Duplicar plano"]);
+      expect(edit.compareDocumentPosition(duplicate)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     });
 
     it("offers Duplicar plano to the director too", async () => {
@@ -693,6 +691,25 @@ describe("LessonPlanDetailPage", () => {
           hidden: true,
         }),
       ).toBeInTheDocument();
+    });
+
+    it("duplicates an archived plan and opens the copy, which is active, with the edit form open", async () => {
+      server.use(duplicateLessonPlanHandler());
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy({ original: buildArchivedLessonPlanDetail() });
+      expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar plano de aula" });
+      expect(await within(dialog).findByRole("textbox", { name: "Título do plano" })).toHaveValue(
+        "Teclado, mouse e janelas (cópia)",
+      );
+      expect(router.state.location.pathname).toBe(`/lesson-plans/${LESSON_PLAN_COPY_ID}`);
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(within(headerTags()).queryByText("Arquivado")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Editar plano" })).toBeEnabled();
     });
 
     it("does not reopen the edit form when going back or forward", async () => {
