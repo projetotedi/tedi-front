@@ -3,13 +3,21 @@ import { beforeEach, describe, expect, it } from "vitest";
 
 import { getMeQueryKey } from "@api/generated/auth/auth";
 import {
+  getGetCourseQueryKey,
   getGetLessonPlanQueryKey,
   getGetLessonPlanUsageQueryKey,
   getListCourseLessonPlansQueryKey,
 } from "@api/generated/catalog/catalog";
+import type { CourseDetailDto } from "@api/generated/model";
 
 import { applyReplacedSequence } from "../lib/course-queries";
-import { buildCourseSequence, buildSequenceItem, COURSE_ID, LESSON_PLAN_ID } from "./handlers";
+import {
+  buildCourseDetail,
+  buildCourseSequence,
+  buildSequenceItem,
+  COURSE_ID,
+  LESSON_PLAN_ID,
+} from "./handlers";
 
 const OTHER_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c2";
 
@@ -31,6 +39,37 @@ describe("applyReplacedSequence", () => {
 
     expect(queryClient.getQueryData(getListCourseLessonPlansQueryKey(COURSE_ID))).toEqual(response);
     expect(isInvalidated(getListCourseLessonPlansQueryKey(COURSE_ID))).toBe(false);
+  });
+
+  it("writes the PUT response into the detail of the course, without invalidating it", async () => {
+    queryClient.setQueryData(getGetCourseQueryKey(COURSE_ID), buildCourseDetail());
+    const response = buildCourseSequence([buildSequenceItem({ expectedDurationMinutes: 45 })]);
+
+    await applyReplacedSequence(queryClient, COURSE_ID, response);
+
+    const detail = queryClient.getQueryData<CourseDetailDto>(getGetCourseQueryKey(COURSE_ID));
+    expect(detail?.lessonPlans).toEqual(response.items);
+    expect(detail?.lessonPlanCount).toBe(1);
+    expect(detail?.plannedWorkloadMinutes).toBe(45);
+    expect(detail?.name).toBe(buildCourseDetail().name);
+    expect(isInvalidated(getGetCourseQueryKey(COURSE_ID))).toBe(false);
+  });
+
+  it("does not create the detail of a course that nobody opened", async () => {
+    await applyReplacedSequence(queryClient, COURSE_ID, buildCourseSequence());
+
+    expect(queryClient.getQueryData(getGetCourseQueryKey(COURSE_ID))).toBeUndefined();
+  });
+
+  it("invalidates the detail of the other courses, which count the plans that changed", async () => {
+    queryClient.setQueryData(
+      getGetCourseQueryKey(OTHER_COURSE_ID),
+      buildCourseDetail({ id: OTHER_COURSE_ID }),
+    );
+
+    await applyReplacedSequence(queryClient, COURSE_ID, buildCourseSequence());
+
+    expect(isInvalidated(getGetCourseQueryKey(OTHER_COURSE_ID))).toBe(true);
   });
 
   it("invalidates the sequence of the other courses, which count the plans that changed", async () => {
