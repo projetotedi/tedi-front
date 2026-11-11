@@ -777,6 +777,69 @@ describe("LessonPlanDetailPage", () => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
     });
 
+    it("shows a warning and stays on the plan when it no longer exists", async () => {
+      server.use(duplicateLessonPlanHandler({ error: NOT_FOUND_ERROR }));
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+      const duplicate = screen.getByRole("button", { name: "Duplicar plano" });
+
+      await user.click(duplicate);
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Não foi possível duplicar: este plano de aula não existe mais.",
+      );
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Teclado, mouse e janelas" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Plano duplicado")).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(duplicate).toBeEnabled();
+      expect(duplicate).toHaveFocus();
+    });
+
+    it("shows a connection warning and clears it when a new try works", async () => {
+      const warning = "Não foi possível duplicar o plano. Verifique sua conexão e tente novamente.";
+      server.use(duplicateLessonPlanHandler({ networkError: true }));
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(warning);
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+      expect(screen.queryByText("Plano duplicado")).not.toBeInTheDocument();
+      const deferred = createDeferred();
+      server.use(duplicateLessonPlanHandler({ delay: deferred.promise }));
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      await waitFor(() => expect(screen.queryByText(warning)).not.toBeInTheDocument());
+      deferred.resolve();
+      expect(
+        await screen.findByRole("dialog", { name: "Editar plano de aula" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(warning)).not.toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(`/lesson-plans/${LESSON_PLAN_COPY_ID}`);
+    });
+
+    it.each([
+      ["a gateway failure (503)", { statusCode: 503, error: "SERVICE_UNAVAILABLE" }, "network"],
+      ["a server error (500)", { statusCode: 500, error: "INTERNAL_SERVER_ERROR" }, "unknown"],
+      ["a permission revoked meanwhile (403)", { statusCode: 403, error: "FORBIDDEN" }, "unknown"],
+    ])("tells %s with the matching text, without leaving the plan", async (_label, error, kind) => {
+      server.use(duplicateLessonPlanHandler({ error }));
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        kind === "network"
+          ? "Não foi possível duplicar o plano. Verifique sua conexão e tente novamente."
+          : "Não foi possível duplicar o plano. Tente novamente.",
+      );
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+    });
+
     it("marks the lesson plan queries for refetch after duplicating", async () => {
       server.use(duplicateLessonPlanHandler());
       const user = userEvent.setup();

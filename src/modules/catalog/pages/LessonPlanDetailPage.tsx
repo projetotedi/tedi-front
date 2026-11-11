@@ -116,6 +116,19 @@ function LessonPlanDetail({ lessonPlanId }: { lessonPlanId: string }): ReactElem
   return <LessonPlanView plan={plan} openEditOnMount={isEditRequested} />;
 }
 
+type DuplicateErrorKey = "notFound" | "network" | "unknown";
+
+/**
+ * Which text explains a failed duplication. A plan that no longer exists and a connection that
+ * failed have their own; everything else, the 403 of a permission revoked meanwhile included, is the
+ * generic one. The button is hidden from who cannot manage plans, so a 403 is rare. A 401 never gets
+ * here to be read: the session handler takes the person to the login.
+ */
+function toDuplicateErrorKey(error: unknown): DuplicateErrorKey {
+  const kind = toRequestErrorKind(error);
+  return kind === "notFound" || kind === "network" ? kind : "unknown";
+}
+
 interface LessonPlanViewProps {
   plan: LessonPlanDetailDto;
   /** Only read when the view mounts, which is when the plan arrives: `?edit=1` is a one-time request. */
@@ -158,7 +171,8 @@ function LessonPlanView({ plan, openEditOnMount }: LessonPlanViewProps): ReactEl
 
     // Toast and navigation go in the callbacks of `mutate`, which do not run once the page is gone: a
     // copy that arrives late never pulls the person away from where they went. The navigation is a
-    // push, so Voltar leads back to the original.
+    // push, so Voltar leads back to the original. A failure stays on this page, as a warning under
+    // the header that the next try clears (`mutate` resets the error), and the focus stays on the button.
     duplicatePlan.mutate(
       { id: plan.id },
       {
@@ -179,6 +193,11 @@ function LessonPlanView({ plan, openEditOnMount }: LessonPlanViewProps): ReactEl
         isDuplicating={duplicatePlan.isPending}
         editButtonId={editButtonId}
       />
+      {duplicatePlan.isError ? (
+        <Alert variant="error">
+          {t(`detail.duplicate.errors.${toDuplicateErrorKey(duplicatePlan.error)}`)}
+        </Alert>
+      ) : null}
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <LessonPlanDataCard plan={plan} />
