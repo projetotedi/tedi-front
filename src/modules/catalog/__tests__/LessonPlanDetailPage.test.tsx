@@ -854,6 +854,10 @@ describe("LessonPlanDetailPage", () => {
       await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
 
       await screen.findByRole("dialog", { name: "Editar plano de aula" });
+      // The original was on screen: its refetch is cancelled when the page leaves, and the query
+      // stays invalidated for whoever comes back to it with Voltar.
+      const originalKey = getGetLessonPlanQueryKey(LESSON_PLAN_ID);
+      expect(queryClient.getQueryState(originalKey)?.isInvalidated).toBe(true);
       expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
       expect(queryClient.getQueryState(otherDetailKey)?.isInvalidated).toBe(true);
       expect(queryClient.getQueryState(courseKey)?.isInvalidated).toBe(false);
