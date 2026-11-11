@@ -186,6 +186,46 @@
     "notFoundTitle": "Course not found",
     "notFoundDescription": "This course does not exist or was removed.",
     "loadError": "Could not load the course plan. Try again.",
+    "notInformed": "Not provided",
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "header": {
+      "lessonPlanCount_zero": "0 lesson plans",
+      "lessonPlanCount_one": "{{count}} lesson plan",
+      "lessonPlanCount_other": "{{count}} lesson plans",
+      "workload": "{{duration}} planned"
+    },
+    "data": {
+      "title": "Course data",
+      "fields": {
+        "name": "Course name",
+        "category": "Category",
+        "status": "Status",
+        "createdAt": "Created on",
+        "description": "Description",
+        "objective": "Objective"
+      }
+    },
+    "classes": {
+      "title": "Classes of this course",
+      "unavailable": "The classes of this course will show up here when the query of classes by course is available."
+    },
+    "workload": {
+      "title": "Planned workload",
+      "total": "Planned total",
+      "lessonsPerClass": "Lessons per class"
+    },
+    "prerequisites": {
+      "title": "Prerequisites",
+      "required": "Required courses",
+      "requiredBy": "Prerequisite of"
+    },
+    "history": {
+      "title": "Catalog and history",
+      "createdBy": "Created by"
+    },
     "plan": {
       "title": "Course plan",
       "columns": {

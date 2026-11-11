@@ -186,6 +186,46 @@
     "notFoundTitle": "Curso não encontrado",
     "notFoundDescription": "Este curso não existe ou foi removido.",
     "loadError": "Não foi possível carregar o plano do curso. Tente novamente.",
+    "notInformed": "Não informado",
+    "status": {
+      "active": "Ativo",
+      "archived": "Arquivado"
+    },
+    "header": {
+      "lessonPlanCount_zero": "0 planos de aula",
+      "lessonPlanCount_one": "{{count}} plano de aula",
+      "lessonPlanCount_other": "{{count}} planos de aula",
+      "workload": "{{duration}} previstas"
+    },
+    "data": {
+      "title": "Dados do curso",
+      "fields": {
+        "name": "Nome do curso",
+        "category": "Categoria",
+        "status": "Status",
+        "createdAt": "Criado em",
+        "description": "Descrição",
+        "objective": "Objetivo"
+      }
+    },
+    "classes": {
+      "title": "Turmas deste curso",
+      "unavailable": "As turmas deste curso aparecem aqui quando a consulta de turmas por curso estiver disponível."
+    },
+    "workload": {
+      "title": "Carga horária prevista",
+      "total": "Total previsto",
+      "lessonsPerClass": "Aulas por turma"
+    },
+    "prerequisites": {
+      "title": "Pré-requisitos",
+      "required": "Cursos exigidos",
+      "requiredBy": "É pré-requisito de"
+    },
+    "history": {
+      "title": "Catálogo e histórico",
+      "createdBy": "Criado por"
+    },
     "plan": {
       "title": "Plano do curso",
       "columns": {
