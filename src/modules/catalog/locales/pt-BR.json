@@ -182,10 +182,10 @@
   },
   "course": {
     "routeTitle": "Curso",
-    "loading": "Carregando o plano do curso…",
+    "loading": "Carregando o curso…",
     "notFoundTitle": "Curso não encontrado",
     "notFoundDescription": "Este curso não existe ou foi removido.",
-    "loadError": "Não foi possível carregar o plano do curso. Tente novamente.",
+    "loadError": "Não foi possível carregar o curso. Tente novamente.",
     "notInformed": "Não informado",
     "status": {
       "active": "Ativo",
