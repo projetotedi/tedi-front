@@ -112,6 +112,15 @@
     "backToList": "Voltar para planos de aula",
     "loadError": "Não foi possível carregar o plano de aula. Tente novamente.",
     "editPlan": "Editar plano",
+    "duplicate": {
+      "action": "Duplicar plano",
+      "success": "Plano duplicado",
+      "errors": {
+        "notFound": "Não foi possível duplicar: este plano de aula não existe mais.",
+        "network": "Não foi possível duplicar o plano. Verifique sua conexão e tente novamente.",
+        "unknown": "Não foi possível duplicar o plano. Tente novamente."
+      }
+    },
     "tags": {
       "duration": "{{duration}} previstos",
       "hasMaterial": "Com material"
