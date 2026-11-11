@@ -616,3 +616,67 @@ export function replaceCourseLessonPlansHandler({
     });
   });
 }
+
+export const LESSON_PLAN_COPY_ID = "01952ef7-0000-7000-8000-0000000000a2";
+
+/**
+ * Response of `POST /lesson-plans/:id/duplicate` for the `buildLessonPlan` plan: the copy has its
+ * own id and the title of the original with " (cópia)" after it. It is born active, as the API does,
+ * even when the original is archived.
+ */
+export function buildLessonPlanCopy(
+  overrides: Partial<LessonPlanResponseDto> = {},
+): LessonPlanResponseDto {
+  return buildLessonPlan({
+    id: LESSON_PLAN_COPY_ID,
+    title: "Teclado, mouse e janelas (cópia)",
+    ...overrides,
+  });
+}
+
+/** Response of `GET /lesson-plans/:id` for the copy: active, in no course and unused. */
+export function buildLessonPlanCopyDetail(
+  overrides: Partial<LessonPlanDetailDto> = {},
+): LessonPlanDetailDto {
+  return buildLessonPlanDetail({
+    ...buildLessonPlanCopy(),
+    status: LessonPlanUsageStatus.unused,
+    usedIn: [],
+    ...overrides,
+  });
+}
+
+export function duplicateLessonPlanHandler({
+  response = buildLessonPlanCopy(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall> = {}) {
+  return http.post("*/lesson-plans/:id/duplicate", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+/**
+ * `GET /lesson-plans/:id` that answers the plan of the id asked, or a 404 when none of `plans` has
+ * it. `getLessonPlanHandler` answers the same body for every id, which cannot tell the original
+ * from its copy.
+ */
+export function getLessonPlansByIdHandler(
+  plans: LessonPlanDetailDto[],
+  onCall?: (call: IdCall) => void,
+) {
+  return http.get("*/lesson-plans/:id", ({ params }) => {
+    const id = String(params.id);
+    onCall?.({ id });
+
+    const plan = plans.find((candidate) => candidate.id === id);
+    return plan === undefined ? apiErrorResponse(NOT_FOUND_ERROR) : HttpResponse.json(plan);
+  });
+}
