@@ -3,7 +3,11 @@ import { useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
-import { useDuplicateLessonPlan, useGetLessonPlan } from "@api/generated/catalog/catalog";
+import {
+  getGetLessonPlanQueryKey,
+  useDuplicateLessonPlan,
+  useGetLessonPlan,
+} from "@api/generated/catalog/catalog";
 import type { LessonPlanDetailDto } from "@api/generated/model";
 import { useCan } from "@modules/auth";
 import { Alert, Button, Card, Skeleton, toast } from "@shared/ui";
@@ -92,13 +96,14 @@ function LessonPlanDetail({ lessonPlanId }: { lessonPlanId: string }): ReactElem
   }, [isEditRequested, planQuery.isPending, setSearchParams]);
 
   // An id that is not a UUID is as missing as one nobody uses: "not found" at once, with no request.
-  if (!isValidId) return <PlanNotFound />;
+  // A 404 from the API is the same, and it wins over the plan that is still in the cache: a refetch
+  // that fails keeps the last data, which would leave a plan the API says is gone on the screen.
+  const isGone = planQuery.isError && toRequestErrorKind(planQuery.error) === "notFound";
+  if (!isValidId || isGone) return <PlanNotFound />;
 
   if (planQuery.isPending) return <LoadingPlaceholder label={t("detail.loading")} />;
 
   if (plan === undefined) {
-    if (toRequestErrorKind(planQuery.error) === "notFound") return <PlanNotFound />;
-
     return (
       <div className="flex flex-col items-start gap-3">
         <Alert variant="error">{t("detail.loadError")}</Alert>
@@ -152,9 +157,18 @@ function LessonPlanView({ plan, openEditOnMount }: LessonPlanViewProps): ReactEl
 
   // The new plan shows up in what lists lesson plans. Nothing of `/courses` is touched: the copy is
   // born in no course. The options of the sequence picker are still a mock (GUS-95), with no cache.
-  // This `onSuccess` is the one of the hook, so it runs even if the person has already left the page.
+  // These callbacks are the ones of the hook, so they run even if the person has already left the
+  // page. A 404 says the plan on screen is gone, so its query is asked again: if the API confirms
+  // it, the page says so instead of keeping the plan that is in the cache.
   const duplicatePlan = useDuplicateLessonPlan({
-    mutation: { onSuccess: () => void invalidateLessonPlans(queryClient) },
+    mutation: {
+      onSuccess: () => void invalidateLessonPlans(queryClient),
+      onError: (error) => {
+        if (toRequestErrorKind(error) !== "notFound") return;
+
+        void queryClient.invalidateQueries({ queryKey: getGetLessonPlanQueryKey(plan.id) });
+      },
+    },
   });
 
   useEffect(() => {

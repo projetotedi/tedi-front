@@ -797,7 +797,8 @@ describe("LessonPlanDetailPage", () => {
     it("shows a warning and stays on the plan when it no longer exists", async () => {
       server.use(duplicateLessonPlanHandler({ error: NOT_FOUND_ERROR }));
       const user = userEvent.setup();
-      const { router } = await renderWithCopy();
+      const { router, queryClient } = await renderWithCopy();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
       const duplicate = screen.getByRole("button", { name: "Duplicar plano" });
 
       await user.click(duplicate);
@@ -805,6 +806,10 @@ describe("LessonPlanDetailPage", () => {
       expect(await screen.findByRole("alert")).toHaveTextContent(
         "Não foi possível duplicar: este plano de aula não existe mais.",
       );
+      // The plan is asked again; here the API still serves it, so the page stays as it is.
+      expect(invalidate).toHaveBeenCalledWith({
+        queryKey: getGetLessonPlanQueryKey(LESSON_PLAN_ID),
+      });
       expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
       expect(
         screen.getByRole("heading", { level: 2, name: "Teclado, mouse e janelas" }),
@@ -813,6 +818,33 @@ describe("LessonPlanDetailPage", () => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
       expect(duplicate).toBeEnabled();
       expect(duplicate).toHaveFocus();
+    });
+
+    it("falls to not found when the duplicate says the plan is gone and the plan is gone", async () => {
+      server.use(
+        duplicateLessonPlanHandler({
+          error: NOT_FOUND_ERROR,
+          // From the moment the API answers the duplicate, the plan itself is a 404 too.
+          onCall: () => server.use(getLessonPlanHandler({ error: NOT_FOUND_ERROR })),
+        }),
+      );
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      expect(
+        await screen.findByRole("heading", { name: "Plano de aula não encontrado" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Duplicar plano/ })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: "Dados do plano de aula" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Voltar para planos de aula" })).toHaveAttribute(
+        "href",
+        "/lesson-plans",
+      );
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
     });
 
     it("shows a connection warning and clears it when a new try works", async () => {
@@ -845,7 +877,8 @@ describe("LessonPlanDetailPage", () => {
     ])("tells %s with the matching text, without leaving the plan", async (_label, error, kind) => {
       server.use(duplicateLessonPlanHandler({ error }));
       const user = userEvent.setup();
-      const { router } = await renderWithCopy();
+      const { router, queryClient } = await renderWithCopy();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
 
       await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
 
@@ -854,6 +887,8 @@ describe("LessonPlanDetailPage", () => {
           ? "Não foi possível duplicar o plano. Verifique sua conexão e tente novamente."
           : "Não foi possível duplicar o plano. Tente novamente.",
       );
+      // Only a 404 says the plan is gone; any other failure leaves the plan in the cache alone.
+      expect(invalidate).not.toHaveBeenCalled();
       expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
     });
 
