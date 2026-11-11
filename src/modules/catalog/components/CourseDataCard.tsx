@@ -24,7 +24,7 @@ export function CourseDataCard({ course, isArchived }: CourseDataCardProps): Rea
 
   return (
     <Card title={t("course.data.title")}>
-      <dl className="grid grid-cols-1 gap-x-8 gap-y-5 md:grid-cols-4">
+      <dl className="grid grid-cols-1 gap-x-6 gap-y-5 md:grid-cols-4">
         <DetailField label={t("course.data.fields.name")}>{course.name}</DetailField>
         <DetailField label={t("course.data.fields.category")}>
           {t(`category.${course.category}`)}

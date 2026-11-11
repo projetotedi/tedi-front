@@ -17,7 +17,15 @@ import { CoursePrerequisitesCard } from "../components/CoursePrerequisitesCard";
 import { CourseWorkloadCard } from "../components/CourseWorkloadCard";
 import { isCourseId, isCourseNotFound, toCourseSequence } from "../lib/course-detail";
 
-const TWO_COLUMNS = "grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_27.5rem]";
+/**
+ * The two columns start at 90rem (1440px, the width of the Figma) and not at `xl` like the other
+ * detail pages. The plan table needs about 35rem inside its card to show its six columns. With the
+ * side column at 27.5rem, the cards of the main column would have 24.5rem for their content at
+ * 1280px and 30rem at 1366px: the table would scroll sideways with "Abrir" out of sight, and the
+ * four fields of "Dados do curso" would break in the middle of the word. Below 90rem the cards
+ * stack in one column, and the table and the fields have the whole width.
+ */
+const TWO_COLUMNS = "grid grid-cols-1 gap-5 min-[90rem]:grid-cols-[minmax(0,1fr)_27.5rem]";
 
 function LoadingPlaceholder({ label }: { label: string }): ReactElement {
   return (
