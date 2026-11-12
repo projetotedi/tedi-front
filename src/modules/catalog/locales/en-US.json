@@ -112,6 +112,15 @@
     "backToList": "Back to lesson plans",
     "loadError": "Could not load the lesson plan. Try again.",
     "editPlan": "Edit plan",
+    "duplicate": {
+      "action": "Duplicate plan",
+      "success": "Plan duplicated",
+      "errors": {
+        "notFound": "Could not duplicate: this lesson plan no longer exists.",
+        "network": "Could not duplicate the plan. Check your connection and try again.",
+        "unknown": "Could not duplicate the plan. Try again."
+      }
+    },
     "tags": {
       "duration": "{{duration}} expected",
       "hasMaterial": "With material"

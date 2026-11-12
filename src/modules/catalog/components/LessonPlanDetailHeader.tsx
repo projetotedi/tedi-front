@@ -9,16 +9,26 @@ import { Badge, Button, Card } from "@shared/ui";
 export interface LessonPlanDetailHeaderProps {
   plan: LessonPlanDetailDto;
   onEdit: () => void;
+  onDuplicate: () => void;
+  /** The duplication is on its way: Duplicar plano shows the spinner and ignores presses. */
+  isDuplicating: boolean;
+  /** Id of the Editar plano button, so the page can give it the focus back. */
+  editButtonId: string;
 }
 
 /**
- * Title, summary tags and the edit action. An archived plan cannot be edited (the API refuses it),
- * so it gets the "Arquivado" tag and no button. There is no "Duplicar plano" until GUS-118, and no
- * delete button at all: plans are archived, never deleted (RN-27).
+ * Title, summary tags and, for who has `lessonPlans.manage`, the actions. Editar plano is left out
+ * of an archived plan (the API refuses to edit it) and the plan gets the "Arquivado" tag. Duplicar
+ * plano stays on it: the API accepts an archived plan and the copy is born active, which is how its
+ * content gets back into use (RN-27). There is no delete button: plans are archived, never deleted
+ * (RN-27).
  */
 export function LessonPlanDetailHeader({
   plan,
   onEdit,
+  onDuplicate,
+  isDuplicating,
+  editButtonId,
 }: LessonPlanDetailHeaderProps): ReactElement {
   const { t } = useTranslation("catalog");
   const canManage = useCan("lessonPlans.manage");
@@ -59,10 +69,22 @@ export function LessonPlanDetailHeader({
             ) : null}
           </ul>
         </div>
-        {canManage && !isArchived ? (
-          <Button variant="secondary" onPress={onEdit}>
-            {t("detail.editPlan")}
-          </Button>
+        {canManage ? (
+          <div className="flex flex-wrap gap-3">
+            {isArchived ? null : (
+              <Button
+                id={editButtonId}
+                variant="secondary"
+                isDisabled={isDuplicating}
+                onPress={onEdit}
+              >
+                {t("detail.editPlan")}
+              </Button>
+            )}
+            <Button variant="primary" isLoading={isDuplicating} onPress={onDuplicate}>
+              {t("detail.duplicate.action")}
+            </Button>
+          </div>
         ) : null}
       </div>
     </Card>

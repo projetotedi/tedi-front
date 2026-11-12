@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -10,13 +10,17 @@ import {
   buildArchivedLessonPlanDetail,
   buildInUseLessonPlanDetail,
   buildLessonPlan,
+  buildLessonPlanCopyDetail,
   buildLessonPlanDetail,
   buildMeUser,
   COURSE_SMARTPHONES,
   COURSE_SOCIAL_NETWORKS,
+  duplicateLessonPlanHandler,
   getCourseHandler,
   getLessonPlanHandler,
+  getLessonPlansByIdHandler,
   getLessonPlanUsageHandler,
+  LESSON_PLAN_COPY_ID,
   LESSON_PLAN_ID,
   NOT_FOUND_ERROR,
   updateLessonPlanHandler,
@@ -41,6 +45,28 @@ async function renderDetail({
   server.use(getLessonPlanHandler({ response: plan }));
   const view = await renderRoutes(catalogRoutes, { route: DETAIL_ROUTE, user: buildMeUser(role) });
   await screen.findByRole("heading", { name: "Dados do plano de aula" });
+  return view;
+}
+
+interface RenderWithCopyOptions {
+  /** The plan on screen, the one that gets duplicated. */
+  original?: DetailPlan;
+  role?: Role;
+  route?: string;
+}
+
+/**
+ * The detail of the original plan, with the API answering for the plan and for its copy. The page
+ * is found with `hidden: true` because a form opened by `?edit=1` hides it from the accessibility tree.
+ */
+async function renderWithCopy({
+  original = buildLessonPlanDetail(),
+  role = Role.coordinator,
+  route = DETAIL_ROUTE,
+}: RenderWithCopyOptions = {}) {
+  server.use(getLessonPlansByIdHandler([original, buildLessonPlanCopyDetail()]));
+  const view = await renderRoutes(catalogRoutes, { route, user: buildMeUser(role) });
+  await screen.findByRole("heading", { name: "Dados do plano de aula", hidden: true });
   return view;
 }
 
@@ -222,6 +248,14 @@ describe("LessonPlanDetailPage", () => {
 
       expect(screen.getByRole("heading", { name: "Dados do plano de aula" })).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Duplicar/ })).not.toBeInTheDocument();
+    });
+
+    it("hides Duplicar plano from the member", async () => {
+      await renderDetail({ role: Role.member, plan: buildInUseLessonPlanDetail() });
+
+      expect(screen.getByRole("heading", { name: "Dados do plano de aula" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Duplicar/ })).not.toBeInTheDocument();
     });
 
     it("offers Editar plano to the director too", async () => {
@@ -230,10 +264,24 @@ describe("LessonPlanDetailPage", () => {
       expect(screen.getByRole("button", { name: "Editar plano" })).toBeInTheDocument();
     });
 
-    it("does not offer Duplicar plano nor an exclude button", async () => {
+    it("offers Duplicar plano to the coordinator, after Editar plano", async () => {
+      await renderDetail({ role: Role.coordinator });
+
+      const edit = screen.getByRole("button", { name: "Editar plano" });
+      const duplicate = screen.getByRole("button", { name: "Duplicar plano" });
+      expect(duplicate).toBeEnabled();
+      expect(edit.compareDocumentPosition(duplicate)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
+    it("offers Duplicar plano to the director too", async () => {
+      await renderDetail({ role: Role.director });
+
+      expect(screen.getByRole("button", { name: "Duplicar plano" })).toBeEnabled();
+    });
+
+    it("does not offer an exclude button", async () => {
       await renderDetail({ plan: buildInUseLessonPlanDetail() });
 
-      expect(screen.queryByRole("button", { name: /Duplicar/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Excluir/ })).not.toBeInTheDocument();
     });
 
@@ -244,10 +292,23 @@ describe("LessonPlanDetailPage", () => {
       expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
     });
 
+    it("offers Duplicar plano for an archived plan, without Editar plano", async () => {
+      await renderDetail({ plan: buildArchivedLessonPlanDetail() });
+
+      expect(screen.getByRole("button", { name: "Duplicar plano" })).toBeEnabled();
+      expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
+    });
+
     it("keeps the 44px touch target of Editar plano", async () => {
       await renderDetail();
 
       expect(screen.getByRole("button", { name: "Editar plano" })).toHaveClass("min-h-11");
+    });
+
+    it("keeps the 44px touch target of Duplicar plano", async () => {
+      await renderDetail();
+
+      expect(screen.getByRole("button", { name: "Duplicar plano" })).toHaveClass("min-h-11");
     });
   });
 
@@ -602,6 +663,317 @@ describe("LessonPlanDetailPage", () => {
       expect(screen.getByRole("textbox", { name: "Horas" })).toHaveValue("2");
       expect(onUpdate).not.toHaveBeenCalled();
       expect(valueOf(card("Dados do plano de aula"), "Duração prevista")).toBe("1h30");
+    });
+  });
+
+  describe("duplicating", () => {
+    it("duplicates the plan, shows Plano duplicado and opens the copy with the edit form open", async () => {
+      const onDuplicate = vi.fn();
+      server.use(duplicateLessonPlanHandler({ onCall: onDuplicate }));
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar plano de aula" });
+      expect(onDuplicate).toHaveBeenCalledTimes(1);
+      expect(onDuplicate).toHaveBeenCalledWith({ id: LESSON_PLAN_ID });
+      expect(await screen.findByText("Plano duplicado")).toBeInTheDocument();
+      const title = await within(dialog).findByRole("textbox", { name: "Título do plano" });
+      expect(title).toHaveValue("Teclado, mouse e janelas (cópia)");
+      await waitFor(() => expect(title).toHaveFocus());
+      await waitFor(() => expect(router.state.location.search).toBe(""));
+      expect(router.state.location.pathname).toBe(`/lesson-plans/${LESSON_PLAN_COPY_ID}`);
+      expect(
+        screen.getByRole("heading", {
+          level: 2,
+          name: "Teclado, mouse e janelas (cópia)",
+          hidden: true,
+        }),
+      ).toBeInTheDocument();
+    });
+
+    it("duplicates an archived plan and opens the copy, which is active, with the edit form open", async () => {
+      server.use(duplicateLessonPlanHandler());
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy({ original: buildArchivedLessonPlanDetail() });
+      expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar plano de aula" });
+      expect(await within(dialog).findByRole("textbox", { name: "Título do plano" })).toHaveValue(
+        "Teclado, mouse e janelas (cópia)",
+      );
+      expect(router.state.location.pathname).toBe(`/lesson-plans/${LESSON_PLAN_COPY_ID}`);
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(within(headerTags()).queryByText("Arquivado")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Editar plano" })).toBeEnabled();
+    });
+
+    it("does not reopen the edit form when going back or forward", async () => {
+      server.use(duplicateLessonPlanHandler());
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+      await screen.findByRole("textbox", { name: "Título do plano" });
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+      await act(() => router.navigate(-1));
+
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Teclado, mouse e janelas" }),
+      ).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      await act(() => router.navigate(1));
+
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Teclado, mouse e janelas (cópia)" }),
+      ).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(`/lesson-plans/${LESSON_PLAN_COPY_ID}`);
+      expect(router.state.location.search).toBe("");
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("closes the edit form of the copy when going back to the original", async () => {
+      server.use(duplicateLessonPlanHandler());
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+      await screen.findByRole("textbox", { name: "Título do plano" });
+
+      await act(() => router.navigate(-1));
+
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Teclado, mouse e janelas" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Duplicar plano" })).toBeEnabled();
+    });
+
+    it("gives the focus to Editar plano of the copy when the opened form is cancelled", async () => {
+      server.use(duplicateLessonPlanHandler());
+      const user = userEvent.setup();
+      await renderWithCopy();
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+      await screen.findByRole("textbox", { name: "Título do plano" });
+
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Editar plano" })).toHaveFocus(),
+      );
+    });
+
+    it("keeps Duplicar plano busy while the API answers and sends one request", async () => {
+      const deferred = createDeferred();
+      const onDuplicate = vi.fn();
+      server.use(duplicateLessonPlanHandler({ delay: deferred.promise, onCall: onDuplicate }));
+      const user = userEvent.setup();
+      await renderWithCopy();
+      const duplicate = screen.getByRole("button", { name: /Duplicar plano/ });
+
+      await user.dblClick(duplicate);
+
+      await waitFor(() => expect(onDuplicate).toHaveBeenCalledTimes(1));
+      expect(duplicate).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("button", { name: "Editar plano" })).toBeDisabled();
+      await user.click(duplicate);
+      expect(onDuplicate).toHaveBeenCalledTimes(1);
+
+      deferred.resolve();
+
+      expect(
+        await screen.findByRole("dialog", { name: "Editar plano de aula" }),
+      ).toBeInTheDocument();
+      expect(onDuplicate).toHaveBeenCalledTimes(1);
+    });
+
+    it("shows a warning and stays on the plan when it no longer exists", async () => {
+      server.use(duplicateLessonPlanHandler({ error: NOT_FOUND_ERROR }));
+      const user = userEvent.setup();
+      const { router, queryClient } = await renderWithCopy();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+      const duplicate = screen.getByRole("button", { name: "Duplicar plano" });
+
+      await user.click(duplicate);
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Não foi possível duplicar: este plano de aula não existe mais.",
+      );
+      // The plan is asked again; here the API still serves it, so the page stays as it is.
+      expect(invalidate).toHaveBeenCalledWith({
+        queryKey: getGetLessonPlanQueryKey(LESSON_PLAN_ID),
+      });
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+      expect(
+        screen.getByRole("heading", { level: 2, name: "Teclado, mouse e janelas" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Plano duplicado")).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(duplicate).toBeEnabled();
+      expect(duplicate).toHaveFocus();
+    });
+
+    it("falls to not found when the duplicate says the plan is gone and the plan is gone", async () => {
+      server.use(
+        duplicateLessonPlanHandler({
+          error: NOT_FOUND_ERROR,
+          // From the moment the API answers the duplicate, the plan itself is a 404 too.
+          onCall: () => server.use(getLessonPlanHandler({ error: NOT_FOUND_ERROR })),
+        }),
+      );
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      expect(
+        await screen.findByRole("heading", { name: "Plano de aula não encontrado" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Duplicar plano/ })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("heading", { name: "Dados do plano de aula" }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Voltar para planos de aula" })).toHaveAttribute(
+        "href",
+        "/lesson-plans",
+      );
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+    });
+
+    it("shows a connection warning and clears it when a new try works", async () => {
+      const warning = "Não foi possível duplicar o plano. Verifique sua conexão e tente novamente.";
+      server.use(duplicateLessonPlanHandler({ networkError: true }));
+      const user = userEvent.setup();
+      const { router } = await renderWithCopy();
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(warning);
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+      expect(screen.queryByText("Plano duplicado")).not.toBeInTheDocument();
+      const deferred = createDeferred();
+      server.use(duplicateLessonPlanHandler({ delay: deferred.promise }));
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      await waitFor(() => expect(screen.queryByText(warning)).not.toBeInTheDocument());
+      deferred.resolve();
+      expect(
+        await screen.findByRole("dialog", { name: "Editar plano de aula" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(warning)).not.toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(`/lesson-plans/${LESSON_PLAN_COPY_ID}`);
+    });
+
+    it.each([
+      ["a gateway failure (503)", { statusCode: 503, error: "SERVICE_UNAVAILABLE" }, "network"],
+      ["a server error (500)", { statusCode: 500, error: "INTERNAL_SERVER_ERROR" }, "unknown"],
+      ["a permission revoked meanwhile (403)", { statusCode: 403, error: "FORBIDDEN" }, "unknown"],
+    ])("tells %s with the matching text, without leaving the plan", async (_label, error, kind) => {
+      server.use(duplicateLessonPlanHandler({ error }));
+      const user = userEvent.setup();
+      const { router, queryClient } = await renderWithCopy();
+      const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        kind === "network"
+          ? "Não foi possível duplicar o plano. Verifique sua conexão e tente novamente."
+          : "Não foi possível duplicar o plano. Tente novamente.",
+      );
+      // Only a 404 says the plan is gone; any other failure leaves the plan in the cache alone.
+      expect(invalidate).not.toHaveBeenCalled();
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+    });
+
+    it("marks the lesson plan queries for refetch after duplicating", async () => {
+      server.use(duplicateLessonPlanHandler());
+      const user = userEvent.setup();
+      const { queryClient } = await renderWithCopy();
+      const listKey = ["/lesson-plans", { page: 1 }] as const;
+      const otherDetailKey = getGetLessonPlanQueryKey("01952ef7-0000-7000-8000-0000000000a9");
+      const courseKey = ["/courses", COURSE_SOCIAL_NETWORKS.courseId] as const;
+      queryClient.setQueryData(listKey, { data: [] });
+      queryClient.setQueryData(otherDetailKey, buildLessonPlanDetail());
+      queryClient.setQueryData(courseKey, { courseId: COURSE_SOCIAL_NETWORKS.courseId });
+
+      await user.click(screen.getByRole("button", { name: "Duplicar plano" }));
+
+      await screen.findByRole("dialog", { name: "Editar plano de aula" });
+      // The original was on screen: its refetch is cancelled when the page leaves, and the query
+      // stays invalidated for whoever comes back to it with Voltar.
+      const originalKey = getGetLessonPlanQueryKey(LESSON_PLAN_ID);
+      expect(queryClient.getQueryState(originalKey)?.isInvalidated).toBe(true);
+      expect(queryClient.getQueryState(listKey)?.isInvalidated).toBe(true);
+      expect(queryClient.getQueryState(otherDetailKey)?.isInvalidated).toBe(true);
+      expect(queryClient.getQueryState(courseKey)?.isInvalidated).toBe(false);
+    });
+  });
+
+  describe("edit from the URL", () => {
+    it("opens the edit form from ?edit=1 and removes the parameter", async () => {
+      server.use(getLessonPlanHandler());
+      const { router } = await renderRoutes(catalogRoutes, {
+        route: `${DETAIL_ROUTE}?edit=1`,
+        user: buildMeUser(Role.coordinator),
+      });
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar plano de aula" });
+      expect(await within(dialog).findByRole("textbox", { name: "Título do plano" })).toHaveValue(
+        "Teclado, mouse e janelas",
+      );
+      await waitFor(() => expect(router.state.location.search).toBe(""));
+      expect(router.state.location.pathname).toBe(DETAIL_ROUTE);
+      expect(router.state.historyAction).toBe("REPLACE");
+    });
+
+    it("ignores ?edit=1 for an archived plan", async () => {
+      server.use(getLessonPlanHandler({ response: buildArchivedLessonPlanDetail() }));
+      const { router } = await renderRoutes(catalogRoutes, {
+        route: `${DETAIL_ROUTE}?edit=1`,
+        user: buildMeUser(Role.coordinator),
+      });
+
+      expect(
+        await screen.findByRole("heading", { name: "Dados do plano de aula" }),
+      ).toBeInTheDocument();
+      await waitFor(() => expect(router.state.location.search).toBe(""));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Editar plano" })).not.toBeInTheDocument();
+    });
+
+    it("ignores ?edit=1 for the member", async () => {
+      server.use(getLessonPlanHandler());
+      const { router } = await renderRoutes(catalogRoutes, {
+        route: `${DETAIL_ROUTE}?edit=1`,
+        user: buildMeUser(Role.member),
+      });
+
+      expect(
+        await screen.findByRole("heading", { name: "Dados do plano de aula" }),
+      ).toBeInTheDocument();
+      await waitFor(() => expect(router.state.location.search).toBe(""));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("drops ?edit=1 when the plan does not exist", async () => {
+      server.use(getLessonPlanHandler({ error: NOT_FOUND_ERROR }));
+      const { router } = await renderRoutes(catalogRoutes, {
+        route: `${DETAIL_ROUTE}?edit=1`,
+        user: buildMeUser(Role.coordinator),
+      });
+
+      expect(
+        await screen.findByRole("heading", { name: "Plano de aula não encontrado" }),
+      ).toBeInTheDocument();
+      await waitFor(() => expect(router.state.location.search).toBe(""));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 });
