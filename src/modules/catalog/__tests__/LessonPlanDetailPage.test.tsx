@@ -14,10 +14,10 @@ import {
   buildMeUser,
   COURSE_SMARTPHONES,
   COURSE_SOCIAL_NETWORKS,
+  getCourseHandler,
   getLessonPlanHandler,
   getLessonPlanUsageHandler,
   LESSON_PLAN_ID,
-  listCourseLessonPlansHandler,
   NOT_FOUND_ERROR,
   updateLessonPlanHandler,
 } from "./handlers";
@@ -392,7 +392,7 @@ describe("LessonPlanDetailPage", () => {
 
     it("opens the plan of the course when its name is pressed", async () => {
       const user = userEvent.setup();
-      server.use(listCourseLessonPlansHandler());
+      server.use(getCourseHandler());
       await renderDetail({ plan: buildInUseLessonPlanDetail() });
 
       await user.click(
