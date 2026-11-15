@@ -8,7 +8,11 @@ export type RegistrationReviewField =
   | "joinedAt"
   | "note";
 
-/** Chave de `registrationReview.errors.*` com o texto do erro de um campo. */
+/**
+ * Chave de `registrationReview.validation.*` com o texto do erro de um campo que o back recusou.
+ * As mensagens da validação do próprio formulário (`roleRequired`, `noteRequired`...) moram no
+ * mesmo grupo de textos e vêm do schema.
+ */
 export type RegistrationReviewFieldMessage =
   | "roleInvalid"
   | "departmentNotFound"
