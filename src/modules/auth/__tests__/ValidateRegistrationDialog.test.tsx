@@ -106,6 +106,18 @@ function setDate(value: string) {
   fireEvent.change(joinedAtField(), { target: { value } });
 }
 
+/**
+ * O select não expõe `ref`, então o erro dele sobe para o alerta, que recebe o foco (e o leitor de
+ * tela o lê). A mesma mensagem continua no campo.
+ */
+async function expectDepartmentRequiredOnTheAlert() {
+  const alert = await screen.findByRole("alert");
+  expect(alert).toHaveTextContent("Escolha o departamento");
+  await waitFor(() => expect(alert.parentElement).toHaveFocus());
+  expect(screen.getAllByText("Escolha o departamento")).toHaveLength(2);
+  return alert;
+}
+
 function valueOf(label: string): string {
   const term = within(dialog()).getByText(label, { selector: "dt" });
   return term.parentElement?.querySelector("dd")?.textContent ?? "";
@@ -473,7 +485,7 @@ describe("ValidateRegistrationDialog", () => {
         await user.type(mainFunctionField(), "Monitoria em sala");
         await user.click(approveButton());
 
-        expect(await screen.findByText("Escolha o departamento")).toBeInTheDocument();
+        await expectDepartmentRequiredOnTheAlert();
         expect(onCall).not.toHaveBeenCalled();
         expect(screen.queryByText("Cadastro aprovado")).not.toBeInTheDocument();
       },
@@ -491,8 +503,43 @@ describe("ValidateRegistrationDialog", () => {
 
       await user.click(approveButton());
 
-      expect(await screen.findByText("Escolha o departamento")).toBeInTheDocument();
+      await expectDepartmentRequiredOnTheAlert();
       expect(onCall).not.toHaveBeenCalled();
+    });
+
+    it("puts the focus on the alert, not on a later field, when the department and the main function are both missing", async () => {
+      const user = userEvent.setup();
+      const onCall = vi.fn();
+      server.use(approveMemberRegistrationHandler({ onCall }));
+      await renderReadyDialog({
+        registration: { registration: buildMemberRegistration({ department: null }) },
+      });
+
+      await user.click(approveButton());
+
+      const alert = await expectDepartmentRequiredOnTheAlert();
+      expect(screen.getByText("Informe a função principal")).toBeInTheDocument();
+      // O react-hook-form voltaria a focar o campo de texto num setTimeout: espera passar e confere de novo.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(alert.parentElement).toHaveFocus();
+      expect(mainFunctionField()).not.toHaveFocus();
+      expect(onCall).not.toHaveBeenCalled();
+    });
+
+    it("takes the focus to the alert again on every new attempt", async () => {
+      const user = userEvent.setup();
+      await renderReadyDialog({
+        registration: { registration: buildMemberRegistration({ department: null }) },
+      });
+      await user.type(mainFunctionField(), "Monitoria em sala");
+      await user.click(approveButton());
+      await expectDepartmentRequiredOnTheAlert();
+
+      await user.click(mainFunctionField());
+      expect(mainFunctionField()).toHaveFocus();
+      await user.click(approveButton());
+
+      await expectDepartmentRequiredOnTheAlert();
     });
 
     it("does not send without the main function, and puts the focus on it", async () => {
@@ -506,6 +553,8 @@ describe("ValidateRegistrationDialog", () => {
       expect(await screen.findByText("Informe a função principal")).toBeInTheDocument();
       expect(mainFunctionField()).toHaveAttribute("aria-invalid", "true");
       await waitFor(() => expect(mainFunctionField()).toHaveFocus());
+      // Campo de texto: o foco vai nele, e o alerta fica de fora.
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
       expect(onCall).not.toHaveBeenCalled();
     });
 

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { useForm, useWatch, type Resolver } from "react-hook-form";
+import { useForm, useWatch, type FieldErrors, type Resolver } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { MemberRegistrationStatus, type MemberRegistrationResponseDto } from "@api/generated/model";
@@ -28,14 +28,15 @@ import { formatSubmittedAt, todayInAppTimeZone } from "../lib/registration-forma
 import { invalidateMemberLists } from "../lib/registration-queries";
 import {
   isRegistrationNotFound,
+  REGISTRATION_REVIEW_FIELD_ORDER,
   toRegistrationReviewError,
   type RegistrationReviewErrorKind,
   type RegistrationReviewField,
-  type RegistrationReviewFieldMessage,
 } from "../lib/registration-review-error";
 import {
   buildReviewDefaults,
   createApproveReviewSchema,
+  REGISTRATION_REVIEW_LIMITS,
   rejectReviewSchema,
   requiresDepartment,
   toApproveBody,
@@ -55,10 +56,11 @@ export interface ValidateRegistrationDialogProps {
 
 type ReviewAction = "approve" | "reject";
 
-/** O que o alerta do formulário diz: um erro da ação ou a mensagem de um campo que o select não deixa focar. */
-type SubmitError =
-  | { kind: RegistrationReviewErrorKind }
-  | { kind: "field"; message: RegistrationReviewFieldMessage };
+/**
+ * O que o alerta do formulário diz: um erro da ação ou a mensagem de um campo que o select não
+ * deixa focar (chave de `registrationReview.validation.*`, venha do schema ou do back).
+ */
+type SubmitError = { kind: RegistrationReviewErrorKind } | { kind: "field"; message: string };
 
 const EMPTY_VALUES: RegistrationReviewFormValues = {
   role: "",
@@ -139,8 +141,15 @@ function ValidateRegistrationContent({
           context,
           options,
         );
+  // `shouldFocusError` desligado: o foco do primeiro campo com problema é daqui (`pointAtField`). O
+  // do react-hook-form foca o primeiro campo com `ref` que errou, e passaria por cima de um select
+  // (sem `ref`) que errou antes, além de voltar a roubar o foco do alerta num `setTimeout`.
   const { control, handleSubmit, clearErrors, setError, setFocus, reset } =
-    useForm<RegistrationReviewFormValues>({ resolver, defaultValues: EMPTY_VALUES });
+    useForm<RegistrationReviewFormValues>({
+      resolver,
+      defaultValues: EMPTY_VALUES,
+      shouldFocusError: false,
+    });
   const role = useWatch({ control, name: "role" });
 
   // Preenche o formulário uma vez por cadastro, antes de pintar, para os campos não aparecerem vazios.
@@ -202,6 +211,26 @@ function ValidateRegistrationContent({
   const isBusy = approveMutation.isPending || rejectMutation.isPending;
   const areFieldsDisabled = isBusy || isLocked;
 
+  /**
+   * Leva a pessoa ao campo com problema: input de texto recebe o foco; o select não expõe `ref`, então
+   * a mensagem dele sobe para o alerta, que recebe o foco e é lido pelo leitor de tela.
+   */
+  function pointAtField(name: RegistrationReviewField, message: string) {
+    if (FOCUSABLE_FIELDS.has(name)) setFocusField(name);
+    else setSubmitError({ kind: "field", message });
+  }
+
+  // Validação do formulário, antes de enviar: o primeiro campo com erro, na ordem da tela.
+  function handleInvalid(errors: FieldErrors<RegistrationReviewFormValues>) {
+    for (const name of REGISTRATION_REVIEW_FIELD_ORDER) {
+      const message = errors[name]?.message;
+      if (typeof message === "string") {
+        pointAtField(name, message);
+        return;
+      }
+    }
+  }
+
   function handleError(error: unknown) {
     const result = toRegistrationReviewError(error);
 
@@ -212,8 +241,7 @@ function ValidateRegistrationContent({
       }
 
       const [first] = result.fields;
-      if (FOCUSABLE_FIELDS.has(first.name)) setFocusField(first.name);
-      else setSubmitError({ kind: "field", message: first.message });
+      pointAtField(first.name, first.message);
       return;
     }
 
@@ -258,7 +286,7 @@ function ValidateRegistrationContent({
     setSubmitError(null);
     setFocusField(null);
     clearErrors();
-    void handleSubmit(action === "approve" ? approve : reject)();
+    void handleSubmit(action === "approve" ? approve : reject, handleInvalid)();
   }
 
   const isPendingRegistration =
@@ -367,7 +395,10 @@ function ValidateRegistrationContent({
           <div ref={errorRef} tabIndex={-1} className="outline-none">
             <Alert variant="error">
               {submitError.kind === "field"
-                ? t(`registrationReview.validation.${submitError.message}`)
+                ? t(
+                    `registrationReview.validation.${submitError.message}`,
+                    REGISTRATION_REVIEW_LIMITS,
+                  )
                 : t(`registrationReview.errors.${submitError.kind}`)}
             </Alert>
           </div>

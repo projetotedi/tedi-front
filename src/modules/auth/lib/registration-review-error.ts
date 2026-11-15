@@ -40,8 +40,11 @@ export type RegistrationReviewError =
 
 const NOT_FOUND_CODE = "MEMBER_REGISTRATION_NOT_FOUND";
 
-/** Ordem em que os campos aparecem no formulário: o foco vai ao primeiro com erro. */
-const FIELD_ORDER: readonly RegistrationReviewField[] = [
+/**
+ * Ordem em que os campos aparecem no formulário. O erro do back sai nessa ordem, e o diálogo a usa
+ * para achar o primeiro campo com problema, o que recebe o foco.
+ */
+export const REGISTRATION_REVIEW_FIELD_ORDER: readonly RegistrationReviewField[] = [
   "role",
   "departmentId",
   "mainFunction",
@@ -80,10 +83,12 @@ function readReportedFields(error: unknown): Set<string> {
 
 function toValidationError(error: unknown): RegistrationReviewError {
   const reported = readReportedFields(error);
-  const fields = FIELD_ORDER.filter((name) => reported.has(name)).map((name) => ({
-    name,
-    message: VALIDATION_MESSAGES[name],
-  }));
+  const fields = REGISTRATION_REVIEW_FIELD_ORDER.filter((name) => reported.has(name)).map(
+    (name) => ({
+      name,
+      message: VALIDATION_MESSAGES[name],
+    }),
+  );
   return fields.length > 0 ? { kind: "fields", fields } : { kind: "invalidData" };
 }
 

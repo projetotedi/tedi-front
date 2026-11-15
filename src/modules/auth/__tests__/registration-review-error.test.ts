@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   isRegistrationNotFound,
+  REGISTRATION_REVIEW_FIELD_ORDER,
   toRegistrationReviewError,
 } from "../lib/registration-review-error";
 
@@ -140,6 +141,18 @@ describe("toRegistrationReviewError", () => {
     ["an empty object", {}],
   ])("falls back to unknown for %s", (_label, error) => {
     expect(toRegistrationReviewError(error)).toEqual({ kind: "unknown" });
+  });
+});
+
+describe("REGISTRATION_REVIEW_FIELD_ORDER", () => {
+  it("lists the fields in the order they appear in the form", () => {
+    expect(REGISTRATION_REVIEW_FIELD_ORDER).toEqual([
+      "role",
+      "departmentId",
+      "mainFunction",
+      "joinedAt",
+      "note",
+    ]);
   });
 });
 
