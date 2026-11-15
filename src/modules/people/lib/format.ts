@@ -34,6 +34,15 @@ export function formatInstant(value: string, locale: string, timeZone?: string):
   }).format(new Date(value));
 }
 
+/**
+ * "17/02/2026" in pt-BR: only the date of a real instant (`format: date-time`, ending in `Z`).
+ * The clock of the instant is in UTC, so the same value can be the day before in Brazil; without
+ * `timeZone` it uses the browser's, like `formatInstant`.
+ */
+export function formatInstantDate(value: string, locale: string, timeZone?: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "short", timeZone }).format(new Date(value));
+}
+
 /** "Março/2026" em pt-BR, a partir de `YYYY-MM`. */
 export function formatMonthYear(value: string, locale: string): string {
   const date = parseLocal(`${value}-01`);

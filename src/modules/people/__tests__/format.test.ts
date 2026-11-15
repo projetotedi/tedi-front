@@ -4,6 +4,7 @@ import {
   formatDate,
   formatDayMonth,
   formatInstant,
+  formatInstantDate,
   formatMonthYear,
   formatPhone,
 } from "../lib/format";
@@ -39,6 +40,27 @@ describe("formatInstant", () => {
 
   it("keeps the UTC clock when the time zone is UTC", () => {
     expect(formatInstant("2026-10-20T13:00:00.000Z", "pt-BR", "UTC")).toBe("20/10/2026, 13:00");
+  });
+});
+
+describe("formatInstantDate", () => {
+  // 02:00 UTC of the 18th is still 23:00 of the 17th in Brazil (UTC-3).
+  const instant = "2026-02-18T02:00:00.000Z";
+
+  it("shows the day of the given time zone, not the UTC day of the value", () => {
+    expect(formatInstantDate(instant, "pt-BR", "America/Sao_Paulo")).toBe("17/02/2026");
+  });
+
+  it("keeps the UTC day when the time zone is UTC", () => {
+    expect(formatInstantDate(instant, "pt-BR", "UTC")).toBe("18/02/2026");
+  });
+
+  it("shows no time of day", () => {
+    expect(formatInstantDate("2026-10-20T13:45:00.000Z", "pt-BR", "UTC")).toBe("20/10/2026");
+  });
+
+  it("follows the locale", () => {
+    expect(formatInstantDate(instant, "en-US", "UTC")).toBe("2/18/26");
   });
 });
 
