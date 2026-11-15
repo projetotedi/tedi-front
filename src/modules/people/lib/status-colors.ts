@@ -16,6 +16,22 @@ export const ACCOUNT_STATUS_COLOR: Record<AccountStatus, BadgeTone> = {
   inactive: "neutral",
 };
 
+export type StudentStatus = "active" | "archived";
+
+/**
+ * A student is "archived" once `archivedAt` holds a date; the API leaves it `null` while the
+ * student is active. An archived student is not deleted: the registration stays readable.
+ */
+export function studentStatusOf(archivedAt: string | null): StudentStatus {
+  return archivedAt === null ? "active" : "archived";
+}
+
+/** Archived is neutral, not a warning: it is a state the registration is in, not a problem. */
+export const STUDENT_STATUS_COLOR: Record<StudentStatus, BadgeTone> = {
+  active: "success",
+  archived: "neutral",
+};
+
 export const ENTRY_STATUS_COLOR: Record<EntryStatus, BadgeTone> = {
   approved: "success",
   adjusted: "info",
