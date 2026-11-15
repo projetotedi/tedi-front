@@ -815,6 +815,28 @@ describe("ValidateRegistrationDialog", () => {
       await waitFor(() => expect(alert.parentElement).toHaveFocus());
     });
 
+    it("draws a visible focus ring around the alert that takes the focus", async () => {
+      const user = userEvent.setup();
+      server.use(
+        approveMemberRegistrationHandler({ error: reviewError(409, "REGISTRATION_NOT_PENDING") }),
+      );
+      await renderReadyDialog();
+
+      await approveWith(user);
+
+      const container = (await screen.findByRole("alert")).parentElement;
+      await waitFor(() => expect(container).toHaveFocus());
+      // O foco vem do código e a pessoa de teclado precisa vê-lo: nada de `outline-none`.
+      expect(container).toHaveAttribute("tabindex", "-1");
+      expect(container).toHaveClass(
+        "rounded-xl",
+        "outline-hidden",
+        "focus-visible:ring-3",
+        "focus-visible:ring-focus",
+      );
+      expect(container).not.toHaveClass("outline-none");
+    });
+
     it("does not close on a 404, and keeps what was typed", async () => {
       const user = userEvent.setup();
       server.use(

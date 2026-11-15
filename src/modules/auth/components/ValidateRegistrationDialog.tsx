@@ -392,7 +392,13 @@ function ValidateRegistrationContent({
         />
 
         {submitError !== null ? (
-          <div ref={errorRef} tabIndex={-1} className="outline-none">
+          // Foco programático: o anel só aparece para quem usa o teclado (`focus-visible`), e tem a
+          // forma do alerta que ele contorna.
+          <div
+            ref={errorRef}
+            tabIndex={-1}
+            className="rounded-xl outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+          >
             <Alert variant="error">
               {submitError.kind === "field"
                 ? t(
