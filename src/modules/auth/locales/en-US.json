@@ -72,7 +72,7 @@
       "description": "Start with your academic details. The RA you enter will be your username in the system."
     },
     "personalStep": {
-      "description": "Now, your personal details."
+      "description": "Now, your personal details. The coordination team checks the registration before granting access."
     },
     "passwordStep": {
       "description": "Last step: create the password you will use to sign in to the system.",
@@ -86,9 +86,52 @@
         "label": "RA",
         "hint": "You will sign in to the system with this RA."
       },
-      "email": {
+      "institutionalEmail": {
         "label": "Institutional email"
       },
+      "course": {
+        "label": "Course"
+      },
+      "semester": {
+        "label": "Semester",
+        "hint": "Use a number from {{semesterMin}} to {{semesterMax}}."
+      },
+      "className": {
+        "label": "Class"
+      },
+      "departmentId": {
+        "label": "Department",
+        "placeholder": "Select a department"
+      },
+      "volunteerTermUrl": {
+        "label": "Volunteer term link",
+        "hint": "Google Drive link to the signed term. The system only stores the link."
+      },
+      "birthDate": {
+        "label": "Date of birth"
+      },
+      "cpf": {
+        "label": "CPF",
+        "placeholder": "456.789.123-00"
+      },
+      "phone": {
+        "label": "Phone",
+        "placeholder": "(11) 98123-4567"
+      },
+      "personalEmail": {
+        "label": "Personal email"
+      },
+      "address": {
+        "label": "Address"
+      },
+      "city": {
+        "label": "City"
+      },
+      "state": {
+        "label": "State (UF)",
+        "placeholder": "Select a state"
+      },
+      "noneOption": "Prefer not to say",
       "password": {
         "label": "Password",
         "hint": "At least 8 characters.",
@@ -111,9 +154,9 @@
       "goToLogin": "Go to sign in",
       "retry": "Try again"
     },
-    "success": {
-      "title": "Registration complete!",
-      "description": "You can now sign in with your RA ({{ra}}) and the password you just created."
+    "submitted": {
+      "title": "Registration sent!",
+      "description": "The coordination team will review your details. Once the registration is approved, you sign in with your RA ({{ra}}) and the password you just created."
     },
     "invalid": {
       "title": "This link is no longer valid",
@@ -122,15 +165,39 @@
     "slowNotice": "Connecting to the server, this may take up to a minute",
     "errors": {
       "raInUse": "This RA is already in use",
-      "emailInUse": "This email is already in use",
+      "emailInUse": "This personal email is already in use",
+      "departmentNotFound": "This department is no longer available. Choose another one.",
+      "invalidData": "The server did not accept some of the details. Go back to the previous steps, check the information and try again.",
       "network": "Could not connect",
       "unknown": "Could not send your registration. Please try again."
     },
     "validation": {
       "nameRequired": "Enter your full name",
-      "nameMax": "The name must have at most 200 characters",
+      "nameMax": "The name must have at most {{nameMax}} characters",
       "raRequired": "Enter your RA",
-      "emailInvalid": "Enter a valid email",
+      "raMax": "The RA must have at most {{raMax}} characters",
+      "institutionalEmailRequired": "Enter your institutional email",
+      "institutionalEmailInvalid": "Enter a valid institutional email",
+      "courseRequired": "Enter your course",
+      "courseMax": "The course must have at most {{courseMax}} characters",
+      "semesterRequired": "Enter your semester",
+      "semesterInvalid": "Enter a semester from {{semesterMin}} to {{semesterMax}}",
+      "classNameRequired": "Enter your class",
+      "classNameMax": "The class must have at most {{classNameMax}} characters",
+      "departmentInvalid": "Choose a department from the list",
+      "volunteerTermUrlInvalid": "Enter a link that starts with https://",
+      "volunteerTermUrlMax": "The link must have at most {{volunteerTermUrlMax}} characters",
+      "birthDateRequired": "Enter your date of birth",
+      "birthDateInvalid": "Enter a valid date of birth, between 01/01/1900 and today",
+      "cpfRequired": "Enter your CPF",
+      "cpfInvalid": "Enter a valid CPF, with 11 digits",
+      "phoneRequired": "Enter your phone number",
+      "phoneInvalid": "Enter the phone number with area code, with 10 or 11 digits",
+      "personalEmailRequired": "Enter your personal email",
+      "personalEmailInvalid": "Enter a valid personal email",
+      "addressMax": "The address must have at most {{addressMax}} characters",
+      "cityMax": "The city must have at most {{cityMax}} characters",
+      "stateInvalid": "Choose a state from the list",
       "passwordMin": "The password must have at least 8 characters",
       "passwordMismatch": "The passwords do not match"
     },

@@ -14,7 +14,10 @@ import { useSlowRequestNotice } from "../hooks/useSlowRequestNotice";
 import { toInviteErrorKey } from "../lib/invite-error";
 import { INVITE_VALIDITY_HOURS } from "../lib/invite-validity";
 
-type Outcome = { kind: "accepted"; ra: string } | { kind: "passwordChanged" } | { kind: "invalid" };
+type Outcome =
+  | { kind: "registrationSubmitted"; ra: string }
+  | { kind: "passwordChanged" }
+  | { kind: "invalid" };
 
 const FORM_CARD_WIDTH = "max-w-200";
 const STATUS_CARD_WIDTH = "max-w-120";
@@ -43,20 +46,31 @@ export function InvitePage(): ReactElement {
     navigate("/login", { replace: true });
   }
 
-  if (outcome?.kind === "accepted" || outcome?.kind === "passwordChanged") {
-    const isPasswordChange = outcome.kind === "passwordChanged";
+  // Sem botão para o login: a pessoa só entra depois que a coordenação aprovar o cadastro, e
+  // antes disso o login não deixa passar. O texto diz que o acesso vem depois da aprovação.
+  if (outcome?.kind === "registrationSubmitted") {
     return (
       <PublicScreen cardWidthClassName={STATUS_CARD_WIDTH}>
         <StatusCard
           variant="success"
           headingLevel={1}
           autoFocus
-          title={t(isPasswordChange ? "resetPassword.success.title" : "invite.success.title")}
-          description={
-            isPasswordChange
-              ? t("resetPassword.success.description")
-              : t("invite.success.description", { ra: outcome.ra })
-          }
+          title={t("invite.submitted.title")}
+          description={t("invite.submitted.description", { ra: outcome.ra })}
+        />
+      </PublicScreen>
+    );
+  }
+
+  if (outcome?.kind === "passwordChanged") {
+    return (
+      <PublicScreen cardWidthClassName={STATUS_CARD_WIDTH}>
+        <StatusCard
+          variant="success"
+          headingLevel={1}
+          autoFocus
+          title={t("resetPassword.success.title")}
+          description={t("resetPassword.success.description")}
         >
           <Button fullWidth onPress={goToLogin}>
             {t("invite.actions.goToLogin")}
@@ -133,7 +147,8 @@ export function InvitePage(): ReactElement {
         <AcceptInviteForm
           token={token}
           role={invite.data.role}
-          onAccepted={(ra) => setOutcome({ kind: "accepted", ra })}
+          departments={invite.data.departments}
+          onAccepted={(ra) => setOutcome({ kind: "registrationSubmitted", ra })}
           onInvalidInvite={() => setOutcome({ kind: "invalid" })}
         />
       )}

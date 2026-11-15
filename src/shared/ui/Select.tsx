@@ -1,5 +1,5 @@
 import { Description, FieldError, Label, ListBox, Select as HeroSelect } from "@heroui/react";
-import type { ReactElement, ReactNode } from "react";
+import type { ReactElement, ReactNode, Ref } from "react";
 
 import chevronDownUrl from "../assets/icons/chevron-down.svg";
 
@@ -23,6 +23,8 @@ export interface SelectProps {
   isDisabled?: boolean;
   isRequired?: boolean;
   autoFocus?: boolean;
+  /** Ref do botão que abre a lista, para focar o campo (ex.: o foco do primeiro campo com erro do react-hook-form). */
+  triggerRef?: Ref<HTMLButtonElement>;
 }
 
 export function Select({
@@ -40,6 +42,7 @@ export function Select({
   isDisabled,
   isRequired,
   autoFocus,
+  triggerRef,
 }: SelectProps): ReactElement {
   const selected = options.find((option) => option.id === value) ?? null;
 
@@ -59,7 +62,7 @@ export function Select({
       autoFocus={autoFocus}
     >
       <Label className={isLabelHidden ? "sr-only" : "text-base"}>{label}</Label>
-      <HeroSelect.Trigger className="min-h-11 rounded-xl text-base">
+      <HeroSelect.Trigger ref={triggerRef} className="min-h-11 rounded-xl text-base">
         {/* `sm:text-base`: o CSS do HeroUI reduz o valor para 14px a partir de `sm`. */}
         <HeroSelect.Value className="text-base sm:text-base">
           {formatValue ? () => formatValue(selected) : undefined}
