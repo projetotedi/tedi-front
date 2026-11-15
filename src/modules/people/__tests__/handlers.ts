@@ -1,10 +1,14 @@
 import { http, HttpResponse } from "msw";
 
-import type { MyProfileResponseDto } from "@api/generated/model";
+import {
+  AccessibilityNeed,
+  type MyProfileResponseDto,
+  type StudentDetailDto,
+} from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 /**
- * Handlers MSW written by hand over the real contract (GET /members/me). The path has a wildcard
+ * Handlers MSW written by hand over the real contract (GET /members/me, GET /students/:id). The path has a wildcard
  * prefix because http-client.ts prefixes the URL with VITE_API_URL at runtime: the test does not
  * need to know it.
  */
@@ -96,5 +100,85 @@ export function myProfileHandler({
       );
     }
     return HttpResponse.json(profile);
+  });
+}
+
+/** A UUID v7, which is what the API generates: the page asks nothing of an id that is not one. */
+export const STUDENT_ID = "01952ef7-0000-7000-8000-0000000000e1";
+
+export const STUDENT_NAME = "Maria da Silva Santos";
+export const STUDENT_CREATOR_NAME = "Beatriz Nunes";
+
+/** The 404 of `GET /students/:id` for an id that does not exist (or has no student profile). */
+export const STUDENT_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 404,
+  error: "STUDENT_NOT_FOUND",
+  message: "Student not found.",
+};
+
+/**
+ * A student with every field of the contract filled: Maria, 67 years old, with a visual need,
+ * registered by Beatriz on 18/02/2026 and active. The instants are at 13:00 UTC on purpose: the
+ * day is the same in every time zone from UTC-12 to UTC+10, so a test that reads the date does not
+ * depend on the machine that runs the suite.
+ */
+export function buildStudentDetail(overrides: Partial<StudentDetailDto> = {}): StudentDetailDto {
+  return {
+    id: STUDENT_ID,
+    name: STUDENT_NAME,
+    birthDate: "1959-03-14",
+    age: 67,
+    phone: "11987654321",
+    email: "maria.santos@example.com",
+    education: "Ensino médio completo",
+    hasSmartphone: true,
+    hasComputer: false,
+    howFoundUs: "Indicação de uma amiga",
+    emergencyContact: { name: "João Santos", phone: "11912345678" },
+    accessibilityNeed: AccessibilityNeed.visual,
+    classNeeds: "Sentar perto da tela e material com letra grande",
+    supportResource: "Lupa e fonte ampliada",
+    createdAt: "2026-02-18T13:00:00.000Z",
+    updatedAt: "2026-10-20T13:00:00.000Z",
+    createdBy: { id: "01952ef7-0000-7000-8000-0000000000f1", name: STUDENT_CREATOR_NAME },
+    archivedAt: null,
+    archiveReason: null,
+    ...overrides,
+  };
+}
+
+interface ApiErrorOptions {
+  statusCode: number;
+  error: string;
+  message?: string;
+}
+
+interface GetStudentHandlerOptions {
+  student?: StudentDetailDto;
+  /** Answers with the `ApiErrorDto` shape and this status instead of the student. */
+  error?: ApiErrorOptions;
+  /** Holds the response until the promise settles. */
+  delay?: Promise<void>;
+  /** Called with the id of the path every time the API is asked. */
+  onCall?: (call: { id: string }) => void;
+}
+
+export function getStudentHandler({
+  student = buildStudentDetail(),
+  error,
+  delay,
+  onCall,
+}: GetStudentHandlerOptions = {}) {
+  return http.get("*/students/:id", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (error) {
+      return HttpResponse.json(
+        { statusCode: error.statusCode, error: error.error, message: error.message ?? error.error },
+        { status: error.statusCode },
+      );
+    }
+    return HttpResponse.json(student);
   });
 }
