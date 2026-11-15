@@ -41,20 +41,24 @@ export function StudentAccessibilityCard({ student }: StudentAccessibilityCardPr
           {t(`student.accessibilityNeed.${row.accessibilityNeed}`)}
         </Badge>
       ),
+      headerClassName: "uppercase",
     },
     {
       header: t("student.accessibility.columns.classNeeds"),
       render: (row) => textOrEmpty(row.classNeeds),
+      headerClassName: "uppercase",
       cellClassName: "break-words",
     },
     {
       header: t("student.accessibility.columns.supportResource"),
       render: (row) => textOrEmpty(row.supportResource),
+      headerClassName: "uppercase",
       cellClassName: "break-words",
     },
     {
       header: t("student.accessibility.columns.registeredBy"),
       render: (row) => textOrEmpty(row.createdBy?.name ?? null),
+      headerClassName: "uppercase",
       cellClassName: "break-words",
     },
   ];
