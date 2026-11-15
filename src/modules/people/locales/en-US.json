@@ -110,5 +110,80 @@
     "empty": "—",
     "notProvided": "Not provided",
     "hoursUnavailable": "The hours bank arrives with the hours module."
+  },
+  "student": {
+    "routeTitle": "Student",
+    "loading": "Loading the student…",
+    "loadError": "We could not load the student. Please try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Student not found",
+    "notFoundDescription": "This student does not exist or was removed.",
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "ageValue_one": "{{count}} year old",
+    "ageValue_other": "{{count}} years old",
+    "header": {
+      "accessibility": "Accessibility: {{need}}"
+    },
+    "archived": {
+      "notice": "Registration archived on {{date}}.",
+      "reason": "Reason: {{reason}}"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "accessibilityNeed": {
+      "none": "None",
+      "visual": "Visual",
+      "hearing": "Hearing",
+      "motor": "Motor",
+      "cognitive": "Cognitive",
+      "other": "Other"
+    },
+    "personal": {
+      "title": "Personal details",
+      "fullName": "Full name",
+      "birthDate": "Date of birth",
+      "age": "Age",
+      "phone": "Phone",
+      "email": "Email",
+      "education": "Education",
+      "hasSmartphone": "Has a smartphone",
+      "hasComputer": "Has a computer",
+      "howFoundUs": "How they found TEDI",
+      "emergencyContactName": "Emergency contact",
+      "emergencyContactPhone": "Emergency phone",
+      "registeredBy": "Registered by",
+      "registeredByValue": "{{name}} — {{date}}",
+      "registeredOn": "On {{date}}"
+    },
+    "accessibility": {
+      "title": "Accessibility needs",
+      "columns": {
+        "category": "Category",
+        "classNeeds": "What the person needs",
+        "supportResource": "Support resource",
+        "registeredBy": "Registered by"
+      },
+      "empty": "No accessibility needs registered."
+    },
+    "enrollments": {
+      "title": "Enrollments",
+      "unavailable": "The enrollments of the student will show up here soon."
+    },
+    "summary": {
+      "title": "Summary",
+      "unavailable": "The summary of the student will show up here soon."
+    },
+    "courseHistory": {
+      "title": "Course history",
+      "unavailable": "The course history of the student will show up here soon."
+    },
+    "record": {
+      "title": "Record",
+      "registeredBy": "Registered by",
+      "updatedAt": "Last updated"
+    }
   }
 }
