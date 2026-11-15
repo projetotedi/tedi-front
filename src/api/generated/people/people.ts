@@ -32,6 +32,7 @@ import type {
   ListMemberRegistrationsParams,
   ListMembers200,
   ListMembersParams,
+  MemberDetailResponseDto,
   MemberRegistrationResponseDto,
   MyProfileResponseDto,
   RejectMemberRegistrationDto,
@@ -965,6 +966,112 @@ export function useGetMyProfile<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetMyProfileQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetMemberUrl = (id: string) => {
+  return `/members/${id}`;
+};
+
+export const getMember = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<MemberDetailResponseDto> => {
+  return httpClient<MemberDetailResponseDto>(getGetMemberUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMemberQueryKey = (id: string) => {
+  return [`/members/${id}`] as const;
+};
+
+export const getGetMemberQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMember>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMemberQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMember>>> = ({ signal }) =>
+    getMember(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetMemberQueryResult = NonNullable<Awaited<ReturnType<typeof getMember>>>;
+export type GetMemberQueryError = ApiErrorDto;
+
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMember>>,
+          TError,
+          Awaited<ReturnType<typeof getMember>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMember>>,
+          TError,
+          Awaited<ReturnType<typeof getMember>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetMemberQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;
