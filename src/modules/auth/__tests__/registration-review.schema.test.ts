@@ -74,7 +74,10 @@ describe("constants", () => {
   });
 
   it("takes the length limits from the contract", () => {
-    expect(REGISTRATION_REVIEW_LIMITS).toEqual({ mainFunctionMax: 100, noteMax: 500 });
+    expect(REGISTRATION_REVIEW_LIMITS).toEqual({
+      maxMainFunctionLength: 100,
+      maxNoteLength: 500,
+    });
   });
 });
 

@@ -38,8 +38,11 @@ export const MIN_JOINED_AT = "2000-01-01";
 
 /** Limites do contrato, para o `maxLength` das mensagens. A nota usa o menor dos dois endpoints. */
 export const REGISTRATION_REVIEW_LIMITS = {
-  mainFunctionMax: approveMemberRegistrationBodyMainFunctionMax,
-  noteMax: Math.min(approveMemberRegistrationBodyNoteMax, rejectMemberRegistrationBodyNoteMax),
+  maxMainFunctionLength: approveMemberRegistrationBodyMainFunctionMax,
+  maxNoteLength: Math.min(
+    approveMemberRegistrationBodyNoteMax,
+    rejectMemberRegistrationBodyNoteMax,
+  ),
 } as const;
 
 export type InvitableRole = (typeof INVITABLE_ROLES)[number];
@@ -80,9 +83,9 @@ export function createApproveReviewSchema(departmentIds: ReadonlySet<string>, to
         .string()
         .trim()
         .min(1, "mainFunctionRequired")
-        .max(REGISTRATION_REVIEW_LIMITS.mainFunctionMax, "mainFunctionMax"),
+        .max(REGISTRATION_REVIEW_LIMITS.maxMainFunctionLength, "mainFunctionMax"),
       joinedAt: z.string().refine((value) => isJoinedAtInRange(value, today), "joinedAtInvalid"),
-      note: z.string().trim().max(REGISTRATION_REVIEW_LIMITS.noteMax, "noteMax"),
+      note: z.string().trim().max(REGISTRATION_REVIEW_LIMITS.maxNoteLength, "noteMax"),
     })
     .superRefine((values, context) => {
       if (requiresDepartment(values.role) && !departmentIds.has(values.departmentId)) {
@@ -97,7 +100,11 @@ export const rejectReviewSchema = z.object({
   departmentId: z.string(),
   mainFunction: z.string(),
   joinedAt: z.string(),
-  note: z.string().trim().min(1, "noteRequired").max(REGISTRATION_REVIEW_LIMITS.noteMax, "noteMax"),
+  note: z
+    .string()
+    .trim()
+    .min(1, "noteRequired")
+    .max(REGISTRATION_REVIEW_LIMITS.maxNoteLength, "noteMax"),
 });
 
 /**
