@@ -384,6 +384,100 @@ export const GetMyProfileResponse = zod.object({
     .describe("Null for a person without a member profile (e.g. the seeded admin)."),
 });
 
+export const GetMemberParams = zod.object({
+  id: zod.uuid().describe("Person id."),
+});
+
+export const GetMemberResponse = zod.object({
+  accessEnabled: zod.boolean(),
+  address: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  birthDate: zod.iso.date().nullable(),
+  city: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  className: zod
+    .string()
+    .nullable()
+    .describe(
+      "Class (turma) at the university. Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  course: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  cpfMasked: zod
+    .string()
+    .nullable()
+    .describe(
+      "CPF with only the last five digits visible; the full CPF is only on GET /member-registrations/:id (RNF-14). Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  department: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Department of the member profile (the one suggested at sign-up while the registration is pending). Null without a member profile or without a department.",
+    ),
+  email: zod.string().nullable().describe("Personal e-mail."),
+  id: zod.uuid().describe("Id of the Person."),
+  institutionalEmail: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  joinedAt: zod.iso
+    .date()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  mainFunction: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  name: zod.string(),
+  phone: zod.string().nullable().describe("Digits only."),
+  ra: zod.string().nullable(),
+  registrationStatus: zod
+    .union([zod.enum(["pending", "approved", "rejected"]), zod.null()])
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  reviewedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe(
+      "When the registration was approved or rejected (UTC). Null while pending and for profiles approved by the backfill, before the validation existed.",
+    ),
+  reviewedBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Who approved or rejected the registration. Null while pending, for profiles approved by the backfill, or when that person was deleted.",
+    ),
+  role: zod
+    .union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()])
+    .describe(
+      "Access profile. Null while the registration is pending or rejected: the role is only granted on approval.",
+    ),
+  semester: zod
+    .int()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  state: zod
+    .string()
+    .nullable()
+    .describe("UF. Null for a person without a member profile (e.g. the seeded admin)."),
+  volunteerTermUrl: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+});
+
 export const createStudentBodyAccessibilityNeedDefault = `none`;
 export const createStudentBodyClassNeedsMax = 500;
 
