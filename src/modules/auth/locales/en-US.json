@@ -38,6 +38,8 @@
     "errors": {
       "invalidCredentials": "Incorrect registration number or password",
       "accessDisabled": "Your access is inactive, contact the coordination team",
+      "registrationPending": "Your registration is waiting for validation by the coordination team. Once it is approved, you will be able to sign in.",
+      "registrationRejected": "Your registration was not approved. Contact the coordination team.",
       "tooManyAttempts": "Too many attempts, please wait a few minutes",
       "network": "Could not connect",
       "unknown": "Could not sign in. Please try again."

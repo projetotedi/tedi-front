@@ -38,6 +38,8 @@
     "errors": {
       "invalidCredentials": "Matrícula ou senha incorretos",
       "accessDisabled": "Seu acesso está inativo, fale com a coordenação",
+      "registrationPending": "Seu cadastro está aguardando a validação da coordenação. Assim que for aprovado, você poderá entrar.",
+      "registrationRejected": "Seu cadastro não foi aprovado. Fale com a coordenação.",
       "tooManyAttempts": "Muitas tentativas, aguarde alguns minutos",
       "network": "Não foi possível conectar",
       "unknown": "Não foi possível entrar. Tente novamente."
