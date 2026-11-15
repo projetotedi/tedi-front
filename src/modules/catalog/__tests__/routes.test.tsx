@@ -10,9 +10,9 @@ import { catalogRoutes } from "../routes";
 import {
   buildMeUser,
   COURSE_ID,
+  getCourseHandler,
   getLessonPlanHandler,
   LESSON_PLAN_ID,
-  listCourseLessonPlansHandler,
 } from "./handlers";
 import { renderRoutes, server, setupCatalogTestServer } from "./test-utils";
 
@@ -144,14 +144,14 @@ describe("catalogRoutes (course)", () => {
     ["director", Role.director],
     ["coordinator", Role.coordinator],
   ])("the %s can open /courses/:id", async (_label, role) => {
-    server.use(listCourseLessonPlansHandler());
+    server.use(getCourseHandler());
     await renderRoutes(catalogRoutes, { route: courseRoute, user: buildMeUser(role) });
 
     expect(await screen.findByRole("heading", { name: "Plano do curso" })).toBeInTheDocument();
   });
 
   it("shows the forbidden page at /courses/:id to someone without catalog.view", async () => {
-    server.use(listCourseLessonPlansHandler());
+    server.use(getCourseHandler());
     const user = buildMeUser(Role.member);
     await renderRoutes(catalogRoutes, {
       route: courseRoute,

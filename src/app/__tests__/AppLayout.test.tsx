@@ -9,6 +9,7 @@ import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { buildMeUser, logoutHandler, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { peopleRoutes } from "@modules/people";
+import { myProfileHandler } from "@modules/people/__tests__/handlers";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -26,7 +27,8 @@ async function openAllGroups(container: HTMLElement) {
 
 async function renderApp(user: MeResponseDto, route = "/") {
   await i18n.changeLanguage("pt-BR");
-  server.use(meHandler({ user }));
+  // The route `/` lands on My profile, which reads the registration from GET /members/me.
+  server.use(meHandler({ user }), myProfileHandler());
 
   const router = createMemoryRouter(
     [

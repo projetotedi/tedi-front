@@ -24,6 +24,7 @@ import type {
 import type {
   ApiErrorDto,
   ArchiveDto,
+  CourseDetailDto,
   CourseLessonPlansResponseDto,
   CourseResponseDto,
   CreateCourseDto,
@@ -150,6 +151,112 @@ export const useCreateCourse = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getCreateCourseMutationOptions(options), queryClient);
 };
+export const getGetCourseUrl = (id: string) => {
+  return `/courses/${id}`;
+};
+
+export const getCourse = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<CourseDetailDto> => {
+  return httpClient<CourseDetailDto>(getGetCourseUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCourseQueryKey = (id: string) => {
+  return [`/courses/${id}`] as const;
+};
+
+export const getGetCourseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCourse>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCourseQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getCourse>>> = ({ signal }) =>
+    getCourse(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetCourseQueryResult = NonNullable<Awaited<ReturnType<typeof getCourse>>>;
+export type GetCourseQueryError = ApiErrorDto;
+
+export function useGetCourse<TData = Awaited<ReturnType<typeof getCourse>>, TError = ApiErrorDto>(
+  id: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCourse>>,
+          TError,
+          Awaited<ReturnType<typeof getCourse>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCourse<TData = Awaited<ReturnType<typeof getCourse>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getCourse>>,
+          TError,
+          Awaited<ReturnType<typeof getCourse>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetCourse<TData = Awaited<ReturnType<typeof getCourse>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetCourse<TData = Awaited<ReturnType<typeof getCourse>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getCourse>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetCourseQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getUpdateCourseUrl = (id: string) => {
   return `/courses/${id}`;
 };
@@ -894,6 +1001,84 @@ export const useArchiveLessonPlan = <TError = ApiErrorDto, TContext = unknown>(
   TContext
 > => {
   return useMutation(getArchiveLessonPlanMutationOptions(options), queryClient);
+};
+export const getDuplicateLessonPlanUrl = (id: string) => {
+  return `/lesson-plans/${id}/duplicate`;
+};
+
+export const duplicateLessonPlan = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<LessonPlanResponseDto> => {
+  return httpClient<LessonPlanResponseDto>(getDuplicateLessonPlanUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getDuplicateLessonPlanMutationKey = () => ["duplicateLessonPlan"] as const;
+
+export const getDuplicateLessonPlanMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof duplicateLessonPlan>>,
+    TError,
+    DuplicateLessonPlanMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof duplicateLessonPlan>>,
+  TError,
+  DuplicateLessonPlanMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDuplicateLessonPlanMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof duplicateLessonPlan>>,
+    DuplicateLessonPlanMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return duplicateLessonPlan(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DuplicateLessonPlanMutationResult = NonNullable<
+  Awaited<ReturnType<typeof duplicateLessonPlan>>
+>;
+
+export type DuplicateLessonPlanMutationError = ApiErrorDto;
+export type DuplicateLessonPlanMutationVariables = { id: string };
+
+export const useDuplicateLessonPlan = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof duplicateLessonPlan>>,
+      TError,
+      DuplicateLessonPlanMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof duplicateLessonPlan>>,
+  TError,
+  DuplicateLessonPlanMutationVariables,
+  TContext
+> => {
+  return useMutation(getDuplicateLessonPlanMutationOptions(options), queryClient);
 };
 export const getUnarchiveLessonPlanUrl = (id: string) => {
   return `/lesson-plans/${id}/unarchive`;

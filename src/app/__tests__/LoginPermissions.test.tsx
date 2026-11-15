@@ -8,6 +8,7 @@ import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@mod
 import { buildMeUser, loginHandler, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { peopleRoutes } from "@modules/people";
+import { myProfileHandler } from "@modules/people/__tests__/handlers";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -28,6 +29,8 @@ describe("login writes the permissions to the session cache", () => {
         },
       }),
       loginHandler({ user: buildMeUser({ role: Role.member, name: "Maria Souza" }) }),
+      // Signing in lands on My profile, which reads the registration from GET /members/me.
+      myProfileHandler(),
     );
 
     const router = createMemoryRouter(

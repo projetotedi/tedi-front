@@ -1,11 +1,12 @@
 import { render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import i18n from "@shared/i18n";
 
 // Registra o namespace "people".
 import "../index";
 import { CategoryHoursCard } from "../components/CategoryHoursCard";
+import { SAMPLE_BY_CATEGORY } from "./fixtures/hours";
 
 type Language = "pt-BR" | "en-US";
 
@@ -14,11 +15,18 @@ async function renderPendingCell(pendingMinutes: number, language: Language) {
   await i18n.changeLanguage(language);
   render(
     <CategoryHoursCard
-      period="2026-03"
-      rows={[{ category: "planning", totalMinutes: 3000, pendingMinutes, note: "Observação" }]}
+      byCategory={{
+        period: "2026-03",
+        rows: [{ category: "planning", totalMinutes: 3000, pendingMinutes, note: "Observação" }],
+      }}
     />,
   );
   return screen.getAllByRole("cell")[2];
+}
+
+/** As células da linha da tabela cujo nome acessível (o texto da linha) casa com `name`. */
+function cellsOfRow(table: HTMLElement, name: RegExp): HTMLElement[] {
+  return within(within(table).getByRole("row", { name })).getAllByRole("cell");
 }
 
 // O pt-BR tem a categoria de plural `many` (a partir de 1 milhão); o en-US não.
@@ -97,5 +105,57 @@ describe("CategoryHoursCard pending column", () => {
     expect(within(cell).getByText("—")).toBeInTheDocument();
     expect(within(cell).getByText("Sem pendência")).toBeInTheDocument();
     expect(within(cell).queryByText("0h")).not.toBeInTheDocument();
+  });
+});
+
+describe("CategoryHoursCard table", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("lists the columns without a status column", () => {
+    render(<CategoryHoursCard byCategory={SAMPLE_BY_CATEGORY} />);
+
+    const table = screen.getByRole("table", { name: "Horas por categoria" });
+
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((header) => header.textContent),
+    ).toEqual(["Categoria", "Horas", "Pendentes", "Observação"]);
+  });
+
+  it("shows the reference month next to the title", () => {
+    render(<CategoryHoursCard byCategory={SAMPLE_BY_CATEGORY} />);
+
+    expect(screen.getByText("Março/2026")).toBeInTheDocument();
+  });
+
+  it("shows pending hours as a tag and a dash when nothing is pending", () => {
+    render(<CategoryHoursCard byCategory={SAMPLE_BY_CATEGORY} />);
+
+    const table = screen.getByRole("table", { name: "Horas por categoria" });
+
+    const planning = cellsOfRow(table, /^Planejamento/);
+    expect(planning[1]).toHaveTextContent(/^8h$/);
+    expect(within(planning[2]).getByText("8h")).toHaveAttribute("aria-hidden", "true");
+    expect(within(planning[2]).getByText("8 horas pendentes")).toBeInTheDocument();
+
+    const lesson = cellsOfRow(table, /^Aula/);
+    expect(lesson[1]).toHaveTextContent(/^28h$/);
+    expect(within(lesson[2]).getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(within(lesson[2]).getByText("Sem pendência")).toBeInTheDocument();
+
+    expect(within(table).queryByText(/Validado|Ajustado/)).not.toBeInTheDocument();
+  });
+
+  it("shows the empty state and no period without hours data", () => {
+    render(<CategoryHoursCard byCategory={null} />);
+
+    expect(screen.getByRole("heading", { name: "Horas por categoria" })).toBeInTheDocument();
+    expect(screen.getByText("O banco de horas chega com o módulo de horas.")).toBeInTheDocument();
+    expect(screen.queryByText("Março/2026")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^[A-Za-zç]+\/\d{4}$/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 });

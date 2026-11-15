@@ -20,7 +20,8 @@ export const catalogRoutes: RouteObject[] = [
     ],
   },
   // Besides the "Cursos" of the prototype ("Em breve", `/courses`): there is no list of courses
-  // yet, so this one has no menu item. It is reached from "Onde este plano é usado".
+  // yet, so this one has no menu item. It is reached from "Onde este plano é usado" and from the
+  // prerequisites of another course.
   {
     path: "courses/:courseId",
     handle: { title: "catalog:course.routeTitle" } satisfies RouteHandle,

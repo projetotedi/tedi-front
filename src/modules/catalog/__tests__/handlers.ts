@@ -6,6 +6,7 @@ import {
   LessonPlanUsageStatus,
   type ApiFieldErrorDto,
   type ArchiveDto,
+  type CourseDetailDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CreateLessonPlanDto,
@@ -501,6 +502,77 @@ export function listCourseLessonPlansHandler({
   });
 }
 
+export const COURSE_CREATOR_NAME = "Ana Paula Torres";
+
+/**
+ * Response of `GET /courses/:id`: "Redes Sociais com Segurança" as in the Figma. It is active, has
+ * the default sequence (7h in four plans), one prerequisite and no course that requires it.
+ * `lessonPlanCount` and `plannedWorkloadMinutes` follow `lessonPlans`, as the API derives them, so
+ * a test that changes the plans does not have to repeat the sum; an override still wins.
+ * The dates are at noon UTC, so they stay on the same day in any time zone of the browser.
+ */
+export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): CourseDetailDto {
+  const lessonPlans = overrides.lessonPlans ?? buildCourseSequence().items;
+
+  return {
+    id: COURSE_ID,
+    name: COURSE_SOCIAL_NETWORKS.courseName,
+    category: CourseCategory.intermediate,
+    status: CourseStatus.active,
+    createdAt: "2024-02-12T12:00:00.000Z",
+    updatedAt: "2026-10-01T12:00:00.000Z",
+    description: "WhatsApp, Instagram e os golpes mais comuns.",
+    objective: "Participar das redes sociais reconhecendo os riscos.",
+    createdBy: { id: "01952ef7-0000-7000-8000-000000000002", name: COURSE_CREATOR_NAME },
+    lessonPlans,
+    lessonPlanCount: lessonPlans.length,
+    plannedWorkloadMinutes: lessonPlans.reduce(
+      (total, item) => total + item.expectedDurationMinutes,
+      0,
+    ),
+    prerequisites: [
+      {
+        id: COURSE_SMARTPHONES.courseId,
+        name: COURSE_SMARTPHONES.courseName,
+        category: CourseCategory.basic,
+        status: CourseStatus.active,
+      },
+    ],
+    requiredBy: [],
+    ...overrides,
+  };
+}
+
+export function buildArchivedCourseDetail(
+  overrides: Partial<CourseDetailDto> = {},
+): CourseDetailDto {
+  return buildCourseDetail({ status: CourseStatus.archived, ...overrides });
+}
+
+/**
+ * `GET /courses/:id`. `response` can be a function of the id in the path, for a test that moves
+ * from one course to another and needs each one to answer with its own data.
+ */
+export function getCourseHandler({
+  response = buildCourseDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: Omit<HandlerOptions<IdCall, CourseDetailDto>, "response"> & {
+  response?: CourseDetailDto | ((id: string) => CourseDetailDto);
+} = {}) {
+  return http.get("*/courses/:id", async ({ params }) => {
+    const id = String(params.id);
+    onCall?.({ id });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(typeof response === "function" ? response(id) : response);
+  });
+}
+
 /** What the API knows about each plan: the plans of the default sequence and the mock catalog. */
 function defaultSequenceCatalog(): CourseLessonPlanItemResponseDto[] {
   return [...buildCourseSequence().items, ...MOCK_LESSON_PLANS.map((plan) => toSequenceItem(plan))];
@@ -542,5 +614,69 @@ export function replaceCourseLessonPlansHandler({
       ...buildCourseSequence(items.filter((item) => item !== undefined)),
       courseId: String(params.id),
     });
+  });
+}
+
+export const LESSON_PLAN_COPY_ID = "01952ef7-0000-7000-8000-0000000000a2";
+
+/**
+ * Response of `POST /lesson-plans/:id/duplicate` for the `buildLessonPlan` plan: the copy has its
+ * own id and the title of the original with " (cópia)" after it. It is born active, as the API does,
+ * even when the original is archived.
+ */
+export function buildLessonPlanCopy(
+  overrides: Partial<LessonPlanResponseDto> = {},
+): LessonPlanResponseDto {
+  return buildLessonPlan({
+    id: LESSON_PLAN_COPY_ID,
+    title: "Teclado, mouse e janelas (cópia)",
+    ...overrides,
+  });
+}
+
+/** Response of `GET /lesson-plans/:id` for the copy: active, in no course and unused. */
+export function buildLessonPlanCopyDetail(
+  overrides: Partial<LessonPlanDetailDto> = {},
+): LessonPlanDetailDto {
+  return buildLessonPlanDetail({
+    ...buildLessonPlanCopy(),
+    status: LessonPlanUsageStatus.unused,
+    usedIn: [],
+    ...overrides,
+  });
+}
+
+export function duplicateLessonPlanHandler({
+  response = buildLessonPlanCopy(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall> = {}) {
+  return http.post("*/lesson-plans/:id/duplicate", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+/**
+ * `GET /lesson-plans/:id` that answers the plan of the id asked, or a 404 when none of `plans` has
+ * it. `getLessonPlanHandler` answers the same body for every id, which cannot tell the original
+ * from its copy.
+ */
+export function getLessonPlansByIdHandler(
+  plans: LessonPlanDetailDto[],
+  onCall?: (call: IdCall) => void,
+) {
+  return http.get("*/lesson-plans/:id", ({ params }) => {
+    const id = String(params.id);
+    onCall?.({ id });
+
+    const plan = plans.find((candidate) => candidate.id === id);
+    return plan === undefined ? apiErrorResponse(NOT_FOUND_ERROR) : HttpResponse.json(plan);
   });
 }

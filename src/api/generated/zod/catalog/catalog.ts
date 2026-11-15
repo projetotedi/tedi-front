@@ -75,6 +75,118 @@ export const CreateCourseResponse = zod.object({
     ),
 });
 
+export const GetCourseParams = zod.object({
+  id: zod.uuid().describe("Id of the course."),
+});
+
+export const getCourseResponseLessonPlanCountMin = 0;
+
+export const getCourseResponsePlannedWorkloadMinutesMin = 0;
+
+export const GetCourseResponse = zod.object({
+  category: zod
+    .enum(["basic", "intermediate", "advanced"])
+    .describe("Level of the content. A class takes the category of its course when created.")
+    .describe("Level of the content."),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe("Null when the person who created the course was removed."),
+  description: zod.string(),
+  id: zod.uuid(),
+  lessonPlanCount: zod
+    .int()
+    .min(getCourseResponseLessonPlanCountMin)
+    .describe("How many lesson plans the course has. 0 when there are none."),
+  lessonPlans: zod
+    .array(
+      zod.object({
+        archivedAt: zod.iso
+          .datetime({ offset: true })
+          .nullable()
+          .describe(
+            "Not null: the lesson plan was archived after it entered the sequence. It stays, tagged 'Arquivado' (RN-27).",
+          ),
+        contents: zod.array(zod.string()).describe("Contents in the order they are taught."),
+        courseCount: zod
+          .int()
+          .min(1)
+          .describe("How many courses use this lesson plan, this one and archived ones included."),
+        expectedDurationMinutes: zod
+          .int()
+          .describe("Expected duration in minutes. It counts toward the workload of the course."),
+        lessonPlanId: zod.uuid(),
+        materialUrl: zod
+          .string()
+          .nullable()
+          .describe("Link to the material. The system stores the link, not the file."),
+        position: zod
+          .int()
+          .min(1)
+          .describe("Place of the lesson plan in the sequence of this course, from 1."),
+        title: zod.string(),
+      }),
+    )
+    .describe("The lesson plans of the course ordered by position. Empty when there are none."),
+  name: zod.string(),
+  objective: zod.string().nullable(),
+  plannedWorkloadMinutes: zod
+    .int()
+    .min(getCourseResponsePlannedWorkloadMinutesMin)
+    .describe(
+      "Sum of expectedDurationMinutes of the lesson plans, never typed (RF-018, RN-24). 0 when there are none.",
+    ),
+  prerequisites: zod
+    .array(
+      zod.object({
+        category: zod
+          .enum(["basic", "intermediate", "advanced"])
+          .describe("Level of the content. A class takes the category of its course when created.")
+          .describe("Level of the content."),
+        id: zod.uuid(),
+        name: zod.string(),
+        status: zod
+          .enum(["active", "archived"])
+          .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+          .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+      }),
+    )
+    .describe(
+      "Courses required before this one, archived ones included, ordered by name. Empty when there are none.",
+    ),
+  requiredBy: zod
+    .array(
+      zod.object({
+        category: zod
+          .enum(["basic", "intermediate", "advanced"])
+          .describe("Level of the content. A class takes the category of its course when created.")
+          .describe("Level of the content."),
+        id: zod.uuid(),
+        name: zod.string(),
+        status: zod
+          .enum(["active", "archived"])
+          .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+          .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+      }),
+    )
+    .describe(
+      "Courses that require this one, archived ones included, ordered by name. Empty when no course requires it.",
+    ),
+  status: zod
+    .enum(["active", "archived"])
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+  updatedAt: zod.iso
+    .datetime({ offset: true })
+    .describe(
+      "The most recent change to the course, to its prerequisites or to its lesson plan sequence.",
+    ),
+});
+
 export const UpdateCourseParams = zod.object({
   id: zod.uuid().describe("Id of the course."),
 });
@@ -479,6 +591,33 @@ export const ArchiveLessonPlanBody = zod.object({
 });
 
 export const ArchiveLessonPlanResponse = zod.object({
+  archiveReason: zod.string().nullable(),
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("Null while the lesson plan is active (RN-27)."),
+  archivedById: zod.uuid().nullable(),
+  contents: zod.array(zod.string()).describe("Contents in the order they are taught."),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdById: zod.uuid().describe("Id of the person who created the lesson plan."),
+  expectedDurationMinutes: zod.int().describe("Expected duration in minutes."),
+  id: zod.uuid(),
+  materialUrl: zod
+    .string()
+    .nullable()
+    .describe("Link to the material. The system stores the link, not the file."),
+  objective: zod.string().nullable(),
+  title: zod.string(),
+  updatedAt: zod.iso
+    .datetime({ offset: true })
+    .describe("The most recent change to the lesson plan or to its contents."),
+});
+
+export const DuplicateLessonPlanParams = zod.object({
+  id: zod.uuid().describe("Id of the lesson plan."),
+});
+
+export const DuplicateLessonPlanResponse = zod.object({
   archiveReason: zod.string().nullable(),
   archivedAt: zod.iso
     .datetime({ offset: true })

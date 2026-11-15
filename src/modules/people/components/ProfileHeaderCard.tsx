@@ -3,21 +3,21 @@ import { useTranslation } from "react-i18next";
 import { Badge, Button, Card, Chip } from "@shared/ui";
 
 import { formatDate } from "../lib/format";
-import { ACCOUNT_STATUS_COLOR } from "../lib/status-colors";
-import type { AccountStatus } from "../mocks/profile.mock";
+import { ACCOUNT_STATUS_COLOR, type AccountStatus } from "../lib/status-colors";
 
 interface ProfileHeaderCardProps {
   name: string;
   roleLabel: string;
   ra: string | null;
   status: AccountStatus;
-  department: string;
-  joinedAt: string;
+  department: string | null;
+  joinedAt: string | null;
 }
 
 /**
- * Cabeçalho do perfil. "Editar meus dados" e "Lançar horas" abrem modais que ficam fora
- * da GUS-86; até lá os botões aparecem desabilitados.
+ * Header of the profile. The "edit my details" and "log hours" buttons open modals that are out of
+ * the scope of GUS-86, so until then they show disabled. The RA, department and "since" chips only
+ * show when there is a value: a person with no member profile (the seeded coordinator) has none.
  */
 export function ProfileHeaderCard({
   name,
@@ -46,12 +46,18 @@ export function ProfileHeaderCard({
                 <Chip>{t("profile.chips.ra", { ra })}</Chip>
               </li>
             )}
-            <li>
-              <Chip>{department}</Chip>
-            </li>
-            <li>
-              <Chip>{t("profile.chips.since", { date: formatDate(joinedAt, i18n.language) })}</Chip>
-            </li>
+            {department && (
+              <li>
+                <Chip>{department}</Chip>
+              </li>
+            )}
+            {joinedAt && (
+              <li>
+                <Chip>
+                  {t("profile.chips.since", { date: formatDate(joinedAt, i18n.language) })}
+                </Chip>
+              </li>
+            )}
           </ul>
         </div>
         <div className="flex flex-wrap gap-3">
