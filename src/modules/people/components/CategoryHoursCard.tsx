@@ -5,14 +5,14 @@ import { formatHours } from "@shared/lib/format";
 import { Badge, Card } from "@shared/ui";
 
 import { formatMonthYear } from "../lib/format";
-import type { CategoryHours } from "../mocks/profile.mock";
+import type { CategoryHoursSummary } from "../lib/hours";
 
 interface CategoryHoursCardProps {
-  period: string;
-  rows: CategoryHours[];
+  /** `null` while there is no hours bank: the card shows an empty state, with no period. */
+  byCategory: CategoryHoursSummary | null;
 }
 
-export function CategoryHoursCard({ period, rows }: CategoryHoursCardProps) {
+export function CategoryHoursCard({ byCategory }: CategoryHoursCardProps) {
   const { t, i18n } = useTranslation("people");
 
   /**
@@ -31,6 +31,16 @@ export function CategoryHoursCard({ period, rows }: CategoryHoursCardProps) {
       minutes: t("profile.byCategory.pendingLabel.minutePart", { count: rest }),
     });
   };
+
+  if (byCategory === null) {
+    return (
+      <Card title={t("profile.byCategory.title")}>
+        <p className="text-base text-muted">{t("profile.hoursUnavailable")}</p>
+      </Card>
+    );
+  }
+
+  const { period, rows } = byCategory;
 
   return (
     <Card

@@ -5,11 +5,15 @@ import { formatHours } from "@shared/lib/format";
 import { Badge, Card } from "@shared/ui";
 
 import { formatDayMonth } from "../lib/format";
+import type { HoursEntry } from "../lib/hours";
 import { ENTRY_STATUS_COLOR } from "../lib/status-colors";
-import type { HoursEntry } from "../mocks/profile.mock";
 
 interface EntriesCardProps {
-  entries: HoursEntry[];
+  /**
+   * `null` while there is no hours bank: the card shows an empty state. An empty list is
+   * different: the bank exists and the person has no entries yet.
+   */
+  entries: HoursEntry[] | null;
 }
 
 /** Últimos lançamentos. O link "Ver extrato completo" abre um modal que fica fora da GUS-86. */
@@ -17,6 +21,14 @@ export function EntriesCard({ entries }: EntriesCardProps) {
   const { t, i18n } = useTranslation("people");
   const duration = (value: number | null) =>
     value === null ? t("profile.empty") : formatHours(value);
+
+  if (entries === null) {
+    return (
+      <Card title={t("profile.entries.title")}>
+        <p className="text-base text-muted">{t("profile.hoursUnavailable")}</p>
+      </Card>
+    );
+  }
 
   return (
     <Card title={t("profile.entries.title")}>
