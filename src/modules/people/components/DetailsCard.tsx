@@ -34,7 +34,9 @@ const GRID_CLASS: Record<DetailsColumns, string> = {
 };
 
 function hasNoValue(value: ReactNode): boolean {
-  return value === null || value === undefined || value === "";
+  return (
+    value === null || value === undefined || (typeof value === "string" && value.trim() === "")
+  );
 }
 
 /**
