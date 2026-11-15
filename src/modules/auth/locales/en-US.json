@@ -184,7 +184,12 @@
         "status": "Status",
         "actions": "Actions"
       },
-      "rowActions": "Actions for {{name}}",
+      "actions": {
+        "edit": "Edit {{name}}",
+        "editTooltip": "Edit",
+        "deactivateMember": "Deactivate {{name}}",
+        "deactivateTooltip": "Deactivate member"
+      },
       "status": {
         "active": "Active",
         "inactive": "Inactive"
@@ -246,16 +251,112 @@
       "link": {
         "label": "Registration link"
       },
-      "copy": "Copy link",
-      "copied": "Link copied.",
-      "copyFallback": "Could not copy automatically. The link has been selected: use Ctrl+C (or Cmd+C) to copy it.",
       "validityTitle": "Copy the link now",
       "validity": "This link is valid for {{hours}} hours and can only be used once. It will not be shown again.",
-      "done": "Done",
       "errors": {
         "network": "Could not connect",
         "unknown": "Could not generate the invite. Please try again."
       }
+    },
+    "generatedLink": {
+      "copy": "Copy link",
+      "copied": "Link copied.",
+      "copyFallback": "Could not copy automatically. The link has been selected: use Ctrl+C (or Cmd+C) to copy it.",
+      "done": "Done"
+    },
+    "editMember": {
+      "title": "Edit member",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "dataTitle": "Member details",
+      "summary": {
+        "name": "Name",
+        "ra": "RA",
+        "email": "Email"
+      }
+    },
+    "memberAccess": {
+      "title": "System access",
+      "role": {
+        "label": "Access role"
+      },
+      "resetPassword": "Generate password reset link",
+      "disable": "Disable access",
+      "enable": "Re-enable access",
+      "enabling": "Re-enabling…",
+      "ownAccount": "You cannot change your own account"
+    },
+    "memberSummary": {
+      "identity": "{{name}} · RA {{ra}}",
+      "identityNoRa": "{{name}}",
+      "currentRole": "Current role: {{role}}"
+    },
+    "passwordReset": {
+      "title": "Password reset link",
+      "description": "Generates a single-use link for the person to create a new password.",
+      "generate": "Generate link",
+      "generating": "Generating…",
+      "back": "Back",
+      "close": "Close",
+      "link": {
+        "label": "Generated link"
+      },
+      "validityTitle": "Copy the link now",
+      "validity": "Valid for {{hours}} hours and can only be used once. Send it to the person through a secure channel. The link is not shown again after you close this window."
+    },
+    "disableAccess": {
+      "title": "Disable access",
+      "warning": "The person can no longer sign in to the system. If they have TEDI open, they are signed out on their next action. The history of lessons, attendance and hours stays. To record the person leaving the project with a date, use Deactivate member.",
+      "note": "You cannot disable your own account or the last active coordinator. Access can be re-enabled later in Edit member › System access.",
+      "back": "Back",
+      "confirm": "Disable access",
+      "confirming": "Disabling…",
+      "close": "Close"
+    },
+    "pendingInvites": {
+      "title": "Pending invites ({{count}})",
+      "titlePending": "Pending invites",
+      "description": "Registration links that have been generated and have not been used or expired yet.",
+      "caption": "Invites waiting to be used",
+      "columns": {
+        "role": "Role",
+        "createdAt": "Generated on",
+        "expiresAt": "Expires on",
+        "actions": "Actions"
+      },
+      "passwordReset": "Password reset",
+      "revoke": "Revoke",
+      "revokeFor": "Revoke the {{role}} invite generated on {{date}}",
+      "revokeForPasswordReset": "Revoke the password reset link generated on {{date}}",
+      "empty": "No pending invites.",
+      "notice": "Revoking invalidates the link right away; anyone who opens it will see “This link is no longer valid”. Used or expired invites leave this list.",
+      "close": "Close",
+      "loading": "Loading invites…",
+      "error": "Could not load the invites. Close and open this window again.",
+      "confirm": {
+        "title": "Revoke invite",
+        "body": "{{role}} invite generated on {{date}}. The link stops working right away and cannot be restored.",
+        "bodyPasswordReset": "Password reset link generated on {{date}}. The link stops working right away and cannot be restored.",
+        "confirm": "Revoke",
+        "confirming": "Revoking…",
+        "back": "Back"
+      }
+    },
+    "actionErrors": {
+      "lastCoordinator": "This is the last active coordinator. Promote someone else to Coordinator before changing the role or disabling this access.",
+      "ownAccount": "You cannot change your own account.",
+      "notFound": "This access no longer exists. Refresh the list.",
+      "inviteGone": "This invite has already been used or revoked, or no longer exists.",
+      "network": "Could not connect. Please try again.",
+      "unknown": "Could not complete the action. Please try again."
+    },
+    "toast": {
+      "roleUpdated": "{{name}}'s role changed to {{role}}.",
+      "accessDisabled": "{{name}}'s access was disabled.",
+      "accessEnabled": "{{name}}'s access was re-enabled.",
+      "inviteRevoked": "Invite revoked."
     }
   }
 }

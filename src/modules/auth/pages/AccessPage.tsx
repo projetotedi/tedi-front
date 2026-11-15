@@ -3,6 +3,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useListAccess } from "@api/generated";
+import type { AccessResponseDto } from "@api/generated/model";
 import { ListState } from "@shared/components/ListState";
 import { useDebounce } from "@shared/hooks/useDebounce";
 import { resolveListState } from "@shared/lib/list-state";
@@ -12,6 +13,7 @@ import personsIcon from "../../../assets/icons/persons.svg";
 import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
+import { EditMemberDialog } from "../components/EditMemberDialog";
 import { PendingInvitesButton } from "../components/PendingInvitesButton";
 import { useCan } from "../hooks/useCan";
 import {
@@ -31,11 +33,11 @@ export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
-  // Ações por linha (GUS-88) devem usar `useCan("access.manage")` e a regra de própria conta (decisão 23).
   const canInvite = useCan("invites.manage");
   const [filters, setFilters] = useState<AccessFilterValues>(EMPTY_ACCESS_FILTERS);
   const [page, setPage] = useState(1);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<AccessResponseDto | null>(null);
 
   // Apagar a busca vale na hora: esperar o debounce manteria o termo antigo nos filtros aplicados.
   const isSearchEmpty = filters.search.trim() === "";
@@ -151,7 +153,7 @@ export function AccessPage(): ReactElement {
           aria-busy={query.isPlaceholderData || undefined}
           className={query.isPlaceholderData ? "opacity-75" : undefined}
         >
-          <AccessTable rows={query.data?.data ?? []} />
+          <AccessTable rows={query.data?.data ?? []} onEditMember={setEditingMember} />
           {renderListState()}
         </div>
 
@@ -179,6 +181,14 @@ export function AccessPage(): ReactElement {
           </div>
         ) : null}
       </Card>
+
+      {editingMember ? (
+        <EditMemberDialog
+          key={editingMember.id}
+          member={editingMember}
+          onClose={() => setEditingMember(null)}
+        />
+      ) : null}
     </section>
   );
 }
