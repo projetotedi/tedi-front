@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -17,7 +17,13 @@ import {
   type CourseCall,
   type ListCourseClassesCall,
 } from "./handlers";
-import { createDeferred, renderWithProviders, server, setupClassesTestServer } from "./test-utils";
+import {
+  createDeferred,
+  expectNoRequestBesidesSession,
+  renderWithProviders,
+  server,
+  setupClassesTestServer,
+} from "./test-utils";
 
 setupClassesTestServer();
 
@@ -334,28 +340,18 @@ describe("CourseOriginCard", () => {
 
   describe("a course that cannot exist for the API", () => {
     it("asks nothing and says the data is not available, with the link and the level still there", async () => {
-      const requests: string[] = [];
-      server.events.on("request:start", ({ request }) => {
-        requests.push(`${request.method} ${new URL(request.url).pathname}`);
-      });
+      const { queryClient } = await renderCard({ course: buildCourse({ id: "computer" }) });
 
-      try {
-        await renderCard({ course: buildCourse({ id: "computer" }) });
-        await act(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        });
-
-        expect(screen.getByText("Os dados deste curso não estão disponíveis.")).toBeInTheDocument();
-        expect(valueOf("Curso")).toHaveTextContent("Informática Básica");
-        expect(
-          screen.getByRole("link", { name: "Abrir curso Informática Básica" }),
-        ).toHaveAttribute("href", "/courses/computer");
-        expect(screen.queryByRole("status")).not.toBeInTheDocument();
-        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-        expect(requests.filter((request) => !request.endsWith("/auth/me"))).toEqual([]);
-      } finally {
-        server.events.removeAllListeners("request:start");
-      }
+      expect(screen.getByText("Os dados deste curso não estão disponíveis.")).toBeInTheDocument();
+      expect(valueOf("Curso")).toHaveTextContent("Informática Básica");
+      expect(screen.getByRole("link", { name: "Abrir curso Informática Básica" })).toHaveAttribute(
+        "href",
+        "/courses/computer",
+      );
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      // Read from the cache of the queries: the two of the card are turned off and never ran.
+      expectNoRequestBesidesSession(queryClient);
     });
   });
 });

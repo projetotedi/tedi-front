@@ -73,3 +73,27 @@ export function createDeferred() {
   });
   return { promise, resolve };
 }
+
+/**
+ * Fails if the screen asked the API for anything besides the session, with no waiting.
+ *
+ * A query that is mounted turned on is already `fetching` when the render ends, and later holds a
+ * result (data or error). A query that is turned off (`enabled: false`) sits in the cache idle and
+ * never runs. So reading the cache is a check that does not depend on how long a request that was
+ * never made would have taken to show up, which a pause and a spy on the handler cannot say.
+ */
+export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
+  const [sessionKey] = getMeQueryKey();
+  const queries = queryClient
+    .getQueryCache()
+    .findAll()
+    .filter((query) => query.queryKey[0] !== sessionKey);
+
+  for (const query of queries) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
+}

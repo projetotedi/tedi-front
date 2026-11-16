@@ -1,4 +1,4 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -136,17 +136,25 @@ describe("the slots of the catalog, filled by the app", () => {
   });
 
   it("shows the course without the card, and asks nothing, to who cannot see classes", async () => {
-    const onCall = vi.fn<(call: ListCourseClassesCall) => void>();
-    server.use(getCourseHandler(), listCourseClassesHandler({ onCall }));
+    server.use(getCourseHandler(), listCourseClassesHandler());
     // The coordinator of the catalog tests has `catalog.view` and no `classes.view`.
-    await renderRoutes(routes, { route: COURSE_ROUTE, user: buildMeUser() });
-
-    expect(await screen.findByRole("heading", { name: "Plano do curso" })).toBeInTheDocument();
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+    const { queryClient } = await renderRoutes(routes, {
+      route: COURSE_ROUTE,
+      user: buildMeUser(),
     });
 
+    // The cards of the screen are drawn together, so once the plan is there the card of the
+    // classes would be too.
+    expect(await screen.findByRole("heading", { name: "Plano do curso" })).toBeInTheDocument();
+
     expect(screen.queryByRole("heading", { name: "Turmas deste curso" })).not.toBeInTheDocument();
-    expect(onCall).not.toHaveBeenCalled();
+    // Read from the cache of the queries: the classes of the course never ran.
+    const classQueries = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: [`/courses/${COURSE_ID}/classes`] });
+    for (const query of classQueries) {
+      expect(query.state.fetchStatus).toBe("idle");
+      expect(query.state.dataUpdateCount + query.state.errorUpdateCount).toBe(0);
+    }
   });
 });

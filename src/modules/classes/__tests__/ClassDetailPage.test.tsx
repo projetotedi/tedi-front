@@ -7,7 +7,7 @@ import { Role } from "@shared/lib/role";
 import { mockCourses } from "../mocks/classes.mock";
 import { classesRoutes } from "../routes";
 import { buildMeUser, buildMeUserWithoutClasses } from "./handlers";
-import { renderRoutes, server, setupClassesTestServer } from "./test-utils";
+import { expectNoRequestBesidesSession, renderRoutes, setupClassesTestServer } from "./test-utils";
 
 setupClassesTestServer();
 
@@ -109,22 +109,12 @@ describe("ClassDetailPage", () => {
     });
 
     it("asks the API nothing for a course of the prototype, whose id cannot exist there", async () => {
-      const requests: string[] = [];
-      server.events.on("request:start", ({ request }) => {
-        requests.push(`${request.method} ${new URL(request.url).pathname}`);
-      });
+      const { queryClient } = await renderClass("1");
 
-      try {
-        await renderClass("1");
-        await screen.findByText("Os dados deste curso não estão disponíveis.");
-        await act(async () => {
-          await new Promise((resolve) => setTimeout(resolve, 50));
-        });
+      await screen.findByText("Os dados deste curso não estão disponíveis.");
 
-        expect(requests.filter((request) => !request.endsWith("/auth/me"))).toEqual([]);
-      } finally {
-        server.events.removeAllListeners("request:start");
-      }
+      // Read from the cache of the queries: nothing but the session ran.
+      expectNoRequestBesidesSession(queryClient);
     });
   });
 
