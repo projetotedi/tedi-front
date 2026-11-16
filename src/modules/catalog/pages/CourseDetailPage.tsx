@@ -14,6 +14,7 @@ import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { CoursePlanCard } from "../components/CoursePlanCard";
 import { CoursePrerequisitesCard } from "../components/CoursePrerequisitesCard";
 import { CourseWorkloadCard } from "../components/CourseWorkloadCard";
+import { DuplicateCourseDialog } from "../components/DuplicateCourseDialog";
 import { isCourseId, isCourseNotFound, toCourseSequence } from "../lib/course-detail";
 
 /**
@@ -63,7 +64,10 @@ interface CourseDetailViewProps {
   renderCourseClasses: RenderCourseClasses;
 }
 
-/** The course that was loaded: header, the two columns of cards and the dialog of the sequence. */
+/**
+ * The course that was loaded: header, the two columns of cards and the dialogs (the sequence and
+ * Duplicar curso, which never are open together: each one is modal).
+ */
 function CourseDetailView({
   courseId,
   course,
@@ -71,6 +75,7 @@ function CourseDetailView({
 }: CourseDetailViewProps): ReactElement {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [archivedBySave, setArchivedBySave] = useState(false);
   const archivedHintRef = useRef<HTMLParagraphElement>(null);
   const wasEditingRef = useRef(false);
@@ -95,7 +100,11 @@ function CourseDetailView({
 
   return (
     <div className="flex flex-col gap-5">
-      <CourseDetailHeader course={course} isArchived={isArchived} />
+      <CourseDetailHeader
+        course={course}
+        isArchived={isArchived}
+        onDuplicate={() => setIsDuplicating(true)}
+      />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <CourseDataCard course={course} isArchived={isArchived} />
@@ -127,6 +136,10 @@ function CourseDetailView({
           onClose={() => setIsEditing(false)}
           onCourseArchived={handleCourseArchived}
         />
+      ) : null}
+
+      {isDuplicating ? (
+        <DuplicateCourseDialog course={course} onClose={() => setIsDuplicating(false)} />
       ) : null}
     </div>
   );
@@ -171,13 +184,13 @@ function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): Rea
 }
 
 /**
- * The screen of a course (RF-014, RF-016, RF-018, RF-020, RF-021). The page asks the API for one
- * thing, `getCourse`, and everything on it comes from that answer: the header (name and tags), the
- * data, the plan (the sequence of lesson plans, with the dialog that builds it), the workload, the
- * prerequisites and who created it. The sequence is not asked for apart: `toCourseSequence` gives
- * the plan card and the dialog the view of it that they read, and when a sequence is saved the
- * answer of the `PUT` is written into this same detail (`applyReplacedSequence`), so everything
- * changes together and nothing is fetched again.
+ * The screen of a course (RF-014, RF-016, RF-018, RF-019, RF-020, RF-021). The page asks the API
+ * for one thing, `getCourse`, and everything on it comes from that answer: the header (name and
+ * tags), the data, the plan (the sequence of lesson plans, with the dialog that builds it), the
+ * workload, the prerequisites and who created it. The sequence is not asked for apart:
+ * `toCourseSequence` gives the plan card and the dialog the view of it that they read, and when a
+ * sequence is saved the answer of the `PUT` is written into this same detail
+ * (`applyReplacedSequence`), so everything changes together and nothing is fetched again.
  *
  * The one card that has a query of its own is "Turmas deste curso" (`listCourseClasses`), and it
  * keeps the query to itself so that its failure shows only there. It is not drawn by this module:
@@ -190,6 +203,11 @@ function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): Rea
  * that the last save was refused as archived belong to the course that was open, not to the next.
  * When the next course is not loaded yet the loading state already throws the old view away; the
  * `key` is for when it is in the cache, and the page shows it with no loading step in between.
+ *
+ * Duplicar curso (RF-019, in the header, for who has `courses.duplicateArchive`) opens
+ * `DuplicateCourseDialog` over the page. The copy opens on this same route with another id, so the
+ * `key` throws away the view of the original, dialog included, and the copy is shown after its own
+ * `getCourse`.
  */
 export function CourseDetailPage({
   renderCourseClasses,

@@ -10,7 +10,7 @@ import {
 } from "@api/generated/catalog/catalog";
 import type { CourseDetailDto } from "@api/generated/model";
 
-import { applyReplacedSequence } from "../lib/course-queries";
+import { applyReplacedSequence, invalidateAfterCourseDuplicated } from "../lib/course-queries";
 import {
   buildCourseDetail,
   buildCourseSequence,
@@ -103,5 +103,82 @@ describe("applyReplacedSequence", () => {
     await applyReplacedSequence(queryClient, COURSE_ID, buildCourseSequence());
 
     expect(isInvalidated(getMeQueryKey())).toBe(false);
+  });
+});
+
+describe("invalidateAfterCourseDuplicated", () => {
+  it("invalidates the detail of the original and of the other courses, whose plans are now in one more course", async () => {
+    queryClient.setQueryData(getGetCourseQueryKey(COURSE_ID), buildCourseDetail());
+    queryClient.setQueryData(
+      getGetCourseQueryKey(OTHER_COURSE_ID),
+      buildCourseDetail({ id: OTHER_COURSE_ID }),
+    );
+
+    await invalidateAfterCourseDuplicated(queryClient);
+
+    expect(isInvalidated(getGetCourseQueryKey(COURSE_ID))).toBe(true);
+    expect(isInvalidated(getGetCourseQueryKey(OTHER_COURSE_ID))).toBe(true);
+  });
+
+  it("invalidates the sequence of every course, whose courseCount changed", async () => {
+    queryClient.setQueryData(getListCourseLessonPlansQueryKey(COURSE_ID), buildCourseSequence());
+    queryClient.setQueryData(
+      getListCourseLessonPlansQueryKey(OTHER_COURSE_ID),
+      buildCourseSequence(),
+    );
+
+    await invalidateAfterCourseDuplicated(queryClient);
+
+    expect(isInvalidated(getListCourseLessonPlansQueryKey(COURSE_ID))).toBe(true);
+    expect(isInvalidated(getListCourseLessonPlansQueryKey(OTHER_COURSE_ID))).toBe(true);
+  });
+
+  it.each([
+    ["without parameters", ["/courses"]],
+    ["with the parameters of a search", ["/courses", { page: 1, search: "redes" }]],
+  ])(
+    "invalidates a list of courses, the key of the listCourses that the contract does not have yet (%s)",
+    async (_label, listKey) => {
+      queryClient.setQueryData(listKey, { data: [] });
+
+      await invalidateAfterCourseDuplicated(queryClient);
+
+      expect(isInvalidated(listKey)).toBe(true);
+    },
+  );
+
+  it("invalidates the lesson plans: their detail (usedIn), their list and the usage the RF-017 reads", async () => {
+    const detailKey = getGetLessonPlanQueryKey(LESSON_PLAN_ID);
+    const usageKey = getGetLessonPlanUsageQueryKey(LESSON_PLAN_ID, {
+      expectedDurationMinutes: 120,
+    });
+    const listKey = ["/lesson-plans", { page: 1 }] as const;
+    queryClient.setQueryData(detailKey, {});
+    queryClient.setQueryData(usageKey, {});
+    queryClient.setQueryData(listKey, { data: [] });
+
+    await invalidateAfterCourseDuplicated(queryClient);
+
+    expect(isInvalidated(detailKey)).toBe(true);
+    expect(isInvalidated(usageKey)).toBe(true);
+    expect(isInvalidated(listKey)).toBe(true);
+  });
+
+  it("leaves what has nothing to do with courses or lesson plans alone", async () => {
+    queryClient.setQueryData(getMeQueryKey(), {});
+    queryClient.setQueryData(["/courses-archive"], {});
+    queryClient.setQueryData(["/classes", { page: 1 }], {});
+
+    await invalidateAfterCourseDuplicated(queryClient);
+
+    expect(isInvalidated(getMeQueryKey())).toBe(false);
+    expect(isInvalidated(["/courses-archive"])).toBe(false);
+    expect(isInvalidated(["/classes", { page: 1 }])).toBe(false);
+  });
+
+  it("does not write anything into the cache: the answer of the POST is not the detail of a course", async () => {
+    await invalidateAfterCourseDuplicated(queryClient);
+
+    expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
   });
 });

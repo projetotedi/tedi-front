@@ -2,13 +2,16 @@ import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { CourseDetailDto } from "@api/generated/model";
+import { useCan } from "@modules/auth";
 import { formatHours } from "@shared/lib/format";
-import { Badge, Card } from "@shared/ui";
+import { Badge, Button, Card } from "@shared/ui";
 
 export interface CourseDetailHeaderProps {
   course: CourseDetailDto;
   /** The course is archived (RN-27): the API says so, or a save was refused with 409 `COURSE_ARCHIVED`. */
   isArchived: boolean;
+  /** Duplicar curso was pressed: the screen opens the dialog that names the copy. */
+  onDuplicate: () => void;
 }
 
 /**
@@ -17,15 +20,25 @@ export interface CourseDetailHeaderProps {
  * Figma comes with the query of the classes of the course (GUS-102), and not before.
  *
  * The actions go on the right of this row, in the order of the Figma: Duplicar curso (`tertiary`,
- * GUS-117), Arquivar or Reativar curso (`danger-soft`, GUS-116), Editar curso (`secondary`, the
+ * GUS-140), Arquivar or Reativar curso (`danger-soft`, GUS-116), Editar curso (`secondary`, the
  * form of GUS-97) and + Nova turma (`primary`, the `classes` module). Each one is shown only with
  * `useCan`: `courses.duplicateArchive` for the first two, `courses.manage` for Editar curso and the
  * permission of the `classes` module for + Nova turma; and, for an archived course, the editing
- * ones stay turned off with the reason on the page (see `CoursePlanCard`). None of them exists
- * yet, so none is drawn, and the container of the actions is created with the first one.
+ * ones stay turned off with the reason on the page (see `CoursePlanCard`).
+ *
+ * Duplicar curso is the only one that exists so far. It stays on an archived course: the API
+ * accepts it and the copy is born active, which is how the content of an archived course gets
+ * back into use (RN-27). The container of the actions is there only when the person has at least
+ * one of them, so a member sees the name and the tags and nothing else; the next actions go
+ * inside it, after this one.
  */
-export function CourseDetailHeader({ course, isArchived }: CourseDetailHeaderProps): ReactElement {
+export function CourseDetailHeader({
+  course,
+  isArchived,
+  onDuplicate,
+}: CourseDetailHeaderProps): ReactElement {
   const { t } = useTranslation("catalog");
+  const canDuplicate = useCan("courses.duplicateArchive");
 
   return (
     <Card>
@@ -55,6 +68,13 @@ export function CourseDetailHeader({ course, isArchived }: CourseDetailHeaderPro
             </li>
           </ul>
         </div>
+        {canDuplicate ? (
+          <div className="flex flex-wrap gap-3">
+            <Button variant="tertiary" onPress={onDuplicate}>
+              {t("course.duplicate.action")}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </Card>
   );

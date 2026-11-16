@@ -289,6 +289,31 @@
         "network": "Could not connect. Check your connection and try again.",
         "unknown": "Could not save the sequence. Try again."
       }
+    },
+    "duplicate": {
+      "action": "Duplicate course",
+      "title": "Duplicate course",
+      "nameLabel": "Name of the new course",
+      "suggestedName": "{{name}} (copy)",
+      "copiedTitle": "What is copied",
+      "copiedDescription_zero": "This course has no lesson plans in its sequence yet. Description, objective and category are copied. Prerequisites and classes are not copied.",
+      "copiedDescription_one": "The {{count}} lesson plan and its order. Description, objective and category too. Prerequisites and classes are not copied.",
+      "copiedDescription_other": "The {{count}} lesson plans and their order. Description, objective and category too. Prerequisites and classes are not copied.",
+      "back": "Back",
+      "submit": "Duplicate course",
+      "submitting": "Duplicating…",
+      "success": "Course duplicated",
+      "fieldErrors": {
+        "nameRequired": "Enter the name of the new course.",
+        "nameTooLong": "The name can have at most {{nameMax}} characters.",
+        "nameTaken": "A course with this name already exists. Choose another name.",
+        "nameInvalid": "Check the name of the new course."
+      },
+      "errors": {
+        "courseNotFound": "Could not duplicate: this course no longer exists.",
+        "network": "Could not duplicate the course. Check your connection and try again.",
+        "unknown": "Could not duplicate the course. Try again."
+      }
     }
   },
   "mock": {

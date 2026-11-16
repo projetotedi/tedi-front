@@ -7,17 +7,22 @@ import { Role } from "@shared/lib/role";
 
 import {
   buildArchivedCourseDetail,
+  buildCourseCopyDetail,
   buildCourseDetail,
   buildCourseSequence,
   buildMeUser,
   buildMockSequenceItem,
   buildSequenceItem,
   COURSE_ARCHIVED_ERROR,
+  COURSE_COPY_ID,
+  COURSE_COPY_NAME,
   COURSE_CREATOR_NAME,
   COURSE_ID,
+  COURSE_NAME_TAKEN_ERROR,
   COURSE_NOT_FOUND_ERROR,
   COURSE_SMARTPHONES,
   COURSE_SOCIAL_NETWORKS,
+  duplicateCourseHandler,
   getCourseHandler,
   listCourseLessonPlansHandler,
   replaceCourseLessonPlansHandler,
@@ -249,13 +254,23 @@ describe("CourseDetailPage", () => {
       expect(screen.queryByText(/^Turmas do curso /)).not.toBeInTheDocument();
     });
 
-    it("has no course actions yet: Duplicar curso, Arquivar curso, Editar curso and + Nova turma are hidden", async () => {
+    it("has Duplicar curso in the header, and not the actions that do not exist yet: Arquivar curso, Editar curso and + Nova turma", async () => {
       await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Duplicar curso", "Arquivar curso", "Editar curso", "+ Nova turma"]) {
+      expect(within(header()).getByRole("button", { name: "Duplicar curso" })).toBeInTheDocument();
+      for (const name of ["Arquivar curso", "Editar curso", "+ Nova turma"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }
+    });
+
+    it("draws Duplicar curso as the tertiary button of the header, before the actions that will come", async () => {
+      await renderPage({ role: Role.coordinator });
+
+      const buttons = within(header()).getAllByRole("button");
+
+      expect(buttons[0]).toHaveAccessibleName("Duplicar curso");
+      expect(buttons[0]).toHaveClass("button--tertiary", "min-h-11");
     });
 
     it("shows an error with retry when the course cannot be loaded", async () => {
@@ -380,18 +395,27 @@ describe("CourseDetailPage", () => {
 
       expect(tags(header())).toContain("Arquivado");
       expect(screen.queryByRole("button", { name: "Editar sequência" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Duplicar curso" })).not.toBeInTheDocument();
       expect(screen.queryByText(ARCHIVED_HINT)).not.toBeInTheDocument();
+    });
+
+    it("still lets who can duplicate do it: the copy is born active", async () => {
+      await renderPage({ course: buildArchivedCourseDetail() });
+
+      expect(within(header()).getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
     });
   });
 
   describe("who sees what", () => {
-    it("the member sees the whole course and cannot edit its sequence", async () => {
+    it("the member sees the whole course, and can neither edit its sequence nor duplicate it", async () => {
       await renderPage({ role: Role.member });
 
       expect(tableTitles()).toHaveLength(4);
       expect(card("Dados do curso")).toBeInTheDocument();
       expect(card("Carga horária prevista")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Editar sequência" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Duplicar curso" })).not.toBeInTheDocument();
+      expect(within(header()).queryByRole("button")).not.toBeInTheDocument();
     });
 
     it.each([
@@ -401,6 +425,15 @@ describe("CourseDetailPage", () => {
       await renderPage({ role });
 
       expect(editButton()).toBeEnabled();
+    });
+
+    it.each([
+      ["director", Role.director],
+      ["coordinator", Role.coordinator],
+    ])("the %s sees Duplicar curso in the header", async (_label, role) => {
+      await renderPage({ role });
+
+      expect(within(header()).getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
     });
   });
 
@@ -569,6 +602,183 @@ describe("CourseDetailPage", () => {
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       await waitFor(() => expect(screen.getByText(ARCHIVED_HINT)).toHaveFocus());
+    });
+  });
+
+  describe("duplicating the course", () => {
+    const duplicateButton = () => screen.getByRole("button", { name: "Duplicar curso" });
+    const duplicateDialog = () => screen.getByRole("dialog", { name: "Duplicar curso" });
+    const newNameField = () =>
+      within(duplicateDialog()).getByRole("textbox", { name: "Nome do novo curso" });
+
+    /** The page with the original and, once it is asked for, the copy: each id answers its own data. */
+    async function renderWithCopy({
+      role = Role.coordinator,
+      original = buildCourseDetail(),
+    }: { role?: Role; original?: CourseDetailDto } = {}) {
+      const onGet = vi.fn();
+      const onDuplicate = vi.fn();
+      server.use(
+        getCourseHandler({
+          response: (id) => (id === COURSE_COPY_ID ? buildCourseCopyDetail() : original),
+          onCall: onGet,
+        }),
+        duplicateCourseHandler({ onCall: onDuplicate }),
+      );
+      const view = await renderRoutes(catalogRoutes, {
+        route: COURSE_ROUTE,
+        user: buildMeUser(role),
+      });
+      await screen.findByRole("heading", { name: original.name });
+      return { ...view, onGet, onDuplicate, user: userEvent.setup() };
+    }
+
+    it("opens the dialog with the name of the course and what comes along with it", async () => {
+      const { user } = await renderWithCopy();
+
+      await user.click(duplicateButton());
+
+      expect(await screen.findByRole("dialog", { name: "Duplicar curso" })).toBeVisible();
+      expect(newNameField()).toHaveValue("Redes Sociais com Segurança (cópia)");
+      expect(
+        within(duplicateDialog()).getByText(
+          "Os 4 planos de aula e a ordem deles. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("counts the plans of the course on the screen, which may be one", async () => {
+      const original = buildCourseDetail({ lessonPlans: [buildSequenceItem()] });
+      const { user } = await renderWithCopy({ original });
+
+      await user.click(duplicateButton());
+
+      expect(
+        await within(await screen.findByRole("dialog", { name: "Duplicar curso" })).findByText(
+          /^O 1 plano de aula e a ordem dele\./,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("opens the dialog for an archived course too", async () => {
+      const { user } = await renderWithCopy({ original: buildArchivedCourseDetail() });
+
+      await user.click(duplicateButton());
+
+      expect(await screen.findByRole("dialog", { name: "Duplicar curso" })).toBeVisible();
+      expect(newNameField()).toHaveValue("Redes Sociais com Segurança (cópia)");
+    });
+
+    it("sends the id of the course on the screen and the name that is in the field", async () => {
+      const { user, onDuplicate } = await renderWithCopy();
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+
+      await user.click(within(duplicateDialog()).getByRole("button", { name: "Duplicar curso" }));
+
+      await waitFor(() => expect(onDuplicate).toHaveBeenCalledTimes(1));
+      expect(onDuplicate).toHaveBeenCalledWith({
+        id: COURSE_ID,
+        body: { name: "Redes Sociais com Segurança (cópia)" },
+      });
+    });
+
+    it("opens the detail of the copy, with the toast Curso duplicado, and leaves the original behind", async () => {
+      const { user, router, onGet } = await renderWithCopy();
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+
+      await user.click(within(duplicateDialog()).getByRole("button", { name: "Duplicar curso" }));
+
+      expect(await screen.findByText("Curso duplicado")).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: COURSE_COPY_NAME })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(`/courses/${COURSE_COPY_ID}`);
+      expect(onGet).toHaveBeenCalledWith({ id: COURSE_COPY_ID });
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: COURSE_NAME })).not.toBeInTheDocument();
+      expect(tags(header(COURSE_COPY_NAME))).toEqual([
+        "Intermediário",
+        "Ativo",
+        "4 planos de aula",
+        "7h previstas",
+      ]);
+    });
+
+    it("goes by push: Voltar of the browser brings the original back, and the copy stays in the cache", async () => {
+      const { user, router } = await renderWithCopy();
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+      await user.click(within(duplicateDialog()).getByRole("button", { name: "Duplicar curso" }));
+      await screen.findByRole("heading", { name: COURSE_COPY_NAME });
+
+      await router.navigate(-1);
+
+      expect(await screen.findByRole("heading", { name: COURSE_NAME })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe(COURSE_ROUTE);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
+    });
+
+    it("keeps the person on the course when the name is taken, with the message on the field", async () => {
+      const { user, router } = await renderWithCopy();
+      server.use(duplicateCourseHandler({ error: COURSE_NAME_TAKEN_ERROR }));
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+
+      await user.click(within(duplicateDialog()).getByRole("button", { name: "Duplicar curso" }));
+
+      expect(
+        await screen.findByText("Já existe um curso com este nome. Escolha outro nome."),
+      ).toBeInTheDocument();
+      expect(newNameField()).toHaveAttribute("aria-invalid", "true");
+      await waitFor(() => expect(newNameField()).toHaveFocus());
+      expect(router.state.location.pathname).toBe(COURSE_ROUTE);
+      expect(screen.queryByText("Curso duplicado")).not.toBeInTheDocument();
+    });
+
+    it("gives the focus back to Duplicar curso when Voltar closes the dialog", async () => {
+      const { user, onDuplicate } = await renderWithCopy();
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+
+      await user.click(within(duplicateDialog()).getByRole("button", { name: "Voltar" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() => expect(duplicateButton()).toHaveFocus());
+      expect(onDuplicate).not.toHaveBeenCalled();
+    });
+
+    it("gives the focus back to Duplicar curso when Escape closes the dialog", async () => {
+      const { user } = await renderWithCopy();
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+
+      await user.keyboard("{Escape}");
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() => expect(duplicateButton()).toHaveFocus());
+    });
+
+    it("opens a fresh dialog each time: what was typed before Voltar is not kept", async () => {
+      const { user } = await renderWithCopy();
+      await user.click(duplicateButton());
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+      await user.clear(newNameField());
+      await user.type(newNameField(), "Outro nome");
+      await user.click(within(duplicateDialog()).getByRole("button", { name: "Voltar" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+      await user.click(duplicateButton());
+
+      await screen.findByRole("dialog", { name: "Duplicar curso" });
+      expect(newNameField()).toHaveValue("Redes Sociais com Segurança (cópia)");
+    });
+
+    it("does not open the dialog for the member, who has no button to open it with", async () => {
+      await renderWithCopy({ role: Role.member });
+
+      expect(screen.queryByRole("button", { name: "Duplicar curso" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 

@@ -1,14 +1,21 @@
 import { screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import { CourseCategory, CourseStatus, type RelatedCourseResponseDto } from "@api/generated/model";
+import { Role } from "@shared/lib/role";
 
 import { CourseDataCard } from "../components/CourseDataCard";
-import { CourseDetailHeader } from "../components/CourseDetailHeader";
+import { CourseDetailHeader, type CourseDetailHeaderProps } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { CoursePrerequisitesCard } from "../components/CoursePrerequisitesCard";
 import { CourseWorkloadCard } from "../components/CourseWorkloadCard";
-import { buildArchivedCourseDetail, buildCourseDetail, COURSE_CREATOR_NAME } from "./handlers";
+import {
+  buildArchivedCourseDetail,
+  buildCourseDetail,
+  buildMeUser,
+  COURSE_CREATOR_NAME,
+} from "./handlers";
 import { renderWithProviders, setupCatalogTestServer } from "./test-utils";
 
 setupCatalogTestServer();
@@ -43,11 +50,23 @@ function valueOf(scope: HTMLElement, label: string): HTMLElement {
   return value;
 }
 
+function renderHeader(
+  {
+    course = buildCourseDetail(),
+    isArchived = false,
+    onDuplicate = vi.fn(),
+  }: Partial<CourseDetailHeaderProps> = {},
+  role: Role = Role.coordinator,
+) {
+  return renderWithProviders(
+    <CourseDetailHeader course={course} isArchived={isArchived} onDuplicate={onDuplicate} />,
+    { user: buildMeUser(role) },
+  );
+}
+
 describe("CourseDetailHeader", () => {
   it("shows the name as a heading and the tags: category, status, lesson plans and workload", async () => {
-    await renderWithProviders(
-      <CourseDetailHeader course={buildCourseDetail()} isArchived={false} />,
-    );
+    await renderHeader();
 
     expect(
       screen.getByRole("heading", { level: 2, name: "Redes Sociais com Segurança" }),
@@ -61,9 +80,7 @@ describe("CourseDetailHeader", () => {
   });
 
   it("shows Arquivado in the place of Ativo for an archived course", async () => {
-    await renderWithProviders(
-      <CourseDetailHeader course={buildArchivedCourseDetail()} isArchived />,
-    );
+    await renderHeader({ course: buildArchivedCourseDetail(), isArchived: true });
 
     expect(screen.getAllByRole("listitem").map((tag) => tag.textContent)).toEqual([
       "Intermediário",
@@ -75,7 +92,7 @@ describe("CourseDetailHeader", () => {
   });
 
   it("goes by isArchived, which also says what a refused save learned", async () => {
-    await renderWithProviders(<CourseDetailHeader course={buildCourseDetail()} isArchived />);
+    await renderHeader({ isArchived: true });
 
     expect(screen.getByText("Arquivado")).toBeInTheDocument();
     expect(screen.queryByText("Ativo")).not.toBeInTheDocument();
@@ -88,9 +105,7 @@ describe("CourseDetailHeader", () => {
   ])("says %s lesson plans as %s", async (count, expected) => {
     const lessonPlans = buildCourseDetail().lessonPlans.slice(0, count);
 
-    await renderWithProviders(
-      <CourseDetailHeader course={buildCourseDetail({ lessonPlans })} isArchived={false} />,
-    );
+    await renderHeader({ course: buildCourseDetail({ lessonPlans }) });
 
     expect(screen.getByText(expected)).toBeInTheDocument();
   });
@@ -100,24 +115,61 @@ describe("CourseDetailHeader", () => {
     [420, "7h previstas"],
     [0, "0h previstas"],
   ])("shows %s minutes of workload as %s, in hours", async (minutes, expected) => {
-    await renderWithProviders(
-      <CourseDetailHeader
-        course={buildCourseDetail({ plannedWorkloadMinutes: minutes })}
-        isArchived={false}
-      />,
-    );
+    await renderHeader({ course: buildCourseDetail({ plannedWorkloadMinutes: minutes }) });
 
     expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
-  it("has no actions yet and no tag of classes, which wait for their own tasks", async () => {
-    await renderWithProviders(
-      <CourseDetailHeader course={buildCourseDetail()} isArchived={false} />,
-    );
+  describe("the actions", () => {
+    it("has Duplicar curso as the only action so far, and no tag of classes, which waits for its own task", async () => {
+      await renderHeader();
 
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.queryByText(/turma/)).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
+        "Duplicar curso",
+      ]);
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.queryByText(/turma/)).not.toBeInTheDocument();
+    });
+
+    it("draws Duplicar curso as the tertiary button, with the 44px target", async () => {
+      await renderHeader();
+
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toHaveClass(
+        "button--tertiary",
+        "min-h-11",
+      );
+    });
+
+    it("asks the screen to open the dialog when Duplicar curso is pressed, and does nothing else", async () => {
+      const onDuplicate = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({ onDuplicate });
+
+      await user.click(screen.getByRole("button", { name: "Duplicar curso" }));
+
+      expect(onDuplicate).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("keeps Duplicar curso on an archived course: the copy is born active", async () => {
+      await renderHeader({ course: buildArchivedCourseDetail(), isArchived: true });
+
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
+    });
+
+    it("keeps Duplicar curso when only a refused save says the course is archived", async () => {
+      await renderHeader({ isArchived: true });
+
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
+    });
+
+    it("shows the member the name and the tags, and no action at all", async () => {
+      await renderHeader({}, Role.member);
+
+      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+      expect(screen.getAllByRole("listitem")).toHaveLength(4);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
   });
 });
 
