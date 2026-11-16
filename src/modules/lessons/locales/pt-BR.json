@@ -101,5 +101,129 @@
     "unknown": "Não foi possível concluir a ação. Tente novamente.",
     "loadError": "Não foi possível carregar a aula.",
     "retry": "Tentar de novo"
+  },
+  "retry": "Tentar de novo",
+  "weekdays": {
+    "monday": "Segunda-feira",
+    "tuesday": "Terça-feira",
+    "wednesday": "Quarta-feira",
+    "thursday": "Quinta-feira",
+    "friday": "Sexta-feira",
+    "saturday": "Sábado",
+    "sunday": "Domingo"
+  },
+  "generate": {
+    "action": "Gerar aulas",
+    "title": "Gerar aulas da turma",
+    "summaryTitle_one": "{{count}} aula será criada",
+    "summaryTitle_other": "{{count}} aulas serão criadas",
+    "summaryPending": "As aulas serão criadas a partir do plano do curso",
+    "summaryDescription": "Uma por plano de aula do curso {{course}}, na ordem do plano. Título e objetivo são copiados para cada aula.",
+    "quote": "“{{title}}”",
+    "skipped_one": "O plano arquivado {{titles}} fica de fora.",
+    "skipped_other": "Os {{count}} planos arquivados ficam de fora: {{titles}}.",
+    "fields": {
+      "weekday": "Dia da semana",
+      "weekdayPlaceholder": "Escolha o dia",
+      "startTime": "Hora de início",
+      "endTime": "Hora de término",
+      "firstDate": "Data da primeira aula",
+      "firstDateHint": "A primeira aula cai no primeiro dia da semana escolhido a partir desta data.",
+      "location": "Local padrão"
+    },
+    "fieldErrors": {
+      "weekdayRequired": "Escolha o dia da semana.",
+      "startTimeInvalid": "Informe a hora de início.",
+      "endTimeInvalid": "Informe a hora de término.",
+      "endTimeBeforeStart": "A hora de término deve ser depois da hora de início.",
+      "firstDateInvalid": "Informe a data da primeira aula.",
+      "locationTooLong": "O local pode ter no máximo {{locationMax}} caracteres."
+    },
+    "preview": {
+      "title": "Prévia das datas",
+      "listLabel": "Datas das aulas",
+      "lessonNumber": "Aula {{number}}",
+      "incomplete": "Preencha o dia da semana, os horários e a data da primeira aula para ver a prévia das datas.",
+      "loading": "Atualizando a prévia…",
+      "error": "Não foi possível carregar a prévia das datas.",
+      "outsidePeriod": "fora do período",
+      "schedule": {
+        "monday": "Toda segunda-feira, {{start}}–{{end}}",
+        "tuesday": "Toda terça-feira, {{start}}–{{end}}",
+        "wednesday": "Toda quarta-feira, {{start}}–{{end}}",
+        "thursday": "Toda quinta-feira, {{start}}–{{end}}",
+        "friday": "Toda sexta-feira, {{start}}–{{end}}",
+        "saturday": "Todo sábado, {{start}}–{{end}}",
+        "sunday": "Todo domingo, {{start}}–{{end}}"
+      },
+      "announcement_one": "Prévia atualizada: {{count}} aula, em {{first}}.",
+      "announcement_other": "Prévia atualizada: de {{first}} a {{last}}.",
+      "announcementOutside_one": "{{count}} aula fica fora do período da turma.",
+      "announcementOutside_other": "{{count}} aulas ficam fora do período da turma."
+    },
+    "outside": {
+      "afterEndTitle": "A última aula cai depois do fim da turma",
+      "afterEndDescription_one": "A turma termina em {{endDate}} e a {{position}}ª aula ficaria em {{date}}. Estenda o período da turma ou comece uma semana antes: o sistema não grava aula fora do período.",
+      "afterEndDescription_other": "A turma termina em {{endDate}} e {{count}} aulas ficariam depois disso, da {{position}}ª em diante, a partir de {{date}}. Estenda o período da turma ou comece mais cedo: o sistema não grava aula fora do período.",
+      "beforeStartTitle": "A primeira aula cai antes do início da turma",
+      "beforeStartDescription": "A turma começa em {{startDate}}. Escolha uma data da primeira aula dentro do período da turma: o sistema não grava aula fora dele.",
+      "editClass": "Editar turma"
+    },
+    "errors": {
+      "alreadyGenerated": {
+        "title": "As aulas desta turma já foram geradas",
+        "description": "Cada turma gera as aulas do plano do curso uma única vez. Feche esta janela para ver as aulas da turma."
+      },
+      "courseWithoutSequence": {
+        "title": "O curso desta turma não tem plano de aula ativo",
+        "description": "Monte a sequência de planos de aula do curso antes de gerar as aulas da turma."
+      },
+      "outsideClassPeriod": {
+        "title": "Há aulas fora do período da turma",
+        "description": "O sistema não grava aula fora do período. Estenda o período da turma ou escolha uma data de início que deixe todas as aulas dentro dele."
+      },
+      "classArchived": {
+        "title": "Esta turma está arquivada",
+        "description": "Turma arquivada não recebe aulas novas."
+      },
+      "classNotFound": {
+        "title": "Esta turma não existe mais",
+        "description": "Ela pode ter sido removida. Volte para a lista de turmas e escolha outra."
+      },
+      "network": {
+        "title": "Não foi possível gerar as aulas",
+        "description": "Verifique sua conexão e tente novamente."
+      },
+      "unknown": {
+        "title": "Não foi possível gerar as aulas",
+        "description": "Tente novamente em instantes."
+      }
+    },
+    "back": "Voltar",
+    "submit_one": "Gerar {{count}} aula",
+    "submit_other": "Gerar {{count}} aulas",
+    "submitIdle": "Gerar aulas",
+    "submitting": "Gerando…",
+    "success_one": "{{count}} aula gerada",
+    "success_other": "{{count}} aulas geradas"
+  },
+  "classLessons": {
+    "title": "Aulas da turma",
+    "caption": "Primeiras aulas da turma",
+    "loading": "Carregando as aulas da turma…",
+    "error": "Não foi possível carregar as aulas da turma.",
+    "empty": "Nenhuma aula ainda.",
+    "columns": {
+      "date": "Data",
+      "time": "Horário",
+      "title": "Aula",
+      "teacher": "Professor",
+      "status": "Status"
+    },
+    "timeRange": "{{start}}–{{end}}",
+    "viewAll_one": "Ver a {{count}} aula",
+    "viewAll_other": "Ver todas as {{count}}",
+    "viewAllLabel_one": "Ver a {{count}} aula desta turma",
+    "viewAllLabel_other": "Ver todas as {{count}} aulas desta turma"
   }
 }

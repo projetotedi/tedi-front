@@ -17,13 +17,17 @@ import { buildMeUser, meHandler } from "./handlers";
 export const server = setupServer();
 
 /**
- * The routes of the classes as the tests of this module render them. The action "+ Nova aula"
- * belongs to the `lessons` module, which `classes` does not import, so here the slot is a stand-in
- * that only says which class it was asked for. The real button is tested with the `lessons` module
- * and put together with these routes in `app/__tests__/classes-slots.test.tsx`.
+ * The routes of the classes as the tests of this module render them. What belongs to the `lessons`
+ * module (the actions of the header and the card "Aulas da turma") is a slot, and `classes` does not
+ * import `lessons`, so here the slots are stand-ins that only say which class they were asked for.
+ * The real ones are tested with the `lessons` module and put together with these routes in
+ * `app/__tests__/classes-slots.test.tsx`.
  */
 export const classesRoutes = createClassesRoutes({
-  renderNewLessonAction: (classDetail) => <p>{`Nova aula da turma ${classDetail.id}`}</p>,
+  renderLessonActions: (classDetail) => (
+    <button type="button">{`Ações de aulas ${classDetail.id}`}</button>
+  ),
+  renderClassLessons: (classId) => <p>{`Aulas da turma ${classId}`}</p>,
 });
 
 /** The time zone of the people who use the system. The suite runs in it, whatever the machine. */

@@ -10,8 +10,9 @@ import { InheritedLevelBadge } from "./InheritedLevelBadge";
 export interface ClassDetailHeaderProps {
   classDetail: ClassDetailDto;
   /**
-   * The actions of the class, on the right of the name and the tags. The screen decides which ones
-   * exist and who sees them; the header only gives them a place. With none, nothing is drawn.
+   * The actions of the class, drawn on the right of the name. They are the screen's to give: the
+   * ones about the lessons belong to another module, so they arrive by slot (`ClassesRouteSlots`).
+   * Without them the header is the name and the tags and nothing else.
    */
   actions?: ReactNode;
 }
@@ -24,11 +25,12 @@ export interface ClassDetailHeaderProps {
  *
  * The actions go on the right of this row, in the order of the Figma: Gerar aulas (`tertiary`,
  * GUS-157), Editar turma (`secondary`, GUS-101, with the form of GUS-133) and + Nova aula
- * (`primary`, GUS-152). Each one is shown only with `useCan` (`classes.manage` for the first two,
- * `lessons.manage` for the last). Only + Nova aula exists so far, and it comes in `actions`, from
- * the slot of the screen (it belongs to the `lessons` module); Gerar aulas and Editar turma wait for
- * their own tasks (the form of the class is still the example one of the list). The container of
- * the actions has no size when what is in it draws nothing (who cannot manage lessons).
+ * (`primary`, GUS-152). Each one is shown only with `useCan`: `lessons.manage`, the permission of
+ * the endpoint, for Gerar aulas and + Nova aula, and `classes.manage` for Editar turma. They go in
+ * `actions`, one container, in that order. Gerar aulas and + Nova aula exist and come from the slot
+ * of the screen (they belong to the `lessons` module); Editar turma waits for its own task (the form
+ * of the class is still the example one of the list). The container of the actions has no size
+ * when what is in it draws nothing (who cannot manage lessons).
  */
 export function ClassDetailHeader({ classDetail, actions }: ClassDetailHeaderProps): ReactElement {
   const { t } = useTranslation("classes");
@@ -36,7 +38,7 @@ export function ClassDetailHeader({ classDetail, actions }: ClassDetailHeaderPro
 
   return (
     <Card>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="flex min-w-0 flex-col gap-2">
           <h2 className="text-2xl font-semibold break-words">
             {classDetail.name || classDetail.code}

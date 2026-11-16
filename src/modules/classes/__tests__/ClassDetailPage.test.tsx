@@ -267,52 +267,56 @@ describe("ClassDetailPage", () => {
       expect(card("Alunos matriculados")).toBeInTheDocument();
     });
 
-    it("keeps the place of Aulas da turma and Membros alocados, which say Em breve", async () => {
+    it("keeps the place of Membros alocados, which says Em breve", async () => {
       await renderPage();
 
-      for (const title of ["Aulas da turma", "Membros alocados"]) {
-        const soon = card(title);
-        expect(within(soon).getByText("Em breve")).toBeInTheDocument();
-        expect(within(soon).queryByRole("table")).not.toBeInTheDocument();
-        expect(within(soon).queryByRole("link")).not.toBeInTheDocument();
-      }
+      const soon = card("Membros alocados");
+      expect(within(soon).getByText("Em breve")).toBeInTheDocument();
+      expect(within(soon).queryByRole("table")).not.toBeInTheDocument();
+      expect(within(soon).queryByRole("link")).not.toBeInTheDocument();
     });
 
-    it("asks the slot for the new-lesson action of the class", async () => {
+    it("puts the lessons card slot for the class, between the data and the students", async () => {
       await renderPage();
 
-      const header = card(CLASS_NAME);
-      expect(within(header).getByText(`Nova aula da turma ${CLASS_ID}`)).toBeInTheDocument();
+      // The card is the `lessons` module's: the page only says where it goes and for which class.
+      const slot = screen.getByText(`Aulas da turma ${CLASS_ID}`);
+      const data = card("Dados da turma");
+      const students = card("Alunos matriculados");
+      expect(data.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        slot.compareDocumentPosition(students) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      // And it is no longer the "Em breve" of before.
+      expect(screen.getAllByText("Em breve")).toHaveLength(1);
     });
 
-    it("puts the action of the slot on the right of the name and the tags", async () => {
-      await renderPage();
-
-      const header = card(CLASS_NAME);
-      const action = within(header).getByText(`Nova aula da turma ${CLASS_ID}`);
-      const row = action.parentElement?.parentElement;
-
-      expect(row).toHaveClass("flex", "flex-wrap", "justify-between");
-      expect(row?.firstElementChild).toContainElement(
-        within(header).getByRole("heading", { name: CLASS_NAME }),
-      );
-      expect(action.parentElement).toBe(row?.lastElementChild);
-    });
-
-    it("does not ask the slot for an archived class", async () => {
-      await renderPage({ classDetail: buildArchivedClassDetail() });
-
-      expect(screen.queryByText(/Nova aula da turma/)).not.toBeInTheDocument();
-    });
-
-    it("still has no Editar turma nor Gerar aulas: they wait for their own tasks", async () => {
+    it("puts the lesson actions slot on the right of the header, with the class it is for", async () => {
       await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Editar turma", "Gerar aulas"]) {
+      const action = within(header()).getByRole("button", { name: `Ações de aulas ${CLASS_ID}` });
+      const name = within(header()).getByRole("heading", { level: 2, name: CLASS_NAME });
+
+      // The actions come after the name and the tags in the header, in a container of their own.
+      expect(name.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(action.parentElement).toHaveClass("flex", "flex-wrap", "gap-3");
+      expect(header().querySelectorAll("button")).toHaveLength(1);
+    });
+
+    it("does not ask the slot for the lesson actions of an archived class", async () => {
+      await renderPage({ classDetail: buildArchivedClassDetail() });
+
+      expect(screen.queryByText(/Ações de aulas/)).not.toBeInTheDocument();
+    });
+
+    it("has no Editar turma yet: only what the lessons slot gives", async () => {
+      await renderPage({ role: Role.coordinator });
+
+      for (const name of ["Editar turma"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button")).toHaveLength(1);
     });
 
     it("keeps the cards of the side column to labels and short values", async () => {

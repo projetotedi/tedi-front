@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, waitFor } from "@testing-library/react";
+import { configure, getConfig, render, waitFor } from "@testing-library/react";
 import { setupServer } from "msw/node";
 import { createMemoryRouter, RouterProvider, type RouteObject } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, expect } from "vitest";
@@ -20,17 +20,27 @@ export const server = setupServer();
 const TEST_TIME_ZONE = "America/Sao_Paulo";
 
 /**
- * Starts the MSW server of the file. A request nobody answered fails the test instead of passing,
- * and the toasts a test raised are cleared after it. It also pins the time zone: the dates of a
- * lesson are read as local dates and an instant (`createdAt`) is shown in the time zone of the
- * browser, so without this the expected text could depend on the machine that runs the suite.
+ * How long `findBy*` and `waitFor` wait. The preview of the dates is asked for after a pause of
+ * 400 ms (`PREVIEW_DEBOUNCE_MS`), so the default one second would leave almost nothing for the
+ * request and the render on a slow machine.
+ */
+const ASYNC_UTIL_TIMEOUT_MS = 4000;
+
+/**
+ * Starts the MSW server of the file. A request nobody answered fails the test instead of passing.
+ * It pins the time zone (the dates of the screen are calendar dates, but the suite should not
+ * depend on the machine that runs it) and clears the toasts, which live outside the React tree
+ * and would otherwise carry from one test to the next.
  */
 export function setupLessonsTestServer(): void {
   let originalTimeZone: string | undefined;
+  let originalTimeout: number | undefined;
 
   beforeAll(() => {
     originalTimeZone = process.env.TZ;
     process.env.TZ = TEST_TIME_ZONE;
+    originalTimeout = getConfig().asyncUtilTimeout;
+    configure({ asyncUtilTimeout: ASYNC_UTIL_TIMEOUT_MS });
     server.listen({ onUnhandledRequest: "error" });
   });
   afterEach(() => {
@@ -39,6 +49,7 @@ export function setupLessonsTestServer(): void {
   });
   afterAll(() => {
     server.close();
+    if (originalTimeout !== undefined) configure({ asyncUtilTimeout: originalTimeout });
     if (originalTimeZone === undefined) delete process.env.TZ;
     else process.env.TZ = originalTimeZone;
   });
@@ -95,4 +106,28 @@ export function createDeferred() {
     resolve = done;
   });
   return { promise, resolve };
+}
+
+/**
+ * Fails if the screen asked the API for anything besides the session, with no waiting.
+ *
+ * A query that is mounted turned on is already `fetching` when the render ends, and later holds a
+ * result (data or error). A query that is turned off (`enabled: false`) sits in the cache idle and
+ * never runs. So reading the cache is a check that does not depend on how long a request that was
+ * never made would have taken to show up, which a pause and a spy on the handler cannot say.
+ */
+export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
+  const [sessionKey] = getMeQueryKey();
+  const queries = queryClient
+    .getQueryCache()
+    .findAll()
+    .filter((query) => query.queryKey[0] !== sessionKey);
+
+  for (const query of queries) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
 }

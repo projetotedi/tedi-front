@@ -16,6 +16,16 @@ import { isClassId, isClassNotFound } from "../lib/class-detail";
 import { LINK_CLASSES } from "../components/link-classes";
 
 /**
+ * What the screen takes from the `lessons` module, which is not this module's to import: see
+ * `ClassesRouteSlots`, in `routes.tsx`, which is this type for whoever builds the routes. It is
+ * declared here so the page does not import the file of the routes that import it.
+ */
+export interface ClassDetailSlots {
+  renderLessonActions: (classDetail: ClassDetailDto) => ReactNode;
+  renderClassLessons: (classId: string) => ReactNode;
+}
+
+/**
  * The two columns start at 90rem (1440px, the width of the Figma), as in the screen of a course. The
  * data card has four fields to a row and the side column is 27.5rem wide, so below that width the
  * cards stack in one column and the fields have the whole width instead of breaking in the middle
@@ -60,32 +70,32 @@ function ClassNotFound(): ReactElement {
   );
 }
 
-interface NewLessonActionSlot {
-  /** The action "+ Nova aula" of the header, from the `lessons` module (see `ClassesRouteSlots`). */
-  renderNewLessonAction: (classDetail: ClassDetailDto) => ReactNode;
+interface ClassDetailViewProps extends ClassDetailSlots {
+  classDetail: ClassDetailDto;
 }
 
 /**
  * The class that was loaded: the header and the two columns of cards. An archived class is
- * read-only (RN-27), and that rule is the class's, so the action to add a lesson to it is not even
+ * read-only (RN-27), and that rule is the class's, so the actions about its lessons are not even
  * asked of the slot.
  */
 function ClassDetailView({
   classDetail,
-  renderNewLessonAction,
-}: { classDetail: ClassDetailDto } & NewLessonActionSlot): ReactElement {
+  renderLessonActions,
+  renderClassLessons,
+}: ClassDetailViewProps): ReactElement {
   const { t } = useTranslation("classes");
 
   return (
     <div className="flex flex-col gap-5">
       <ClassDetailHeader
         classDetail={classDetail}
-        actions={classDetail.archivedAt === null ? renderNewLessonAction(classDetail) : null}
+        actions={classDetail.archivedAt === null ? renderLessonActions(classDetail) : null}
       />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <ClassDataCard classDetail={classDetail} />
-          <ComingSoonCard title={t("detail.lessons.title")} />
+          {renderClassLessons(classDetail.id)}
           <EnrolledStudentsCard
             classId={classDetail.id}
             preview={classDetail.enrollmentsPreview}
@@ -108,10 +118,15 @@ function ClassDetailView({
   );
 }
 
+interface ClassDetailProps extends ClassDetailSlots {
+  classId: string;
+}
+
 function ClassDetail({
   classId,
-  renderNewLessonAction,
-}: { classId: string } & NewLessonActionSlot): ReactElement {
+  renderLessonActions,
+  renderClassLessons,
+}: ClassDetailProps): ReactElement {
   const { t } = useTranslation("classes");
   const classQuery = useGetClass(classId);
   const classDetail = classQuery.data;
@@ -136,24 +151,28 @@ function ClassDetail({
   }
 
   return (
-    <ClassDetailView classDetail={classDetail} renderNewLessonAction={renderNewLessonAction} />
+    <ClassDetailView
+      classDetail={classDetail}
+      renderLessonActions={renderLessonActions}
+      renderClassLessons={renderClassLessons}
+    />
   );
 }
 
-export type ClassDetailPageProps = NewLessonActionSlot;
+export type ClassDetailPageProps = ClassDetailSlots;
 
 /**
  * The screen of a class (RF-029, RF-034, RF-035). The page asks the API for one thing, `getClass`,
  * and everything on it comes from that answer: the header (name and tags), the data, the summary
  * and the first students enrolled. "Curso de origem" (`CourseOriginCard`, GUS-134) starts from the
  * course of that answer and asks for the prerequisites and the other classes of the course by
- * itself, so a failure there shows only in that card. "Aulas da turma" and "Membros alocados"
- * have no data yet and only keep their place with "Em breve". The title of the page is on the
- * topbar (`handle.title` of the route), so there is no `<h1>`.
- *
- * The action "+ Nova aula" of the header is not this module's: it comes from the slot
- * `renderNewLessonAction` (`ClassesRouteSlots`, filled by `app/`), and the page asks for it only
- * when the class is not archived.
+ * itself, so a failure there shows only in that card. What belongs to the lessons is not this
+ * module's: the actions of the header (Gerar aulas) and the card "Aulas da turma" (GUS-157) come in
+ * by slot (`ClassDetailSlots`, filled by `app/` through `ClassesRouteSlots`), and each one asks the
+ * API by itself. "Membros alocados" has no data yet and only keeps its place with "Em breve". The
+ * title of the page is on the topbar (`handle.title` of the route), so there is no `<h1>`. The
+ * actions of the header (Gerar aulas and + Nova aula) are asked of the slot only when the class is
+ * not archived.
  *
  * An id that is not a UUID cannot be a class: it is "not found" at once, with no request. The id is
  * also the `key` of the detail, so the state of one class never stays on the next one when the
@@ -161,12 +180,20 @@ export type ClassDetailPageProps = NewLessonActionSlot;
  * 404 that did not come from the API says nothing about this class) shows the page of not found;
  * any other error shows the alert with "Tentar de novo".
  */
-export function ClassDetailPage({ renderNewLessonAction }: ClassDetailPageProps): ReactElement {
+export function ClassDetailPage({
+  renderLessonActions,
+  renderClassLessons,
+}: ClassDetailSlots): ReactElement {
   const { classId = "" } = useParams();
 
   if (!isClassId(classId)) return <ClassNotFound />;
 
   return (
-    <ClassDetail key={classId} classId={classId} renderNewLessonAction={renderNewLessonAction} />
+    <ClassDetail
+      key={classId}
+      classId={classId}
+      renderLessonActions={renderLessonActions}
+      renderClassLessons={renderClassLessons}
+    />
   );
 }

@@ -135,13 +135,50 @@ describe("ClassDetailHeader", () => {
     expect(screen.getByText(label)).toBeInTheDocument();
   });
 
-  it("has no actions yet: Gerar aulas, Editar turma and + Nova aula wait for their own tasks", async () => {
+  it("has no actions without the actions prop: nothing is drawn on the right of the name", async () => {
     await renderWithProviders(<ClassDetailHeader classDetail={buildClassDetail()} />, {
       user: buildMeUser(Role.coordinator),
     });
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
+    expect(document.querySelector("[data-slot='card'] .flex-wrap.gap-3")).toBeNull();
+  });
+
+  it("draws the given actions on the right of the name, in one container, in the order they come", async () => {
+    await renderWithProviders(
+      <ClassDetailHeader
+        classDetail={buildClassDetail()}
+        actions={
+          <>
+            <button type="button">Gerar aulas</button>
+            <button type="button">Editar turma</button>
+          </>
+        }
+      />,
+      { user: buildMeUser(Role.coordinator) },
+    );
+
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.map((button) => button.textContent)).toEqual(["Gerar aulas", "Editar turma"]);
+    expect(buttons[0].parentElement).toBe(buttons[1].parentElement);
+    expect(buttons[0].parentElement).toHaveClass("flex", "flex-wrap", "gap-3");
+    const name = screen.getByRole("heading", { level: 2, name: "Informática Básica — Turma A" });
+    expect(
+      name.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("puts the actions beside the name from the medium width on, and under it on a phone", async () => {
+    await renderWithProviders(
+      <ClassDetailHeader
+        classDetail={buildClassDetail()}
+        actions={<button type="button">Gerar aulas</button>}
+      />,
+    );
+
+    const row = screen.getByRole("button", { name: "Gerar aulas" }).parentElement?.parentElement;
+    expect(row).toHaveClass("flex-col", "md:flex-row", "md:justify-between");
   });
 });
 
