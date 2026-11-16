@@ -8,7 +8,7 @@
 import type { CourseCategory } from "./courseCategory.ts";
 
 export interface CreateCourseDto {
-  /** Level of the content. A class takes the category of its course when created. */
+  /** Level of the content. A class has no category of its own: it shows the one of its course (RN-14). */
   category: CourseCategory;
   /** @maxLength 2000 */
   description: string;
