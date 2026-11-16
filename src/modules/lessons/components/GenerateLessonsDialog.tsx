@@ -132,6 +132,16 @@ export function GenerateLessonsDialog({
     [weekday, startTime, endTime, firstDate, location],
   );
 
+  // A failure is about the fields it came with: once they change it is about something else, so it
+  // goes. What is still true of the class (a rule) comes back from the preview of the new fields.
+  // The state is reset while rendering, as React asks for a state that follows another, and `body`
+  // is the same object until a field changes.
+  const [bodyOfFailure, setBodyOfFailure] = useState(body);
+  if (body !== bodyOfFailure) {
+    setBodyOfFailure(body);
+    setSubmitError(null);
+  }
+
   const { query, isCurrent } = useClassLessonsPreview(classId, body);
   const previewData = query.data;
   const previewKind = query.isError ? toGenerateLessonsErrorKind(query.error) : null;
@@ -201,12 +211,6 @@ export function GenerateLessonsDialog({
   useEffect(() => {
     if (submitError !== null) submitErrorRef.current?.focus();
   }, [submitError]);
-
-  // A failure is about the fields it came with: once they change it is about something else. What is
-  // still true of the class (a rule) comes back from the preview of the new fields.
-  useEffect(() => {
-    setSubmitError(null);
-  }, [body]);
 
   function handleError(error: unknown) {
     const kind = toGenerateLessonsErrorKind(error);
