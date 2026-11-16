@@ -137,9 +137,6 @@
       "seeAll_one": "Ver o aluno matriculado",
       "seeAll_other": "Ver todos os {{count}}"
     },
-    "lessons": {
-      "title": "Aulas da turma"
-    },
     "members": {
       "title": "Membros alocados"
     }

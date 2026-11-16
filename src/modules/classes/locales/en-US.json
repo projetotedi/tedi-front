@@ -137,9 +137,6 @@
       "seeAll_one": "See the enrolled student",
       "seeAll_other": "See all {{count}}"
     },
-    "lessons": {
-      "title": "Class lessons"
-    },
     "members": {
       "title": "Allocated members"
     }
