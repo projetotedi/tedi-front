@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import { CourseCategory, CourseStatus, type CourseDetailDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { catalogRoutes } from "../routes";
 import {
   buildArchivedCourseDetail,
   buildCourseDetail,
@@ -23,7 +22,13 @@ import {
   listCourseLessonPlansHandler,
   replaceCourseLessonPlansHandler,
 } from "./handlers";
-import { createDeferred, renderRoutes, server, setupCatalogTestServer } from "./test-utils";
+import {
+  catalogRoutes,
+  createDeferred,
+  renderRoutes,
+  server,
+  setupCatalogTestServer,
+} from "./test-utils";
 
 setupCatalogTestServer();
 
@@ -205,17 +210,43 @@ describe("CourseDetailPage", () => {
       },
     );
 
-    it("says the classes of the course are not available yet, with no link and no tag of classes", async () => {
+    it("renders the classes slot with the id of the course, and the page does not draw the card itself", async () => {
       await renderPage();
 
-      const classes = card("Turmas deste curso");
+      expect(screen.getByText(`Turmas do curso ${COURSE_ID}`)).toBeInTheDocument();
+      // The card "Turmas deste curso" belongs to the classes module: the page only gives it a place.
+      expect(
+        screen.queryByRole("heading", { name: "Turmas deste curso", hidden: true }),
+      ).not.toBeInTheDocument();
+      expect(tags(header()).join(" ")).not.toMatch(/turma/);
+    });
+
+    it("renders the slot of the course that is open when a prerequisite takes the screen to another course", async () => {
+      const user = userEvent.setup();
+      server.use(
+        getCourseHandler({
+          response: (id) =>
+            id === COURSE_SMARTPHONES.courseId ? buildSmartphonesCourse() : buildCourseDetail(),
+        }),
+      );
+      await renderRoutes(catalogRoutes, { route: COURSE_ROUTE, user: buildMeUser() });
+      await screen.findByText(`Turmas do curso ${COURSE_ID}`);
+
+      await user.click(screen.getByRole("link", { name: COURSE_SMARTPHONES.courseName }));
 
       expect(
-        within(classes).getByText("As turmas deste curso vão aparecer aqui em breve."),
+        await screen.findByText(`Turmas do curso ${COURSE_SMARTPHONES.courseId}`),
       ).toBeInTheDocument();
-      expect(within(classes).queryByRole("link")).not.toBeInTheDocument();
-      expect(within(classes).queryByRole("table")).not.toBeInTheDocument();
-      expect(tags(header()).join(" ")).not.toMatch(/turma/);
+      expect(screen.queryByText(`Turmas do curso ${COURSE_ID}`)).not.toBeInTheDocument();
+    });
+
+    it("does not render the slot for an id that is not a course, or while the course is loading or failed", async () => {
+      server.use(getCourseHandler({ error: COURSE_NOT_FOUND_ERROR }));
+      await renderRoutes(catalogRoutes, { route: COURSE_ROUTE });
+
+      await screen.findByRole("heading", { name: "Curso não encontrado" });
+
+      expect(screen.queryByText(/^Turmas do curso /)).not.toBeInTheDocument();
     });
 
     it("has no course actions yet: Duplicar curso, Arquivar curso, Editar curso and + Nova turma are hidden", async () => {
