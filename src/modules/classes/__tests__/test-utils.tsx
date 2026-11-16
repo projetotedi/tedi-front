@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
 import { setupServer } from "msw/node";
@@ -57,6 +58,11 @@ export async function renderRoutes(
   });
 
   return { ...view, router, queryClient };
+}
+
+/** For a component that needs the router and the session (`Link`, `useCan`), with no route of its own. */
+export function renderWithProviders(ui: ReactElement, options: RenderOptions = {}) {
+  return renderRoutes([{ path: "*", element: ui }], options);
 }
 
 export function createDeferred() {
