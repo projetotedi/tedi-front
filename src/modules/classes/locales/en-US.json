@@ -62,6 +62,22 @@
       "unknown": "Could not save the class. Try again."
     }
   },
+  "courseClasses": {
+    "title": "Classes of this course",
+    "viewAll": "View all {{count}}",
+    "viewAllLabel": "View all {{count}} classes of this course",
+    "columns": {
+      "class": "Class",
+      "edition": "Edition",
+      "period": "Period",
+      "students": "Students",
+      "status": "Status"
+    },
+    "enrolledLabel": "{{enrolled}} of {{capacity}} seats taken",
+    "loading": "Loading the classes of the course…",
+    "error": "Could not load the classes of this course.",
+    "empty": "This course has no classes yet."
+  },
   "detailNotFound": "Class not found",
   "backToList": "Back to classes",
   "editions": {

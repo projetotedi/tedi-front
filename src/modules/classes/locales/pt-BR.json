@@ -62,6 +62,22 @@
       "unknown": "Não foi possível salvar a turma. Tente novamente."
     }
   },
+  "courseClasses": {
+    "title": "Turmas deste curso",
+    "viewAll": "Ver todas as {{count}}",
+    "viewAllLabel": "Ver todas as {{count}} turmas deste curso",
+    "columns": {
+      "class": "Turma",
+      "edition": "Edição",
+      "period": "Período",
+      "students": "Alunos",
+      "status": "Status"
+    },
+    "enrolledLabel": "{{enrolled}} de {{capacity}} vagas ocupadas",
+    "loading": "Carregando as turmas do curso…",
+    "error": "Não foi possível carregar as turmas deste curso.",
+    "empty": "Este curso ainda não tem turmas."
+  },
   "detailNotFound": "Turma não encontrada",
   "backToList": "Voltar para turmas",
   "editions": {
