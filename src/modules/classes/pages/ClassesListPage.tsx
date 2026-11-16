@@ -204,6 +204,21 @@ export function ClassesListPage(): ReactElement {
   const formatFilterValue = (label: string) => (selected: { label: string } | null) =>
     `${label}: ${selected?.label.toLocaleLowerCase() ?? t("all").toLocaleLowerCase()}`;
 
+  // The course of the URL can be one that this list does not know: "Ver todas" in the course screen
+  // brings the id of a real course (a UUID), and the courses and classes here are still the mock
+  // ones. Without an option for it the filter would say "Curso: todos" while it is filtering. So the
+  // id gets an option of its own, with a neutral name, that is the one selected, and the trigger
+  // says just that name: it already says "curso", and it is not a course to be named.
+  const isCourseUnknown = course !== "" && findCourse(courses, course) === undefined;
+  const courseChoices = choices([
+    ...courses.map((item) => ({ id: item.id, label: item.name })),
+    ...(isCourseUnknown ? [{ id: course, label: t("selectedCourse") }] : []),
+  ]);
+  const formatCourseFilterValue = (selected: { id: string; label: string } | null) =>
+    isCourseUnknown && selected?.id === course
+      ? selected.label
+      : formatFilterValue(t("course"))(selected);
+
   return (
     <section
       aria-labelledby="classes-title"
@@ -246,8 +261,8 @@ export function ClassesListPage(): ReactElement {
               isLabelHidden
               value={course}
               onChange={(value) => updateParam("courseId", value)}
-              formatValue={formatFilterValue(t("course"))}
-              options={choices(courses.map((item) => ({ id: item.id, label: item.name })))}
+              formatValue={formatCourseFilterValue}
+              options={courseChoices}
             />
             <Select
               label={t("level")}

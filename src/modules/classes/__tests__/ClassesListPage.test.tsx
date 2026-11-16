@@ -143,6 +143,93 @@ describe("classes list", () => {
     expect(screen.queryByRole("option", { name: /Fotografia digital/ })).not.toBeInTheDocument();
   });
 
+  describe("a course in the URL that this list does not know", () => {
+    // What "Ver todas" of the course screen brings: the id of a real course, which no class of the
+    // prototype list has.
+    const REAL_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
+    const route = `/classes?courseId=${REAL_COURSE_ID}`;
+
+    it("does not say the course filter is on every course: it says a course is selected", () => {
+      renderPage(route);
+
+      expect(screen.getByRole("button", { name: /Curso selecionado/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Curso: todos/ })).not.toBeInTheDocument();
+    });
+
+    it("shows that the list has nothing for it, as it does for any filter with no result", () => {
+      renderPage(route);
+
+      expect(screen.getByRole("heading", { name: "Turmas (0)" })).toBeInTheDocument();
+      expect(screen.getByText("Nada encontrado")).toBeInTheDocument();
+    });
+
+    it("offers that choice as the selected option, after Todos and the courses", async () => {
+      const user = userEvent.setup();
+      renderPage(route);
+
+      await user.click(screen.getByRole("button", { name: /Curso selecionado/ }));
+
+      const options = screen.getAllByRole("option");
+      expect(options.map((option) => option.textContent)).toEqual([
+        "Todos",
+        "Informática Básica",
+        "Smartphones no dia a dia",
+        "Internet",
+        "Redes Sociais com Segurança",
+        "Fotografia digital",
+        "Segurança digital",
+        "Curso selecionado",
+      ]);
+      expect(screen.getByRole("option", { name: "Curso selecionado" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(screen.getByRole("option", { name: "Todos" })).toHaveAttribute(
+        "aria-selected",
+        "false",
+      );
+    });
+
+    it("goes back to every course when Todos is chosen, and the option for the id goes away", async () => {
+      const user = userEvent.setup();
+      renderPage(route);
+
+      await user.click(screen.getByRole("button", { name: /Curso selecionado/ }));
+      await user.click(screen.getByRole("option", { name: "Todos" }));
+
+      expect(screen.getByRole("button", { name: /Curso: todos/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (12)" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /Curso: todos/ }));
+      expect(screen.queryByRole("option", { name: "Curso selecionado" })).not.toBeInTheDocument();
+    });
+
+    it("goes back to every course with Limpar filtros too", async () => {
+      const user = userEvent.setup();
+      renderPage(route);
+
+      await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+      expect(screen.getByRole("button", { name: /Curso: todos/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (12)" })).toBeInTheDocument();
+    });
+
+    it("leaves a course the list knows as it was: its name, and no option for the selection", async () => {
+      const user = userEvent.setup();
+      renderPage("/classes?courseId=internet");
+
+      expect(screen.getByRole("button", { name: /Curso: internet/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Curso selecionado/ })).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: /Curso: internet/ }));
+
+      expect(screen.queryByRole("option", { name: "Curso selecionado" })).not.toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Internet" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    });
+  });
+
   it.each([
     ["loading", "Carregando turmas…"],
     ["error", "Não foi possível carregar as turmas"],

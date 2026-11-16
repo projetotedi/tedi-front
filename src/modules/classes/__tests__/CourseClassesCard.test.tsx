@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { ClassStatus } from "@api/generated/model";
+import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
 import { CourseClassesCard } from "../components/CourseClassesCard";
@@ -16,7 +17,13 @@ import {
   listCourseClassesHandler,
   type ListCourseClassesCall,
 } from "./handlers";
-import { createDeferred, renderWithProviders, server, setupClassesTestServer } from "./test-utils";
+import {
+  createDeferred,
+  expectNoRequestBesidesSession,
+  renderWithProviders,
+  server,
+  setupClassesTestServer,
+} from "./test-utils";
 
 setupClassesTestServer();
 
@@ -136,7 +143,7 @@ describe("CourseClassesCard", () => {
       await renderCard();
 
       expect(await screen.findByRole("link", { name: "Turma 2026.1" })).toHaveClass("min-h-11");
-      expect(screen.getByRole("link", { name: /Ver todas as 1/ })).toHaveClass("min-h-11");
+      expect(screen.getByRole("link", { name: /Ver a 1 turma/ })).toHaveClass("min-h-11");
     });
   });
 
@@ -198,6 +205,52 @@ describe("CourseClassesCard", () => {
       await screen.findByText("Este curso ainda não tem turmas.");
 
       expect(within(card()).queryByRole("link")).not.toBeInTheDocument();
+    });
+
+    it("says Ver a 1 turma, and not Ver todas, when the course has a single class", async () => {
+      server.use(listCourseClassesHandler({ response: buildCourseClassesPage() }));
+      await renderCard();
+
+      const link = await screen.findByRole("link", { name: "Ver a 1 turma deste curso" });
+
+      expect(link).toHaveTextContent("Ver a 1 turma");
+      expect(link).not.toHaveTextContent("Ver todas");
+      expect(link).toHaveAttribute("href", `/classes?courseId=${COURSE_ID}`);
+    });
+
+    it("says Ver todas as 2 from two classes on", async () => {
+      server.use(
+        listCourseClassesHandler({
+          response: buildCourseClassesPage([buildCourseClassItem(), UNNAMED_CLASS]),
+        }),
+      );
+      await renderCard();
+
+      const link = await screen.findByRole("link", { name: "Ver todas as 2 turmas deste curso" });
+
+      expect(link).toHaveTextContent("Ver todas as 2");
+    });
+
+    it.each([
+      [1, "View 1 class", "View 1 class of this course"],
+      [2, "View all 2", "View all 2 classes of this course"],
+      [12, "View all 12", "View all 12 classes of this course"],
+    ])("writes the link for %i classes in English too", async (total, text, label) => {
+      server.use(
+        listCourseClassesHandler({
+          response: buildCourseClassesPage([buildCourseClassItem()], total),
+        }),
+      );
+      await renderCard();
+      await screen.findByRole("table", { name: "Turmas deste curso" });
+
+      await act(async () => {
+        await i18n.changeLanguage("en-US");
+      });
+
+      const link = screen.getByRole("link", { name: label });
+      expect(link).toHaveTextContent(text);
+      expect(link).toHaveAttribute("href", `/classes?courseId=${COURSE_ID}`);
     });
   });
 
@@ -275,17 +328,13 @@ describe("CourseClassesCard", () => {
     });
 
     it("draws nothing and asks nothing without classes.view", async () => {
-      const onCall = vi.fn<(call: ListCourseClassesCall) => void>();
-      server.use(listCourseClassesHandler({ onCall }));
-      const { container } = await renderCard({ user: buildMeUserWithoutClasses() });
-
-      await act(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      });
+      server.use(listCourseClassesHandler());
+      const { container, queryClient } = await renderCard({ user: buildMeUserWithoutClasses() });
 
       expect(container).toBeEmptyDOMElement();
       expect(screen.queryByRole("heading", { name: "Turmas deste curso" })).not.toBeInTheDocument();
-      expect(onCall).not.toHaveBeenCalled();
+      // Read from the cache of the queries: the one of the classes is turned off and never ran.
+      expectNoRequestBesidesSession(queryClient);
     });
   });
 });

@@ -6,6 +6,7 @@
   "edition": "Edição",
   "course": "Curso",
   "level": "Nível",
+  "selectedCourse": "Curso selecionado",
   "status": "Status",
   "all": "Todos",
   "archived": "Arquivadas",
@@ -64,8 +65,10 @@
   },
   "courseClasses": {
     "title": "Turmas deste curso",
-    "viewAll": "Ver todas as {{count}}",
-    "viewAllLabel": "Ver todas as {{count}} turmas deste curso",
+    "viewAll_one": "Ver a {{count}} turma",
+    "viewAll_other": "Ver todas as {{count}}",
+    "viewAllLabel_one": "Ver a {{count}} turma deste curso",
+    "viewAllLabel_other": "Ver todas as {{count}} turmas deste curso",
     "columns": {
       "class": "Turma",
       "edition": "Edição",

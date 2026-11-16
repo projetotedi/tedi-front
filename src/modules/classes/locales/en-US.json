@@ -6,6 +6,7 @@
   "edition": "Edition",
   "course": "Course",
   "level": "Level",
+  "selectedCourse": "Selected course",
   "status": "Status",
   "all": "All",
   "archived": "Archived",
@@ -64,8 +65,10 @@
   },
   "courseClasses": {
     "title": "Classes of this course",
-    "viewAll": "View all {{count}}",
-    "viewAllLabel": "View all {{count}} classes of this course",
+    "viewAll_one": "View {{count}} class",
+    "viewAll_other": "View all {{count}}",
+    "viewAllLabel_one": "View {{count}} class of this course",
+    "viewAllLabel_other": "View all {{count}} classes of this course",
     "columns": {
       "class": "Class",
       "edition": "Edition",
