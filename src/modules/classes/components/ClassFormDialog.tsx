@@ -22,7 +22,8 @@ export interface ClassFormDialogProps {
   /**
    * Saves the class. The dialog stays open until it resolves, and a rejection stays on the form: the
    * refusals about the course (409 `COURSE_CHANGE_NOT_ALLOWED`, 409 `COURSE_ARCHIVED`, 400
-   * `COURSE_NOT_FOUND`) go to the course field and anything else to a warning above the buttons.
+   * `COURSE_NOT_FOUND`) go to the course field, or to the warning above the buttons when the field
+   * is off, and anything else goes to that same warning.
    */
   onSave: (record: ClassRecord) => void | Promise<void>;
 }
@@ -114,12 +115,17 @@ export function ClassFormDialog({
     } catch (error) {
       const courseError = toCourseFieldError(error);
 
-      if (courseError !== null) {
+      if (courseError === null) {
+        setError("root.server", { type: "server", message: "unknown" });
+      } else if (isCourseLocked) {
+        // A field that is off cannot take the focus, and a screen reader would never be told of an
+        // error that sits under it. The warning of the form is a live region (`role="alert"`), so it
+        // carries the message; the hint of why the field is off stays where it is.
+        setError("root.server", { type: "server", message: courseError });
+      } else {
         setError("courseId", { type: "server", message: courseError });
         // Same as the invalid fields of the other forms: the focus goes to the field that has the error.
         courseFieldRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
-      } else {
-        setError("root.server", { type: "server", message: "unknown" });
       }
     } finally {
       inFlightRef.current = false;

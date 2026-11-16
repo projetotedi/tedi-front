@@ -250,16 +250,12 @@ describe("ClassFormDialog", () => {
   });
 
   describe("when the API refuses the save", () => {
-    async function saveRefusedWith(error: unknown) {
+    async function saveRefusedWith(error: unknown, initialClass: ClassRecord = PLANNED_EMPTY) {
       const user = userEvent.setup();
       const onSave = vi
         .fn<(record: ClassRecord) => void | Promise<void>>()
         .mockRejectedValue(error);
-      const { onOpenChange } = renderDialog({
-        initialClass: PLANNED_EMPTY,
-        isEditing: true,
-        onSave,
-      });
+      const { onOpenChange } = renderDialog({ initialClass, isEditing: true, onSave });
 
       await submit(user, true);
       await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
@@ -320,6 +316,42 @@ describe("ClassFormDialog", () => {
 
       await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
       expect(screen.queryByText(CHANGE_NOT_ALLOWED)).not.toBeInTheDocument();
+    });
+
+    describe("with the course field turned off", () => {
+      it.each([
+        [{ statusCode: 409, error: "COURSE_CHANGE_NOT_ALLOWED" }, CHANGE_NOT_ALLOWED],
+        [
+          { statusCode: 409, error: "COURSE_ARCHIVED" },
+          "Este curso foi arquivado e não recebe turmas novas.",
+        ],
+        [
+          { statusCode: 400, error: "COURSE_NOT_FOUND" },
+          "Curso não encontrado. Escolha outro curso.",
+        ],
+      ])(
+        "announces %j in the warning of the form, since a field that is off takes no focus",
+        async (error, message) => {
+          const { onOpenChange } = await saveRefusedWith(error, IN_PROGRESS);
+
+          // `role="alert"` is a live region: the screen reader says it when it appears.
+          expect(await screen.findByRole("alert")).toHaveTextContent(message);
+          expect(screen.getByRole("dialog", { name: "Editar turma" })).toBeInTheDocument();
+          expect(onOpenChange).not.toHaveBeenCalled();
+          // The field stays off, and what it says is still why it is off, not the error.
+          expect(courseTrigger()).toBeDisabled();
+          expect(courseTrigger()).toHaveAccessibleDescription(LOCKED_HINT);
+          expect(screen.getAllByText(message)).toHaveLength(1);
+        },
+      );
+
+      it("leaves the focus on the button that was pressed: the field that is off cannot take it", async () => {
+        await saveRefusedWith({ statusCode: 409, error: "COURSE_CHANGE_NOT_ALLOWED" }, IN_PROGRESS);
+        await screen.findByRole("alert");
+
+        expect(courseTrigger()).not.toHaveFocus();
+        expect(screen.getByRole("button", { name: "Salvar alterações" })).toHaveFocus();
+      });
     });
 
     it("shows any other error as a warning of the form, and not on a field", async () => {
