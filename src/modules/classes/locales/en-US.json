@@ -48,11 +48,18 @@
   "capacity": "Total seats",
   "form": {
     "editionPlaceholder": "e.g. 2026.1",
+    "coursePlaceholder": "Select the course",
+    "archivedCourseOption": "{{name}} (archived)",
+    "courseLockedHint": "The course can only be changed while the class is Planned and has no enrollments.",
     "errors": {
       "required": "This field is required.",
       "invalidEdition": "Enter the edition in the format 2026.1.",
       "invalidPeriod": "The end date must be on or after the start date.",
-      "invalidCapacity": "Enter a whole number greater than zero."
+      "invalidCapacity": "Enter a whole number greater than zero.",
+      "courseChangeNotAllowed": "This class can no longer change course: it is no longer Planned or already has an enrollment.",
+      "courseArchived": "This course was archived and takes no new classes.",
+      "courseNotFound": "Course not found. Choose another course.",
+      "unknown": "Could not save the class. Try again."
     }
   },
   "detailNotFound": "Class not found",
@@ -64,13 +71,5 @@
     "2025-1": "2025.1",
     "2024": "2024"
   },
-  "courses": {
-    "phone": "Smartphones in daily life",
-    "internet": "Internet",
-    "photo": "Digital photography",
-    "security": "Digital safety",
-    "computer": "Basic computing",
-    "social": "Social media safety"
-  },
-  "levels": { "beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced" }
+  "levels": { "basic": "Basic", "intermediate": "Intermediate", "advanced": "Advanced" }
 }

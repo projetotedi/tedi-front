@@ -48,11 +48,18 @@
   "capacity": "Vagas totais",
   "form": {
     "editionPlaceholder": "Ex.: 2026.1",
+    "coursePlaceholder": "Selecione o curso",
+    "archivedCourseOption": "{{name}} (arquivado)",
+    "courseLockedHint": "O curso só pode ser trocado enquanto a turma está Planejada e sem matrículas.",
     "errors": {
       "required": "Campo obrigatório.",
       "invalidEdition": "Informe a edição no formato 2026.1.",
       "invalidPeriod": "A data de término deve ser igual ou posterior à data de início.",
-      "invalidCapacity": "Informe um número inteiro maior que zero."
+      "invalidCapacity": "Informe um número inteiro maior que zero.",
+      "courseChangeNotAllowed": "Esta turma não pode mais trocar de curso: ela já não está Planejada ou já tem matrícula.",
+      "courseArchived": "Este curso foi arquivado e não recebe turmas novas.",
+      "courseNotFound": "Curso não encontrado. Escolha outro curso.",
+      "unknown": "Não foi possível salvar a turma. Tente novamente."
     }
   },
   "detailNotFound": "Turma não encontrada",
@@ -64,13 +71,5 @@
     "2025-1": "2025.1",
     "2024": "2024"
   },
-  "courses": {
-    "phone": "Smartphones no dia a dia",
-    "internet": "Internet",
-    "photo": "Fotografia digital",
-    "security": "Segurança digital",
-    "computer": "Informática Básica",
-    "social": "Redes Sociais com Segurança"
-  },
-  "levels": { "beginner": "Iniciante", "intermediate": "Intermediário", "advanced": "Avançado" }
+  "levels": { "basic": "Básico", "intermediate": "Intermediário", "advanced": "Avançado" }
 }

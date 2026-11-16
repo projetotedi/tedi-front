@@ -61,6 +61,58 @@ describe("classes list", () => {
     expect(await screen.findByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
   });
 
+  it("filters by the level of the course: a class has no level of its own", () => {
+    renderPage("/classes?level=intermediate");
+
+    expect(screen.getByRole("heading", { name: "Turmas (4)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Turma 2025\.2/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Navegação segura" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Redes Sociais com Segurança — C" }),
+    ).toBeInTheDocument();
+    // This class used to carry the level "Intermediário" on its own; now it follows its course.
+    expect(screen.queryByRole("link", { name: /Informática Básica — B/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
+  });
+
+  it("puts every class of a basic course under the basic level", () => {
+    renderPage("/classes?level=basic");
+
+    expect(screen.getByRole("heading", { name: "Turmas (8)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Informática Básica — B (2025)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Informática Básica — C" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Turma 2025\.2/ })).not.toBeInTheDocument();
+  });
+
+  it("offers the three levels of a course in the level filter and every course in the course filter", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: /Nível: todos/ }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Todos",
+      "Básico",
+      "Intermediário",
+      "Avançado",
+    ]);
+    await user.keyboard("{Escape}");
+
+    // The filter finds the classes of an archived course too: the classes keep their course.
+    await user.click(screen.getByRole("button", { name: /Curso: todos/ }));
+    expect(screen.getByRole("option", { name: "Fotografia digital" })).toBeInTheDocument();
+  });
+
+  it("does not offer an archived course in the select of a new class", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /Curso/ }));
+
+    expect(screen.getByRole("option", { name: "Informática Básica" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Fotografia digital/ })).not.toBeInTheDocument();
+  });
+
   it.each([
     ["loading", "Carregando turmas…"],
     ["error", "Não foi possível carregar as turmas"],

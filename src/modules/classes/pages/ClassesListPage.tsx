@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { ClassStatus, CourseCategory } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
 import { Badge, Button, Card, Checkbox, Dialog, Pagination, Select, TextField } from "@shared/ui";
@@ -9,12 +10,11 @@ import pencilIcon from "@shared/assets/icons/pencil.svg";
 import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 
 import { ClassFormDialog } from "../components/ClassFormDialog";
-import {
-  initialClasses,
-  mockCourses,
-  type ClassRecord,
-  type ClassStatus,
-} from "../mocks/classes.mock";
+import { useCourseOptions } from "../hooks/useCourseOptions";
+import { CLASS_STATUS_LABEL_KEYS, classStatusTone } from "../lib/class-status";
+import { findCourse } from "../lib/course-options";
+import { formatPeriod } from "../lib/format-period";
+import { initialClasses, type ClassRecord } from "../mocks/classes.mock";
 
 const PAGE_SIZE = 10;
 const blank = (id: string): ClassRecord => ({
@@ -22,21 +22,20 @@ const blank = (id: string): ClassRecord => ({
   code: "",
   name: "",
   courseId: "computer",
-  course: "Informática Básica",
   editionId: "2026-1",
   edition: "2026.1",
-  level: "Iniciante",
   start: "2026-03-03",
   end: "2026-06-27",
   location: "Laboratório 2 — Bloco B",
   enrolled: 0,
   capacity: 15,
-  status: "planned",
+  status: ClassStatus.planned,
   archived: false,
 });
 
 export function ClassesListPage(): ReactElement {
-  const { t } = useTranslation("classes");
+  const { t, i18n } = useTranslation("classes");
+  const { courses } = useCourseOptions();
   const [params, setParams] = useSearchParams();
   const [records, setRecords] = useState(initialClasses);
   const search = params.get("search") ?? "";
@@ -70,25 +69,28 @@ export function ClassesListPage(): ReactElement {
     setEditing(blank(String(Date.now())));
   }
 
+  // The name and the level of a class are the ones of its course (RN-14): a class has neither of its own.
+  const courseOf = (item: ClassRecord) => findCourse(courses, item.courseId);
+
   const filtered = records.filter((item) => {
     const q = search.trim().toLocaleLowerCase();
     return (
       item.archived === (status === "archived") &&
-      (!q || `${item.code} ${item.name} ${item.course}`.toLocaleLowerCase().includes(q)) &&
+      (!q ||
+        `${item.code} ${item.name} ${courseOf(item)?.name ?? ""}`
+          .toLocaleLowerCase()
+          .includes(q)) &&
       (!edition || item.editionId === edition) &&
       (!course || item.courseId === course) &&
-      (!level || item.level === level) &&
+      (!level || courseOf(item)?.category === level) &&
       (!statuses.length || statuses.includes(item.status))
     );
   });
   const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const statusLabels: Record<ClassStatus, string> = {
-    planned: t("planned"),
-    inProgress: t("inProgress"),
-    completed: t("completed"),
-    cancelled: t("cancelled"),
-  };
+  const statusLabels = Object.fromEntries(
+    Object.values(ClassStatus).map((value) => [value, t(CLASS_STATUS_LABEL_KEYS[value])]),
+  ) as Record<ClassStatus, string>;
   const columns: Column<ClassRecord>[] = [
     {
       header: t("class"),
@@ -98,7 +100,7 @@ export function ClassesListPage(): ReactElement {
         <a
           className="font-medium text-foreground hover:underline focus-visible:underline"
           href={`/classes/${row.id}`}
-          title={`${row.code} · ${row.course}`}
+          title={`${row.code} · ${courseOf(row)?.name ?? ""}`}
         >
           {row.name}
         </a>
@@ -108,21 +110,7 @@ export function ClassesListPage(): ReactElement {
       header: t("period"),
       headerClassName: "w-[20%]",
       cellClassName: "w-[20%] whitespace-nowrap",
-      render: (row) => (
-        <span>
-          {new Date(`${row.start}T00:00:00`).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-          })}{" "}
-          -{" "}
-          {new Date(`${row.end}T00:00:00`).toLocaleDateString("pt-BR", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "2-digit",
-          })}
-        </span>
-      ),
+      render: (row) => <span>{formatPeriod(row.start, row.end, i18n.language)}</span>,
     },
     {
       header: t("seats"),
@@ -139,17 +127,7 @@ export function ClassesListPage(): ReactElement {
       headerClassName: "w-[13%]",
       cellClassName: "w-[13%]",
       render: (row) => (
-        <Badge
-          tone={
-            row.status === "completed" || row.archived
-              ? "neutral"
-              : row.status === "cancelled"
-                ? "danger"
-                : row.status === "planned"
-                  ? "warning"
-                  : "info"
-          }
-        >
+        <Badge tone={row.archived ? "neutral" : classStatusTone(row.status)}>
           {row.archived ? t("archived") : statusLabels[row.status]}
         </Badge>
       ),
@@ -269,12 +247,7 @@ export function ClassesListPage(): ReactElement {
               value={course}
               onChange={(value) => updateParam("courseId", value)}
               formatValue={formatFilterValue(t("course"))}
-              options={choices(
-                mockCourses.map((item) => ({
-                  id: item.id,
-                  label: t(`courses.${item.localeKey}`),
-                })),
-              )}
+              options={choices(courses.map((item) => ({ id: item.id, label: item.name })))}
             />
             <Select
               label={t("level")}
@@ -282,11 +255,12 @@ export function ClassesListPage(): ReactElement {
               value={level}
               onChange={(value) => updateParam("level", value)}
               formatValue={formatFilterValue(t("level"))}
-              options={choices([
-                { id: "Iniciante", label: t("levels.beginner") },
-                { id: "Intermediário", label: t("levels.intermediate") },
-                { id: "Avançado", label: t("levels.advanced") },
-              ])}
+              options={choices(
+                Object.values(CourseCategory).map((category) => ({
+                  id: category,
+                  label: t(`levels.${category}`),
+                })),
+              )}
             />
             <details className="relative min-h-11">
               <summary className="flex min-h-11 list-none cursor-pointer items-center justify-between rounded-xl border border-[var(--field-border)] bg-white px-3 text-base shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
