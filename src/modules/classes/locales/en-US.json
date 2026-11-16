@@ -78,6 +78,50 @@
     "error": "Could not load the classes of this course.",
     "empty": "This course has no classes yet."
   },
+  "inheritedLevel": {
+    "basic": "Basic level — inherited from the course",
+    "intermediate": "Intermediate level — inherited from the course",
+    "advanced": "Advanced level — inherited from the course"
+  },
+  "detail": {
+    "archived": "Archived",
+    "data": {
+      "title": "Class data",
+      "noLocation": "Not informed",
+      "seatsLabel": "{{enrolled}} of {{capacity}} seats taken",
+      "fields": {
+        "code": "Code",
+        "edition": "Edition",
+        "period": "Period",
+        "location": "Location",
+        "seats": "Seats",
+        "course": "Course",
+        "level": "Level (from the course)"
+      }
+    }
+  },
+  "courseOrigin": {
+    "title": "Source course",
+    "openCourse": "Open course",
+    "openCourseLabel": "Open course {{name}}",
+    "archivedCourse": "Archived",
+    "fields": {
+      "course": "Course",
+      "prerequisites": "Prerequisites",
+      "lessonPlans": "Lesson plans",
+      "otherClasses": "Other classes"
+    },
+    "noPrerequisites": "None",
+    "lessonPlanCount_zero": "No lesson plans",
+    "lessonPlanCount_one": "{{count}} lesson plan",
+    "lessonPlanCount_other": "{{count}} lesson plans",
+    "otherClasses_zero": "None",
+    "otherClasses_one": "{{count}} class",
+    "otherClasses_other": "{{count}} classes",
+    "loading": "Loading the data of the course…",
+    "error": "Could not load the data of the course.",
+    "unavailable": "The data of this course is not available."
+  },
   "detailNotFound": "Class not found",
   "backToList": "Back to classes",
   "editions": {

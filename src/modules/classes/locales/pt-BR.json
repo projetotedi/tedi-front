@@ -78,6 +78,50 @@
     "error": "Não foi possível carregar as turmas deste curso.",
     "empty": "Este curso ainda não tem turmas."
   },
+  "inheritedLevel": {
+    "basic": "Nível básico — herdado do curso",
+    "intermediate": "Nível intermediário — herdado do curso",
+    "advanced": "Nível avançado — herdado do curso"
+  },
+  "detail": {
+    "archived": "Arquivada",
+    "data": {
+      "title": "Dados da turma",
+      "noLocation": "Não informado",
+      "seatsLabel": "{{enrolled}} de {{capacity}} vagas ocupadas",
+      "fields": {
+        "code": "Código",
+        "edition": "Edição",
+        "period": "Período",
+        "location": "Local",
+        "seats": "Vagas",
+        "course": "Curso",
+        "level": "Nível (do curso)"
+      }
+    }
+  },
+  "courseOrigin": {
+    "title": "Curso de origem",
+    "openCourse": "Abrir curso",
+    "openCourseLabel": "Abrir curso {{name}}",
+    "archivedCourse": "Arquivado",
+    "fields": {
+      "course": "Curso",
+      "prerequisites": "Pré-requisitos",
+      "lessonPlans": "Planos de aula",
+      "otherClasses": "Outras turmas"
+    },
+    "noPrerequisites": "Nenhum",
+    "lessonPlanCount_zero": "Nenhum plano de aula",
+    "lessonPlanCount_one": "{{count}} plano de aula",
+    "lessonPlanCount_other": "{{count}} planos de aula",
+    "otherClasses_zero": "Nenhuma",
+    "otherClasses_one": "{{count}} turma",
+    "otherClasses_other": "{{count}} turmas",
+    "loading": "Carregando os dados do curso…",
+    "error": "Não foi possível carregar os dados do curso.",
+    "unavailable": "Os dados deste curso não estão disponíveis."
+  },
   "detailNotFound": "Turma não encontrada",
   "backToList": "Voltar para turmas",
   "editions": {

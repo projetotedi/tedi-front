@@ -3,17 +3,23 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import "../index";
+import { CourseCategory } from "@api/generated/model";
 import i18n from "@shared/i18n";
+import { mockCourses } from "../mocks/classes.mock";
 import { ClassesListPage } from "../pages/ClassesListPage";
+
+function pageAt(route: string) {
+  return (
+    <MemoryRouter initialEntries={[route]}>
+      <ClassesListPage />
+    </MemoryRouter>
+  );
+}
 
 function renderPage(route = "/classes") {
   void i18n.changeLanguage("pt-BR");
   window.history.replaceState({}, "", route);
-  return render(
-    <MemoryRouter initialEntries={[route]}>
-      <ClassesListPage />
-    </MemoryRouter>,
-  );
+  return render(pageAt(route));
 }
 
 describe("classes list", () => {
@@ -73,6 +79,30 @@ describe("classes list", () => {
     // This class used to carry the level "Intermediário" on its own; now it follows its course.
     expect(screen.queryByRole("link", { name: /Informática Básica — B/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
+  });
+
+  it("follows the category of the course when it changes: the filter reads the course, not the class", () => {
+    const computer = mockCourses.find((course) => course.id === "computer");
+    if (computer === undefined) throw new Error('No mock course "computer"');
+    const original = computer.category;
+
+    try {
+      const view = renderPage("/classes?level=basic");
+      expect(screen.getByRole("link", { name: "Turma 2026.2" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (8)" })).toBeInTheDocument();
+
+      // The category is a data of the course: no class is touched, and the list is drawn again.
+      computer.category = CourseCategory.advanced;
+      view.rerender(pageAt("/classes?level=basic"));
+
+      expect(screen.queryByRole("link", { name: "Turma 2026.2" })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (3)" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Smartphones no dia a dia — B" }),
+      ).toBeInTheDocument();
+    } finally {
+      computer.category = original;
+    }
   });
 
   it("puts every class of a basic course under the basic level", () => {
