@@ -4,6 +4,7 @@ import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@mod
 import { createCatalogRoutes } from "@modules/catalog";
 import { peopleRoutes } from "@modules/people";
 import { classesRoutes } from "@modules/classes";
+import { lessonsRoutes } from "@modules/lessons";
 
 import { catalogRouteSlots } from "./catalog-slots";
 import { AppLayout } from "./layouts/AppLayout";
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
               ...peopleRoutes,
               ...createCatalogRoutes(catalogRouteSlots),
               ...classesRoutes,
+              ...lessonsRoutes,
               ...prototypeRoutes,
               ...authProtectedRoutes,
               { path: "*", element: <Navigate to="/" replace /> },
