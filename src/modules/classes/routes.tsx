@@ -13,6 +13,7 @@ export const classesRoutes: RouteObject[] = [
       { index: true, element: <ClassesListPage /> },
       {
         path: ":classId",
+        handle: { title: "classes:detail.routeTitle" } satisfies RouteHandle,
         element: (
           <RequirePermission permission="classes.view">
             <ClassDetailPage />

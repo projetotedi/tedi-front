@@ -55,8 +55,6 @@
       "invalidCapacity": "Enter a whole number greater than zero."
     }
   },
-  "detailNotFound": "Class not found",
-  "backToList": "Back to classes",
   "editions": {
     "2026-1": "2026.1",
     "2026-2": "2026.2",

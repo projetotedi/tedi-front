@@ -55,8 +55,6 @@
       "invalidCapacity": "Informe um número inteiro maior que zero."
     }
   },
-  "detailNotFound": "Turma não encontrada",
-  "backToList": "Voltar para turmas",
   "editions": {
     "2026-1": "2026.1",
     "2026-2": "2026.2",
