@@ -28,6 +28,7 @@
     "skipped_other": "Os {{count}} planos arquivados ficam de fora: {{titles}}.",
     "fields": {
       "weekday": "Dia da semana",
+      "weekdayPlaceholder": "Escolha o dia",
       "startTime": "Hora de início",
       "endTime": "Hora de término",
       "firstDate": "Data da primeira aula",
@@ -45,6 +46,7 @@
     "preview": {
       "title": "Prévia das datas",
       "listLabel": "Datas das aulas",
+      "lessonNumber": "Aula {{number}}",
       "incomplete": "Preencha o dia da semana, os horários e a data da primeira aula para ver a prévia das datas.",
       "loading": "Atualizando a prévia…",
       "error": "Não foi possível carregar a prévia das datas.",

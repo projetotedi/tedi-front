@@ -28,6 +28,7 @@
     "skipped_other": "The {{count}} archived plans are left out: {{titles}}.",
     "fields": {
       "weekday": "Day of the week",
+      "weekdayPlaceholder": "Choose the day",
       "startTime": "Start time",
       "endTime": "End time",
       "firstDate": "Date of the first lesson",
@@ -45,6 +46,7 @@
     "preview": {
       "title": "Preview of the dates",
       "listLabel": "Dates of the lessons",
+      "lessonNumber": "Lesson {{number}}",
       "incomplete": "Fill in the day of the week, the times and the date of the first lesson to see the preview of the dates.",
       "loading": "Updating the preview…",
       "error": "The preview of the dates could not be loaded.",
