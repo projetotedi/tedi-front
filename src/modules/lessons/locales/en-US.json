@@ -1,0 +1,133 @@
+{
+  "close": "Close",
+  "retry": "Try again",
+  "weekdays": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "status": {
+    "planned": "Planned",
+    "confirmed": "Confirmed",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "generate": {
+    "action": "Generate lessons",
+    "title": "Generate the lessons of the class",
+    "summaryTitle_one": "{{count}} lesson will be created",
+    "summaryTitle_other": "{{count}} lessons will be created",
+    "summaryPending": "The lessons will be created from the plan of the course",
+    "summaryDescription": "One per lesson plan of the course {{course}}, in the order of the plan. Title and objective are copied to each lesson.",
+    "quote": "“{{title}}”",
+    "skipped_one": "The archived plan {{titles}} is left out.",
+    "skipped_other": "The {{count}} archived plans are left out: {{titles}}.",
+    "fields": {
+      "weekday": "Day of the week",
+      "weekdayPlaceholder": "Choose the day",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "firstDate": "Date of the first lesson",
+      "firstDateHint": "The first lesson falls on the first chosen weekday on or after this date.",
+      "location": "Default location"
+    },
+    "fieldErrors": {
+      "weekdayRequired": "Choose the day of the week.",
+      "startTimeInvalid": "Enter the start time.",
+      "endTimeInvalid": "Enter the end time.",
+      "endTimeBeforeStart": "The end time must be after the start time.",
+      "firstDateInvalid": "Enter the date of the first lesson.",
+      "locationTooLong": "The location can have at most {{locationMax}} characters."
+    },
+    "preview": {
+      "title": "Preview of the dates",
+      "listLabel": "Dates of the lessons",
+      "lessonNumber": "Lesson {{number}}",
+      "incomplete": "Fill in the day of the week, the times and the date of the first lesson to see the preview of the dates.",
+      "loading": "Updating the preview…",
+      "error": "The preview of the dates could not be loaded.",
+      "outsidePeriod": "outside the period",
+      "schedule": {
+        "monday": "Every Monday, {{start}}–{{end}}",
+        "tuesday": "Every Tuesday, {{start}}–{{end}}",
+        "wednesday": "Every Wednesday, {{start}}–{{end}}",
+        "thursday": "Every Thursday, {{start}}–{{end}}",
+        "friday": "Every Friday, {{start}}–{{end}}",
+        "saturday": "Every Saturday, {{start}}–{{end}}",
+        "sunday": "Every Sunday, {{start}}–{{end}}"
+      },
+      "announcement_one": "Preview updated: {{count}} lesson, on {{first}}.",
+      "announcement_other": "Preview updated: from {{first}} to {{last}}.",
+      "announcementOutside_one": "{{count}} lesson falls outside the period of the class.",
+      "announcementOutside_other": "{{count}} lessons fall outside the period of the class."
+    },
+    "outside": {
+      "afterEndTitle": "The last lesson falls after the end of the class",
+      "afterEndDescription_one": "The class ends on {{endDate}} and lesson number {{position}} would be on {{date}}. Extend the period of the class or start a week earlier: the system does not save a lesson outside the period.",
+      "afterEndDescription_other": "The class ends on {{endDate}} and {{count}} lessons would come after it, from number {{position}} on, starting {{date}}. Extend the period of the class or start earlier: the system does not save a lesson outside the period.",
+      "beforeStartTitle": "The first lesson falls before the start of the class",
+      "beforeStartDescription": "The class starts on {{startDate}}. Choose a date for the first lesson inside the period of the class: the system does not save a lesson outside it.",
+      "editClass": "Edit class"
+    },
+    "errors": {
+      "alreadyGenerated": {
+        "title": "The lessons of this class were already generated",
+        "description": "Each class generates the lessons of the course plan only once. Close this window to see the lessons of the class."
+      },
+      "courseWithoutSequence": {
+        "title": "The course of this class has no active lesson plan",
+        "description": "Build the sequence of lesson plans of the course before generating the lessons of the class."
+      },
+      "outsideClassPeriod": {
+        "title": "Some lessons fall outside the period of the class",
+        "description": "The system does not save a lesson outside the period. Extend the period of the class or choose a start date that leaves every lesson inside it."
+      },
+      "classArchived": {
+        "title": "This class is archived",
+        "description": "An archived class does not receive new lessons."
+      },
+      "classNotFound": {
+        "title": "This class no longer exists",
+        "description": "It may have been removed. Go back to the list of classes and choose another."
+      },
+      "network": {
+        "title": "The lessons could not be generated",
+        "description": "Check your connection and try again."
+      },
+      "unknown": {
+        "title": "The lessons could not be generated",
+        "description": "Try again in a moment."
+      }
+    },
+    "back": "Back",
+    "submit_one": "Generate {{count}} lesson",
+    "submit_other": "Generate {{count}} lessons",
+    "submitIdle": "Generate lessons",
+    "submitting": "Generating…",
+    "success_one": "{{count}} lesson generated",
+    "success_other": "{{count}} lessons generated"
+  },
+  "classLessons": {
+    "title": "Lessons of the class",
+    "caption": "First lessons of the class",
+    "loading": "Loading the lessons of the class…",
+    "error": "The lessons of the class could not be loaded.",
+    "empty": "No lesson yet.",
+    "columns": {
+      "date": "Date",
+      "time": "Time",
+      "title": "Lesson",
+      "teacher": "Teacher",
+      "status": "Status"
+    },
+    "timeRange": "{{start}}–{{end}}",
+    "viewAll_one": "See the {{count}} lesson",
+    "viewAll_other": "See all {{count}}",
+    "viewAllLabel_one": "See the {{count}} lesson of this class",
+    "viewAllLabel_other": "See all {{count}} lessons of this class"
+  }
+}

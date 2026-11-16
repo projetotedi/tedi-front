@@ -6,9 +6,8 @@ import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
 import { classesMenuItems } from "../menu";
-import { classesRoutes } from "../routes";
 import { buildMeUser, CLASS_ID, CLASS_NAME, getClassHandler } from "./handlers";
-import { renderRoutes, server, setupClassesTestServer } from "./test-utils";
+import { classesRoutes, renderRoutes, server, setupClassesTestServer } from "./test-utils";
 
 setupClassesTestServer();
 

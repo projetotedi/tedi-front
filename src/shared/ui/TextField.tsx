@@ -15,7 +15,7 @@ export interface TextFieldProps {
   isRequired?: boolean;
   isReadOnly?: boolean;
   autoFocus?: boolean;
-  type?: "text" | "password" | "email" | "date";
+  type?: "text" | "password" | "email" | "date" | "time";
   list?: string;
   inputMode?: InputHTMLAttributes<HTMLInputElement>["inputMode"];
   autoComplete?: string;

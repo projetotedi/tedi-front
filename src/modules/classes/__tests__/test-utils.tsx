@@ -11,9 +11,24 @@ import { AuthProvider } from "@modules/auth";
 import i18n from "@shared/i18n";
 
 import "../index";
+import { createClassesRoutes } from "../routes";
 import { buildMeUser, meHandler } from "./handlers";
 
 export const server = setupServer();
+
+/**
+ * The routes of the classes as the tests of this module render them. What belongs to the `lessons`
+ * module (the actions of the header and the card "Aulas da turma") is a slot, and `classes` does not
+ * import `lessons`, so here the slots are stand-ins that only say which class they were asked for.
+ * The real ones are tested with the `lessons` module and put together with these routes in
+ * `app/__tests__/classes-slots.test.tsx`.
+ */
+export const classesRoutes = createClassesRoutes({
+  renderLessonActions: (classDetail) => (
+    <button type="button">{`Ações de aulas ${classDetail.id}`}</button>
+  ),
+  renderClassLessons: (classId) => <p>{`Aulas da turma ${classId}`}</p>,
+});
 
 /** The time zone of the people who use the system. The suite runs in it, whatever the machine. */
 const TEST_TIME_ZONE = "America/Sao_Paulo";

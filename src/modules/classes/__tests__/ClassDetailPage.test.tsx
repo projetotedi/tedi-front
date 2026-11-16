@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type ClassDetailDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { classesRoutes } from "../routes";
 import {
   buildArchivedClassDetail,
   buildClassCourse,
@@ -21,7 +20,13 @@ import {
   listCourseClassesHandler,
   STUDENT_NAMES,
 } from "./handlers";
-import { createDeferred, renderRoutes, server, setupClassesTestServer } from "./test-utils";
+import {
+  classesRoutes,
+  createDeferred,
+  renderRoutes,
+  server,
+  setupClassesTestServer,
+} from "./test-utils";
 
 setupClassesTestServer();
 
@@ -262,25 +267,50 @@ describe("ClassDetailPage", () => {
       expect(card("Alunos matriculados")).toBeInTheDocument();
     });
 
-    it("keeps the place of Aulas da turma and Membros alocados, which say Em breve", async () => {
+    it("keeps the place of Membros alocados, which says Em breve", async () => {
       await renderPage();
 
-      for (const title of ["Aulas da turma", "Membros alocados"]) {
-        const soon = card(title);
-        expect(within(soon).getByText("Em breve")).toBeInTheDocument();
-        expect(within(soon).queryByRole("table")).not.toBeInTheDocument();
-        expect(within(soon).queryByRole("link")).not.toBeInTheDocument();
-      }
+      const soon = card("Membros alocados");
+      expect(within(soon).getByText("Em breve")).toBeInTheDocument();
+      expect(within(soon).queryByRole("table")).not.toBeInTheDocument();
+      expect(within(soon).queryByRole("link")).not.toBeInTheDocument();
     });
 
-    it("has no actions yet: Editar turma, Gerar aulas and + Nova aula are hidden", async () => {
+    it("puts the lessons card slot for the class, between the data and the students", async () => {
+      await renderPage();
+
+      // The card is the `lessons` module's: the page only says where it goes and for which class.
+      const slot = screen.getByText(`Aulas da turma ${CLASS_ID}`);
+      const data = card("Dados da turma");
+      const students = card("Alunos matriculados");
+      expect(data.compareDocumentPosition(slot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(
+        slot.compareDocumentPosition(students) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      // And it is no longer the "Em breve" of before.
+      expect(screen.getAllByText("Em breve")).toHaveLength(1);
+    });
+
+    it("puts the lesson actions slot on the right of the header, with the class it is for", async () => {
       await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Editar turma", "Gerar aulas", "+ Nova aula"]) {
+      const action = within(header()).getByRole("button", { name: `Ações de aulas ${CLASS_ID}` });
+      const name = within(header()).getByRole("heading", { level: 2, name: CLASS_NAME });
+
+      // The actions come after the name and the tags in the header, in a container of their own.
+      expect(name.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(action.parentElement).toHaveClass("flex", "flex-wrap", "gap-3");
+      expect(header().querySelectorAll("button")).toHaveLength(1);
+    });
+
+    it("has no Editar turma nor + Nova aula yet: only what the lessons slot gives", async () => {
+      await renderPage({ role: Role.coordinator });
+
+      for (const name of ["Editar turma", "+ Nova aula"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button")).toHaveLength(1);
     });
 
     it("keeps the cards of the side column to labels and short values", async () => {
