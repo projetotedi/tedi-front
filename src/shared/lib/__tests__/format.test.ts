@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
-import { formatHours } from "../format";
+import { formatCalendarDate, formatHours } from "../format";
 
 describe("formatHours", () => {
   it("formats whole hours", () => {
@@ -41,5 +41,35 @@ describe("formatHours", () => {
 
   it("shows no sign when a negative value rounds to zero", () => {
     expect(formatHours(-0.4)).toBe("0h");
+  });
+});
+
+describe("formatCalendarDate", () => {
+  const ORIGINAL_TZ = process.env.TZ;
+
+  afterEach(() => {
+    if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+    else process.env.TZ = ORIGINAL_TZ;
+  });
+
+  it("formats a date of the API in the short form of the locale", () => {
+    expect(formatCalendarDate("2026-04-07", "pt-BR")).toBe("07/04/2026");
+    expect(formatCalendarDate("2026-04-07", "en-US")).toBe("4/7/26");
+  });
+
+  it("keeps the day when the browser is behind UTC, where a date read as UTC would be the day before", () => {
+    process.env.TZ = "America/Sao_Paulo";
+
+    expect(formatCalendarDate("2026-04-07", "pt-BR")).toBe("07/04/2026");
+    expect(formatCalendarDate("2026-01-01", "pt-BR")).toBe("01/01/2026");
+  });
+
+  it.each([
+    ["an empty value", ""],
+    ["a word", "soon"],
+    ["an instant, which is not a date of the calendar", "2026-04-07T10:00:00.000Z"],
+    ["a day that does not exist", "2026-02-31"],
+  ])("returns %s as it came, instead of failing", (_label, value) => {
+    expect(formatCalendarDate(value, "pt-BR")).toBe(value);
   });
 });
