@@ -110,9 +110,6 @@ export const lessonFormSchema = z
 
 export type LessonFormValues = z.infer<typeof lessonFormSchema>;
 
-/** The names of the fields of the lesson form, which are also the names the API errors point at. */
-export type LessonFormField = keyof LessonFormValues;
-
 /** What a new lesson starts with: planned, on its own, and every field empty. */
 export function emptyLessonFormValues(): LessonFormValues {
   return {
