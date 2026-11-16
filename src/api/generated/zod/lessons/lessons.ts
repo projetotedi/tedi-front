@@ -7,6 +7,430 @@
  */
 import * as zod from "zod";
 
+export const GenerateClassLessonsParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const generateClassLessonsBodyEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+export const generateClassLessonsBodyLocationMax = 200;
+
+export const generateClassLessonsBodyStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+
+export const GenerateClassLessonsBody = zod.object({
+  endTime: zod
+    .string()
+    .regex(generateClassLessonsBodyEndTimeRegExp)
+    .describe(
+      "End of every lesson, HH:mm in 24 hours. It must be after startTime (else 400 INVALID_TIME_RANGE): a lesson does not cross midnight.",
+    ),
+  firstDate: zod.iso
+    .date()
+    .describe(
+      "Where the series starts, YYYY-MM-DD. The first lesson is on the first weekday on or after this date: this very date when it already is that weekday, otherwise the next one (a monday with weekday tuesday starts the next day). Each next lesson is a week after the one before.",
+    ),
+  location: zod
+    .string()
+    .max(generateClassLessonsBodyLocationMax)
+    .nullish()
+    .describe(
+      "Place of every lesson. Null or blank means not informed. A lesson can have its place changed afterwards.",
+    ),
+  startTime: zod
+    .string()
+    .regex(generateClassLessonsBodyStartTimeRegExp)
+    .describe("Start of every lesson, HH:mm in 24 hours."),
+  weekday: zod
+    .enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"])
+    .describe(
+      "The day of the week of the lessons: one lesson a week, always on this day. Lower case English name.",
+    )
+    .describe(
+      "The day of the week of the lessons: one lesson a week, always on this day. Lower case English name.",
+    ),
+});
+
+export const generateClassLessonsResponseLessonsItemEndTimeRegExp = new RegExp(
+  "^([01]\\d|2[0-3]):[0-5]\\d$",
+);
+export const generateClassLessonsResponseLessonsItemStartTimeRegExp = new RegExp(
+  "^([01]\\d|2[0-3]):[0-5]\\d$",
+);
+
+export const GenerateClassLessonsResponse = zod.object({
+  classId: zod.uuid(),
+  lessons: zod
+    .array(
+      zod.object({
+        cancelReason: zod
+          .string()
+          .nullable()
+          .describe("Why the lesson was cancelled. Set exactly when the status is cancelled."),
+        cancelledAt: zod.iso
+          .datetime({ offset: true })
+          .nullable()
+          .describe("When the lesson was cancelled. Set exactly when the status is cancelled."),
+        cancelledById: zod.uuid().nullable().describe("Id of the person who cancelled the lesson."),
+        class: zod.object({
+          archivedAt: zod.iso
+            .datetime({ offset: true })
+            .nullable()
+            .describe(
+              "Null while the class is active. An archived class is read-only: its lessons cannot be created, edited, cancelled or rescheduled (RN-27).",
+            ),
+          code: zod.string().describe("Unique inside its edition."),
+          endDate: zod.iso
+            .date()
+            .describe("Last day of the class: the latest day a lesson of it can have."),
+          id: zod.uuid(),
+          name: zod.string().nullable().describe("Optional label. Null when not informed."),
+          startDate: zod.iso
+            .date()
+            .describe("First day of the class: the earliest day a lesson of it can have."),
+        }),
+        course: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .describe("The course the class offers."),
+        createdAt: zod.iso.datetime({ offset: true }),
+        createdById: zod.uuid().describe("Id of the person who created the lesson."),
+        date: zod.iso
+          .date()
+          .describe("Day of the lesson, YYYY-MM-DD, inside the period of the class."),
+        durationMinutes: zod
+          .int()
+          .describe(
+            "From startTime to endTime, in minutes. Calculated when read, not stored (RF-039).",
+          ),
+        edition: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string().describe('Year and term, "<year>.<term>".'),
+          })
+          .describe("The edition of the class."),
+        endTime: zod.string().regex(generateClassLessonsResponseLessonsItemEndTimeRegExp),
+        expectedMonitors: zod
+          .int()
+          .nullable()
+          .describe("Monitors expected. Null when not informed."),
+        expectedStudents: zod
+          .int()
+          .nullable()
+          .describe("Students expected. Null when not informed."),
+        id: zod.uuid(),
+        lessonPlan: zod
+          .object({
+            archivedAt: zod.iso
+              .datetime({ offset: true })
+              .nullable()
+              .describe(
+                "Null while the plan is active. An archived plan still shows on the lessons that already came from it (RN-27), but cannot originate a new lesson.",
+              ),
+            id: zod.uuid(),
+            title: zod
+              .string()
+              .describe(
+                "The title the plan has now, which may differ from the one the lesson copied.",
+              ),
+          })
+          .nullable()
+          .describe(
+            "The lesson plan this lesson was created from. Null for a lesson created on its own. It never changes (RN-20).",
+          ),
+        location: zod.string().nullable().describe("Null when not informed."),
+        objective: zod
+          .string()
+          .nullable()
+          .describe(
+            "The lesson's own objective: copied from the plan when it was created, editable afterwards (RN-18).",
+          ),
+        originalDate: zod.iso
+          .date()
+          .nullable()
+          .describe(
+            "The first day the lesson was scheduled for, set by its first reschedule and kept by the next ones. Null for a lesson that was never rescheduled.",
+          ),
+        postNotes: zod
+          .string()
+          .nullable()
+          .describe("Notes written after the lesson. Null when there are none."),
+        rescheduleNote: zod
+          .string()
+          .nullable()
+          .describe("Note about its last reschedule. Null when none was given."),
+        rescheduleReason: zod
+          .string()
+          .nullable()
+          .describe("Why the lesson moved, in its last reschedule. Null when none was given."),
+        sequenceOrder: zod
+          .int()
+          .nullable()
+          .describe(
+            "Position the plan had in the sequence of the course when the lesson was created. Null for a lesson outside the sequence. A snapshot: a later reordering of the sequence does not change it.",
+          ),
+        startTime: zod.string().regex(generateClassLessonsResponseLessonsItemStartTimeRegExp),
+        status: zod
+          .enum(["planned", "confirmed", "done", "cancelled"])
+          .describe(
+            "Status of the lesson (F4.5). A lesson that was rescheduled keeps its status. cancelled is final: the lesson stays, with its reason, and cannot be edited or rescheduled.",
+          )
+          .describe(
+            "Status of the lesson (F4.5). A lesson that was rescheduled keeps its status. cancelled is final: the lesson stays, with its reason, and cannot be edited or rescheduled.",
+          ),
+        subject: zod
+          .string()
+          .nullable()
+          .describe("Free text about what the lesson covers. Null when not informed."),
+        title: zod
+          .string()
+          .describe(
+            "The lesson's own title: copied from the plan when it was created, editable afterwards (RN-18).",
+          ),
+        updatedAt: zod.iso.datetime({ offset: true }),
+      }),
+    )
+    .describe(
+      "The lessons created, planned, in the order of the sequence (so by date). Each one is the same LessonResponseDto the other routes of the module answer.",
+    ),
+});
+
+export const PreviewClassLessonsParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const previewClassLessonsBodyEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+export const previewClassLessonsBodyLocationMax = 200;
+
+export const previewClassLessonsBodyStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+
+export const PreviewClassLessonsBody = zod.object({
+  endTime: zod
+    .string()
+    .regex(previewClassLessonsBodyEndTimeRegExp)
+    .describe(
+      "End of every lesson, HH:mm in 24 hours. It must be after startTime (else 400 INVALID_TIME_RANGE): a lesson does not cross midnight.",
+    ),
+  firstDate: zod.iso
+    .date()
+    .describe(
+      "Where the series starts, YYYY-MM-DD. The first lesson is on the first weekday on or after this date: this very date when it already is that weekday, otherwise the next one (a monday with weekday tuesday starts the next day). Each next lesson is a week after the one before.",
+    ),
+  location: zod
+    .string()
+    .max(previewClassLessonsBodyLocationMax)
+    .nullish()
+    .describe(
+      "Place of every lesson. Null or blank means not informed. A lesson can have its place changed afterwards.",
+    ),
+  startTime: zod
+    .string()
+    .regex(previewClassLessonsBodyStartTimeRegExp)
+    .describe("Start of every lesson, HH:mm in 24 hours."),
+  weekday: zod
+    .enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"])
+    .describe(
+      "The day of the week of the lessons: one lesson a week, always on this day. Lower case English name.",
+    )
+    .describe(
+      "The day of the week of the lessons: one lesson a week, always on this day. Lower case English name.",
+    ),
+});
+
+export const previewClassLessonsResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+
+export const previewClassLessonsResponseOutsideClassPeriodCountMin = 0;
+
+export const previewClassLessonsResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+
+export const PreviewClassLessonsResponse = zod.object({
+  classEndDate: zod.iso
+    .date()
+    .describe(
+      "Last day of the class: no lesson can be after it. The warning of the lessons outside the period reads it.",
+    ),
+  classId: zod.uuid(),
+  classStartDate: zod.iso.date().describe("First day of the class: no lesson can be before it."),
+  durationMinutes: zod
+    .int()
+    .describe(
+      "From startTime to endTime, in minutes: how long each lesson would be. Calculated, not typed.",
+    ),
+  endTime: zod.string().regex(previewClassLessonsResponseEndTimeRegExp),
+  items: zod
+    .array(
+      zod.object({
+        date: zod.iso
+          .date()
+          .describe("Day of the lesson, YYYY-MM-DD, one week after the lesson before it."),
+        expectedDurationMinutes: zod
+          .int()
+          .describe(
+            "The duration the lesson plan expects, in minutes. The lesson itself gets the time of the body (startTime to endTime), which is the top-level durationMinutes.",
+          ),
+        lessonPlanId: zod.uuid(),
+        outsideClassPeriod: zod
+          .boolean()
+          .describe(
+            "True when `date` is before the first day or after the last day of the class (RN-21). The preview only marks it: generating with any such lesson answers 409 LESSONS_OUTSIDE_CLASS_PERIOD.",
+          ),
+        sequenceOrder: zod
+          .int()
+          .min(1)
+          .describe(
+            "Position of the plan in the sequence of the course: the `sequenceOrder` its lesson would carry. It keeps the real position, so it can skip a number when an archived plan is left out (see skippedLessonPlans).",
+          ),
+        title: zod.string().describe("The title the lesson would copy from the plan (RN-18)."),
+      }),
+    )
+    .describe(
+      "One per active lesson plan of the sequence of the course, in the order of the sequence: the first on the first weekday on or after firstDate and each next one a week later. Never empty (a course without an active plan answers 409 COURSE_WITHOUT_SEQUENCE).",
+    ),
+  lessonCount: zod.int().min(1).describe("How many lessons would be created: the number of items."),
+  location: zod
+    .string()
+    .nullable()
+    .describe("The place every lesson would have. Null when not informed."),
+  outsideClassPeriodCount: zod
+    .int()
+    .min(previewClassLessonsResponseOutsideClassPeriodCountMin)
+    .describe(
+      "How many items are outsideClassPeriod. Above 0, generating answers 409 LESSONS_OUTSIDE_CLASS_PERIOD: the class must be extended (or the series moved) first.",
+    ),
+  skippedLessonPlans: zod
+    .array(
+      zod.object({
+        archivedAt: zod.iso.datetime({ offset: true }).describe("When the plan was archived."),
+        lessonPlanId: zod.uuid(),
+        sequenceOrder: zod
+          .int()
+          .min(1)
+          .describe("Position of the plan in the sequence of the course."),
+        title: zod.string(),
+      }),
+    )
+    .describe(
+      "The archived plans of the sequence, which originate no lesson (RN-27). The days stay consecutive: a skipped plan leaves no gap. Empty when none is archived.",
+    ),
+  startTime: zod.string().regex(previewClassLessonsResponseStartTimeRegExp),
+  weekday: zod
+    .enum(["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"])
+    .describe(
+      "The day of the week of the lessons: one lesson a week, always on this day. Lower case English name.",
+    ),
+});
+
+export const listLessonsQueryLimitMax = 100;
+
+export const listLessonsQuerySearchMax = 100;
+
+export const ListLessonsQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listLessonsQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listLessonsQuerySearchMax)
+    .optional()
+    .describe(
+      "Words to look for in the title and in the subject of the lesson. Every word has to show up, each one in either of the two, in any order and not necessarily next to each other: senhas privacidade finds Senhas e privacidade. Case and accents are ignored.",
+    ),
+  classId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the lessons of this class, archived class included. Without it, the lessons of an archived class are left out (RN-27). An id that matches no class answers an empty list.",
+    ),
+  courseId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the lessons of the classes of this course. The lessons of its archived classes are left out. An id that matches no course answers an empty list.",
+    ),
+  lessonPlanId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the lessons created from this lesson plan. An id that matches no plan answers an empty list.",
+    ),
+  status: zod
+    .enum(["planned", "confirmed", "done", "cancelled"])
+    .optional()
+    .describe(
+      "Only the lessons with this status. One value. Omit for every status: the cancelled lessons are listed too.",
+    ),
+  from: zod.iso
+    .date()
+    .optional()
+    .describe(
+      "First day of the period, YYYY-MM-DD, included. It can come alone. With `to`, it cannot be after it (else 400 INVALID_DATE_RANGE).",
+    ),
+  to: zod.iso
+    .date()
+    .optional()
+    .describe(
+      "Last day of the period, YYYY-MM-DD, included. It can come alone. With `from`, it cannot be before it (else 400 INVALID_DATE_RANGE).",
+    ),
+});
+
+export const listLessonsResponseDataItemClassColorIndexMin = 0;
+export const listLessonsResponseDataItemClassColorIndexMax = 7;
+
+export const listLessonsResponseDataItemEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+export const listLessonsResponseDataItemStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+
+export const ListLessonsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      belowExpectedMonitors: zod
+        .boolean()
+        .describe(
+          "True when the lesson has fewer monitors allocated than it expects (F4.4, RF-050). Always false until the allocation exists (GUS-158).",
+        ),
+      class: zod.object({
+        code: zod.string().describe("Unique inside its edition."),
+        colorIndex: zod
+          .int()
+          .min(listLessonsResponseDataItemClassColorIndexMin)
+          .max(listLessonsResponseDataItemClassColorIndexMax)
+          .describe(
+            "Color slot of the class in the calendar, from 0 to 7; the front picks the color of the class by it. It follows the order the classes were created in and does not change with the filter, the page or the period, nor when another class is archived. Classes created in sequence get different slots until the slots run out, and then they repeat.",
+          ),
+        id: zod.uuid(),
+        name: zod
+          .string()
+          .describe(
+            "The label of the class on the row: its name, or its code when it has no name. Never null.",
+          ),
+      }),
+      date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD."),
+      endTime: zod.string().regex(listLessonsResponseDataItemEndTimeRegExp),
+      id: zod.uuid(),
+      startTime: zod.string().regex(listLessonsResponseDataItemStartTimeRegExp),
+      status: zod
+        .enum(["planned", "confirmed", "done", "cancelled"])
+        .describe(
+          "Status of the lesson (F4.5). A lesson that was rescheduled keeps its status. cancelled is final: the lesson stays, with its reason, and cannot be edited or rescheduled.",
+        )
+        .describe(
+          "Status of the lesson (F4.5). A cancelled lesson is listed like the others: the calendar draws it with a style of its own.",
+        ),
+      teacher: zod
+        .object({
+          id: zod.uuid(),
+          name: zod.string(),
+        })
+        .nullable()
+        .describe(
+          "The teacher of the lesson. Always null until the allocation exists (E5, GUS-158): the front shows a dash.",
+        ),
+      title: zod.string().describe("The lesson's own title (RN-18)."),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
 export const createLessonBodyEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 export const createLessonBodyExpectedMonitorsMin = 0;
 export const createLessonBodyExpectedMonitorsMax = 100;
@@ -225,6 +649,105 @@ export const CreateLessonResponse = zod.object({
     ),
   updatedAt: zod.iso.datetime({ offset: true }),
 });
+
+export const listLessonsCalendarQuerySearchMax = 100;
+
+export const ListLessonsCalendarQueryParams = zod.object({
+  search: zod
+    .string()
+    .max(listLessonsCalendarQuerySearchMax)
+    .optional()
+    .describe(
+      "Words to look for in the title and in the subject of the lesson. Every word has to show up, each one in either of the two, in any order and not necessarily next to each other: senhas privacidade finds Senhas e privacidade. Case and accents are ignored.",
+    ),
+  classId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the lessons of this class, archived class included. Without it, the lessons of an archived class are left out (RN-27). An id that matches no class answers an empty list.",
+    ),
+  courseId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the lessons of the classes of this course. The lessons of its archived classes are left out. An id that matches no course answers an empty list.",
+    ),
+  lessonPlanId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the lessons created from this lesson plan. An id that matches no plan answers an empty list.",
+    ),
+  status: zod
+    .enum(["planned", "confirmed", "done", "cancelled"])
+    .optional()
+    .describe(
+      "Only the lessons with this status. One value. Omit for every status: the cancelled lessons are listed too.",
+    ),
+  from: zod.iso
+    .date()
+    .describe(
+      "First day of the period, YYYY-MM-DD, included. Required. It cannot be after `to` (else 400 INVALID_DATE_RANGE).",
+    ),
+  to: zod.iso
+    .date()
+    .describe(
+      "Last day of the period, YYYY-MM-DD, included. Required. The period holds at most 42 days counting both ends, six weeks, a month grid (else 400 DATE_RANGE_TOO_LONG).",
+    ),
+});
+
+export const listLessonsCalendarResponseClassColorIndexMin = 0;
+export const listLessonsCalendarResponseClassColorIndexMax = 7;
+
+export const listLessonsCalendarResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+export const listLessonsCalendarResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
+
+export const ListLessonsCalendarResponseItem = zod.object({
+  belowExpectedMonitors: zod
+    .boolean()
+    .describe(
+      "True when the lesson has fewer monitors allocated than it expects (F4.4, RF-050). Always false until the allocation exists (GUS-158).",
+    ),
+  class: zod.object({
+    code: zod.string().describe("Unique inside its edition."),
+    colorIndex: zod
+      .int()
+      .min(listLessonsCalendarResponseClassColorIndexMin)
+      .max(listLessonsCalendarResponseClassColorIndexMax)
+      .describe(
+        "Color slot of the class in the calendar, from 0 to 7; the front picks the color of the class by it. It follows the order the classes were created in and does not change with the filter, the page or the period, nor when another class is archived. Classes created in sequence get different slots until the slots run out, and then they repeat.",
+      ),
+    id: zod.uuid(),
+    name: zod
+      .string()
+      .describe(
+        "The label of the class on the row: its name, or its code when it has no name. Never null.",
+      ),
+  }),
+  date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD."),
+  endTime: zod.string().regex(listLessonsCalendarResponseEndTimeRegExp),
+  id: zod.uuid(),
+  startTime: zod.string().regex(listLessonsCalendarResponseStartTimeRegExp),
+  status: zod
+    .enum(["planned", "confirmed", "done", "cancelled"])
+    .describe(
+      "Status of the lesson (F4.5). A lesson that was rescheduled keeps its status. cancelled is final: the lesson stays, with its reason, and cannot be edited or rescheduled.",
+    )
+    .describe(
+      "Status of the lesson (F4.5). A cancelled lesson is listed like the others: the calendar draws it with a style of its own.",
+    ),
+  teacher: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "The teacher of the lesson. Always null until the allocation exists (E5, GUS-158): the front shows a dash.",
+    ),
+  title: zod.string().describe("The lesson's own title (RN-18)."),
+});
+export const ListLessonsCalendarResponse = zod.array(ListLessonsCalendarResponseItem);
 
 export const GetLessonParams = zod.object({
   id: zod.uuid().describe("Id of the lesson."),

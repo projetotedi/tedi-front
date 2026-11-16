@@ -24,8 +24,15 @@ import type {
 import type {
   ApiErrorDto,
   CancelLessonDto,
+  ClassLessonsPreviewResponseDto,
   CreateLessonDto,
+  GenerateClassLessonsDto,
+  GeneratedClassLessonsResponseDto,
+  LessonListItemResponseDto,
   LessonResponseDto,
+  ListLessons200,
+  ListLessonsCalendarParams,
+  ListLessonsParams,
   RescheduleLessonDto,
   UpdateLessonDto,
 } from "../model";
@@ -48,6 +55,331 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getGenerateClassLessonsUrl = (id: string) => {
+  return `/classes/${id}/lessons/generate`;
+};
+
+export const generateClassLessons = async (
+  id: string,
+  generateClassLessonsDto: GenerateClassLessonsDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<GeneratedClassLessonsResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<GeneratedClassLessonsResponseDto>(getGenerateClassLessonsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(generateClassLessonsDto),
+  });
+};
+
+export const getGenerateClassLessonsMutationKey = () => ["generateClassLessons"] as const;
+
+export const getGenerateClassLessonsMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateClassLessons>>,
+    TError,
+    GenerateClassLessonsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateClassLessons>>,
+  TError,
+  GenerateClassLessonsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getGenerateClassLessonsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateClassLessons>>,
+    GenerateClassLessonsMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return generateClassLessons(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateClassLessonsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateClassLessons>>
+>;
+export type GenerateClassLessonsMutationBody = GenerateClassLessonsDto;
+export type GenerateClassLessonsMutationError = ApiErrorDto;
+export type GenerateClassLessonsMutationVariables = { id: string; data: GenerateClassLessonsDto };
+
+export const useGenerateClassLessons = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof generateClassLessons>>,
+      TError,
+      GenerateClassLessonsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof generateClassLessons>>,
+  TError,
+  GenerateClassLessonsMutationVariables,
+  TContext
+> => {
+  return useMutation(getGenerateClassLessonsMutationOptions(options), queryClient);
+};
+export const getPreviewClassLessonsUrl = (id: string) => {
+  return `/classes/${id}/lessons/preview`;
+};
+
+export const previewClassLessons = async (
+  id: string,
+  generateClassLessonsDto: GenerateClassLessonsDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ClassLessonsPreviewResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<ClassLessonsPreviewResponseDto>(getPreviewClassLessonsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(generateClassLessonsDto),
+  });
+};
+
+export const getPreviewClassLessonsMutationKey = () => ["previewClassLessons"] as const;
+
+export const getPreviewClassLessonsMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof previewClassLessons>>,
+    TError,
+    PreviewClassLessonsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof previewClassLessons>>,
+  TError,
+  PreviewClassLessonsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getPreviewClassLessonsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof previewClassLessons>>,
+    PreviewClassLessonsMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return previewClassLessons(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PreviewClassLessonsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof previewClassLessons>>
+>;
+export type PreviewClassLessonsMutationBody = GenerateClassLessonsDto;
+export type PreviewClassLessonsMutationError = ApiErrorDto;
+export type PreviewClassLessonsMutationVariables = { id: string; data: GenerateClassLessonsDto };
+
+export const usePreviewClassLessons = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof previewClassLessons>>,
+      TError,
+      PreviewClassLessonsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof previewClassLessons>>,
+  TError,
+  PreviewClassLessonsMutationVariables,
+  TContext
+> => {
+  return useMutation(getPreviewClassLessonsMutationOptions(options), queryClient);
+};
+export const getListLessonsUrl = (params?: ListLessonsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/lessons?${stringifiedParams}` : `/lessons`;
+};
+
+export const listLessons = async (
+  params?: ListLessonsParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListLessons200> => {
+  return httpClient<ListLessons200>(getListLessonsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLessonsQueryKey = (params?: ListLessonsParams) => {
+  return [`/lessons`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLessonsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLessons>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessons>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLessonsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLessons>>> = ({ signal }) =>
+    listLessons(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLessons>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLessonsQueryResult = NonNullable<Awaited<ReturnType<typeof listLessons>>>;
+export type ListLessonsQueryError = ApiErrorDto;
+
+export function useListLessons<
+  TData = Awaited<ReturnType<typeof listLessons>>,
+  TError = ApiErrorDto,
+>(
+  params: undefined | ListLessonsParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessons>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessons>>,
+          TError,
+          Awaited<ReturnType<typeof listLessons>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessons<
+  TData = Awaited<ReturnType<typeof listLessons>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessons>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessons>>,
+          TError,
+          Awaited<ReturnType<typeof listLessons>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessons<
+  TData = Awaited<ReturnType<typeof listLessons>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessons>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListLessons<
+  TData = Awaited<ReturnType<typeof listLessons>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonsParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessons>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListLessonsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getCreateLessonUrl = () => {
   return `/lessons`;
@@ -143,6 +475,145 @@ export const useCreateLesson = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getCreateLessonMutationOptions(options), queryClient);
 };
+export const getListLessonsCalendarUrl = (params: ListLessonsCalendarParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/lessons/calendar?${stringifiedParams}`
+    : `/lessons/calendar`;
+};
+
+export const listLessonsCalendar = async (
+  params: ListLessonsCalendarParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<LessonListItemResponseDto[]> => {
+  return httpClient<LessonListItemResponseDto[]>(getListLessonsCalendarUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLessonsCalendarQueryKey = (params?: ListLessonsCalendarParams) => {
+  return [`/lessons/calendar`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLessonsCalendarQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLessonsCalendar>>,
+  TError = ApiErrorDto,
+>(
+  params: ListLessonsCalendarParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonsCalendar>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLessonsCalendarQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLessonsCalendar>>> = ({ signal }) =>
+    listLessonsCalendar(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLessonsCalendar>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLessonsCalendarQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLessonsCalendar>>
+>;
+export type ListLessonsCalendarQueryError = ApiErrorDto;
+
+export function useListLessonsCalendar<
+  TData = Awaited<ReturnType<typeof listLessonsCalendar>>,
+  TError = ApiErrorDto,
+>(
+  params: ListLessonsCalendarParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonsCalendar>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessonsCalendar>>,
+          TError,
+          Awaited<ReturnType<typeof listLessonsCalendar>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessonsCalendar<
+  TData = Awaited<ReturnType<typeof listLessonsCalendar>>,
+  TError = ApiErrorDto,
+>(
+  params: ListLessonsCalendarParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonsCalendar>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessonsCalendar>>,
+          TError,
+          Awaited<ReturnType<typeof listLessonsCalendar>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessonsCalendar<
+  TData = Awaited<ReturnType<typeof listLessonsCalendar>>,
+  TError = ApiErrorDto,
+>(
+  params: ListLessonsCalendarParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonsCalendar>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListLessonsCalendar<
+  TData = Awaited<ReturnType<typeof listLessonsCalendar>>,
+  TError = ApiErrorDto,
+>(
+  params: ListLessonsCalendarParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonsCalendar>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListLessonsCalendarQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getGetLessonUrl = (id: string) => {
   return `/lessons/${id}`;
 };
