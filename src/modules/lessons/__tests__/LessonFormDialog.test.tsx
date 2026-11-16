@@ -26,6 +26,7 @@ import {
   LESSON_CANCELLED_ERROR,
   LESSON_ID,
   LESSON_NOT_FOUND_ERROR,
+  LESSON_PLAN_ID,
   LESSON_PLAN_ID_2,
   LESSON_PLAN_NOT_IN_SEQUENCE_ERROR,
   listCourseLessonPlansHandler,
@@ -439,6 +440,121 @@ describe("LessonFormDialog (create)", () => {
       expect(planTrigger()).toHaveTextContent("Sem plano (aula avulsa)");
       expect(textbox("Título da aula")).toHaveValue("Senhas e privacidade");
       expect(textbox("Objetivo")).toHaveValue("Criar e guardar senhas com segurança.");
+    });
+
+    describe("changing from one plan to another", () => {
+      const OBJECTIVE_OF_SENHAS = "Criar e guardar senhas com segurança.";
+      const OBJECTIVE_OF_TECLADO =
+        "Familiarizar o aluno com o teclado, o mouse e o uso básico das janelas.";
+      const PLAN_CANNOT_BE_READ = { statusCode: 500, error: "INTERNAL_SERVER_ERROR" };
+
+      async function renderWithSenhasChosen(user: UserEvent) {
+        useSequenceHandlers();
+        const view = await renderCreate();
+        await waitForPlans();
+        await choosePlan(user, "Senhas e privacidade");
+        await waitFor(() => expect(textbox("Objetivo")).toHaveValue(OBJECTIVE_OF_SENHAS));
+        return view;
+      }
+
+      it("replaces the title and the objective with the ones of the new plan", async () => {
+        const user = userEvent.setup();
+        await renderWithSenhasChosen(user);
+
+        await choosePlan(user, "Teclado, mouse e janelas");
+
+        await waitFor(() => expect(textbox("Objetivo")).toHaveValue(OBJECTIVE_OF_TECLADO));
+        expect(textbox("Título da aula")).toHaveValue("Teclado, mouse e janelas");
+      });
+
+      it("takes out the objective of the first plan when the new plan cannot be read, and does not send it", async () => {
+        const onCall = vi.fn<(call: CreateLessonCall) => void>();
+        const user = userEvent.setup();
+        await renderWithSenhasChosen(user);
+        server.use(
+          getLessonPlanHandler({ error: PLAN_CANNOT_BE_READ }),
+          createLessonHandler({ onCall }),
+        );
+
+        await choosePlan(user, "Teclado, mouse e janelas");
+
+        expect(
+          await screen.findByText(/Não foi possível trazer o objetivo do plano/),
+        ).toBeInTheDocument();
+        expect(textbox("Título da aula")).toHaveValue("Teclado, mouse e janelas");
+        expect(textbox("Objetivo")).toHaveValue("");
+
+        fillSchedule();
+        await save(user);
+
+        await waitFor(() => expect(onCall).toHaveBeenCalledTimes(1));
+        expect(onCall.mock.calls[0]?.[0].body).toMatchObject({
+          lessonPlanId: LESSON_PLAN_ID,
+          sequenceOrder: 1,
+          title: "Teclado, mouse e janelas",
+          objective: null,
+        });
+      });
+
+      it("keeps what the person typed in the objective when the new plan cannot be read", async () => {
+        const user = userEvent.setup();
+        await renderWithSenhasChosen(user);
+        await user.clear(textbox("Objetivo"));
+        await user.type(textbox("Objetivo"), "Meu objetivo");
+        server.use(getLessonPlanHandler({ error: PLAN_CANNOT_BE_READ }));
+
+        await choosePlan(user, "Teclado, mouse e janelas");
+
+        expect(
+          await screen.findByText(/Não foi possível trazer o objetivo do plano/),
+        ).toBeInTheDocument();
+        expect(textbox("Objetivo")).toHaveValue("Meu objetivo");
+      });
+
+      it("takes out the objective of the first plan after 'Sem plano' too, when the next plan cannot be read", async () => {
+        const user = userEvent.setup();
+        await renderWithSenhasChosen(user);
+        await choosePlan(user, "Sem plano (aula avulsa)");
+        // 'Sem plano' keeps what the plan filled in.
+        expect(textbox("Objetivo")).toHaveValue(OBJECTIVE_OF_SENHAS);
+        server.use(getLessonPlanHandler({ error: PLAN_CANNOT_BE_READ }));
+
+        await choosePlan(user, "Teclado, mouse e janelas");
+
+        expect(
+          await screen.findByText(/Não foi possível trazer o objetivo do plano/),
+        ).toBeInTheDocument();
+        expect(textbox("Objetivo")).toHaveValue("");
+      });
+
+      it("takes out the objective of the second plan, and not of the first, when a third cannot be read", async () => {
+        const user = userEvent.setup();
+        await renderWithSenhasChosen(user);
+        await choosePlan(user, "Teclado, mouse e janelas");
+        await waitFor(() => expect(textbox("Objetivo")).toHaveValue(OBJECTIVE_OF_TECLADO));
+        server.use(getLessonPlanHandler({ error: PLAN_CANNOT_BE_READ }));
+
+        await choosePlan(user, "Senhas e privacidade");
+
+        expect(
+          await screen.findByText(/Não foi possível trazer o objetivo do plano/),
+        ).toBeInTheDocument();
+        expect(textbox("Objetivo")).toHaveValue("");
+      });
+
+      it("keeps the objective of the plan when the same plan is chosen again and cannot be read", async () => {
+        const user = userEvent.setup();
+        await renderWithSenhasChosen(user);
+        await choosePlan(user, "Sem plano (aula avulsa)");
+        server.use(getLessonPlanHandler({ error: PLAN_CANNOT_BE_READ }));
+
+        await choosePlan(user, "Senhas e privacidade");
+
+        expect(
+          await screen.findByText(/Não foi possível trazer o objetivo do plano/),
+        ).toBeInTheDocument();
+        expect(textbox("Objetivo")).toHaveValue(OBJECTIVE_OF_SENHAS);
+      });
     });
 
     it("sends a lesson on its own, without a plan and without a position, when 'Sem plano' stays chosen", async () => {

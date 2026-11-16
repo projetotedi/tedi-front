@@ -102,6 +102,9 @@ function LessonForm({
   const statusFieldRef = useRef<HTMLDivElement>(null);
   const inFlightRef = useRef(false);
   const selectedPlanRef = useRef(NO_LESSON_PLAN);
+  // Which plan filled in the objective, and with what: it tells the objective that came from a plan
+  // from the one the person typed.
+  const objectiveFilledByRef = useRef<{ lessonPlanId: string; value: string } | null>(null);
   const [submitError, setSubmitError] = useState<LessonAlertErrorKind | null>(null);
   const [isObjectiveUnavailable, setIsObjectiveUnavailable] = useState(false);
   // Read once, when the form opens: a lesson that was already cancelled has nothing to edit. One
@@ -201,6 +204,10 @@ function LessonForm({
    * so is whatever the person typed after choosing: the answer never overwrites that. If the plan
    * cannot be read the title stays and the objective says so. "Sem plano" leaves the fields as they
    * are.
+   *
+   * Changing from one plan to another takes out the objective the first one filled in, if the person
+   * did not change it: it is not the objective of the new plan, and left there (because the new one
+   * cannot be read) it would be sent as if it were. What the person typed stays.
    */
   async function applyPlan(lessonPlanId: string) {
     selectedPlanRef.current = lessonPlanId;
@@ -208,6 +215,14 @@ function LessonForm({
 
     const item = planItems.find((candidate) => candidate.lessonPlanId === lessonPlanId);
     if (item === undefined) return;
+
+    const filledBy = objectiveFilledByRef.current;
+    if (filledBy !== null && filledBy.lessonPlanId !== lessonPlanId) {
+      if (getValues("objective") === filledBy.value) {
+        setValue("objective", "", { shouldValidate: true });
+      }
+      objectiveFilledByRef.current = null;
+    }
 
     const objectiveWhenChosen = getValues("objective");
     setValue("title", item.title, { shouldValidate: true });
@@ -221,6 +236,7 @@ function LessonForm({
       }
       if (getValues("objective") === objectiveWhenChosen) {
         setValue("objective", prefill.objective, { shouldValidate: true });
+        objectiveFilledByRef.current = { lessonPlanId, value: prefill.objective };
       }
     } catch {
       if (selectedPlanRef.current === lessonPlanId) setIsObjectiveUnavailable(true);
