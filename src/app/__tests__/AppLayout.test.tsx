@@ -8,6 +8,7 @@ import type { MeResponseDto } from "@api/generated/model";
 import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { buildMeUser, logoutHandler, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
+import { lessonsRoutes } from "@modules/lessons";
 import { peopleRoutes } from "@modules/people";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
 import i18n from "@shared/i18n";
@@ -44,6 +45,7 @@ async function renderApp(user: MeResponseDto, route = "/") {
                 children: [
                   { index: true, element: <Navigate to="/profile" replace /> },
                   ...peopleRoutes,
+                  ...lessonsRoutes,
                   ...prototypeRoutes,
                   ...authProtectedRoutes,
                 ],

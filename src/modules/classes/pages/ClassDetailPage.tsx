@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -60,13 +60,28 @@ function ClassNotFound(): ReactElement {
   );
 }
 
-/** The class that was loaded: the header and the two columns of cards. */
-function ClassDetailView({ classDetail }: { classDetail: ClassDetailDto }): ReactElement {
+interface NewLessonActionSlot {
+  /** The action "+ Nova aula" of the header, from the `lessons` module (see `ClassesRouteSlots`). */
+  renderNewLessonAction: (classDetail: ClassDetailDto) => ReactNode;
+}
+
+/**
+ * The class that was loaded: the header and the two columns of cards. An archived class is
+ * read-only (RN-27), and that rule is the class's, so the action to add a lesson to it is not even
+ * asked of the slot.
+ */
+function ClassDetailView({
+  classDetail,
+  renderNewLessonAction,
+}: { classDetail: ClassDetailDto } & NewLessonActionSlot): ReactElement {
   const { t } = useTranslation("classes");
 
   return (
     <div className="flex flex-col gap-5">
-      <ClassDetailHeader classDetail={classDetail} />
+      <ClassDetailHeader
+        classDetail={classDetail}
+        actions={classDetail.archivedAt === null ? renderNewLessonAction(classDetail) : null}
+      />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <ClassDataCard classDetail={classDetail} />
@@ -93,7 +108,10 @@ function ClassDetailView({ classDetail }: { classDetail: ClassDetailDto }): Reac
   );
 }
 
-function ClassDetail({ classId }: { classId: string }): ReactElement {
+function ClassDetail({
+  classId,
+  renderNewLessonAction,
+}: { classId: string } & NewLessonActionSlot): ReactElement {
   const { t } = useTranslation("classes");
   const classQuery = useGetClass(classId);
   const classDetail = classQuery.data;
@@ -117,8 +135,12 @@ function ClassDetail({ classId }: { classId: string }): ReactElement {
     );
   }
 
-  return <ClassDetailView classDetail={classDetail} />;
+  return (
+    <ClassDetailView classDetail={classDetail} renderNewLessonAction={renderNewLessonAction} />
+  );
 }
+
+export type ClassDetailPageProps = NewLessonActionSlot;
 
 /**
  * The screen of a class (RF-029, RF-034, RF-035). The page asks the API for one thing, `getClass`,
@@ -129,16 +151,22 @@ function ClassDetail({ classId }: { classId: string }): ReactElement {
  * have no data yet and only keep their place with "Em breve". The title of the page is on the
  * topbar (`handle.title` of the route), so there is no `<h1>`.
  *
+ * The action "+ Nova aula" of the header is not this module's: it comes from the slot
+ * `renderNewLessonAction` (`ClassesRouteSlots`, filled by `app/`), and the page asks for it only
+ * when the class is not archived.
+ *
  * An id that is not a UUID cannot be a class: it is "not found" at once, with no request. The id is
  * also the `key` of the detail, so the state of one class never stays on the next one when the
  * route stays the same and the id changes. The 404 `CLASS_NOT_FOUND` (read with its code, since a
  * 404 that did not come from the API says nothing about this class) shows the page of not found;
  * any other error shows the alert with "Tentar de novo".
  */
-export function ClassDetailPage(): ReactElement {
+export function ClassDetailPage({ renderNewLessonAction }: ClassDetailPageProps): ReactElement {
   const { classId = "" } = useParams();
 
   if (!isClassId(classId)) return <ClassNotFound />;
 
-  return <ClassDetail key={classId} classId={classId} />;
+  return (
+    <ClassDetail key={classId} classId={classId} renderNewLessonAction={renderNewLessonAction} />
+  );
 }
