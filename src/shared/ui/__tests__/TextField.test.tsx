@@ -137,6 +137,14 @@ describe("TextField", () => {
     expect(input).toHaveAttribute("autocomplete", "email");
   });
 
+  it("renders a time input with its label", () => {
+    render(<Harness label="Hora" type="time" />);
+
+    const input = screen.getByLabelText("Hora");
+    expect(input).toHaveAttribute("type", "time");
+    expect(input.tagName).toBe("INPUT");
+  });
+
   it("forwards the input ref", () => {
     const inputRef = createRef<HTMLInputElement>();
     render(<Harness inputRef={inputRef} />);
