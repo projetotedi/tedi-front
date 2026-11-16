@@ -8,7 +8,7 @@
 import type { CourseCategory } from "./courseCategory.ts";
 
 export interface UpdateCourseDto {
-  /** Omit to keep. Never null. Changing the category does not change the classes already created (RN-18). */
+  /** Omit to keep. Never null. A class has no category of its own: changing it changes the category its classes show (RN-14). */
   category?: CourseCategory;
   /**
    * Omit to keep. Never null.

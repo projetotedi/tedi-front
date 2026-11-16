@@ -23,6 +23,14 @@ function isCourseSequenceKey(queryKey: readonly unknown[]): boolean {
   );
 }
 
+/** `/courses` and everything under it: the key of a list of courses, of a detail and of a sequence. */
+function isCoursesKey(queryKey: readonly unknown[]): boolean {
+  const [key] = queryKey;
+  const base = getCreateCourseUrl();
+
+  return typeof key === "string" && (key === base || key.startsWith(`${base}/`));
+}
+
 /** `/courses/<id>`: the query key of the detail of any course, and not of what hangs from it. */
 function isCourseDetailKey(queryKey: readonly unknown[]): boolean {
   const [key] = queryKey;
@@ -70,6 +78,29 @@ export async function applyReplacedSequence(
     queryClient.invalidateQueries({
       predicate: ({ queryKey }) => isCourseDetailKey(queryKey) && queryKey[0] !== currentDetailKey,
     }),
+    invalidateLessonPlans(queryClient),
+  ]);
+}
+
+/**
+ * What the app has to know after a course is duplicated (RF-019):
+ *
+ * - there is one more course, so whatever lists courses is out of date. The contract has no course
+ *   list yet (`listCourses`), so this is every key under `/courses`: when the list exists its key
+ *   is one of them and needs no change here;
+ * - the copy gets the lesson plans of the original, in the same order, and a lesson plan is shared
+ *   by the courses that use it (RN-17), so each of those plans is now in one more course. That is
+ *   `courseCount` in the sequence of the original and of the other courses that use the same plans
+ *   (the detail and the sequence keys, which are under `/courses` too) and `usedIn` in the detail
+ *   of each plan, so the lesson plans are invalidated as well.
+ *
+ * Nothing is written into the cache from the answer of the `POST`: it is a `CourseResponseDto`, with
+ * no sequence, no workload and no `requiredBy`, so it is not the detail of a course. The detail of
+ * the copy is fetched when the screen opens it.
+ */
+export async function invalidateAfterCourseDuplicated(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) }),
     invalidateLessonPlans(queryClient),
   ]);
 }

@@ -29,6 +29,7 @@ import type {
   CourseResponseDto,
   CreateCourseDto,
   CreateLessonPlanDto,
+  DuplicateCourseDto,
   GetLessonPlanUsageParams,
   LessonPlanDetailDto,
   LessonPlanResponseDto,
@@ -351,6 +352,106 @@ export const useUpdateCourse = <TError = ApiErrorDto, TContext = unknown>(
   TContext
 > => {
   return useMutation(getUpdateCourseMutationOptions(options), queryClient);
+};
+export const getDuplicateCourseUrl = (id: string) => {
+  return `/courses/${id}/duplicate`;
+};
+
+export const duplicateCourse = async (
+  id: string,
+  duplicateCourseDto: DuplicateCourseDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<CourseResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<CourseResponseDto>(getDuplicateCourseUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(duplicateCourseDto),
+  });
+};
+
+export const getDuplicateCourseMutationKey = () => ["duplicateCourse"] as const;
+
+export const getDuplicateCourseMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof duplicateCourse>>,
+    TError,
+    DuplicateCourseMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof duplicateCourse>>,
+  TError,
+  DuplicateCourseMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDuplicateCourseMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof duplicateCourse>>,
+    DuplicateCourseMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return duplicateCourse(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DuplicateCourseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof duplicateCourse>>
+>;
+export type DuplicateCourseMutationBody = DuplicateCourseDto;
+export type DuplicateCourseMutationError = ApiErrorDto;
+export type DuplicateCourseMutationVariables = { id: string; data: DuplicateCourseDto };
+
+export const useDuplicateCourse = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof duplicateCourse>>,
+      TError,
+      DuplicateCourseMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof duplicateCourse>>,
+  TError,
+  DuplicateCourseMutationVariables,
+  TContext
+> => {
+  return useMutation(getDuplicateCourseMutationOptions(options), queryClient);
 };
 export const getListCourseLessonPlansUrl = (id: string) => {
   return `/courses/${id}/lesson-plans`;
