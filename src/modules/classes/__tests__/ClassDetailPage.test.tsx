@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { type ClassDetailDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { classesRoutes } from "../routes";
 import {
   buildArchivedClassDetail,
   buildClassCourse,
@@ -21,7 +20,13 @@ import {
   listCourseClassesHandler,
   STUDENT_NAMES,
 } from "./handlers";
-import { createDeferred, renderRoutes, server, setupClassesTestServer } from "./test-utils";
+import {
+  classesRoutes,
+  createDeferred,
+  renderRoutes,
+  server,
+  setupClassesTestServer,
+} from "./test-utils";
 
 setupClassesTestServer();
 
@@ -273,10 +278,37 @@ describe("ClassDetailPage", () => {
       }
     });
 
-    it("has no actions yet: Editar turma, Gerar aulas and + Nova aula are hidden", async () => {
+    it("asks the slot for the new-lesson action of the class", async () => {
+      await renderPage();
+
+      const header = card(CLASS_NAME);
+      expect(within(header).getByText(`Nova aula da turma ${CLASS_ID}`)).toBeInTheDocument();
+    });
+
+    it("puts the action of the slot on the right of the name and the tags", async () => {
+      await renderPage();
+
+      const header = card(CLASS_NAME);
+      const action = within(header).getByText(`Nova aula da turma ${CLASS_ID}`);
+      const row = action.parentElement?.parentElement;
+
+      expect(row).toHaveClass("flex", "flex-wrap", "justify-between");
+      expect(row?.firstElementChild).toContainElement(
+        within(header).getByRole("heading", { name: CLASS_NAME }),
+      );
+      expect(action.parentElement).toBe(row?.lastElementChild);
+    });
+
+    it("does not ask the slot for an archived class", async () => {
+      await renderPage({ classDetail: buildArchivedClassDetail() });
+
+      expect(screen.queryByText(/Nova aula da turma/)).not.toBeInTheDocument();
+    });
+
+    it("still has no Editar turma nor Gerar aulas: they wait for their own tasks", async () => {
       await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Editar turma", "Gerar aulas", "+ Nova aula"]) {
+      for (const name of ["Editar turma", "Gerar aulas"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }

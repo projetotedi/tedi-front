@@ -11,9 +11,20 @@ import { AuthProvider } from "@modules/auth";
 import i18n from "@shared/i18n";
 
 import "../index";
+import { createClassesRoutes } from "../routes";
 import { buildMeUser, meHandler } from "./handlers";
 
 export const server = setupServer();
+
+/**
+ * The routes of the classes as the tests of this module render them. The action "+ Nova aula"
+ * belongs to the `lessons` module, which `classes` does not import, so here the slot is a stand-in
+ * that only says which class it was asked for. The real button is tested with the `lessons` module
+ * and put together with these routes in `app/__tests__/classes-slots.test.tsx`.
+ */
+export const classesRoutes = createClassesRoutes({
+  renderNewLessonAction: (classDetail) => <p>{`Nova aula da turma ${classDetail.id}`}</p>,
+});
 
 /** The time zone of the people who use the system. The suite runs in it, whatever the machine. */
 const TEST_TIME_ZONE = "America/Sao_Paulo";
