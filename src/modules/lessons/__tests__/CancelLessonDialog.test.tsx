@@ -65,6 +65,12 @@ describe("CancelLessonDialog", () => {
       expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     });
 
+    it("draws no asterisk of its own: a required field draws its own", async () => {
+      await renderCancel();
+
+      expect(screen.getByRole("dialog").textContent).not.toContain("*");
+    });
+
     it("focuses the reason when the dialog opens", async () => {
       await renderCancel();
 

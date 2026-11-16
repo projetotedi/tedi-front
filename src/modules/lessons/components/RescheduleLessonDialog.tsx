@@ -23,7 +23,6 @@ import {
   type RescheduleLessonFormValues,
 } from "../schemas/lesson.schema";
 import { LessonLoadError, LessonLoadingPlaceholder } from "./LessonDialogStates";
-import { RequiredLabel } from "./RequiredLabel";
 
 export interface RescheduleLessonDialogProps {
   lessonId: string;
@@ -153,7 +152,7 @@ function RescheduleForm({
           control={control}
           render={({ field, fieldState }) => (
             <TextField
-              label={<RequiredLabel>{t("reschedule.date")}</RequiredLabel>}
+              label={t("reschedule.date")}
               type="date"
               value={field.value}
               onChange={field.onChange}
@@ -175,7 +174,7 @@ function RescheduleForm({
           control={control}
           render={({ field, fieldState }) => (
             <TextField
-              label={<RequiredLabel>{t("reschedule.startTime")}</RequiredLabel>}
+              label={t("reschedule.startTime")}
               type="time"
               value={field.value}
               onChange={field.onChange}
@@ -195,7 +194,7 @@ function RescheduleForm({
           control={control}
           render={({ field, fieldState }) => (
             <TextField
-              label={<RequiredLabel>{t("reschedule.endTime")}</RequiredLabel>}
+              label={t("reschedule.endTime")}
               type="time"
               value={field.value}
               onChange={field.onChange}

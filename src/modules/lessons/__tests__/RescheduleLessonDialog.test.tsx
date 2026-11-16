@@ -77,6 +77,12 @@ describe("RescheduleLessonDialog", () => {
       expect(within(dialog).getByRole("button", { name: "Fechar" })).toBeInTheDocument();
     });
 
+    it("draws no asterisk of its own: a required field draws its own", async () => {
+      await renderReschedule();
+
+      expect(screen.getByRole("dialog").textContent).not.toContain("*");
+    });
+
     it("says the period of the class under the new date", async () => {
       await renderReschedule();
 

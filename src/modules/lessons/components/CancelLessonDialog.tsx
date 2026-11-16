@@ -20,7 +20,6 @@ import {
   toCancelLessonBody,
   type CancelLessonFormValues,
 } from "../schemas/lesson.schema";
-import { RequiredLabel } from "./RequiredLabel";
 
 export interface CancelLessonDialogProps {
   lessonId: string;
@@ -152,7 +151,7 @@ export function CancelLessonDialog({
           control={control}
           render={({ field, fieldState }) => (
             <TextArea
-              label={<RequiredLabel>{t("cancel.reason")}</RequiredLabel>}
+              label={t("cancel.reason")}
               description={t("cancel.reasonHint")}
               rows={4}
               value={field.value}

@@ -42,7 +42,6 @@ import {
   type LessonFormValues,
 } from "../schemas/lesson.schema";
 import { LessonLoadError, LessonLoadingPlaceholder } from "./LessonDialogStates";
-import { RequiredLabel } from "./RequiredLabel";
 
 /**
  * The class a new lesson is for. There is no list of classes in the contract to choose from, so
@@ -284,12 +283,7 @@ function LessonForm({
       onSubmit={onSubmit}
       className="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2"
     >
-      <TextField
-        label={<RequiredLabel>{t("form.class")}</RequiredLabel>}
-        value={classLabel}
-        onChange={noop}
-        isReadOnly
-      />
+      <TextField label={t("form.class")} value={classLabel} onChange={noop} isRequired isReadOnly />
 
       {target.mode === "create" ? (
         <Controller
@@ -335,7 +329,7 @@ function LessonForm({
           control={control}
           render={({ field, fieldState }) => (
             <TextField
-              label={<RequiredLabel>{t("form.title")}</RequiredLabel>}
+              label={t("form.title")}
               value={field.value}
               onChange={field.onChange}
               onBlur={field.onBlur}
@@ -381,7 +375,7 @@ function LessonForm({
           control={control}
           render={({ field, fieldState }) => (
             <TextField
-              label={<RequiredLabel>{t("form.date")}</RequiredLabel>}
+              label={t("form.date")}
               type="date"
               value={field.value}
               onChange={field.onChange}
@@ -396,11 +390,12 @@ function LessonForm({
         />
       ) : (
         <TextField
-          label={<RequiredLabel>{t("form.date")}</RequiredLabel>}
+          label={t("form.date")}
           type="date"
           value={target.lesson.date}
           onChange={noop}
           description={t("form.scheduleLockedHint")}
+          isRequired
           isReadOnly
         />
       )}
@@ -428,7 +423,7 @@ function LessonForm({
             control={control}
             render={({ field, fieldState }) => (
               <TextField
-                label={<RequiredLabel>{t("form.startTime")}</RequiredLabel>}
+                label={t("form.startTime")}
                 type="time"
                 value={field.value}
                 onChange={field.onChange}
@@ -445,7 +440,7 @@ function LessonForm({
             control={control}
             render={({ field, fieldState }) => (
               <TextField
-                label={<RequiredLabel>{t("form.endTime")}</RequiredLabel>}
+                label={t("form.endTime")}
                 type="time"
                 value={field.value}
                 onChange={field.onChange}
@@ -461,19 +456,21 @@ function LessonForm({
       ) : (
         <>
           <TextField
-            label={<RequiredLabel>{t("form.startTime")}</RequiredLabel>}
+            label={t("form.startTime")}
             type="time"
             value={target.lesson.startTime}
             onChange={noop}
             description={t("form.scheduleLockedHint")}
+            isRequired
             isReadOnly
           />
           <TextField
-            label={<RequiredLabel>{t("form.endTime")}</RequiredLabel>}
+            label={t("form.endTime")}
             type="time"
             value={target.lesson.endTime}
             onChange={noop}
             description={t("form.scheduleLockedHint")}
+            isRequired
             isReadOnly
           />
         </>

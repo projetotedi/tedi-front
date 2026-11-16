@@ -192,6 +192,14 @@ describe("LessonFormDialog (create)", () => {
       expect(field(/^Alunos esperados/)).toHaveAttribute("inputmode", "numeric");
     });
 
+    it("marks the class as required too, and draws no asterisk of its own: a required field draws its own", async () => {
+      server.use(listCourseLessonPlansHandler());
+      await renderCreate();
+
+      expect(field(/^Turma/)).toBeRequired();
+      expect(screen.getByRole("dialog").textContent).not.toContain("*");
+    });
+
     it("focuses the title when the dialog opens", async () => {
       server.use(listCourseLessonPlansHandler());
       await renderCreate();
@@ -851,6 +859,18 @@ describe("LessonFormDialog (edit)", () => {
           "Para mudar data e horário, use Remarcar aula.",
         );
       }
+    });
+
+    it("keeps the class, the date and the times marked as required, without an asterisk of its own", async () => {
+      server.use(getLessonHandler());
+      await renderEdit();
+      await screen.findByRole("textbox", { name: "Título da aula" });
+
+      for (const label of [/^Turma/, /^Data da aula/, /^Hora de início/, /^Hora de término/]) {
+        expect(field(label)).toBeRequired();
+      }
+      expect(field(/^Plano de aula \(origem\)/)).not.toBeRequired();
+      expect(screen.getByRole("dialog").textContent).not.toContain("*");
     });
 
     it("says 'Sem plano' for a lesson that was created on its own", async () => {
