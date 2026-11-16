@@ -33,13 +33,17 @@ export type LessonAlertErrorKind =
   | "network"
   | "unknown";
 
-export interface LessonFieldError {
-  name: LessonFieldName;
+/**
+ * The name is generic so a form types it with the fields it has: `setError(name, ...)` of React
+ * Hook Form then takes it without a cast (the dialog of cancelling only has `reason`).
+ */
+export interface LessonFieldError<TName extends LessonFieldName = LessonFieldName> {
+  name: TName;
   message: LessonFieldErrorKey;
 }
 
-export type LessonSubmitError =
-  | { kind: "fields"; fields: LessonFieldError[] }
+export type LessonSubmitError<TName extends LessonFieldName = LessonFieldName> =
+  | { kind: "fields"; fields: LessonFieldError<TName>[] }
   | { kind: LessonAlertErrorKind };
 
 /**
@@ -108,27 +112,29 @@ function isFieldDetail(detail: unknown): detail is ApiFieldErrorDto {
   return typeof field === "string" && typeof message === "string";
 }
 
-function onField(
-  allowedFields: readonly LessonFieldName[],
+function onField<TName extends LessonFieldName>(
+  allowedFields: readonly TName[],
   name: LessonFieldName,
   message: LessonFieldErrorKey,
-): LessonSubmitError {
-  return allowedFields.includes(name)
-    ? { kind: "fields", fields: [{ name, message }] }
-    : { kind: "unknown" };
+): LessonSubmitError<TName> {
+  const field = allowedFields.find((allowed) => allowed === name);
+
+  return field === undefined
+    ? { kind: "unknown" }
+    : { kind: "fields", fields: [{ name: field, message }] };
 }
 
 /** The fields a 400 `VALIDATION_FAILED` points at that the form has, once each, in screen order. */
-function validationFields(
+function validationFields<TName extends LessonFieldName>(
   details: unknown,
-  allowedFields: readonly LessonFieldName[],
-): LessonSubmitError {
-  const named = new Set(
-    Array.isArray(details) ? details.filter(isFieldDetail).map((d) => d.field) : [],
+  allowedFields: readonly TName[],
+): LessonSubmitError<TName> {
+  const named = new Set<string>(
+    Array.isArray(details) ? details.filter(isFieldDetail).map((detail) => detail.field) : [],
   );
   const fields = allowedFields
     .filter((name) => named.has(name))
-    .map((name): LessonFieldError => ({ name, message: "serverInvalid" }));
+    .map((name): LessonFieldError<TName> => ({ name, message: "serverInvalid" }));
 
   return fields.length > 0 ? { kind: "fields", fields } : { kind: "unknown" };
 }
@@ -149,10 +155,10 @@ function validationFields(
  *   read-only, RN-27);
  * - a failed connection (`TypeError`) or a gateway (502, 503, 504): `network`. Anything else: `unknown`.
  */
-export function toLessonSubmitError(
+export function toLessonSubmitError<TName extends LessonFieldName>(
   error: unknown,
-  allowedFields: readonly LessonFieldName[],
-): LessonSubmitError {
+  allowedFields: readonly TName[],
+): LessonSubmitError<TName> {
   const { statusCode, error: code, details } = readApiError(error);
 
   if (statusCode === 400) {
