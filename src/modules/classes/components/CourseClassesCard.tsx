@@ -6,28 +6,18 @@ import { useListCourseClasses } from "@api/generated/classes/classes";
 import type { CourseClassItemResponseDto } from "@api/generated/model";
 import { useCan } from "@modules/auth";
 import { DataTable, type Column } from "@shared/components/DataTable";
-import { Alert, Badge, Button, Card, Skeleton } from "@shared/ui";
+import { Alert, Badge, Button, Card } from "@shared/ui";
 
 import { CLASS_STATUS_LABEL_KEYS, classStatusTone } from "../lib/class-status";
 import { formatPeriod } from "../lib/format-period";
 import { LINK_CLASSES } from "./link-classes";
+import { LoadingPlaceholder } from "./LoadingPlaceholder";
 
 /** How many classes the card lists: a preview, "Ver todas" opens the whole list of the course. */
 export const COURSE_CLASSES_PREVIEW_LIMIT = 5;
 
 export interface CourseClassesCardProps {
   courseId: string;
-}
-
-function LoadingPlaceholder({ label }: { label: string }): ReactElement {
-  return (
-    <div role="status" className="flex flex-col gap-3">
-      <p className="sr-only">{label}</p>
-      <Skeleton className="h-10 w-full rounded-xl" />
-      <Skeleton className="h-10 w-full rounded-xl" />
-      <Skeleton className="h-10 w-full rounded-xl" />
-    </div>
-  );
 }
 
 /**

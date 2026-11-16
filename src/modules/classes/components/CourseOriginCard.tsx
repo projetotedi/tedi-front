@@ -5,29 +5,19 @@ import { Link } from "react-router-dom";
 import { useListCourseClasses } from "@api/generated/classes/classes";
 import { useGetCourse } from "@api/generated/catalog/catalog";
 import { CourseStatus, type ClassCourseResponseDto } from "@api/generated/model";
-import { Alert, Badge, Button, Card, Skeleton } from "@shared/ui";
+import { Alert, Badge, Button, Card } from "@shared/ui";
 
 import { otherClassesCount } from "../lib/course-options";
 import { isUuid } from "../lib/ids";
 import { DetailField } from "./DetailField";
 import { LINK_CLASSES } from "./link-classes";
+import { LoadingPlaceholder } from "./LoadingPlaceholder";
 
 export interface CourseOriginCardProps {
   /** The class is archived (RN-27): it is not in the total of the classes of its course. */
   isClassArchived: boolean;
   /** The course of the class, as the API gives it with the class: name, category and status. */
   course: ClassCourseResponseDto;
-}
-
-function LoadingPlaceholder({ label }: { label: string }): ReactElement {
-  return (
-    <div role="status" className="flex flex-col gap-3">
-      <p className="sr-only">{label}</p>
-      <Skeleton className="h-10 w-full rounded-xl" />
-      <Skeleton className="h-10 w-full rounded-xl" />
-      <Skeleton className="h-10 w-full rounded-xl" />
-    </div>
-  );
 }
 
 /**
