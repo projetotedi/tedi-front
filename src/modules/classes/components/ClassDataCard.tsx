@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type { ClassDetailDto } from "@api/generated/model";
 import { DetailsCard } from "@shared/components/DetailsCard";
 
+import { CLASS_STATUS_LABEL_KEYS } from "../lib/class-status";
 import { formatCalendarDate, formatInstantDate } from "../lib/format";
 
 export interface ClassDataCardProps {
@@ -27,7 +28,7 @@ export function ClassDataCard({ classDetail }: ClassDataCardProps): ReactElement
       fields={[
         { label: t("detail.data.fields.code"), value: classDetail.code },
         { label: t("detail.data.fields.course"), value: course.name },
-        { label: t("detail.data.fields.level"), value: t(`detail.category.${course.category}`) },
+        { label: t("detail.data.fields.level"), value: t(`levels.${course.category}`) },
         { label: t("detail.data.fields.edition"), value: edition.name },
         {
           label: t("detail.data.fields.startDate"),
@@ -38,7 +39,10 @@ export function ClassDataCard({ classDetail }: ClassDataCardProps): ReactElement
           value: formatCalendarDate(classDetail.endDate, i18n.language),
         },
         { label: t("detail.data.fields.location"), value: classDetail.location },
-        { label: t("detail.data.fields.status"), value: t(`detail.status.${classDetail.status}`) },
+        {
+          label: t("detail.data.fields.status"),
+          value: t(CLASS_STATUS_LABEL_KEYS[classDetail.status]),
+        },
         { label: t("detail.data.fields.capacity"), value: classDetail.capacity },
         {
           label: t("detail.data.fields.enrolled"),

@@ -8,7 +8,7 @@ import { DataTable, type Column } from "@shared/components/DataTable";
 import { Card } from "@shared/ui";
 
 import { formatInstantDate } from "../lib/format";
-import { LINK_CLASSES } from "../lib/link-classes";
+import { LINK_CLASSES } from "./link-classes";
 
 /** How many students the card shows. The API sends at most this many in `enrollmentsPreview`. */
 const PREVIEW_LIMIT = 5;

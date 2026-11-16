@@ -6,6 +6,7 @@
   "edition": "Edition",
   "course": "Course",
   "level": "Level",
+  "selectedCourse": "Selected course",
   "status": "Status",
   "all": "All",
   "archived": "Archived",
@@ -48,29 +49,43 @@
   "capacity": "Total seats",
   "form": {
     "editionPlaceholder": "e.g. 2026.1",
+    "coursePlaceholder": "Select the course",
+    "archivedCourseOption": "{{name}} (archived)",
+    "courseLockedHint": "The course can only be changed while the class is Planned and has no enrollments.",
     "errors": {
       "required": "This field is required.",
       "invalidEdition": "Enter the edition in the format 2026.1.",
       "invalidPeriod": "The end date must be on or after the start date.",
-      "invalidCapacity": "Enter a whole number greater than zero."
+      "invalidCapacity": "Enter a whole number greater than zero.",
+      "courseChangeNotAllowed": "This class can no longer change course: it is no longer Planned or already has an enrollment.",
+      "courseArchived": "This course was archived and takes no new classes.",
+      "courseNotFound": "Course not found. Choose another course.",
+      "unknown": "Could not save the class. Try again."
     }
   },
-  "editions": {
-    "2026-1": "2026.1",
-    "2026-2": "2026.2",
-    "2025-2": "2025.2",
-    "2025-1": "2025.1",
-    "2024": "2024"
+  "courseClasses": {
+    "title": "Classes of this course",
+    "viewAll_one": "View {{count}} class",
+    "viewAll_other": "View all {{count}}",
+    "viewAllLabel_one": "View {{count}} class of this course",
+    "viewAllLabel_other": "View all {{count}} classes of this course",
+    "columns": {
+      "class": "Class",
+      "edition": "Edition",
+      "period": "Period",
+      "students": "Students",
+      "status": "Status"
+    },
+    "enrolledLabel": "{{enrolled}} of {{capacity}} seats taken",
+    "loading": "Loading the classes of the course…",
+    "error": "Could not load the classes of this course.",
+    "empty": "This course has no classes yet."
   },
-  "courses": {
-    "phone": "Smartphones in daily life",
-    "internet": "Internet",
-    "photo": "Digital photography",
-    "security": "Digital safety",
-    "computer": "Basic computing",
-    "social": "Social media safety"
+  "inheritedLevel": {
+    "basic": "Basic level — inherited from the course",
+    "intermediate": "Intermediate level — inherited from the course",
+    "advanced": "Advanced level — inherited from the course"
   },
-  "levels": { "beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced" },
   "detail": {
     "routeTitle": "Class",
     "loading": "Loading the class…",
@@ -81,24 +96,8 @@
     "backToList": "Back to classes",
     "archived": "Archived",
     "comingSoon": "Coming soon",
-    "status": {
-      "planned": "Planned",
-      "in_progress": "In progress",
-      "completed": "Completed",
-      "cancelled": "Cancelled"
-    },
-    "category": {
-      "basic": "Basic",
-      "intermediate": "Intermediate",
-      "advanced": "Advanced"
-    },
     "header": {
       "edition": "Edition {{name}}",
-      "inheritedLevel": {
-        "basic": "Basic level — inherited from the course",
-        "intermediate": "Intermediate level — inherited from the course",
-        "advanced": "Advanced level — inherited from the course"
-      },
       "seats_one": "{{enrolled}} of {{count}} seat",
       "seats_other": "{{enrolled}} of {{count}} seats"
     },
@@ -138,17 +137,45 @@
       "seeAll_one": "See the enrolled student",
       "seeAll_other": "See all {{count}}"
     },
-    "course": {
-      "title": "Source course",
-      "open": "Open course",
-      "name": "Course",
-      "lessonPlanCount": "Lesson plans"
-    },
     "lessons": {
       "title": "Class lessons"
     },
     "members": {
       "title": "Allocated members"
     }
+  },
+  "courseOrigin": {
+    "title": "Source course",
+    "openCourse": "Open course",
+    "openCourseLabel": "Open course {{name}}",
+    "archivedCourse": "Archived",
+    "fields": {
+      "course": "Course",
+      "prerequisites": "Prerequisites",
+      "lessonPlans": "Lesson plans",
+      "otherClasses": "Other classes"
+    },
+    "noPrerequisites": "None",
+    "lessonPlanCount_zero": "No lesson plans",
+    "lessonPlanCount_one": "{{count}} lesson plan",
+    "lessonPlanCount_other": "{{count}} lesson plans",
+    "otherClasses_zero": "None",
+    "otherClasses_one": "{{count}} class",
+    "otherClasses_other": "{{count}} classes",
+    "loading": "Loading the data of the course…",
+    "error": "Could not load the data of the course.",
+    "unavailable": "The data of this course is not available."
+  },
+  "editions": {
+    "2024": "2024",
+    "2026-1": "2026.1",
+    "2026-2": "2026.2",
+    "2025-2": "2025.2",
+    "2025-1": "2025.1"
+  },
+  "levels": {
+    "basic": "Basic",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
   }
 }

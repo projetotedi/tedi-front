@@ -6,6 +6,7 @@
   "edition": "Edição",
   "course": "Curso",
   "level": "Nível",
+  "selectedCourse": "Curso selecionado",
   "status": "Status",
   "all": "Todos",
   "archived": "Arquivadas",
@@ -48,29 +49,43 @@
   "capacity": "Vagas totais",
   "form": {
     "editionPlaceholder": "Ex.: 2026.1",
+    "coursePlaceholder": "Selecione o curso",
+    "archivedCourseOption": "{{name}} (arquivado)",
+    "courseLockedHint": "O curso só pode ser trocado enquanto a turma está Planejada e sem matrículas.",
     "errors": {
       "required": "Campo obrigatório.",
       "invalidEdition": "Informe a edição no formato 2026.1.",
       "invalidPeriod": "A data de término deve ser igual ou posterior à data de início.",
-      "invalidCapacity": "Informe um número inteiro maior que zero."
+      "invalidCapacity": "Informe um número inteiro maior que zero.",
+      "courseChangeNotAllowed": "Esta turma não pode mais trocar de curso: ela já não está Planejada ou já tem matrícula.",
+      "courseArchived": "Este curso foi arquivado e não recebe turmas novas.",
+      "courseNotFound": "Curso não encontrado. Escolha outro curso.",
+      "unknown": "Não foi possível salvar a turma. Tente novamente."
     }
   },
-  "editions": {
-    "2026-1": "2026.1",
-    "2026-2": "2026.2",
-    "2025-2": "2025.2",
-    "2025-1": "2025.1",
-    "2024": "2024"
+  "courseClasses": {
+    "title": "Turmas deste curso",
+    "viewAll_one": "Ver a {{count}} turma",
+    "viewAll_other": "Ver todas as {{count}}",
+    "viewAllLabel_one": "Ver a {{count}} turma deste curso",
+    "viewAllLabel_other": "Ver todas as {{count}} turmas deste curso",
+    "columns": {
+      "class": "Turma",
+      "edition": "Edição",
+      "period": "Período",
+      "students": "Alunos",
+      "status": "Status"
+    },
+    "enrolledLabel": "{{enrolled}} de {{capacity}} vagas ocupadas",
+    "loading": "Carregando as turmas do curso…",
+    "error": "Não foi possível carregar as turmas deste curso.",
+    "empty": "Este curso ainda não tem turmas."
   },
-  "courses": {
-    "phone": "Smartphones no dia a dia",
-    "internet": "Internet",
-    "photo": "Fotografia digital",
-    "security": "Segurança digital",
-    "computer": "Informática Básica",
-    "social": "Redes Sociais com Segurança"
+  "inheritedLevel": {
+    "basic": "Nível básico — herdado do curso",
+    "intermediate": "Nível intermediário — herdado do curso",
+    "advanced": "Nível avançado — herdado do curso"
   },
-  "levels": { "beginner": "Iniciante", "intermediate": "Intermediário", "advanced": "Avançado" },
   "detail": {
     "routeTitle": "Turma",
     "loading": "Carregando a turma…",
@@ -81,24 +96,8 @@
     "backToList": "Voltar para turmas",
     "archived": "Arquivada",
     "comingSoon": "Em breve",
-    "status": {
-      "planned": "Planejada",
-      "in_progress": "Em andamento",
-      "completed": "Encerrada",
-      "cancelled": "Cancelada"
-    },
-    "category": {
-      "basic": "Básico",
-      "intermediate": "Intermediário",
-      "advanced": "Avançado"
-    },
     "header": {
       "edition": "Edição {{name}}",
-      "inheritedLevel": {
-        "basic": "Nível básico — herdado do curso",
-        "intermediate": "Nível intermediário — herdado do curso",
-        "advanced": "Nível avançado — herdado do curso"
-      },
       "seats_one": "{{enrolled}} de {{count}} vaga",
       "seats_other": "{{enrolled}} de {{count}} vagas"
     },
@@ -138,17 +137,45 @@
       "seeAll_one": "Ver o aluno matriculado",
       "seeAll_other": "Ver todos os {{count}}"
     },
-    "course": {
-      "title": "Curso de origem",
-      "open": "Abrir curso",
-      "name": "Curso",
-      "lessonPlanCount": "Planos de aula"
-    },
     "lessons": {
       "title": "Aulas da turma"
     },
     "members": {
       "title": "Membros alocados"
     }
+  },
+  "courseOrigin": {
+    "title": "Curso de origem",
+    "openCourse": "Abrir curso",
+    "openCourseLabel": "Abrir curso {{name}}",
+    "archivedCourse": "Arquivado",
+    "fields": {
+      "course": "Curso",
+      "prerequisites": "Pré-requisitos",
+      "lessonPlans": "Planos de aula",
+      "otherClasses": "Outras turmas"
+    },
+    "noPrerequisites": "Nenhum",
+    "lessonPlanCount_zero": "Nenhum plano de aula",
+    "lessonPlanCount_one": "{{count}} plano de aula",
+    "lessonPlanCount_other": "{{count}} planos de aula",
+    "otherClasses_zero": "Nenhuma",
+    "otherClasses_one": "{{count}} turma",
+    "otherClasses_other": "{{count}} turmas",
+    "loading": "Carregando os dados do curso…",
+    "error": "Não foi possível carregar os dados do curso.",
+    "unavailable": "Os dados deste curso não estão disponíveis."
+  },
+  "editions": {
+    "2024": "2024",
+    "2026-1": "2026.1",
+    "2026-2": "2026.2",
+    "2025-2": "2025.2",
+    "2025-1": "2025.1"
+  },
+  "levels": {
+    "basic": "Básico",
+    "intermediate": "Intermediário",
+    "advanced": "Avançado"
   }
 }

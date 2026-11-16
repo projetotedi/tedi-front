@@ -6,14 +6,14 @@ import { useGetClass } from "@api/generated/classes/classes";
 import type { ClassDetailDto } from "@api/generated/model";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
-import { ClassCourseCard } from "../components/ClassCourseCard";
 import { ClassDataCard } from "../components/ClassDataCard";
 import { ClassDetailHeader } from "../components/ClassDetailHeader";
 import { ClassSummaryCard } from "../components/ClassSummaryCard";
 import { ComingSoonCard } from "../components/ComingSoonCard";
+import { CourseOriginCard } from "../components/CourseOriginCard";
 import { EnrolledStudentsCard } from "../components/EnrolledStudentsCard";
 import { isClassId, isClassNotFound } from "../lib/class-detail";
-import { LINK_CLASSES } from "../lib/link-classes";
+import { LINK_CLASSES } from "../components/link-classes";
 
 /**
  * The two columns start at 90rem (1440px, the width of the Figma), as in the screen of a course. The
@@ -23,7 +23,7 @@ import { LINK_CLASSES } from "../lib/link-classes";
  */
 const TWO_COLUMNS = "grid grid-cols-1 gap-5 min-[90rem]:grid-cols-[minmax(0,1fr)_27.5rem]";
 
-function LoadingPlaceholder({ label }: { label: string }): ReactElement {
+function ClassDetailSkeleton({ label }: { label: string }): ReactElement {
   return (
     <div role="status" className="flex flex-col gap-5">
       <p className="sr-only">{label}</p>
@@ -83,7 +83,10 @@ function ClassDetailView({ classDetail }: { classDetail: ClassDetailDto }): Reac
             summary={classDetail.summary}
           />
           <ComingSoonCard title={t("detail.members.title")} />
-          <ClassCourseCard course={classDetail.course} />
+          <CourseOriginCard
+            isClassArchived={classDetail.archivedAt !== null}
+            course={classDetail.course}
+          />
         </div>
       </div>
     </div>
@@ -95,7 +98,7 @@ function ClassDetail({ classId }: { classId: string }): ReactElement {
   const classQuery = useGetClass(classId);
   const classDetail = classQuery.data;
 
-  if (classQuery.isPending) return <LoadingPlaceholder label={t("detail.loading")} />;
+  if (classQuery.isPending) return <ClassDetailSkeleton label={t("detail.loading")} />;
 
   if (classDetail === undefined) {
     if (isClassNotFound(classQuery.error)) return <ClassNotFound />;
@@ -119,8 +122,10 @@ function ClassDetail({ classId }: { classId: string }): ReactElement {
 
 /**
  * The screen of a class (RF-029, RF-034, RF-035). The page asks the API for one thing, `getClass`,
- * and everything on it comes from that answer: the header (name and tags), the data, the summary,
- * the first students enrolled and the course of origin. "Aulas da turma" and "Membros alocados"
+ * and everything on it comes from that answer: the header (name and tags), the data, the summary
+ * and the first students enrolled. "Curso de origem" (`CourseOriginCard`, GUS-134) starts from the
+ * course of that answer and asks for the prerequisites and the other classes of the course by
+ * itself, so a failure there shows only in that card. "Aulas da turma" and "Membros alocados"
  * have no data yet and only keep their place with "Em breve". The title of the page is on the
  * topbar (`handle.title` of the route), so there is no `<h1>`.
  *

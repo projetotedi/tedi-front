@@ -218,10 +218,6 @@
         "objective": "Objetivo"
       }
     },
-    "classes": {
-      "title": "Turmas deste curso",
-      "unavailable": "As turmas deste curso vão aparecer aqui em breve."
-    },
     "workload": {
       "title": "Carga horária prevista",
       "total": "Total previsto",
@@ -292,6 +288,31 @@
         "courseNotFound": "Este curso não existe mais. Nada foi salvo.",
         "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
         "unknown": "Não foi possível salvar a sequência. Tente novamente."
+      }
+    },
+    "duplicate": {
+      "action": "Duplicar curso",
+      "title": "Duplicar curso",
+      "nameLabel": "Nome do novo curso",
+      "suggestedName": "{{name}} (cópia)",
+      "copiedTitle": "O que é copiado",
+      "copiedDescription_zero": "Este curso ainda não tem planos de aula na sequência. Descrição, objetivo e categoria são copiados. Pré-requisitos e turmas não são copiados.",
+      "copiedDescription_one": "O {{count}} plano de aula e a ordem dele. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+      "copiedDescription_other": "Os {{count}} planos de aula e a ordem deles. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+      "back": "Voltar",
+      "submit": "Duplicar curso",
+      "submitting": "Duplicando…",
+      "success": "Curso duplicado",
+      "fieldErrors": {
+        "nameRequired": "Informe o nome do novo curso.",
+        "nameTooLong": "O nome pode ter no máximo {{nameMax}} caracteres.",
+        "nameTaken": "Já existe um curso com este nome. Escolha outro nome.",
+        "nameInvalid": "Revise o nome do novo curso."
+      },
+      "errors": {
+        "courseNotFound": "Não foi possível duplicar: este curso não existe mais.",
+        "network": "Não foi possível duplicar o curso. Verifique sua conexão e tente novamente.",
+        "unknown": "Não foi possível duplicar o curso. Tente novamente."
       }
     }
   },

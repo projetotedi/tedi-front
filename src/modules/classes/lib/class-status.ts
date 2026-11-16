@@ -1,14 +1,24 @@
 import { ClassStatus } from "@api/generated/model";
 import type { BadgeProps } from "@shared/ui";
 
-/**
- * The tone of the tag of each status of a class. The text always says the status, the color only
- * reinforces it. An archived class keeps its status (RF-034, RN-27), so archiving has a tag of its
- * own and does not change this one.
- */
-export const CLASS_STATUS_TONE: Record<ClassStatus, BadgeProps["tone"]> = {
-  [ClassStatus.planned]: "info",
-  [ClassStatus.in_progress]: "success",
-  [ClassStatus.completed]: "neutral",
-  [ClassStatus.cancelled]: "danger",
-};
+/** The key of the label of each status in the `classes` namespace (`planned`, `inProgress`...). */
+export const CLASS_STATUS_LABEL_KEYS = {
+  [ClassStatus.planned]: "planned",
+  [ClassStatus.in_progress]: "inProgress",
+  [ClassStatus.completed]: "completed",
+  [ClassStatus.cancelled]: "cancelled",
+} as const satisfies Record<ClassStatus, string>;
+
+/** The tone of the tag of each status, the same on every screen that shows one. */
+export function classStatusTone(status: ClassStatus): BadgeProps["tone"] {
+  switch (status) {
+    case ClassStatus.planned:
+      return "warning";
+    case ClassStatus.in_progress:
+      return "info";
+    case ClassStatus.completed:
+      return "neutral";
+    case ClassStatus.cancelled:
+      return "danger";
+  }
+}

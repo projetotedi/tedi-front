@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 import { ClassStatus, CourseCategory } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { ClassCourseCard } from "../components/ClassCourseCard";
 import { ClassDataCard } from "../components/ClassDataCard";
 import { ClassDetailHeader } from "../components/ClassDetailHeader";
 import { ClassSummaryCard } from "../components/ClassSummaryCard";
 import { ComingSoonCard } from "../components/ComingSoonCard";
 import { EnrolledStudentsCard } from "../components/EnrolledStudentsCard";
+import { InheritedLevelBadge } from "../components/InheritedLevelBadge";
 import {
   buildArchivedClassDetail,
   buildClassCourse,
@@ -18,7 +18,6 @@ import {
   buildEnrollment,
   buildMeUser,
   CLASS_ID,
-  COURSE_ID,
   STUDENT_NAMES,
 } from "./handlers";
 import { renderWithProviders, setupClassesTestServer } from "./test-utils";
@@ -45,6 +44,18 @@ const labelsOf = (scope: HTMLElement) =>
     .map((label) => label.textContent);
 
 const tags = () => screen.getAllByRole("listitem").map((tag) => tag.textContent);
+
+describe("InheritedLevelBadge", () => {
+  it.each([
+    [CourseCategory.basic, "Nível básico — herdado do curso"],
+    [CourseCategory.intermediate, "Nível intermediário — herdado do curso"],
+    [CourseCategory.advanced, "Nível avançado — herdado do curso"],
+  ])("says the %s level comes from the course", async (category, text) => {
+    await renderWithProviders(<InheritedLevelBadge category={category} />);
+
+    expect(screen.getByText(text)).toBeInTheDocument();
+  });
+});
 
 describe("ClassDetailHeader", () => {
   it("shows the name as a heading and the tags: status, edition, inherited level and seats", async () => {
@@ -395,54 +406,6 @@ describe("EnrolledStudentsCard", () => {
     expect(within(students).getByText("Nenhum aluno matriculado ainda.")).toBeInTheDocument();
     expect(within(students).queryByRole("table")).not.toBeInTheDocument();
     expect(within(students).queryByRole("link")).not.toBeInTheDocument();
-  });
-});
-
-describe("ClassCourseCard", () => {
-  it("shows the course and how many lesson plans it has", async () => {
-    await renderWithProviders(<ClassCourseCard course={buildClassCourse()} />);
-
-    const course = card("Curso de origem");
-    expect(labelsOf(course)).toEqual(["Curso", "Planos de aula"]);
-    expect(valueOf(course, "Curso")).toHaveTextContent(/^Informática Básica$/);
-    expect(valueOf(course, "Planos de aula")).toHaveTextContent(/^4$/);
-  });
-
-  it("takes zero lesson plans for a value, not for a missing one", async () => {
-    await renderWithProviders(
-      <ClassCourseCard course={buildClassCourse({ lessonPlanCount: 0 })} />,
-    );
-
-    expect(valueOf(card("Curso de origem"), "Planos de aula")).toHaveTextContent(/^0$/);
-    expect(screen.queryByText("—")).not.toBeInTheDocument();
-  });
-
-  it.each([
-    ["member", Role.member],
-    ["director", Role.director],
-    ["coordinator", Role.coordinator],
-  ])(
-    "links Abrir curso to the course for the %s, without the arrow in its name",
-    async (_label, role) => {
-      await renderWithProviders(<ClassCourseCard course={buildClassCourse()} />, {
-        user: buildMeUser(role),
-      });
-
-      const link = within(card("Curso de origem")).getByRole("link", { name: "Abrir curso" });
-      expect(link).toHaveAttribute("href", `/courses/${COURSE_ID}`);
-      expect(link).toHaveTextContent(/^Abrir curso\s›$/);
-    },
-  );
-
-  it("has no link for who cannot see the catalog, since the course screen would turn them away", async () => {
-    const user = buildMeUser(Role.member);
-
-    await renderWithProviders(<ClassCourseCard course={buildClassCourse()} />, {
-      user: { ...user, permissions: { ...user.permissions, "catalog.view": "none" } },
-    });
-
-    expect(screen.getByRole("heading", { name: "Curso de origem" })).toBeInTheDocument();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
   });
 });
 

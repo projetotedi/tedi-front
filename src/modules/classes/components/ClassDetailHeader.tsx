@@ -4,7 +4,8 @@ import { useTranslation } from "react-i18next";
 import type { ClassDetailDto } from "@api/generated/model";
 import { Badge, Card } from "@shared/ui";
 
-import { CLASS_STATUS_TONE } from "../lib/class-status";
+import { CLASS_STATUS_LABEL_KEYS, classStatusTone } from "../lib/class-status";
+import { InheritedLevelBadge } from "./InheritedLevelBadge";
 
 export interface ClassDetailHeaderProps {
   classDetail: ClassDetailDto;
@@ -35,7 +36,7 @@ export function ClassDetailHeader({ classDetail }: ClassDetailHeaderProps): Reac
         </h2>
         <ul className="flex flex-wrap gap-2">
           <li>
-            <Badge tone={CLASS_STATUS_TONE[status]}>{t(`detail.status.${status}`)}</Badge>
+            <Badge tone={classStatusTone(status)}>{t(CLASS_STATUS_LABEL_KEYS[status])}</Badge>
           </li>
           {archivedAt === null ? null : (
             <li>
@@ -46,7 +47,7 @@ export function ClassDetailHeader({ classDetail }: ClassDetailHeaderProps): Reac
             <Badge tone="neutral">{t("detail.header.edition", { name: edition.name })}</Badge>
           </li>
           <li>
-            <Badge tone="highlight">{t(`detail.header.inheritedLevel.${course.category}`)}</Badge>
+            <InheritedLevelBadge category={course.category} />
           </li>
           <li>
             <Badge tone="warning">

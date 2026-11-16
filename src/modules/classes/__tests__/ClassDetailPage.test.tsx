@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { type ClassDetailDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
@@ -17,11 +17,18 @@ import {
   CLASS_NOT_FOUND_ERROR,
   COURSE_ID,
   getClassHandler,
+  getCourseHandler,
+  listCourseClassesHandler,
   STUDENT_NAMES,
 } from "./handlers";
 import { createDeferred, renderRoutes, server, setupClassesTestServer } from "./test-utils";
 
 setupClassesTestServer();
+
+// "Curso de origem" asks for the course and the total of its classes by itself (GUS-134).
+beforeEach(() => {
+  server.use(getCourseHandler(), listCourseClassesHandler());
+});
 
 const CLASS_ROUTE = `/classes/${CLASS_ID}`;
 
@@ -87,10 +94,10 @@ describe("ClassDetailPage", () => {
 
       deferred.resolve();
       expect(await screen.findByRole("heading", { name: CLASS_NAME })).toBeInTheDocument();
-      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+      expect(screen.queryByText("Carregando a turma…")).not.toBeInTheDocument();
     });
 
-    it("asks GET /classes/:id once, by the id of the route, and nothing else", async () => {
+    it("asks GET /classes/:id once, by the id of the route, and only the course card asks for more", async () => {
       const onGet = vi.fn();
       const requests: string[] = [];
       server.events.on("request:start", ({ request }) => {
@@ -99,10 +106,13 @@ describe("ClassDetailPage", () => {
 
       try {
         await renderPage({ onGet });
+        await within(card("Curso de origem")).findByText("6 planos de aula");
 
         expect(onGet).toHaveBeenCalledExactlyOnceWith({ id: CLASS_ID });
-        expect(requests.filter((request) => !request.endsWith("/auth/me"))).toEqual([
+        expect(requests.filter((request) => !request.endsWith("/auth/me")).sort()).toEqual([
           `GET /classes/${CLASS_ID}`,
+          `GET /courses/${COURSE_ID}`,
+          `GET /courses/${COURSE_ID}/classes`,
         ]);
       } finally {
         server.events.removeAllListeners("request:start");
@@ -223,16 +233,33 @@ describe("ClassDetailPage", () => {
       expect(screen.queryByRole("link", { name: /Ver todos/ })).not.toBeInTheDocument();
     });
 
-    it("links to the course of origin and shows its name and how many lesson plans it has", async () => {
+    it("shows the course of origin of the class, with its level, prerequisites, lesson plans and other classes", async () => {
       await renderPage();
 
       const course = card("Curso de origem");
-      expect(valueOf(course, "Curso")).toHaveTextContent(/^Informática Básica$/);
-      expect(valueOf(course, "Planos de aula")).toHaveTextContent(/^4$/);
-      expect(within(course).getByRole("link", { name: "Abrir curso" })).toHaveAttribute(
-        "href",
-        `/courses/${COURSE_ID}`,
+      expect(await within(course).findByText("6 planos de aula")).toBeInTheDocument();
+      expect(valueOf(course, "Curso")).toHaveTextContent(/^Informática BásicaBásico$/);
+      expect(valueOf(course, "Pré-requisitos")).toHaveTextContent(/^Nenhum$/);
+      // The total of the course counts this class, which is active: the other classes are none.
+      expect(valueOf(course, "Outras turmas")).toHaveTextContent(/^Nenhuma$/);
+      expect(
+        within(course).getByRole("link", { name: "Abrir curso Informática Básica" }),
+      ).toHaveAttribute("href", `/courses/${COURSE_ID}`);
+    });
+
+    it("keeps the rest of the class on the screen when the course card cannot load", async () => {
+      server.use(getCourseHandler({ error: { statusCode: 500, error: "INTERNAL_SERVER_ERROR" } }));
+      await renderPage();
+
+      const course = card("Curso de origem");
+      expect(await within(course).findByRole("alert")).toHaveTextContent(
+        "Não foi possível carregar os dados do curso.",
       );
+      expect(within(course).getByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
+      expect(valueOf(course, "Curso")).toHaveTextContent(/^Informática BásicaBásico$/);
+      expect(screen.getAllByRole("alert")).toHaveLength(1);
+      expect(card("Dados da turma")).toBeInTheDocument();
+      expect(card("Alunos matriculados")).toBeInTheDocument();
     });
 
     it("keeps the place of Aulas da turma and Membros alocados, which say Em breve", async () => {
@@ -258,6 +285,7 @@ describe("ClassDetailPage", () => {
 
     it("keeps the cards of the side column to labels and short values", async () => {
       await renderPage();
+      await within(card("Curso de origem")).findByText("6 planos de aula");
 
       for (const title of ["Resumo", "Curso de origem"]) {
         const side = card(title);
@@ -307,9 +335,7 @@ describe("ClassDetailPage", () => {
         }),
       });
 
-      expect(valueOf(card("Curso de origem"), "Planos de aula")).toHaveTextContent(/^0$/);
       expect(valueOf(card("Resumo"), "Carga horária")).toHaveTextContent(/^0h$/);
-      expect(within(card("Curso de origem")).queryByText("—")).not.toBeInTheDocument();
     });
   });
 

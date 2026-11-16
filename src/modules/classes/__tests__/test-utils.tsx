@@ -19,9 +19,10 @@ export const server = setupServer();
 const TEST_TIME_ZONE = "America/Sao_Paulo";
 
 /**
- * Starts MSW for the file, with an unhandled request being an error. It also pins the time zone:
- * the screen shows an instant (`createdAt`, the day of an enrollment) in the time zone of the
- * browser, so without this the expected text would depend on the machine that runs the suite.
+ * Starts the MSW server of the file. A request nobody answered fails the test instead of passing.
+ * It also pins the time zone: the screen shows an instant (`createdAt`, the day of an enrollment)
+ * in the time zone of the browser, so without this the expected text would depend on the machine
+ * that runs the suite.
  */
 export function setupClassesTestServer(): void {
   let originalTimeZone: string | undefined;
@@ -44,14 +45,9 @@ interface RenderOptions {
   user?: MeResponseDto | null;
 }
 
-/**
- * Renders `routes` under the session provider, at `route`, with the person `user` logged in
- * (`GET /auth/me` answered by MSW). It waits for the session to settle, so the page under test
- * starts with the permissions of the user already known.
- */
-export async function renderRoutes(
+async function renderRouter(
   routes: RouteObject[],
-  { route = "/", user = buildMeUser() }: RenderOptions = {},
+  { route = "/", user = buildMeUser() }: RenderOptions,
 ) {
   await i18n.changeLanguage("pt-BR");
   server.use(meHandler({ user }));
@@ -59,9 +55,7 @@ export async function renderRoutes(
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  const router = createMemoryRouter([{ element: <AuthProvider />, children: routes }], {
-    initialEntries: [route],
-  });
+  const router = createMemoryRouter(routes, { initialEntries: [route] });
 
   const view = render(
     <QueryClientProvider client={queryClient}>
@@ -69,6 +63,8 @@ export async function renderRoutes(
     </QueryClientProvider>,
   );
 
+  // The session is what `useCan` reads: wait until it is known, so a test never looks at the
+  // moment before the permissions arrive.
   await waitFor(() => {
     const session = queryClient.getQueryState(getMeQueryKey());
     expect(session?.status).toBeDefined();
@@ -78,9 +74,14 @@ export async function renderRoutes(
   return { ...view, router, queryClient };
 }
 
-/** For a component that needs the router and the session (`Link`, `useCan`), with no route of its own. */
+/** Renders `ui` on any route, under the session provider, with a query client that does not retry. */
 export function renderWithProviders(ui: ReactElement, options: RenderOptions = {}) {
-  return renderRoutes([{ path: "*", element: ui }], options);
+  return renderRouter([{ path: "*", element: <AuthProvider>{ui}</AuthProvider> }], options);
+}
+
+/** Renders the routes of a module under the session provider, as the app does. */
+export function renderRoutes(routes: RouteObject[], options: RenderOptions = {}) {
+  return renderRouter([{ element: <AuthProvider />, children: routes }], options);
 }
 
 export function createDeferred() {
@@ -89,4 +90,28 @@ export function createDeferred() {
     resolve = done;
   });
   return { promise, resolve };
+}
+
+/**
+ * Fails if the screen asked the API for anything besides the session, with no waiting.
+ *
+ * A query that is mounted turned on is already `fetching` when the render ends, and later holds a
+ * result (data or error). A query that is turned off (`enabled: false`) sits in the cache idle and
+ * never runs. So reading the cache is a check that does not depend on how long a request that was
+ * never made would have taken to show up, which a pause and a spy on the handler cannot say.
+ */
+export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
+  const [sessionKey] = getMeQueryKey();
+  const queries = queryClient
+    .getQueryCache()
+    .findAll()
+    .filter((query) => query.queryKey[0] !== sessionKey);
+
+  for (const query of queries) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
 }
