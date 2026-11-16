@@ -79,7 +79,7 @@ export const STUDENT_NAMES = [
 /**
  * An item of `enrollmentsPreview`: the student number `index` (from 0) of `STUDENT_NAMES`,
  * enrolled one day after the one before. The dates are at noon UTC, so they stay on the same day
- * in any time zone of the browser.
+ * in Brazil, the time zone the suite runs in (see `setupClassesTestServer`).
  */
 export function buildEnrollment(
   index: number,
@@ -140,8 +140,8 @@ export function buildClassSummary(
  * five students and no lessons or attendance yet. `enrollmentsTotal` and `summary` follow the
  * number of enrolled students (`enrollmentsTotal`, else `summary.enrolledCount`, else 12) and the
  * capacity, as the API derives them, so a test that changes one does not repeat the rest; an
- * override still wins. The dates are at noon UTC, so they stay on the same day in any time zone of
- * the browser.
+ * override still wins. The dates are at noon UTC, so they stay on the same day in Brazil, the time
+ * zone the suite runs in (see `setupClassesTestServer`).
  */
 export function buildClassDetail(overrides: Partial<ClassDetailDto> = {}): ClassDetailDto {
   const capacity = overrides.capacity ?? overrides.summary?.capacity ?? 15;

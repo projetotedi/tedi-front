@@ -15,10 +15,28 @@ import { buildMeUser, meHandler } from "./handlers";
 
 export const server = setupServer();
 
+/** The time zone of the people who use the system. The suite runs in it, whatever the machine. */
+const TEST_TIME_ZONE = "America/Sao_Paulo";
+
+/**
+ * Starts MSW for the file, with an unhandled request being an error. It also pins the time zone:
+ * the screen shows an instant (`createdAt`, the day of an enrollment) in the time zone of the
+ * browser, so without this the expected text would depend on the machine that runs the suite.
+ */
 export function setupClassesTestServer(): void {
-  beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
+  let originalTimeZone: string | undefined;
+
+  beforeAll(() => {
+    originalTimeZone = process.env.TZ;
+    process.env.TZ = TEST_TIME_ZONE;
+    server.listen({ onUnhandledRequest: "error" });
+  });
   afterEach(() => server.resetHandlers());
-  afterAll(() => server.close());
+  afterAll(() => {
+    server.close();
+    if (originalTimeZone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimeZone;
+  });
 }
 
 interface RenderOptions {
