@@ -72,5 +72,85 @@
     "computer": "Informática Básica",
     "social": "Redes Sociais com Segurança"
   },
-  "levels": { "beginner": "Iniciante", "intermediate": "Intermediário", "advanced": "Avançado" }
+  "levels": { "beginner": "Iniciante", "intermediate": "Intermediário", "advanced": "Avançado" },
+  "detail": {
+    "routeTitle": "Turma",
+    "loading": "Carregando a turma…",
+    "loadError": "Não foi possível carregar a turma. Tente novamente.",
+    "retry": "Tentar de novo",
+    "notFoundTitle": "Turma não encontrada",
+    "notFoundDescription": "Esta turma não existe ou foi removida. Volte para a lista e escolha outra.",
+    "backToList": "Voltar para turmas",
+    "archived": "Arquivada",
+    "comingSoon": "Em breve",
+    "status": {
+      "planned": "Planejada",
+      "in_progress": "Em andamento",
+      "completed": "Encerrada",
+      "cancelled": "Cancelada"
+    },
+    "category": {
+      "basic": "Básico",
+      "intermediate": "Intermediário",
+      "advanced": "Avançado"
+    },
+    "header": {
+      "edition": "Edição {{name}}",
+      "inheritedLevel": {
+        "basic": "Nível básico — herdado do curso",
+        "intermediate": "Nível intermediário — herdado do curso",
+        "advanced": "Nível avançado — herdado do curso"
+      },
+      "seats_one": "{{enrolled}} de {{count}} vaga",
+      "seats_other": "{{enrolled}} de {{count}} vagas"
+    },
+    "data": {
+      "title": "Dados da turma",
+      "fields": {
+        "code": "Código",
+        "course": "Curso",
+        "level": "Nível (do curso)",
+        "edition": "Edição",
+        "startDate": "Início",
+        "endDate": "Término",
+        "location": "Local",
+        "status": "Status",
+        "capacity": "Vagas totais",
+        "enrolled": "Matriculados",
+        "createdAt": "Criada em"
+      },
+      "activeCount_zero": "0 ativos",
+      "activeCount_one": "{{count}} ativo",
+      "activeCount_other": "{{count}} ativos"
+    },
+    "summary": {
+      "title": "Resumo",
+      "workload": "Carga horária",
+      "lessonsDone": "Aulas realizadas",
+      "students": "Alunos",
+      "averageAttendance": "Frequência média",
+      "outOf": "{{done}} de {{total}}"
+    },
+    "enrollments": {
+      "title": "Alunos matriculados",
+      "caption": "Primeiros alunos matriculados na turma",
+      "name": "Nome",
+      "enrolledAt": "Matriculado em",
+      "empty": "Nenhum aluno matriculado ainda.",
+      "seeAll_one": "Ver o aluno matriculado",
+      "seeAll_other": "Ver todos os {{count}}"
+    },
+    "course": {
+      "title": "Curso de origem",
+      "open": "Abrir curso",
+      "name": "Curso",
+      "lessonPlanCount": "Planos de aula"
+    },
+    "lessons": {
+      "title": "Aulas da turma"
+    },
+    "members": {
+      "title": "Membros alocados"
+    }
+  }
 }

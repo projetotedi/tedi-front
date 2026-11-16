@@ -72,5 +72,85 @@
     "computer": "Basic computing",
     "social": "Social media safety"
   },
-  "levels": { "beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced" }
+  "levels": { "beginner": "Beginner", "intermediate": "Intermediate", "advanced": "Advanced" },
+  "detail": {
+    "routeTitle": "Class",
+    "loading": "Loading the class…",
+    "loadError": "Could not load the class. Try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Class not found",
+    "notFoundDescription": "This class does not exist or was removed. Go back to the list and pick another.",
+    "backToList": "Back to classes",
+    "archived": "Archived",
+    "comingSoon": "Coming soon",
+    "status": {
+      "planned": "Planned",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "category": {
+      "basic": "Basic",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "header": {
+      "edition": "Edition {{name}}",
+      "inheritedLevel": {
+        "basic": "Basic level — inherited from the course",
+        "intermediate": "Intermediate level — inherited from the course",
+        "advanced": "Advanced level — inherited from the course"
+      },
+      "seats_one": "{{enrolled}} of {{count}} seat",
+      "seats_other": "{{enrolled}} of {{count}} seats"
+    },
+    "data": {
+      "title": "Class data",
+      "fields": {
+        "code": "Code",
+        "course": "Course",
+        "level": "Level (of the course)",
+        "edition": "Edition",
+        "startDate": "Start",
+        "endDate": "End",
+        "location": "Location",
+        "status": "Status",
+        "capacity": "Total seats",
+        "enrolled": "Enrolled",
+        "createdAt": "Created on"
+      },
+      "activeCount_zero": "0 active",
+      "activeCount_one": "{{count}} active",
+      "activeCount_other": "{{count}} active"
+    },
+    "summary": {
+      "title": "Summary",
+      "workload": "Workload",
+      "lessonsDone": "Lessons held",
+      "students": "Students",
+      "averageAttendance": "Average attendance",
+      "outOf": "{{done}} of {{total}}"
+    },
+    "enrollments": {
+      "title": "Enrolled students",
+      "caption": "First students enrolled in the class",
+      "name": "Name",
+      "enrolledAt": "Enrolled on",
+      "empty": "No student enrolled yet.",
+      "seeAll_one": "See the enrolled student",
+      "seeAll_other": "See all {{count}}"
+    },
+    "course": {
+      "title": "Source course",
+      "open": "Open course",
+      "name": "Course",
+      "lessonPlanCount": "Lesson plans"
+    },
+    "lessons": {
+      "title": "Class lessons"
+    },
+    "members": {
+      "title": "Allocated members"
+    }
+  }
 }
