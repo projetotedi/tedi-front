@@ -14,7 +14,7 @@ import {
   generateClassLessonsHandler,
   previewClassLessonsHandler,
   type ClassBodyCall,
-} from "./handlers";
+} from "./generate-handlers";
 import { renderWithProviders, server, setupLessonsTestServer } from "./test-utils";
 
 setupLessonsTestServer();

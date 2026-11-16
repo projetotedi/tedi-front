@@ -25,3 +25,15 @@ export function lessonStatusTone(status: LessonStatus): BadgeProps["tone"] {
       return "danger";
   }
 }
+
+/**
+ * The statuses the edit form offers. `cancelled` is not one of them: the API refuses it on
+ * `updateLesson` (400) because cancelling records a reason, and that is `cancelLesson`.
+ */
+export const EDITABLE_LESSON_STATUSES = [
+  LessonStatus.planned,
+  LessonStatus.confirmed,
+  LessonStatus.done,
+] as const;
+
+export type EditableLessonStatus = (typeof EDITABLE_LESSON_STATUSES)[number];

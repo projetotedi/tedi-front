@@ -12,7 +12,7 @@ import {
   LESSONS_ALREADY_GENERATED_ERROR,
   previewClassLessonsHandler,
   type ClassBodyCall,
-} from "./handlers";
+} from "./generate-handlers";
 import { createDeferred, server, setupLessonsTestServer } from "./test-utils";
 
 setupLessonsTestServer();

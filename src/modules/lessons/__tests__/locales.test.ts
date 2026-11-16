@@ -28,4 +28,17 @@ describe("lessons locales", () => {
       expect(empty).toEqual([]);
     }
   });
+
+  it("uses the same interpolation variables in both languages", () => {
+    const variables = (locale: object, key: string): string[] => {
+      const value = key
+        .split(".")
+        .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], locale);
+      return [...String(value).matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort();
+    };
+
+    for (const key of flattenKeys(ptBR)) {
+      expect(variables(enUS, key), key).toEqual(variables(ptBR, key));
+    }
+  });
 });

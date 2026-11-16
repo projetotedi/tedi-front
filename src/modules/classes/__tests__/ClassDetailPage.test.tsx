@@ -303,10 +303,16 @@ describe("ClassDetailPage", () => {
       expect(header().querySelectorAll("button")).toHaveLength(1);
     });
 
-    it("has no Editar turma nor + Nova aula yet: only what the lessons slot gives", async () => {
+    it("does not ask the slot for the lesson actions of an archived class", async () => {
+      await renderPage({ classDetail: buildArchivedClassDetail() });
+
+      expect(screen.queryByText(/Ações de aulas/)).not.toBeInTheDocument();
+    });
+
+    it("has no Editar turma yet: only what the lessons slot gives", async () => {
       await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Editar turma", "+ Nova aula"]) {
+      for (const name of ["Editar turma"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }

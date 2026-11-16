@@ -27,10 +27,10 @@ export interface ClassDetailHeaderProps {
  * GUS-157), Editar turma (`secondary`, GUS-101, with the form of GUS-133) and + Nova aula
  * (`primary`, GUS-152). Each one is shown only with `useCan`: `lessons.manage`, the permission of
  * the endpoint, for Gerar aulas and + Nova aula, and `classes.manage` for Editar turma. They go in
- * `actions`, one container, in that order, so Gerar aulas stays before Editar turma, which comes
- * after it inside the same container. Only Gerar aulas exists so far: the form of the class is
- * still the example one of the list (GUS-133), and the lessons module has no screen for + Nova
- * aula yet.
+ * `actions`, one container, in that order. Gerar aulas and + Nova aula exist and come from the slot
+ * of the screen (they belong to the `lessons` module); Editar turma waits for its own task (the form
+ * of the class is still the example one of the list). The container of the actions has no size
+ * when what is in it draws nothing (who cannot manage lessons).
  */
 export function ClassDetailHeader({ classDetail, actions }: ClassDetailHeaderProps): ReactElement {
   const { t } = useTranslation("classes");
@@ -68,7 +68,7 @@ export function ClassDetailHeader({ classDetail, actions }: ClassDetailHeaderPro
             </li>
           </ul>
         </div>
-        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap gap-3 empty:hidden">{actions}</div> : null}
       </div>
     </Card>
   );

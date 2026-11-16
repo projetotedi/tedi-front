@@ -1,5 +1,107 @@
 {
   "close": "Fechar",
+  "status": {
+    "planned": "Planejada",
+    "confirmed": "Confirmada",
+    "done": "Realizada",
+    "cancelled": "Cancelada"
+  },
+  "actions": {
+    "new": "Nova aula",
+    "edit": "Editar aula",
+    "editFor": "Editar a aula {{title}}",
+    "cancel": "Cancelar aula",
+    "cancelFor": "Cancelar a aula {{title}}",
+    "reschedule": "Remarcar aula"
+  },
+  "form": {
+    "newTitle": "Nova aula",
+    "editTitle": "Editar aula",
+    "loading": "Carregando a aula…",
+    "class": "Turma",
+    "lessonPlan": "Plano de aula (origem)",
+    "noLessonPlan": "Sem plano (aula avulsa)",
+    "title": "Título da aula",
+    "objective": "Objetivo",
+    "date": "Data da aula",
+    "location": "Local",
+    "startTime": "Hora de início",
+    "endTime": "Hora de término",
+    "expectedStudents": "Alunos esperados",
+    "expectedMonitors": "Monitores esperados",
+    "subject": "Assunto da aula",
+    "status": "Status",
+    "postNotes": "Observações pós-aula",
+    "periodHint": "Período da turma: {{start}} a {{end}}",
+    "scheduleLockedHint": "Para mudar data e horário, use Remarcar aula.",
+    "originLockedHint": "O plano de origem não muda depois que a aula é criada.",
+    "lessonPlansLoading": "Carregando os planos do curso…",
+    "lessonPlansError": "Não foi possível carregar os planos do curso. A aula ainda pode ser criada sem plano.",
+    "objectiveUnavailable": "Não foi possível trazer o objetivo do plano. Preencha à mão, se quiser.",
+    "cancel": "Cancelar",
+    "save": "Salvar aula",
+    "saving": "Salvando…"
+  },
+  "cancel": {
+    "title": "Cancelar aula",
+    "warningTitle": "Cancelar a aula estorna as horas",
+    "warningDescription": "As horas já lançadas para os membros presentes são estornadas. A aula continua no calendário, marcada como cancelada.",
+    "reason": "Motivo do cancelamento",
+    "reasonHint": "Obrigatório. Aparece na ficha da aula e no calendário da turma.",
+    "back": "Voltar",
+    "submit": "Cancelar aula",
+    "submitting": "Cancelando…"
+  },
+  "reschedule": {
+    "title": "Remarcar aula",
+    "date": "Nova data",
+    "startTime": "Hora de início",
+    "endTime": "Hora de término",
+    "location": "Local",
+    "reason": "Motivo da remarcação",
+    "note": "Observação",
+    "infoTitle": "A data original fica registrada",
+    "infoCurrentDate": "Data atual da aula: {{date}}. Ela passa a ser a data original.",
+    "infoOriginalDate": "Data original: {{date}}. Ela continua registrada, mesmo remarcando de novo.",
+    "back": "Voltar",
+    "submit": "Remarcar aula",
+    "submitting": "Remarcando…"
+  },
+  "toast": {
+    "created": "Aula criada",
+    "updated": "Aula atualizada",
+    "cancelled": "Aula cancelada",
+    "rescheduled": "Aula remarcada. A data original, {{originalDate}}, fica registrada."
+  },
+  "fieldErrors": {
+    "titleRequired": "Informe o título da aula.",
+    "titleTooLong": "O título pode ter no máximo {{titleMax}} caracteres.",
+    "objectiveTooLong": "O objetivo pode ter no máximo {{objectiveMax}} caracteres.",
+    "dateRequired": "Informe a data.",
+    "startTimeRequired": "Informe a hora de início.",
+    "endTimeRequired": "Informe a hora de término.",
+    "invalidTimeRange": "A hora de término precisa ser depois da hora de início.",
+    "outsideClassPeriod": "A data precisa estar dentro do período da turma ({{start}} a {{end}}).",
+    "countInvalid": "Informe um número inteiro de 0 a {{max}}.",
+    "locationTooLong": "O local pode ter no máximo {{locationMax}} caracteres.",
+    "subjectTooLong": "O assunto pode ter no máximo {{subjectMax}} caracteres.",
+    "postNotesTooLong": "As observações podem ter no máximo {{postNotesMax}} caracteres.",
+    "reasonRequired": "Informe o motivo do cancelamento.",
+    "reasonTooLong": "O motivo pode ter no máximo {{reasonMax}} caracteres.",
+    "noteTooLong": "A observação pode ter no máximo {{noteMax}} caracteres.",
+    "lessonPlanUnavailable": "Este plano não pode originar a aula. Escolha outro plano da sequência do curso.",
+    "serverInvalid": "Revise este campo e tente de novo."
+  },
+  "errors": {
+    "lessonCancelled": "Esta aula está cancelada e não pode mais ser alterada.",
+    "classArchived": "A turma está arquivada. As aulas de uma turma arquivada ficam só para leitura.",
+    "classNotFound": "A turma desta aula não foi encontrada.",
+    "lessonNotFound": "Aula não encontrada. Ela pode ter sido removida.",
+    "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+    "unknown": "Não foi possível concluir a ação. Tente novamente.",
+    "loadError": "Não foi possível carregar a aula.",
+    "retry": "Tentar de novo"
+  },
   "retry": "Tentar de novo",
   "weekdays": {
     "monday": "Segunda-feira",
@@ -9,12 +111,6 @@
     "friday": "Sexta-feira",
     "saturday": "Sábado",
     "sunday": "Domingo"
-  },
-  "status": {
-    "planned": "Planejada",
-    "confirmed": "Confirmada",
-    "done": "Realizada",
-    "cancelled": "Cancelada"
   },
   "generate": {
     "action": "Gerar aulas",

@@ -14,7 +14,7 @@ import {
   CLASS_ID,
   listLessonsHandler,
   type ListLessonsCall,
-} from "./handlers";
+} from "./generate-handlers";
 import {
   createDeferred,
   expectNoRequestBesidesSession,

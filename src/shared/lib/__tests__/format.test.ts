@@ -2,6 +2,13 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { formatCalendarDate, formatHours } from "../format";
 
+const ORIGINAL_TZ = process.env.TZ;
+
+afterEach(() => {
+  if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+  else process.env.TZ = ORIGINAL_TZ;
+});
+
 describe("formatHours", () => {
   it("formats whole hours", () => {
     expect(formatHours(120)).toBe("2h");
@@ -45,29 +52,33 @@ describe("formatHours", () => {
 });
 
 describe("formatCalendarDate", () => {
-  const ORIGINAL_TZ = process.env.TZ;
-
-  afterEach(() => {
-    if (ORIGINAL_TZ === undefined) delete process.env.TZ;
-    else process.env.TZ = ORIGINAL_TZ;
+  it("formats a date of the API in the short form of the locale", () => {
+    expect(formatCalendarDate("2026-03-10", "pt-BR")).toBe("10/03/2026");
+    expect(formatCalendarDate("2026-03-10", "en-US")).toBe("3/10/26");
   });
 
-  it("formats a date of the API in the short form of the locale", () => {
-    expect(formatCalendarDate("2026-04-07", "pt-BR")).toBe("07/04/2026");
-    expect(formatCalendarDate("2026-04-07", "en-US")).toBe("4/7/26");
+  it("keeps the zero of the day and of the month", () => {
+    expect(formatCalendarDate("2026-06-07", "pt-BR")).toBe("07/06/2026");
   });
 
   it("keeps the day when the browser is behind UTC, where a date read as UTC would be the day before", () => {
     process.env.TZ = "America/Sao_Paulo";
 
-    expect(formatCalendarDate("2026-04-07", "pt-BR")).toBe("07/04/2026");
+    expect(formatCalendarDate("2026-03-10", "pt-BR")).toBe("10/03/2026");
     expect(formatCalendarDate("2026-01-01", "pt-BR")).toBe("01/01/2026");
+  });
+
+  it("keeps the day when the browser is ahead of UTC too", () => {
+    process.env.TZ = "Pacific/Auckland";
+
+    expect(formatCalendarDate("2026-03-10", "pt-BR")).toBe("10/03/2026");
   });
 
   it.each([
     ["an empty value", ""],
     ["a word", "soon"],
-    ["an instant, which is not a date of the calendar", "2026-04-07T10:00:00.000Z"],
+    ["an instant, which is not a date of the calendar", "2026-03-10T10:00:00.000Z"],
+    ["a month that does not exist", "2026-13-40"],
     ["a day that does not exist", "2026-02-31"],
   ])("returns %s as it came, instead of failing", (_label, value) => {
     expect(formatCalendarDate(value, "pt-BR")).toBe(value);

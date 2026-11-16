@@ -95,7 +95,7 @@ export function renderWithProviders(ui: ReactElement, options: RenderOptions = {
   return renderRouter([{ path: "*", element: <AuthProvider>{ui}</AuthProvider> }], options);
 }
 
-/** Renders routes under the session provider, as the app does. */
+/** Renders the routes of a module under the session provider, as the app does. */
 export function renderRoutes(routes: RouteObject[], options: RenderOptions = {}) {
   return renderRouter([{ element: <AuthProvider />, children: routes }], options);
 }

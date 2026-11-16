@@ -4,6 +4,7 @@ import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@mod
 import { createCatalogRoutes } from "@modules/catalog";
 import { peopleRoutes } from "@modules/people";
 import { createClassesRoutes } from "@modules/classes";
+import { lessonsRoutes } from "@modules/lessons";
 
 import { catalogRouteSlots } from "./catalog-slots";
 import { classesRouteSlots } from "./classes-slots";
@@ -17,10 +18,9 @@ import { prototypeRoutes } from "./prototype-routes";
  * Cada módulo em src/modules/<modulo>/ exporta suas rotas em `routes.tsx`
  * (re-exportadas pelo index.ts do módulo). Aqui elas só são concatenadas, e o item de
  * menu de cada uma entra em `app/menu.ts`. O `catalog` e o `classes` são a exceção: cada um exporta
- * uma fábrica (`createCatalogRoutes`, `createClassesRoutes`) que recebe os slots com o que as
- * telas dele pedem a outros módulos (`catalog-slots.tsx`, hoje o card "Turmas deste curso" do
- * `classes`; `classes-slots.tsx`, hoje as ações de aulas do cabeçalho da turma e o card "Aulas da
- * turma" do `lessons`).
+ * uma fábrica (`createCatalogRoutes`, `createClassesRoutes`) que recebe os slots com o que as telas
+ * dele pedem a outros módulos (`catalog-slots.tsx`, hoje o card "Turmas deste curso" do `classes`;
+ * `classes-slots.tsx`, hoje o "+ Nova aula" do `lessons`).
  *
  * Rotas públicas (login, formulário de pré-inscrição) ficam sob PublicLayout;
  * o restante sob AppLayout, atrás de RequireRole (só exige sessão ativa; cada rota que
@@ -51,6 +51,7 @@ export const router = createBrowserRouter([
               ...peopleRoutes,
               ...createCatalogRoutes(catalogRouteSlots),
               ...createClassesRoutes(classesRouteSlots),
+              ...lessonsRoutes,
               ...prototypeRoutes,
               ...authProtectedRoutes,
               { path: "*", element: <Navigate to="/" replace /> },

@@ -10,7 +10,7 @@ import {
   CLASS_START_DATE,
   FIGMA_BODY,
   PLAN_FIXTURES,
-} from "./handlers";
+} from "./generate-handlers";
 
 describe("summarizeOutsidePeriod", () => {
   it("is empty when every lesson is inside the period", () => {

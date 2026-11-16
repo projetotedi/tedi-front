@@ -1,18 +1,19 @@
 import { http, HttpResponse } from "msw";
 
 import {
+  LessonPlanUsageStatus,
   LessonStatus,
-  Weekday,
-  type ClassLessonPreviewItemResponseDto,
-  type ClassLessonsPreviewResponseDto,
-  type GenerateClassLessonsDto,
-  type GeneratedClassLessonsResponseDto,
-  type LessonListItemResponseDto,
+  type ApiFieldErrorDto,
+  type CancelLessonDto,
+  type CourseLessonPlanItemResponseDto,
+  type CourseLessonPlansResponseDto,
+  type CreateLessonDto,
+  type LessonPlanDetailDto,
   type LessonResponseDto,
-  type ListLessons200,
   type MeResponseDto,
   type PermissionsDto,
-  type SkippedLessonPlanResponseDto,
+  type RescheduleLessonDto,
+  type UpdateLessonDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
@@ -21,9 +22,20 @@ function permissionsWith(granted: Partial<PermissionsDto>): PermissionsDto {
 }
 
 // The matrix of the back (docs/PERMISSIONS.md): everybody sees the lessons, and only the director
-// and the coordination manage them (generate, create, edit, cancel, reschedule).
-const VIEWER_PERMISSIONS = permissionsWith({ "lessons.view": "all", "lessons.manage": "none" });
-const MANAGER_PERMISSIONS = permissionsWith({ "lessons.view": "all", "lessons.manage": "all" });
+// and the coordination manage them.
+const VIEWER_PERMISSIONS = permissionsWith({
+  "catalog.view": "all",
+  "classes.view": "all",
+  "lessons.view": "all",
+  "lessons.manage": "none",
+});
+
+const MANAGER_PERMISSIONS = permissionsWith({
+  "catalog.view": "all",
+  "classes.view": "all",
+  "lessons.view": "all",
+  "lessons.manage": "all",
+});
 
 const PERMISSIONS_BY_ROLE: Record<Role, PermissionsDto> = {
   [Role.member]: VIEWER_PERMISSIONS,
@@ -43,13 +55,10 @@ export function buildMeUser(role: Role = Role.coordinator): MeResponseDto {
   };
 }
 
-/** The same user without `lessons.view`, the permission of the card "Aulas da turma". */
+/** The same user without `lessons.view`, the permission of the routes of the module. */
 export function buildMeUserWithoutLessons(role: Role = Role.coordinator): MeResponseDto {
   const user = buildMeUser(role);
-  return {
-    ...user,
-    permissions: { ...user.permissions, "lessons.view": "none", "lessons.manage": "none" },
-  };
+  return { ...user, permissions: { ...user.permissions, "lessons.view": "none" } };
 }
 
 interface MeHandlerOptions {
@@ -65,314 +74,212 @@ export function meHandler({ user = buildMeUser() }: MeHandlerOptions = {}) {
   });
 }
 
+export const LESSON_ID = "01952ef7-0000-7000-8000-0000000000f1";
+export const OTHER_LESSON_ID = "01952ef7-0000-7000-8000-0000000000f2";
 export const CLASS_ID = "01952ef7-0000-7000-8000-0000000000d1";
+export const COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
+export const EDITION_ID = "01952ef7-0000-7000-8000-0000000000e1";
+export const LESSON_PLAN_ID = "01952ef7-0000-7000-8000-0000000000a1";
+export const LESSON_PLAN_ID_2 = "01952ef7-0000-7000-8000-0000000000a2";
+export const ARCHIVED_LESSON_PLAN_ID = "01952ef7-0000-7000-8000-0000000000a3";
+
+export const CLASS_NAME = "Informática Básica — A";
 export const COURSE_NAME = "Informática Básica";
 
-/** The period of the class of the Figma: it ends on a Friday, so a fourth Tuesday is outside. */
-export const CLASS_START_DATE = "2026-04-07";
-export const CLASS_END_DATE = "2026-04-24";
-
-/** The lesson plans of the sequence of the course, in order. The Figma shows the first four. */
-export const PLAN_FIXTURES = [
-  { id: "01952ef7-0000-7000-8000-0000000000b1", title: "Conhecendo o computador", minutes: 90 },
-  { id: "01952ef7-0000-7000-8000-0000000000b2", title: "Teclado, mouse e janelas", minutes: 90 },
-  { id: "01952ef7-0000-7000-8000-0000000000b3", title: "Navegando na internet", minutes: 60 },
-  { id: "01952ef7-0000-7000-8000-0000000000b4", title: "Segurança e privacidade", minutes: 120 },
-] as const;
-
-type PlanFixture = (typeof PLAN_FIXTURES)[number];
-
-const WEEKDAY_NUMBER: Record<Weekday, number> = {
-  sunday: 0,
-  monday: 1,
-  tuesday: 2,
-  wednesday: 3,
-  thursday: 4,
-  friday: 5,
-  saturday: 6,
-};
-
-/** `YYYY-MM-DD` plus `days` on the calendar. UTC, so the time zone of the machine never moves the day. */
-function addDays(date: string, days: number): string {
-  const [year, month, day] = date.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
-}
-
-/** What the API does: the first lesson is the first `weekday` on or after `firstDate`. */
-function firstLessonDate(firstDate: string, weekday: Weekday): string {
-  const [year, month, day] = firstDate.split("-").map(Number);
-  const current = new Date(Date.UTC(year, month - 1, day)).getUTCDay();
-  return addDays(firstDate, (WEEKDAY_NUMBER[weekday] - current + 7) % 7);
-}
-
-function minutesBetween(start: string, end: string): number {
-  const toMinutes = (time: string) => {
-    const [hours, minutes] = time.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
-  return toMinutes(end) - toMinutes(start);
-}
-
-/** The body the Figma shows: Tuesdays, 09:00 to 11:00, from the first day of the class. */
-export const FIGMA_BODY: GenerateClassLessonsDto = {
-  weekday: Weekday.tuesday,
-  startTime: "09:00",
-  endTime: "11:00",
-  firstDate: CLASS_START_DATE,
-  location: "Laboratório 2 — Bloco B",
-};
-
-export function buildPreviewItem(
-  overrides: Partial<ClassLessonPreviewItemResponseDto> = {},
-): ClassLessonPreviewItemResponseDto {
-  return {
-    date: CLASS_START_DATE,
-    expectedDurationMinutes: PLAN_FIXTURES[0].minutes,
-    lessonPlanId: PLAN_FIXTURES[0].id,
-    outsideClassPeriod: false,
-    sequenceOrder: 1,
-    title: PLAN_FIXTURES[0].title,
-    ...overrides,
-  };
-}
-
-interface PreviewOptions {
-  /** The lesson plans of the sequence that originate a lesson, in order. Three by default. */
-  plans?: readonly PlanFixture[];
-  classStartDate?: string;
-  classEndDate?: string;
-  skippedLessonPlans?: SkippedLessonPlanResponseDto[];
-}
+/** The period of the class of the Figma: the first and the last day a lesson of it can have. */
+export const CLASS_PERIOD = { startDate: "2026-03-02", endDate: "2026-06-30" } as const;
 
 /**
- * The answer of `POST /classes/:id/lessons/preview` for `body`, computed as the API does: one
- * lesson per plan, the first on the first weekday on or after `firstDate` and each next one a week
- * later, marked `outsideClassPeriod` when it falls before the start or after the end of the class.
- * It follows the body, so a test that changes the weekday gets other dates without a new fixture.
+ * Response of the lesson routes: "Teclado, mouse e janelas", planned for 2026-03-10 from 09:00 to
+ * 11:00 in the class "Informática Básica — A", created from the first plan of the course, never
+ * rescheduled. Overrides win over any default.
  */
-export function buildPreviewFor(
-  body: GenerateClassLessonsDto,
-  {
-    plans = PLAN_FIXTURES.slice(0, 3),
-    classStartDate = CLASS_START_DATE,
-    classEndDate = CLASS_END_DATE,
-    skippedLessonPlans = [],
-  }: PreviewOptions = {},
-): ClassLessonsPreviewResponseDto {
-  const first = firstLessonDate(body.firstDate, body.weekday);
-  const items = plans.map((plan, index) => {
-    const date = addDays(first, index * 7);
-    return buildPreviewItem({
-      date,
-      expectedDurationMinutes: plan.minutes,
-      lessonPlanId: plan.id,
-      outsideClassPeriod: date < classStartDate || date > classEndDate,
-      sequenceOrder: index + 1,
-      title: plan.title,
-    });
-  });
-
+export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonResponseDto {
   return {
-    classId: CLASS_ID,
-    classStartDate,
-    classEndDate,
-    weekday: body.weekday,
-    startTime: body.startTime,
-    endTime: body.endTime,
-    durationMinutes: minutesBetween(body.startTime, body.endTime),
-    location: body.location?.trim() ? body.location.trim() : null,
-    items,
-    lessonCount: items.length,
-    outsideClassPeriodCount: items.filter((item) => item.outsideClassPeriod).length,
-    skippedLessonPlans,
-  };
-}
-
-/**
- * A preview with three lessons, all inside the period (Tuesdays from 07/04/2026). `lessonCount` and
- * `outsideClassPeriodCount` follow the items, as the API derives them, unless an override says
- * otherwise.
- */
-export function buildPreview(
-  overrides: Partial<ClassLessonsPreviewResponseDto> = {},
-): ClassLessonsPreviewResponseDto {
-  const base = buildPreviewFor(FIGMA_BODY);
-  const items = overrides.items ?? base.items;
-
-  return {
-    ...base,
-    items,
-    lessonCount: items.length,
-    outsideClassPeriodCount: items.filter((item) => item.outsideClassPeriod).length,
-    ...overrides,
-  };
-}
-
-/** The preview of the Figma: four lessons, the fourth on 28/04/2026, after the end of the class. */
-export function buildOutsidePreview(
-  overrides: Partial<ClassLessonsPreviewResponseDto> = {},
-): ClassLessonsPreviewResponseDto {
-  return {
-    ...buildPreviewFor(FIGMA_BODY, { plans: PLAN_FIXTURES }),
-    ...overrides,
-  };
-}
-
-export function buildSkippedPlan(
-  overrides: Partial<SkippedLessonPlanResponseDto> = {},
-): SkippedLessonPlanResponseDto {
-  return {
-    archivedAt: "2026-03-01T12:00:00.000Z",
-    lessonPlanId: "01952ef7-0000-7000-8000-0000000000b9",
-    sequenceOrder: 2,
-    title: "Redes sociais antigas",
-    ...overrides,
-  };
-}
-
-/** A lesson as the API answers it after generating (`LessonResponseDto`), the number `index` of the series. */
-export function buildLesson(
-  index = 0,
-  overrides: Partial<LessonResponseDto> = {},
-): LessonResponseDto {
-  const plan = PLAN_FIXTURES[index % PLAN_FIXTURES.length];
-  const number = String(index + 1).padStart(2, "0");
-
-  return {
-    id: `01952ef7-0000-7000-8000-0000000003${number}`,
-    title: plan.title,
-    objective: `Objetivo da aula ${plan.title}.`,
-    subject: null,
-    date: addDays(CLASS_START_DATE, index * 7),
+    id: LESSON_ID,
+    title: "Teclado, mouse e janelas",
+    objective: "Usar teclado e mouse e organizar janelas.",
+    date: "2026-03-10",
     startTime: "09:00",
     endTime: "11:00",
     durationMinutes: 120,
     location: "Laboratório 2 — Bloco B",
     status: LessonStatus.planned,
-    sequenceOrder: index + 1,
-    class: {
-      id: CLASS_ID,
-      code: "INFO-A",
-      name: "Informática Básica — Turma A",
-      startDate: CLASS_START_DATE,
-      endDate: CLASS_END_DATE,
-      archivedAt: null,
-    },
-    course: { id: "01952ef7-0000-7000-8000-0000000000c1", name: COURSE_NAME },
-    edition: { id: "01952ef7-0000-7000-8000-0000000000e1", name: "2026.1" },
-    lessonPlan: { id: plan.id, title: plan.title, archivedAt: null },
-    expectedStudents: null,
-    expectedMonitors: null,
+    expectedStudents: 12,
+    expectedMonitors: 2,
+    subject: null,
+    postNotes: null,
     originalDate: null,
     rescheduleReason: null,
     rescheduleNote: null,
-    postNotes: null,
     cancelReason: null,
     cancelledAt: null,
     cancelledById: null,
-    createdAt: "2026-04-01T12:00:00.000Z",
+    sequenceOrder: 1,
+    lessonPlan: { id: LESSON_PLAN_ID, title: "Teclado, mouse e janelas", archivedAt: null },
+    class: {
+      id: CLASS_ID,
+      code: "INFO-A",
+      name: CLASS_NAME,
+      archivedAt: null,
+      ...CLASS_PERIOD,
+    },
+    course: { id: COURSE_ID, name: COURSE_NAME },
+    edition: { id: EDITION_ID, name: "2026.1" },
     createdById: "01952ef7-0000-7000-8000-000000000001",
-    updatedAt: "2026-04-01T12:00:00.000Z",
+    createdAt: "2026-02-12T12:00:00.000Z",
+    updatedAt: "2026-02-12T12:00:00.000Z",
     ...overrides,
   };
 }
 
-/** The answer of `POST /classes/:id/lessons/generate`: `count` planned lessons, a week apart. */
-export function buildGeneratedLessons(count: number): GeneratedClassLessonsResponseDto {
-  return {
-    classId: CLASS_ID,
-    lessons: Array.from({ length: count }, (_, index) => buildLesson(index)),
-  };
+/** A lesson created on its own, outside the sequence of the course. */
+export function buildStandaloneLesson(overrides: Partial<LessonResponseDto> = {}) {
+  return buildLesson({ lessonPlan: null, sequenceOrder: null, ...overrides });
 }
 
-/** An item of `GET /lessons`: the lesson number `index` of the series, planned, with no teacher. */
-export function buildLessonListItem(
-  index = 0,
-  overrides: Partial<LessonListItemResponseDto> = {},
-): LessonListItemResponseDto {
-  const plan = PLAN_FIXTURES[index % PLAN_FIXTURES.length];
-  const number = String(index + 1).padStart(2, "0");
+export function buildCancelledLesson(overrides: Partial<LessonResponseDto> = {}) {
+  return buildLesson({
+    status: LessonStatus.cancelled,
+    cancelReason: "Feriado municipal.",
+    cancelledAt: "2026-03-05T12:00:00.000Z",
+    cancelledById: "01952ef7-0000-7000-8000-000000000001",
+    ...overrides,
+  });
+}
 
+/** A lesson that was already rescheduled once: it was on 2026-03-03 before it moved. */
+export function buildRescheduledLesson(overrides: Partial<LessonResponseDto> = {}) {
+  return buildLesson({
+    originalDate: "2026-03-03",
+    rescheduleReason: "Sala indisponível",
+    rescheduleNote: "A sala foi usada para a prova.",
+    ...overrides,
+  });
+}
+
+/** An item of the sequence of a course (`GET /courses/:id/lesson-plans`). */
+export function buildSequenceItem(
+  overrides: Partial<CourseLessonPlanItemResponseDto> = {},
+): CourseLessonPlanItemResponseDto {
   return {
-    id: `01952ef7-0000-7000-8000-0000000003${number}`,
-    title: plan.title,
-    date: addDays(CLASS_START_DATE, index * 7),
-    startTime: "09:00",
-    endTime: "11:00",
-    status: LessonStatus.planned,
-    teacher: null,
-    belowExpectedMonitors: false,
-    class: { id: CLASS_ID, code: "INFO-A", name: "Informática Básica — Turma A", colorIndex: 0 },
+    lessonPlanId: LESSON_PLAN_ID,
+    position: 1,
+    title: "Teclado, mouse e janelas",
+    contents: ["Teclado e mouse", "Janelas do sistema"],
+    expectedDurationMinutes: 120,
+    materialUrl: null,
+    courseCount: 1,
+    archivedAt: null,
     ...overrides,
   };
 }
 
-/** The answer of `GET /lessons`: `total` can be more than the items of the page. */
-export function buildLessonsPage(
-  items: LessonListItemResponseDto[] = [],
-  total: number = items.length,
-  limit = 5,
-): ListLessons200 {
-  return { data: items, total, page: 1, limit };
+/**
+ * Response of `GET /courses/:id/lesson-plans`. By default it is the sequence of the Figma with two
+ * plans, "Teclado, mouse e janelas" (1) and "Senhas e privacidade" (2). The positions are renumbered
+ * from 1 and the workload is the sum of the durations, as the API does.
+ */
+export function buildCourseLessonPlans(
+  items: CourseLessonPlanItemResponseDto[] = [
+    buildSequenceItem(),
+    buildSequenceItem({
+      lessonPlanId: LESSON_PLAN_ID_2,
+      title: "Senhas e privacidade",
+      expectedDurationMinutes: 90,
+    }),
+  ],
+): CourseLessonPlansResponseDto {
+  return {
+    courseId: COURSE_ID,
+    items: items.map((item, index) => ({ ...item, position: index + 1 })),
+    plannedWorkloadMinutes: items.reduce((total, item) => total + item.expectedDurationMinutes, 0),
+  };
+}
+
+/** Response of `GET /lesson-plans/:id`: the plan the lesson comes from, with its own objective. */
+export function buildLessonPlanDetail(
+  overrides: Partial<LessonPlanDetailDto> = {},
+): LessonPlanDetailDto {
+  return {
+    id: LESSON_PLAN_ID,
+    title: "Teclado, mouse e janelas",
+    objective: "Familiarizar o aluno com o teclado, o mouse e o uso básico das janelas.",
+    expectedDurationMinutes: 120,
+    contents: ["Teclado e mouse", "Janelas do sistema"],
+    materialUrl: null,
+    archivedAt: null,
+    archivedById: null,
+    archiveReason: null,
+    createdById: "01952ef7-0000-7000-8000-000000000001",
+    createdBy: { id: "01952ef7-0000-7000-8000-000000000001", name: "Ana Coordenadora" },
+    createdAt: "2026-02-01T12:00:00.000Z",
+    updatedAt: "2026-02-01T12:00:00.000Z",
+    status: LessonPlanUsageStatus.in_use,
+    usedIn: [],
+    ...overrides,
+  };
 }
 
 export interface ApiErrorOptions {
   statusCode: number;
   error: string;
   message?: string;
+  details?: ApiFieldErrorDto[];
 }
 
-export const LESSONS_ALREADY_GENERATED_ERROR: ApiErrorOptions = {
-  statusCode: 409,
-  error: "LESSONS_ALREADY_GENERATED",
-  message: "The lessons of this class were already generated.",
-};
+export const VALIDATION_ERROR = (details: ApiFieldErrorDto[]): ApiErrorOptions => ({
+  statusCode: 400,
+  error: "VALIDATION_FAILED",
+  message: "Bad request.",
+  details,
+});
 
-export const COURSE_WITHOUT_SEQUENCE_ERROR: ApiErrorOptions = {
-  statusCode: 409,
-  error: "COURSE_WITHOUT_SEQUENCE",
-  message: "The course has no active lesson plan.",
-};
-
-export const LESSONS_OUTSIDE_CLASS_PERIOD_ERROR: ApiErrorOptions = {
-  statusCode: 409,
-  error: "LESSONS_OUTSIDE_CLASS_PERIOD",
-  message: "A lesson would fall outside the period of the class.",
-};
-
-export const CLASS_ARCHIVED_ERROR: ApiErrorOptions = {
-  statusCode: 409,
-  error: "CLASS_ARCHIVED",
-  message: "The class is archived.",
-};
-
-export const CLASS_NOT_FOUND_ERROR: ApiErrorOptions = {
-  statusCode: 404,
-  error: "CLASS_NOT_FOUND",
-  message: "Class not found.",
+export const OUTSIDE_PERIOD_ERROR: ApiErrorOptions = {
+  statusCode: 400,
+  error: "LESSON_OUTSIDE_CLASS_PERIOD",
+  message: "The date is outside the period of the class.",
 };
 
 export const INVALID_TIME_RANGE_ERROR: ApiErrorOptions = {
   statusCode: 400,
   error: "INVALID_TIME_RANGE",
-  message: "endTime must be after startTime.",
+  message: "The end of the lesson must be after its start.",
 };
 
-function apiErrorResponse({ statusCode, error, message }: ApiErrorOptions) {
+export const LESSON_PLAN_NOT_IN_SEQUENCE_ERROR: ApiErrorOptions = {
+  statusCode: 400,
+  error: "LESSON_PLAN_NOT_IN_COURSE_SEQUENCE",
+  message: "The lesson plan is not in the sequence of the course at this position.",
+};
+
+export const LESSON_CANCELLED_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "LESSON_CANCELLED",
+  message: "A cancelled lesson cannot be changed.",
+};
+
+export const CLASS_ARCHIVED_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CLASS_ARCHIVED",
+  message: "Archived classes are read-only.",
+};
+
+export const LESSON_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 404,
+  error: "LESSON_NOT_FOUND",
+  message: "Lesson not found.",
+};
+
+function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptions) {
   return HttpResponse.json(
-    { statusCode, error, message: message ?? error },
+    { statusCode, error, message: message ?? error, ...(details ? { details } : {}) },
     { status: statusCode },
   );
 }
 
-async function readBody<TBody>(request: Request): Promise<TBody | undefined> {
-  const text = await request.text();
-  return text ? (JSON.parse(text) as TBody) : undefined;
-}
-
-interface HandlerOptions<TCall, TResponse> {
-  /** The answer, or a function of the call, for a test that wants the answer to follow the body. */
-  response?: TResponse | ((call: TCall) => TResponse);
+interface HandlerOptions<TCall, TResponse = LessonResponseDto> {
+  response?: TResponse;
   error?: ApiErrorOptions;
   networkError?: boolean;
   /** Holds the answer until the test resolves it, to look at the loading state. */
@@ -380,93 +287,151 @@ interface HandlerOptions<TCall, TResponse> {
   onCall?: (call: TCall) => void;
 }
 
-function resolveResponse<TCall, TResponse>(
-  response: TResponse | ((call: TCall) => TResponse),
-  call: TCall,
-): TResponse {
-  return typeof response === "function" ? (response as (call: TCall) => TResponse)(call) : response;
-}
-
-export interface ClassBodyCall {
+interface IdCall {
   id: string;
-  body: GenerateClassLessonsDto;
 }
 
-/** `POST /classes/:id/lessons/preview`. By default it answers as the API does for the body it gets. */
-export function previewClassLessonsHandler({
-  response = (call: ClassBodyCall) => buildPreviewFor(call.body),
+export interface CreateLessonCall {
+  body: CreateLessonDto;
+}
+
+export interface UpdateLessonCall {
+  id: string;
+  body: UpdateLessonDto;
+}
+
+export interface CancelLessonCall {
+  id: string;
+  body: CancelLessonDto;
+}
+
+export interface RescheduleLessonCall {
+  id: string;
+  body: RescheduleLessonDto;
+}
+
+async function readBody<TBody>(request: Request): Promise<TBody> {
+  return (await request.json()) as TBody;
+}
+
+export function getLessonHandler({
+  response = buildLesson(),
   error,
   networkError = false,
   delay,
   onCall,
-}: HandlerOptions<ClassBodyCall, ClassLessonsPreviewResponseDto> = {}) {
-  return http.post("*/classes/:id/lessons/preview", async ({ request, params }) => {
-    const call: ClassBodyCall = {
-      id: String(params.id),
-      body: (await readBody<GenerateClassLessonsDto>(request)) as GenerateClassLessonsDto,
-    };
-    onCall?.(call);
+}: HandlerOptions<IdCall> = {}) {
+  return http.get("*/lessons/:id", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
-    return HttpResponse.json(resolveResponse(response, call));
+    return HttpResponse.json(response);
   });
 }
 
-/** `POST /classes/:id/lessons/generate`: 201 with the lessons created. */
-export function generateClassLessonsHandler({
-  response = (call: ClassBodyCall) => buildGeneratedLessons(buildPreviewFor(call.body).lessonCount),
+export function createLessonHandler({
+  response = buildLesson(),
   error,
   networkError = false,
   delay,
   onCall,
-}: HandlerOptions<ClassBodyCall, GeneratedClassLessonsResponseDto> = {}) {
-  return http.post("*/classes/:id/lessons/generate", async ({ request, params }) => {
-    const call: ClassBodyCall = {
-      id: String(params.id),
-      body: (await readBody<GenerateClassLessonsDto>(request)) as GenerateClassLessonsDto,
-    };
-    onCall?.(call);
+}: HandlerOptions<CreateLessonCall> = {}) {
+  return http.post("*/lessons", async ({ request }) => {
+    onCall?.({ body: await readBody<CreateLessonDto>(request) });
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
-    return HttpResponse.json(resolveResponse(response, call), { status: 201 });
+    return HttpResponse.json(response, { status: 201 });
   });
 }
 
-export interface ListLessonsCall {
-  /** `null` when the request does not send the parameter. */
-  classId: string | null;
-  page: number | null;
-  limit: number | null;
-}
-
-function numberOrNull(value: string | null): number | null {
-  return value === null ? null : Number(value);
-}
-
-/** `GET /lessons`. */
-export function listLessonsHandler({
-  response = buildLessonsPage(),
+export function updateLessonHandler({
+  response = buildLesson(),
   error,
   networkError = false,
   delay,
   onCall,
-}: HandlerOptions<ListLessonsCall, ListLessons200> = {}) {
-  return http.get("*/lessons", async ({ request }) => {
-    const query = new URL(request.url).searchParams;
-    const call: ListLessonsCall = {
-      classId: query.get("classId"),
-      page: numberOrNull(query.get("page")),
-      limit: numberOrNull(query.get("limit")),
-    };
-    onCall?.(call);
+}: HandlerOptions<UpdateLessonCall> = {}) {
+  return http.patch("*/lessons/:id", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody<UpdateLessonDto>(request) });
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
-    return HttpResponse.json(resolveResponse(response, call));
+    return HttpResponse.json(response);
+  });
+}
+
+export function cancelLessonHandler({
+  response = buildCancelledLesson(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<CancelLessonCall> = {}) {
+  return http.patch("*/lessons/:id/cancel", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody<CancelLessonDto>(request) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export function rescheduleLessonHandler({
+  response = buildRescheduledLesson({ date: "2026-03-17", originalDate: "2026-03-10" }),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<RescheduleLessonCall> = {}) {
+  return http.patch("*/lessons/:id/reschedule", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody<RescheduleLessonDto>(request) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export function listCourseLessonPlansHandler({
+  response = buildCourseLessonPlans(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, CourseLessonPlansResponseDto> = {}) {
+  return http.get("*/courses/:id/lesson-plans", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+type LessonPlanDetailResponse = LessonPlanDetailDto | ((id: string) => LessonPlanDetailDto);
+
+export function getLessonPlanHandler({
+  response = buildLessonPlanDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, LessonPlanDetailResponse> = {}) {
+  return http.get("*/lesson-plans/:id", async ({ params }) => {
+    const id = String(params.id);
+    onCall?.({ id });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(typeof response === "function" ? response(id) : response);
   });
 }

@@ -37,7 +37,7 @@ import {
   PLAN_FIXTURES,
   previewClassLessonsHandler,
   type ClassBodyCall,
-} from "./handlers";
+} from "./generate-handlers";
 import { createDeferred, renderWithProviders, server, setupLessonsTestServer } from "./test-utils";
 
 setupLessonsTestServer();

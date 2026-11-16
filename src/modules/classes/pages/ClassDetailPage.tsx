@@ -74,7 +74,11 @@ interface ClassDetailViewProps extends ClassDetailSlots {
   classDetail: ClassDetailDto;
 }
 
-/** The class that was loaded: the header and the two columns of cards. */
+/**
+ * The class that was loaded: the header and the two columns of cards. An archived class is
+ * read-only (RN-27), and that rule is the class's, so the actions about its lessons are not even
+ * asked of the slot.
+ */
 function ClassDetailView({
   classDetail,
   renderLessonActions,
@@ -84,7 +88,10 @@ function ClassDetailView({
 
   return (
     <div className="flex flex-col gap-5">
-      <ClassDetailHeader classDetail={classDetail} actions={renderLessonActions(classDetail)} />
+      <ClassDetailHeader
+        classDetail={classDetail}
+        actions={classDetail.archivedAt === null ? renderLessonActions(classDetail) : null}
+      />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <ClassDataCard classDetail={classDetail} />
@@ -152,6 +159,8 @@ function ClassDetail({
   );
 }
 
+export type ClassDetailPageProps = ClassDetailSlots;
+
 /**
  * The screen of a class (RF-029, RF-034, RF-035). The page asks the API for one thing, `getClass`,
  * and everything on it comes from that answer: the header (name and tags), the data, the summary
@@ -161,7 +170,9 @@ function ClassDetail({
  * module's: the actions of the header (Gerar aulas) and the card "Aulas da turma" (GUS-157) come in
  * by slot (`ClassDetailSlots`, filled by `app/` through `ClassesRouteSlots`), and each one asks the
  * API by itself. "Membros alocados" has no data yet and only keeps its place with "Em breve". The
- * title of the page is on the topbar (`handle.title` of the route), so there is no `<h1>`.
+ * title of the page is on the topbar (`handle.title` of the route), so there is no `<h1>`. The
+ * actions of the header (Gerar aulas and + Nova aula) are asked of the slot only when the class is
+ * not archived.
  *
  * An id that is not a UUID cannot be a class: it is "not found" at once, with no request. The id is
  * also the `key` of the detail, so the state of one class never stays on the next one when the
