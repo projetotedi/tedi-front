@@ -12,9 +12,20 @@ import i18n from "@shared/i18n";
 import { toast, ToastProvider } from "@shared/ui";
 
 import "../index";
+import { createCatalogRoutes } from "../routes";
 import { buildMeUser, meHandler } from "./handlers";
 
 export const server = setupServer();
+
+/**
+ * The routes of the catalog as the tests of this module render them. The card "Turmas deste curso"
+ * belongs to the `classes` module, which `catalog` does not import, so here the slot is a stand-in
+ * that only says which course it was asked for. The real card is tested with the `classes` module
+ * and put together with these routes in `app/__tests__/catalog-slots.test.tsx`.
+ */
+export const catalogRoutes = createCatalogRoutes({
+  renderCourseClasses: (courseId) => <p>{`Turmas do curso ${courseId}`}</p>,
+});
 
 export function setupCatalogTestServer(): void {
   beforeAll(() => server.listen({ onUnhandledRequest: "error" }));

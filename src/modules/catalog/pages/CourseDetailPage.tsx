@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -8,7 +8,6 @@ import { CourseStatus, type CourseDetailDto } from "@api/generated/model";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
 import { BuildSequenceDialog } from "../components/BuildSequenceDialog";
-import { CourseClassesCard } from "../components/CourseClassesCard";
 import { CourseDataCard } from "../components/CourseDataCard";
 import { CourseDetailHeader } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
@@ -55,17 +54,25 @@ function CourseNotFound(): ReactElement {
   );
 }
 
+/** The slot for the card "Turmas deste curso": see `CatalogRouteSlots.renderCourseClasses`. */
+type RenderCourseClasses = (courseId: string) => ReactNode;
+
 interface CourseDetailViewProps {
   /** The id of the route, which is what the cache keys of the course are made from. */
   courseId: string;
   course: CourseDetailDto;
+  renderCourseClasses: RenderCourseClasses;
 }
 
 /**
  * The course that was loaded: header, the two columns of cards and the dialogs (the sequence and
  * Duplicar curso, which never are open together: each one is modal).
  */
-function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactElement {
+function CourseDetailView({
+  courseId,
+  course,
+  renderCourseClasses,
+}: CourseDetailViewProps): ReactElement {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
@@ -107,7 +114,7 @@ function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactEle
             onEditSequence={() => setIsEditing(true)}
             archivedHintRef={archivedHintRef}
           />
-          <CourseClassesCard />
+          {renderCourseClasses(courseId)}
         </div>
         <div className="flex min-w-0 flex-col gap-5">
           <CourseWorkloadCard
@@ -138,7 +145,12 @@ function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactEle
   );
 }
 
-function CourseDetail({ courseId }: { courseId: string }): ReactElement {
+interface CourseDetailProps {
+  courseId: string;
+  renderCourseClasses: RenderCourseClasses;
+}
+
+function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): ReactElement {
   const { t } = useTranslation("catalog");
   const courseQuery = useGetCourse(courseId);
   const course = courseQuery.data;
@@ -162,7 +174,13 @@ function CourseDetail({ courseId }: { courseId: string }): ReactElement {
     );
   }
 
-  return <CourseDetailView courseId={courseId} course={course} />;
+  return (
+    <CourseDetailView
+      courseId={courseId}
+      course={course}
+      renderCourseClasses={renderCourseClasses}
+    />
+  );
 }
 
 /**
@@ -174,9 +192,11 @@ function CourseDetail({ courseId }: { courseId: string }): ReactElement {
  * sequence is saved the answer of the `PUT` is written into this same detail
  * (`applyReplacedSequence`), so everything changes together and nothing is fetched again.
  *
- * The one card that will have a query of its own is "Turmas deste curso" (`listCourseClasses`,
- * GUS-102), and it keeps the query to itself so that its failure shows only there. The title of the
- * page is on the topbar (`handle.title` of the route), so there is no `<h1>`.
+ * The one card that has a query of its own is "Turmas deste curso" (`listCourseClasses`), and it
+ * keeps the query to itself so that its failure shows only there. It is not drawn by this module:
+ * the classes belong to the `classes` module, which `catalog` does not import, so the page calls
+ * `renderCourseClasses(courseId)`, the slot that the composition in `app/` fills with that card.
+ * The title of the page is on the topbar (`handle.title` of the route), so there is no `<h1>`.
  *
  * An id that is not a UUID is "not found" at once, with no request. The id is also the `key` of the
  * detail: a prerequisite opens another course on this same route, and the dialog and the notice
@@ -189,10 +209,16 @@ function CourseDetail({ courseId }: { courseId: string }): ReactElement {
  * `key` throws away the view of the original, dialog included, and the copy is shown after its own
  * `getCourse`.
  */
-export function CourseDetailPage(): ReactElement {
+export function CourseDetailPage({
+  renderCourseClasses,
+}: {
+  renderCourseClasses: RenderCourseClasses;
+}): ReactElement {
   const { courseId = "" } = useParams();
 
   if (!isCourseId(courseId)) return <CourseNotFound />;
 
-  return <CourseDetail key={courseId} courseId={courseId} />;
+  return (
+    <CourseDetail key={courseId} courseId={courseId} renderCourseClasses={renderCourseClasses} />
+  );
 }

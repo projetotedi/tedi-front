@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import { CourseCategory, CourseStatus, type RelatedCourseResponseDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { CourseClassesCard } from "../components/CourseClassesCard";
 import { CourseDataCard } from "../components/CourseDataCard";
 import { CourseDetailHeader, type CourseDetailHeaderProps } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
@@ -237,21 +236,6 @@ describe("CourseDataCard", () => {
     expect(valueOf(data, "Objetivo")).toHaveTextContent(
       "Participar das redes sociais reconhecendo os riscos.",
     );
-  });
-});
-
-describe("CourseClassesCard", () => {
-  it("says the classes are not available yet, with no table, no link and no button", async () => {
-    await renderWithProviders(<CourseClassesCard />);
-
-    const classes = card("Turmas deste curso");
-
-    expect(
-      within(classes).getByText("As turmas deste curso vão aparecer aqui em breve."),
-    ).toBeInTheDocument();
-    expect(within(classes).queryByRole("table")).not.toBeInTheDocument();
-    expect(within(classes).queryByRole("link")).not.toBeInTheDocument();
-    expect(within(classes).queryByRole("button")).not.toBeInTheDocument();
   });
 });
 

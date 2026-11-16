@@ -6,7 +6,6 @@ import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
 import { catalogMenuItems } from "../menu";
-import { catalogRoutes } from "../routes";
 import {
   buildMeUser,
   COURSE_ID,
@@ -14,7 +13,7 @@ import {
   getLessonPlanHandler,
   LESSON_PLAN_ID,
 } from "./handlers";
-import { renderRoutes, server, setupCatalogTestServer } from "./test-utils";
+import { catalogRoutes, renderRoutes, server, setupCatalogTestServer } from "./test-utils";
 
 setupCatalogTestServer();
 

@@ -218,10 +218,6 @@
         "objective": "Objective"
       }
     },
-    "classes": {
-      "title": "Classes of this course",
-      "unavailable": "The classes of this course will show up here soon."
-    },
     "workload": {
       "title": "Planned workload",
       "total": "Planned total",

@@ -1,40 +1,66 @@
-export type ClassStatus = "planned" | "inProgress" | "completed" | "cancelled";
+import {
+  ClassStatus,
+  CourseCategory,
+  CourseStatus,
+  type ClassCourseResponseDto,
+} from "@api/generated/model";
 
-export interface MockCourse {
-  id: string;
-  name: string;
-  level: string;
-  localeKey: string;
-}
-
-export const mockCourses: MockCourse[] = [
-  { id: "computer", name: "Informática Básica", level: "Iniciante", localeKey: "computer" },
+/**
+ * The courses of the prototype, with the shape the API gives a class for its course
+ * (`ClassCourseResponseDto`): the category is the one of the course, and "Fotografia digital" is
+ * archived, so the class form has a course it must not offer. TEMPORARY: until `GET /courses`
+ * exists (see `useCourseOptions`).
+ */
+export const mockCourses: ClassCourseResponseDto[] = [
+  {
+    id: "computer",
+    name: "Informática Básica",
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+  },
   {
     id: "phone",
     name: "Smartphones no dia a dia",
-    level: "Iniciante",
-    localeKey: "phone",
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
   },
-  { id: "internet", name: "Internet", level: "Intermediário", localeKey: "internet" },
+  {
+    id: "internet",
+    name: "Internet",
+    category: CourseCategory.intermediate,
+    status: CourseStatus.active,
+  },
   {
     id: "social",
     name: "Redes Sociais com Segurança",
-    level: "Intermediário",
-    localeKey: "social",
+    category: CourseCategory.intermediate,
+    status: CourseStatus.active,
   },
-  { id: "photo", name: "Fotografia digital", level: "Avançado", localeKey: "photo" },
-  { id: "security", name: "Segurança digital", level: "Intermediário", localeKey: "security" },
+  {
+    id: "photo",
+    name: "Fotografia digital",
+    category: CourseCategory.advanced,
+    status: CourseStatus.archived,
+  },
+  {
+    id: "security",
+    name: "Segurança digital",
+    category: CourseCategory.intermediate,
+    status: CourseStatus.active,
+  },
 ];
 
+/**
+ * A class of the prototype list. It has no course name and no level: both come from the course it
+ * points to by `courseId` (RN-14), so changing the category of the course changes it here too.
+ */
 export interface ClassRecord {
   id: string;
   code: string;
   name: string;
   courseId: string;
-  course: string;
   editionId: string;
   edition: string;
-  level: string;
   start: string;
   end: string;
   location?: string;
@@ -50,15 +76,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-2026.2",
     name: "Turma 2026.2",
     courseId: "computer",
-    course: "Informática Básica",
     editionId: "2026-1",
     edition: "1º semestre 2026",
-    level: "Iniciante",
     start: "2026-03-03",
     end: "2026-05-27",
     enrolled: 12,
     capacity: 15,
-    status: "inProgress",
+    status: ClassStatus.in_progress,
     archived: false,
   },
   {
@@ -66,15 +90,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-2025.2",
     name: "Turma 2025.2",
     courseId: "internet",
-    course: "Internet",
     editionId: "2025-2",
     edition: "2º semestre 2025",
-    level: "Intermediário",
     start: "2025-07-03",
     end: "2025-08-27",
     enrolled: 9,
     capacity: 12,
-    status: "inProgress",
+    status: ClassStatus.in_progress,
     archived: false,
   },
   {
@@ -82,15 +104,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-2024",
     name: "Turma 2024",
     courseId: "computer",
-    course: "Informática Básica",
     editionId: "2024",
     edition: "2024",
-    level: "Iniciante",
     start: "2024-06-02",
     end: "2024-08-12",
     enrolled: 6,
     capacity: 15,
-    status: "planned",
+    status: ClassStatus.planned,
     archived: false,
   },
   {
@@ -98,15 +118,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-004",
     name: "Informática Básica — B (2025)",
     courseId: "computer",
-    course: "Informática Básica",
     editionId: "2025-2",
     edition: "2º semestre 2025",
-    level: "Intermediário",
     start: "2025-08-05",
     end: "2025-12-12",
     enrolled: 15,
     capacity: 15,
-    status: "completed",
+    status: ClassStatus.completed,
     archived: false,
   },
   {
@@ -114,15 +132,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-005",
     name: "Smartphones no dia a dia — B",
     courseId: "phone",
-    course: "Smartphones no dia a dia",
     editionId: "2026-1",
     edition: "1º semestre 2026",
-    level: "Iniciante",
     start: "2026-03-10",
     end: "2026-06-30",
     enrolled: 14,
     capacity: 16,
-    status: "inProgress",
+    status: ClassStatus.in_progress,
     archived: false,
   },
   {
@@ -130,15 +146,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-006",
     name: "Redes Sociais com Segurança — C",
     courseId: "social",
-    course: "Redes Sociais com Segurança",
     editionId: "2026-2",
     edition: "2º semestre 2026",
-    level: "Intermediário",
     start: "2026-04-06",
     end: "2026-07-24",
     enrolled: 0,
     capacity: 15,
-    status: "planned",
+    status: ClassStatus.planned,
     archived: false,
   },
   {
@@ -146,15 +160,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-007",
     name: "Informática Básica — D",
     courseId: "computer",
-    course: "Informática Básica",
     editionId: "2026-1",
     edition: "1º semestre 2026",
-    level: "Iniciante",
     start: "2026-04-13",
     end: "2026-07-31",
     enrolled: 3,
     capacity: 15,
-    status: "planned",
+    status: ClassStatus.planned,
     archived: false,
   },
   {
@@ -162,15 +174,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-008",
     name: "Smartphones no dia a dia — A (2025)",
     courseId: "phone",
-    course: "Smartphones no dia a dia",
     editionId: "2025-1",
     edition: "1º semestre 2025",
-    level: "Iniciante",
     start: "2025-03-04",
     end: "2025-06-26",
     enrolled: 15,
     capacity: 15,
-    status: "completed",
+    status: ClassStatus.completed,
     archived: false,
   },
   {
@@ -178,15 +188,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-009",
     name: "Informática Básica — C",
     courseId: "computer",
-    course: "Informática Básica",
     editionId: "2026-1",
     edition: "1º semestre 2026",
-    level: "Intermediário",
     start: "2026-03-17",
     end: "2026-07-07",
     enrolled: 11,
     capacity: 15,
-    status: "inProgress",
+    status: ClassStatus.in_progress,
     archived: false,
   },
   {
@@ -194,15 +202,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-010",
     name: "Redes Sociais com Segurança — A (2025)",
     courseId: "social",
-    course: "Redes Sociais com Segurança",
     editionId: "2025-2",
     edition: "2º semestre 2025",
-    level: "Intermediário",
     start: "2025-08-05",
     end: "2025-12-12",
     enrolled: 13,
     capacity: 15,
-    status: "completed",
+    status: ClassStatus.completed,
     archived: false,
   },
   {
@@ -210,15 +216,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-011",
     name: "Mensagens e contatos",
     courseId: "phone",
-    course: "Smartphones no dia a dia",
     editionId: "2025-1",
     edition: "1º semestre 2025",
-    level: "Iniciante",
     start: "2025-02-01",
     end: "2025-06-30",
     enrolled: 14,
     capacity: 18,
-    status: "completed",
+    status: ClassStatus.completed,
     archived: false,
   },
   {
@@ -226,15 +230,13 @@ export const initialClasses: ClassRecord[] = [
     code: "TUR-012",
     name: "Navegação segura",
     courseId: "internet",
-    course: "Internet",
     editionId: "2025-1",
     edition: "1º semestre 2025",
-    level: "Intermediário",
     start: "2025-02-01",
     end: "2025-06-30",
     enrolled: 13,
     capacity: 18,
-    status: "completed",
+    status: ClassStatus.completed,
     archived: false,
   },
 ];

@@ -218,10 +218,6 @@
         "objective": "Objetivo"
       }
     },
-    "classes": {
-      "title": "Turmas deste curso",
-      "unavailable": "As turmas deste curso vão aparecer aqui em breve."
-    },
     "workload": {
       "title": "Carga horária prevista",
       "total": "Total previsto",
