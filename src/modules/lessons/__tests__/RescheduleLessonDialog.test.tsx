@@ -101,7 +101,7 @@ describe("RescheduleLessonDialog", () => {
       expect(within(dialog).queryByText(/Data original:/)).not.toBeInTheDocument();
     });
 
-    it("remarcar uma aula já remarcada mostra 'Data original' no aviso", async () => {
+    it("shows 'Data original' in the info when the lesson was already rescheduled", async () => {
       await renderReschedule(buildRescheduledLesson({ date: "2026-03-17" }));
 
       const dialog = screen.getByRole("dialog");
