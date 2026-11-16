@@ -87,20 +87,61 @@
     "advanced": "Nível avançado — herdado do curso"
   },
   "detail": {
+    "routeTitle": "Turma",
+    "loading": "Carregando a turma…",
+    "loadError": "Não foi possível carregar a turma. Tente novamente.",
+    "retry": "Tentar de novo",
+    "notFoundTitle": "Turma não encontrada",
+    "notFoundDescription": "Esta turma não existe ou foi removida. Volte para a lista e escolha outra.",
+    "backToList": "Voltar para turmas",
     "archived": "Arquivada",
+    "comingSoon": "Em breve",
+    "header": {
+      "edition": "Edição {{name}}",
+      "seats_one": "{{enrolled}} de {{count}} vaga",
+      "seats_other": "{{enrolled}} de {{count}} vagas"
+    },
     "data": {
       "title": "Dados da turma",
-      "noLocation": "Não informado",
-      "seatsLabel": "{{enrolled}} de {{capacity}} vagas ocupadas",
       "fields": {
         "code": "Código",
-        "edition": "Edição",
-        "period": "Período",
-        "location": "Local",
-        "seats": "Vagas",
         "course": "Curso",
-        "level": "Nível (do curso)"
-      }
+        "level": "Nível (do curso)",
+        "edition": "Edição",
+        "startDate": "Início",
+        "endDate": "Término",
+        "location": "Local",
+        "status": "Status",
+        "capacity": "Vagas totais",
+        "enrolled": "Matriculados",
+        "createdAt": "Criada em"
+      },
+      "activeCount_zero": "0 ativos",
+      "activeCount_one": "{{count}} ativo",
+      "activeCount_other": "{{count}} ativos"
+    },
+    "summary": {
+      "title": "Resumo",
+      "workload": "Carga horária",
+      "lessonsDone": "Aulas realizadas",
+      "students": "Alunos",
+      "averageAttendance": "Frequência média",
+      "outOf": "{{done}} de {{total}}"
+    },
+    "enrollments": {
+      "title": "Alunos matriculados",
+      "caption": "Primeiros alunos matriculados na turma",
+      "name": "Nome",
+      "enrolledAt": "Matriculado em",
+      "empty": "Nenhum aluno matriculado ainda.",
+      "seeAll_one": "Ver o aluno matriculado",
+      "seeAll_other": "Ver todos os {{count}}"
+    },
+    "lessons": {
+      "title": "Aulas da turma"
+    },
+    "members": {
+      "title": "Membros alocados"
     }
   },
   "courseOrigin": {
@@ -125,14 +166,16 @@
     "error": "Não foi possível carregar os dados do curso.",
     "unavailable": "Os dados deste curso não estão disponíveis."
   },
-  "detailNotFound": "Turma não encontrada",
-  "backToList": "Voltar para turmas",
   "editions": {
+    "2024": "2024",
     "2026-1": "2026.1",
     "2026-2": "2026.2",
     "2025-2": "2025.2",
-    "2025-1": "2025.1",
-    "2024": "2024"
+    "2025-1": "2025.1"
   },
-  "levels": { "basic": "Básico", "intermediate": "Intermediário", "advanced": "Avançado" }
+  "levels": {
+    "basic": "Básico",
+    "intermediate": "Intermediário",
+    "advanced": "Avançado"
+  }
 }

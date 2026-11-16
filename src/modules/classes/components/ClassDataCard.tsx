@@ -1,52 +1,58 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { ClassCourseResponseDto } from "@api/generated/model";
-import { Card } from "@shared/ui";
+import type { ClassDetailDto } from "@api/generated/model";
+import { DetailsCard } from "@shared/components/DetailsCard";
 
-import { formatPeriod } from "../lib/format-period";
-import type { ClassRecord } from "../mocks/classes.mock";
-import { DetailField } from "./DetailField";
+import { CLASS_STATUS_LABEL_KEYS } from "../lib/class-status";
+import { formatCalendarDate, formatInstantDate } from "../lib/format";
 
 export interface ClassDataCardProps {
-  classRecord: ClassRecord;
-  /** The course of the class: its name and its category are what the card shows of it. */
-  course: ClassCourseResponseDto;
+  classDetail: ClassDetailDto;
 }
 
 /**
- * "Dados da turma": code, edition, period, location, seats and the course. The level is always the
- * one of the course, so it is labelled "Nível (do curso)" and read from `course.category`, never
- * from the class: a class has no level of its own (RN-14).
+ * "Dados da turma": the eleven fields of the Figma in its order, four to a row. A field the API
+ * answers as `null` (the location) goes to the `DetailsCard` as it came and shows as a dash. The
+ * level is the one of the course, and "Matriculados" counts the active enrollments. The person
+ * who created the class (`createdBy`) is not on the Figma, so it is not here.
  */
-export function ClassDataCard({ classRecord, course }: ClassDataCardProps): ReactElement {
+export function ClassDataCard({ classDetail }: ClassDataCardProps): ReactElement {
   const { t, i18n } = useTranslation("classes");
+  const { course, edition, summary } = classDetail;
 
   return (
-    <Card title={t("detail.data.title")}>
-      <dl className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-        <DetailField label={t("detail.data.fields.code")}>{classRecord.code}</DetailField>
-        <DetailField label={t("detail.data.fields.edition")}>{classRecord.edition}</DetailField>
-        <DetailField label={t("detail.data.fields.period")}>
-          {formatPeriod(classRecord.start, classRecord.end, i18n.language)}
-        </DetailField>
-        <DetailField label={t("detail.data.fields.location")}>
-          {classRecord.location || t("detail.data.noLocation")}
-        </DetailField>
-        <DetailField label={t("detail.data.fields.seats")}>
-          <span aria-hidden="true">{`${classRecord.enrolled}/${classRecord.capacity}`}</span>
-          <span className="sr-only">
-            {t("detail.data.seatsLabel", {
-              enrolled: classRecord.enrolled,
-              capacity: classRecord.capacity,
-            })}
-          </span>
-        </DetailField>
-        <DetailField label={t("detail.data.fields.course")}>{course.name}</DetailField>
-        <DetailField label={t("detail.data.fields.level")}>
-          {t(`levels.${course.category}`)}
-        </DetailField>
-      </dl>
-    </Card>
+    <DetailsCard
+      title={t("detail.data.title")}
+      columns={4}
+      fields={[
+        { label: t("detail.data.fields.code"), value: classDetail.code },
+        { label: t("detail.data.fields.course"), value: course.name },
+        { label: t("detail.data.fields.level"), value: t(`levels.${course.category}`) },
+        { label: t("detail.data.fields.edition"), value: edition.name },
+        {
+          label: t("detail.data.fields.startDate"),
+          value: formatCalendarDate(classDetail.startDate, i18n.language),
+        },
+        {
+          label: t("detail.data.fields.endDate"),
+          value: formatCalendarDate(classDetail.endDate, i18n.language),
+        },
+        { label: t("detail.data.fields.location"), value: classDetail.location },
+        {
+          label: t("detail.data.fields.status"),
+          value: t(CLASS_STATUS_LABEL_KEYS[classDetail.status]),
+        },
+        { label: t("detail.data.fields.capacity"), value: classDetail.capacity },
+        {
+          label: t("detail.data.fields.enrolled"),
+          value: t("detail.data.activeCount", { count: summary.enrolledCount }),
+        },
+        {
+          label: t("detail.data.fields.createdAt"),
+          value: formatInstantDate(classDetail.createdAt, i18n.language),
+        },
+      ]}
+    />
   );
 }

@@ -46,6 +46,10 @@
   "comingSoon": {
     "description": "This area is still under construction and is coming soon."
   },
+  "details": {
+    "empty": "—",
+    "notInformed": "Not provided"
+  },
   "toast": {
     "region": "Notifications",
     "close": "Close notification"

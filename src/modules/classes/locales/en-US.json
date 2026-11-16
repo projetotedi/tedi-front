@@ -87,20 +87,61 @@
     "advanced": "Advanced level — inherited from the course"
   },
   "detail": {
+    "routeTitle": "Class",
+    "loading": "Loading the class…",
+    "loadError": "Could not load the class. Try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Class not found",
+    "notFoundDescription": "This class does not exist or was removed. Go back to the list and pick another.",
+    "backToList": "Back to classes",
     "archived": "Archived",
+    "comingSoon": "Coming soon",
+    "header": {
+      "edition": "Edition {{name}}",
+      "seats_one": "{{enrolled}} of {{count}} seat",
+      "seats_other": "{{enrolled}} of {{count}} seats"
+    },
     "data": {
       "title": "Class data",
-      "noLocation": "Not informed",
-      "seatsLabel": "{{enrolled}} of {{capacity}} seats taken",
       "fields": {
         "code": "Code",
-        "edition": "Edition",
-        "period": "Period",
-        "location": "Location",
-        "seats": "Seats",
         "course": "Course",
-        "level": "Level (from the course)"
-      }
+        "level": "Level (of the course)",
+        "edition": "Edition",
+        "startDate": "Start",
+        "endDate": "End",
+        "location": "Location",
+        "status": "Status",
+        "capacity": "Total seats",
+        "enrolled": "Enrolled",
+        "createdAt": "Created on"
+      },
+      "activeCount_zero": "0 active",
+      "activeCount_one": "{{count}} active",
+      "activeCount_other": "{{count}} active"
+    },
+    "summary": {
+      "title": "Summary",
+      "workload": "Workload",
+      "lessonsDone": "Lessons held",
+      "students": "Students",
+      "averageAttendance": "Average attendance",
+      "outOf": "{{done}} of {{total}}"
+    },
+    "enrollments": {
+      "title": "Enrolled students",
+      "caption": "First students enrolled in the class",
+      "name": "Name",
+      "enrolledAt": "Enrolled on",
+      "empty": "No student enrolled yet.",
+      "seeAll_one": "See the enrolled student",
+      "seeAll_other": "See all {{count}}"
+    },
+    "lessons": {
+      "title": "Class lessons"
+    },
+    "members": {
+      "title": "Allocated members"
     }
   },
   "courseOrigin": {
@@ -125,14 +166,16 @@
     "error": "Could not load the data of the course.",
     "unavailable": "The data of this course is not available."
   },
-  "detailNotFound": "Class not found",
-  "backToList": "Back to classes",
   "editions": {
+    "2024": "2024",
     "2026-1": "2026.1",
     "2026-2": "2026.2",
     "2025-2": "2025.2",
-    "2025-1": "2025.1",
-    "2024": "2024"
+    "2025-1": "2025.1"
   },
-  "levels": { "basic": "Basic", "intermediate": "Intermediate", "advanced": "Advanced" }
+  "levels": {
+    "basic": "Basic",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  }
 }

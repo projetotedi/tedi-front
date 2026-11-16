@@ -24,6 +24,7 @@ import type {
 import type {
   ApiErrorDto,
   ArchiveDto,
+  ClassDetailDto,
   ClassResponseDto,
   ClassesSummaryByCourseResponseDto,
   CreateClassDto,
@@ -279,6 +280,112 @@ export function useGetClassesSummaryByCourse<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getGetClassesSummaryByCourseQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetClassUrl = (id: string) => {
+  return `/classes/${id}`;
+};
+
+export const getClass = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ClassDetailDto> => {
+  return httpClient<ClassDetailDto>(getGetClassUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClassQueryKey = (id: string) => {
+  return [`/classes/${id}`] as const;
+};
+
+export const getGetClassQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClass>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClassQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getClass>>> = ({ signal }) =>
+    getClass(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetClassQueryResult = NonNullable<Awaited<ReturnType<typeof getClass>>>;
+export type GetClassQueryError = ApiErrorDto;
+
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClass>>,
+          TError,
+          Awaited<ReturnType<typeof getClass>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClass>>,
+          TError,
+          Awaited<ReturnType<typeof getClass>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetClassQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

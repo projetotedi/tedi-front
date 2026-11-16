@@ -140,6 +140,132 @@ export const GetClassesSummaryByCourseResponseItem = zod.object({
 });
 export const GetClassesSummaryByCourseResponse = zod.array(GetClassesSummaryByCourseResponseItem);
 
+export const GetClassParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const getClassResponseCourseOneLessonPlanCountMin = 0;
+
+export const getClassResponseCourseOnePlannedWorkloadMinutesMin = 0;
+
+export const getClassResponseEnrollmentsTotalMin = 0;
+
+export const getClassResponseSummaryAverageAttendanceMin = 0;
+export const getClassResponseSummaryAverageAttendanceMax = 1;
+
+export const getClassResponseSummaryEnrolledCountMin = 0;
+
+export const getClassResponseSummaryOccupancyRateMin = 0;
+
+export const GetClassResponse = zod.object({
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("Set when archived: the class is then read-only (RN-27). Null while active."),
+  capacity: zod.int().describe("Number of seats."),
+  code: zod.string().describe("Unique inside its edition."),
+  course: zod
+    .object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        )
+        .describe(
+          "Always the current category of the course: a class has no category of its own (RN-14).",
+        ),
+      id: zod.uuid(),
+      lessonPlanCount: zod
+        .int()
+        .min(getClassResponseCourseOneLessonPlanCountMin)
+        .describe(
+          "Lesson plans in the sequence of the course, archived plans that stayed in it included (same number as GET /courses/{id}).",
+        ),
+      name: zod.string(),
+      plannedWorkloadMinutes: zod
+        .int()
+        .min(getClassResponseCourseOnePlannedWorkloadMinutesMin)
+        .describe("Sum of the expected durations of the sequence (RF-018, RN-24), never stored."),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+        .describe(
+          "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+        ),
+    })
+    .describe(
+      "The course this class offers, read now: its category is the one of the course (RN-14, RF-029), and changing it there changes it here.",
+    ),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe("Null when the person who created the class was removed."),
+  edition: zod.object({
+    id: zod.uuid(),
+    name: zod.string().describe('Year and term, "<year>.<term>".'),
+  }),
+  endDate: zod.iso.date(),
+  enrollmentsPreview: zod
+    .array(
+      zod.object({
+        enrolledAt: zod.iso.datetime({ offset: true }),
+        id: zod.uuid().describe("Id of the enrollment."),
+        student: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .describe("The enrolled student."),
+      }),
+    )
+    .describe(
+      "Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments (GUS-108). Empty when there are none.",
+    ),
+  enrollmentsTotal: zod
+    .int()
+    .min(getClassResponseEnrollmentsTotalMin)
+    .describe("Active enrollments of the class, the same as summary.enrolledCount."),
+  id: zod.uuid(),
+  location: zod.string().nullable().describe("Null when not informed."),
+  name: zod.string().nullable().describe("Optional label. Null when not informed."),
+  startDate: zod.iso.date(),
+  status: zod
+    .enum(["planned", "in_progress", "completed", "cancelled"])
+    .describe("Status of the class (RF-034). Omit for planned.")
+    .describe("Independent of archiving: an archived class keeps its status (RF-034, RN-27)."),
+  summary: zod.object({
+    averageAttendance: zod
+      .number()
+      .min(getClassResponseSummaryAverageAttendanceMin)
+      .max(getClassResponseSummaryAverageAttendanceMax)
+      .nullable()
+      .describe("Fraction from 0 to 1. Null until the attendance module exists (E6)."),
+    capacity: zod.int().describe("Number of seats."),
+    enrolledCount: zod
+      .int()
+      .min(getClassResponseSummaryEnrolledCountMin)
+      .describe("Active enrollments. 0 until enrollments exist (GUS-108)."),
+    lessonsDone: zod
+      .int()
+      .nullable()
+      .describe("Null until the lessons module feeds the sheet of the class (RF-035)."),
+    lessonsTotal: zod
+      .int()
+      .nullable()
+      .describe("Null until the lessons module feeds the sheet of the class (RF-035)."),
+    occupancyRate: zod
+      .number()
+      .min(getClassResponseSummaryOccupancyRateMin)
+      .describe(
+        "enrolledCount / capacity, rounded to two decimals. Can pass 1 if the class is over capacity.",
+      ),
+  }),
+});
+
 export const UpdateClassParams = zod.object({
   id: zod.uuid().describe("Id of the class."),
 });
