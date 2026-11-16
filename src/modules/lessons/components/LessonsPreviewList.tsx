@@ -19,8 +19,10 @@ export interface LessonsPreviewListProps {
  *
  * A lesson outside the period of the class has the warning color and says it in words, so it is
  * not only a color. The text of the number and of the day is read by a screen reader as "Aula 1",
- * and the square with the number is for who sees. The auxiliary text uses the dark neutral and not
- * `text-muted`: on these backgrounds `text-muted` is 4,2:1 (4,3:1 on the warning), under 4,5:1.
+ * and the square with the number is for who sees. The color of the text is set on each piece
+ * because the body of the dialog is `text-muted` and the pieces would inherit it: `text-muted` on
+ * these backgrounds is 4,2:1 (4,3:1 on the warning), under 4,5:1. So the day and the title are
+ * `text-foreground`, and the auxiliary text (the duration) is the dark neutral (6,7:1).
  */
 export function LessonsPreviewList({ preview, isBusy }: LessonsPreviewListProps): ReactElement {
   const { t, i18n } = useTranslation("lessons");
@@ -44,19 +46,25 @@ export function LessonsPreviewList({ preview, isBusy }: LessonsPreviewListProps)
           >
             <span
               aria-hidden="true"
-              className="grid size-6 shrink-0 place-items-center rounded-md border border-border-secondary bg-surface text-sm font-medium"
+              className="grid size-6 shrink-0 place-items-center rounded-md border border-border-secondary bg-surface text-sm font-medium text-foreground"
             >
               {number}
             </span>
             <span className="sr-only">{t("generate.preview.lessonNumber", { number })}</span>
             <span
               className={`w-28 shrink-0 text-base font-medium ${
-                isOutside ? "text-tedi-warning-foreground" : ""
+                isOutside ? "text-tedi-warning-foreground" : "text-foreground"
               }`}
             >
               {formatCalendarDate(item.date, i18n.language)}
             </span>
-            <span className="min-w-0 flex-1 text-base break-words">{item.title}</span>
+            <span
+              className={`min-w-0 flex-1 basis-40 text-base break-words ${
+                isOutside ? "text-tedi-warning-foreground" : "text-foreground"
+              }`}
+            >
+              {item.title}
+            </span>
             {isOutside ? (
               <span className="text-sm font-semibold text-tedi-warning-foreground">
                 {t("generate.preview.outsidePeriod")}

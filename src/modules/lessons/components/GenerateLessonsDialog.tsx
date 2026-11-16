@@ -329,11 +329,13 @@ export function GenerateLessonsDialog({
       >
         <Alert
           variant="info"
+          // The description of the info alert is `text-muted`, which is 3,9:1 on its blue
+          // background (under 4,5:1), so the text takes the foreground color (15:1).
           description={
-            <>
+            <span className="text-foreground">
               {t("generate.summaryDescription", { course: courseName })}
               {skippedText === null ? null : ` ${skippedText}`}
-            </>
+            </span>
           }
         >
           {lessonCount === undefined
@@ -438,7 +440,7 @@ export function GenerateLessonsDialog({
 
         <section aria-labelledby={previewTitleId} className="flex flex-col gap-3">
           <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-            <h3 id={previewTitleId} className="text-base font-semibold">
+            <h3 id={previewTitleId} className="text-base font-semibold text-foreground">
               {t("generate.preview.title")}
             </h3>
             {previewNote === null ? null : <p className="text-sm text-muted">{previewNote}</p>}

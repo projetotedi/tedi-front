@@ -285,6 +285,44 @@ describe("GenerateLessonsDialog", () => {
       expect(within(rows[2]).getByText("3")).toBeInTheDocument();
     });
 
+    it("sets the color of the text of each row, because the body of the dialog is muted (4,2:1 on the row)", async () => {
+      const user = setupUser();
+      await renderDialog();
+
+      await fillValidForm(user);
+
+      await screen.findByRole("list", PREVIEW_LIST);
+      const [row] = rowsOfList();
+      expect(within(row).getByText("07/04/2026")).toHaveClass("text-foreground");
+      expect(within(row).getByText("Conhecendo o computador")).toHaveClass("text-foreground");
+      expect(within(row).getByText("1h30")).toHaveClass("text-tedi-neutral-foreground");
+      expect(within(row).getByText("1")).toHaveClass("text-foreground");
+      expect(screen.getByRole("heading", { level: 3, name: "Prévia das datas" })).toHaveClass(
+        "text-foreground",
+      );
+    });
+
+    it("lets the title of a lesson go to its own line on a narrow screen, instead of breaking inside a word", async () => {
+      const user = setupUser();
+      await renderDialog();
+
+      await fillValidForm(user);
+
+      await screen.findByRole("list", PREVIEW_LIST);
+      const [row] = rowsOfList();
+      expect(row).toHaveClass("flex-wrap");
+      expect(within(row).getByText("Conhecendo o computador")).toHaveClass("basis-40", "flex-1");
+    });
+
+    it("gives the description of the summary the foreground color, which the muted one of the alert is under 4,5:1", async () => {
+      await renderDialog();
+
+      const description = screen.getByText(/^Uma por plano de aula do curso Informática Básica/);
+
+      expect(description).toHaveClass("text-foreground");
+      expect(description.closest("[data-slot='alert-description']")).not.toBeNull();
+    });
+
     it("shows the schedule of the preview next to its title, read from the answer", async () => {
       const user = setupUser();
       await renderDialog();
