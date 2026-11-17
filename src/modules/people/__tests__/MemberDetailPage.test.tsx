@@ -2,7 +2,11 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { MemberStatus, type MemberDetailResponseDto } from "@api/generated/model";
+import {
+  MemberRegistrationStatus,
+  MemberStatus,
+  type MemberDetailResponseDto,
+} from "@api/generated/model";
 import { getGetMemberQueryKey } from "@api/generated/people/people";
 import { buildMeUser, meHandler } from "@modules/auth/__tests__/handlers";
 import { renderRoutes, server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
@@ -376,6 +380,21 @@ describe("MemberDetailPage", () => {
       await renderPage({ member: buildMemberDetail({ reviewedBy: null, reviewedAt: null }) });
 
       expectNoValue(valueOf(record(), "Cadastro aprovado por"), "Cadastro aprovado por");
+    });
+
+    // `reviewedBy` and `reviewedAt` are about the review, whatever came out of it: for a rejected
+    // registration they say who rejected it. The fixture keeps both filled, and none of these
+    // registrations was approved, so the value has to be the dash.
+    it.each([
+      ["a rejected registration", MemberRegistrationStatus.rejected],
+      ["a pending registration", MemberRegistrationStatus.pending],
+      ["a person with no member profile", null],
+    ])("shows a dash, and not who reviewed it, for %s", async (_label, registrationStatus) => {
+      await renderPage({ member: buildMemberDetail({ registrationStatus }) });
+
+      expect(valueOf(record(), "Cadastro aprovado por")).toHaveTextContent(/^—Não informado$/);
+      expect(within(record()).queryByText(/Ana Paula Torres/)).not.toBeInTheDocument();
+      expect(within(record()).queryByText(/01\/03\/2024/)).not.toBeInTheDocument();
     });
   });
 

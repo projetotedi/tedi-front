@@ -88,7 +88,11 @@ function MemberDetailView({ member }: { member: MemberDetailResponseDto }): Reac
         <div className="flex min-w-0 flex-col gap-5">
           <MemberHoursBankCard />
           <MemberAttendanceCard />
-          <MemberRecordCard reviewedBy={member.reviewedBy} reviewedAt={member.reviewedAt} />
+          <MemberRecordCard
+            registrationStatus={member.registrationStatus}
+            reviewedBy={member.reviewedBy}
+            reviewedAt={member.reviewedAt}
+          />
         </div>
       </div>
     </div>
