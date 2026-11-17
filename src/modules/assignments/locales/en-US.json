@@ -67,6 +67,7 @@
     "monitorsOf": "{{confirmed}} of {{expected}}",
     "belowExpected": "Below expected",
     "applications": "Applications",
+    "studentsLoading": "Loading the students…",
     "loading": "Loading the coverage of the lesson…",
     "error": "The coverage of the lesson could not be loaded."
   },

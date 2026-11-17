@@ -19,8 +19,9 @@ export interface LessonCoverageCardProps {
  * screen of the lesson in the Figma. Four pairs of label and value:
  *
  * - **Alunos**: the students enrolled in the class of the lesson (`getClass`, `summary.enrolledCount`,
- *   F8: "8 alunos matriculados" of the Figma). A class that cannot be read leaves a dash here, and the
- *   rest of the card stays;
+ *   F8: "8 alunos matriculados" of the Figma). The class is asked after the lesson is known, so the card
+ *   does not wait for it: it is drawn with the rest, and this value is a small skeleton until the class
+ *   answers. A class that cannot be read leaves a dash here, and the rest of the card stays;
  * - **Professor(a)**: the confirmed teacher, taken from the assignments of the lesson (a pending one
  *   is a candidate, not the teacher), or a dash;
  * - **Monitores**: the confirmed monitors against the expected ones ("2 de 3"), or only the confirmed
@@ -36,8 +37,8 @@ export interface LessonCoverageCardProps {
  * query (and key) of the screen that hosts the card, so there is no second request for it.
  *
  * Without `lessons.view` the card is not drawn and nothing is asked. It brings its own request and its
- * own failure: while it loads it is a skeleton, and when it fails the error is the card's, with
- * "Tentar de novo", and does not take the screen that hosts it down.
+ * own failure: while the lesson and the assignments load it is a skeleton, and when they fail the error
+ * is the card's, with "Tentar de novo", and does not take the screen that hosts it down.
  */
 export function LessonCoverageCard({ lessonId }: LessonCoverageCardProps): ReactElement | null {
   const { t } = useTranslation("assignments");
@@ -79,18 +80,24 @@ export function LessonCoverageCard({ lessonId }: LessonCoverageCardProps): React
     );
   }
 
-  if (classQuery.isPending) return <CoverageLoading title={title} />;
-
   const teacher = findConfirmedTeacher(assignments);
   const { confirmed, expected } = lesson.coverage.monitors;
+  // The class is asked after the lesson is known, so it can answer after the rest of the card is
+  // ready. The card is drawn with what it has (the lesson and the assignments) and only this value
+  // waits: a small skeleton, and then the number. A class that cannot be read is a dash, and a class
+  // with no student is a zero.
+  const students = classQuery.isPending ? (
+    <PendingStudents />
+  ) : (
+    (classQuery.data?.summary.enrolledCount ?? null)
+  );
 
   return (
     <DetailsCard
       title={title}
       columns={1}
       fields={[
-        // The class that cannot be read is a dash, and a class with no student is a zero.
-        { label: t("coverage.students"), value: classQuery.data?.summary.enrolledCount ?? null },
+        { label: t("coverage.students"), value: students },
         { label: t("coverage.teacher"), value: teacher?.name ?? null },
         {
           label: t("coverage.monitors"),
@@ -110,6 +117,18 @@ export function LessonCoverageCard({ lessonId }: LessonCoverageCardProps): React
         { label: t("coverage.applications"), value: countPendingApplications(assignments) },
       ]}
     />
+  );
+}
+
+/** The value of Alunos while the class is on its way: a small skeleton, and the label for who does not see it. */
+function PendingStudents(): ReactElement {
+  const { t } = useTranslation("assignments");
+
+  return (
+    <div role="status">
+      <p className="sr-only">{t("coverage.studentsLoading")}</p>
+      <Skeleton className="h-5 w-8 rounded-md" />
+    </div>
   );
 }
 

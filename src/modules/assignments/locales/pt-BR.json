@@ -67,6 +67,7 @@
     "monitorsOf": "{{confirmed}} de {{expected}}",
     "belowExpected": "Abaixo do esperado",
     "applications": "Candidaturas",
+    "studentsLoading": "Carregando os alunos…",
     "loading": "Carregando a cobertura da aula…",
     "error": "Não foi possível carregar a cobertura da aula."
   },

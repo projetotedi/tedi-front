@@ -73,10 +73,18 @@ async function renderCard(user = buildMeUser(Role.coordinator)) {
   return renderWithProviders(<LessonCoverageCard lessonId={LESSON_ID} />, { user });
 }
 
-/** Waits for the card to leave the skeleton: its pairs of label and value are on the screen. */
+/**
+ * Waits for the card to leave the skeleton and for its students to be known. The pairs of label and
+ * value are drawn as soon as the lesson and the assignments are there, and the students come from the
+ * class, which is asked after the lesson and can answer later (the value is a skeleton until then),
+ * so a test that looks at the whole card waits for that too.
+ */
 async function waitForCoverage() {
   await screen.findByRole("heading", { name: TITLE });
   await within(card()).findByText("Alunos", { selector: "dt" });
+  await waitFor(() =>
+    expect(within(valueOf("Alunos")).queryByRole("status")).not.toBeInTheDocument(),
+  );
 }
 
 /** The API as the Figma shows the lesson: 8 students, Beatriz teaching, 3 of 3 monitors, 1 application. */
@@ -286,6 +294,32 @@ describe("LessonCoverageCard", () => {
 
       expect(within(card()).queryByRole("link")).not.toBeInTheDocument();
       expect(within(card()).queryByRole("button")).not.toBeInTheDocument();
+    });
+
+    it("draws the card with the lesson and the assignments while the class is on its way, with only the students pending", async () => {
+      const classAnswer = createDeferred();
+      useFullCoverage();
+      server.use(getClassHandler({ delay: classAnswer.promise }));
+      await renderCard();
+
+      // The lesson and the assignments are there before the class: the card is not held in the skeleton.
+      await waitFor(() => expect(valueOf("Professor(a)")).toHaveTextContent("Beatriz Nunes"));
+      expect(valueOf("Monitores")).toHaveTextContent(/^3 de 3$/);
+      expect(valueOf("Candidaturas")).toHaveTextContent(/^1$/);
+      expect(screen.queryByText("Carregando a cobertura da aula…")).not.toBeInTheDocument();
+      // Only the students wait, with a small skeleton that a screen reader reads as loading, and not as
+      // a value that is missing.
+      const pending = within(valueOf("Alunos")).getByRole("status");
+      expect(pending).toHaveTextContent("Carregando os alunos…");
+      expect(within(valueOf("Alunos")).queryByText("Não informado")).not.toBeInTheDocument();
+      const cardWhilePending = card();
+
+      classAnswer.resolve();
+
+      await waitFor(() => expect(valueOf("Alunos")).toHaveTextContent(/^8$/));
+      expect(within(valueOf("Alunos")).queryByRole("status")).not.toBeInTheDocument();
+      // The same card, with the number where the skeleton was: nothing was mounted again.
+      expect(card()).toBe(cardWhilePending);
     });
 
     it("keeps the rest of the card when the class cannot be read: the students are a dash", async () => {
