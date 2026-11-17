@@ -251,6 +251,52 @@ describe("AdjustEntryDialog", () => {
     await waitFor(() => expect(within(queue).queryByText("14/03")).not.toBeInTheDocument());
   });
 
+  it("shows a VALIDATION_FAILED of the API on the fields it points at", async () => {
+    const user = userEvent.setup();
+    const { dialog } = await renderAndOpen(user, {
+      extraHandlers: [
+        http.patch("*/hour-entries/:id/adjust", () =>
+          apiError(400, "VALIDATION_FAILED", [
+            { field: "justification", message: "must not be blank" },
+            { field: "validatedMinutes", message: "must be at most 1440" },
+          ]),
+        ),
+      ],
+    });
+    await fill(user, dialog, "2h", JUSTIFICATION);
+
+    await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+
+    const newValue = within(dialog).getByRole("textbox", { name: /Novo valor \(horas\)/ });
+    await waitFor(() =>
+      expect(newValue).toHaveAccessibleDescription("Informe um valor entre 0h01 e 24h."),
+    );
+    expect(
+      within(dialog).getByRole("textbox", { name: /Justificativa/ }),
+    ).toHaveAccessibleDescription("Escreva a justificativa.");
+    expect(newValue).toHaveFocus();
+  });
+
+  it.each([
+    ["a VALIDATION_FAILED with no field of the form", apiError(400, "VALIDATION_FAILED", [])],
+    ["the person's own entry", apiError(409, "SELF_REVIEW_NOT_ALLOWED")],
+  ])("shows an alert for %s", async (_case, response) => {
+    const user = userEvent.setup();
+    const { dialog } = await renderAndOpen(user, {
+      extraHandlers: [http.patch("*/hour-entries/:id/adjust", () => response.clone())],
+    });
+    await fill(user, dialog, "2h", JUSTIFICATION);
+
+    await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent(
+      response.status === 409
+        ? "Você não pode revisar o próprio lançamento."
+        : "Não foi possível salvar o ajuste. Tente de novo.",
+    );
+  });
+
   it("keeps the dialog open with an alert when saving fails", async () => {
     const user = userEvent.setup();
     const { dialog } = await renderAndOpen(user, {

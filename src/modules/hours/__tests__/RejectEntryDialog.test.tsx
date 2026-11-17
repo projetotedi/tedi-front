@@ -4,7 +4,13 @@ import { http } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { ENTRY_1203_ID } from "./bank-fixtures";
-import { apiError, createBankSpies, requestsTo, type BankSpies } from "./bank-handlers";
+import {
+  apiError,
+  createBankSpies,
+  queueRequests,
+  requestsTo,
+  type BankSpies,
+} from "./bank-handlers";
 import {
   createDeferred,
   renderBankRoutes,
@@ -131,6 +137,45 @@ describe("RejectEntryDialog", () => {
 
     expect(await screen.findByText("Lançamento rejeitado")).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Rejeitar lançamento" })).not.toBeInTheDocument();
+  });
+
+  it("shows a VALIDATION_FAILED of the reason on its field", async () => {
+    const user = userEvent.setup();
+    const { dialog } = await renderAndOpen(user, {
+      extraHandlers: [
+        http.patch("*/hour-entries/:id/reject", () =>
+          apiError(400, "VALIDATION_FAILED", [{ field: "reason", message: "must not be blank" }]),
+        ),
+      ],
+    });
+    await user.type(reasonField(dialog), REASON);
+
+    await user.click(within(dialog).getByRole("button", { name: "Rejeitar lançamento" }));
+
+    await waitFor(() =>
+      expect(reasonField(dialog)).toHaveAccessibleDescription("Escreva o motivo da rejeição."),
+    );
+    expect(reasonField(dialog)).toHaveFocus();
+  });
+
+  it("closes and refreshes the queue when the entry is no longer pending", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog, queue } = await renderAndOpen(user, {
+      spies,
+      extraHandlers: [
+        http.patch("*/hour-entries/:id/reject", () => apiError(404, "HOUR_ENTRY_NOT_FOUND")),
+      ],
+    });
+    await user.type(reasonField(dialog), REASON);
+    const reads = queueRequests(spies).length;
+
+    await user.click(within(dialog).getByRole("button", { name: "Rejeitar lançamento" }));
+
+    expect(await screen.findByText("Este lançamento já não está pendente.")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Rejeitar lançamento" })).not.toBeInTheDocument();
+    expect(queueRequests(spies).length).toBeGreaterThan(reads);
+    expect(within(queue).getByText("12/03")).toBeInTheDocument();
   });
 
   it("keeps the dialog open with an alert when rejecting fails", async () => {
