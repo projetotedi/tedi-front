@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AssignmentRole, AssignmentStatus } from "@api/generated/model";
@@ -683,6 +684,45 @@ describe("MyLessonsPage", () => {
         ).toBeInTheDocument();
       },
     );
+
+    it("does not hold the dialog for the reads behind it: Confirmar settles while the agenda is still being read again", async () => {
+      const backend = createApplicationsBackend();
+      const slowAgenda = createDeferred();
+      let agendaReads = 0;
+      server.use(
+        // The first read is the one of the page when it opens; the next ones are slow.
+        http.get("*/me/assignments", async () => {
+          agendaReads += 1;
+          if (agendaReads > 1) await slowAgenda.promise;
+          return HttpResponse.json(buildMyAssignments());
+        }),
+        ...backend.handlers,
+      );
+      const user = userEvent.setup();
+      await renderPage(Role.coordinator);
+      await user.click(await screen.findByRole("button", { name: "Candidaturas pendentes (3)" }));
+      const dialog = await screen.findByRole("dialog", { name: "Candidaturas pendentes (3)" });
+
+      await user.click(
+        within(dialog).getByRole("button", { name: "Confirmar a candidatura de Beatriz Nunes" }),
+      );
+
+      // The queue is read again and shown, the toast says it was done, and the buttons are free
+      // again, with the agenda behind the dialog still on its way.
+      expect(
+        await screen.findByRole("dialog", { name: "Candidaturas pendentes (2)" }),
+      ).toBeInTheDocument();
+      expect(await screen.findByText("Candidatura confirmada")).toBeInTheDocument();
+      await waitFor(() =>
+        expect(within(dialog).getByText("Fechar", { selector: "button" })).toBeEnabled(),
+      );
+      expect(
+        within(dialog).getByRole("button", { name: "Confirmar a candidatura de Diego Almeida" }),
+      ).toBeEnabled();
+      expect(agendaReads).toBe(2);
+
+      slowAgenda.resolve();
+    });
 
     it("keeps the agenda of who reviews, too: it is for every profile", async () => {
       await renderPage(Role.coordinator);

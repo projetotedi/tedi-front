@@ -45,9 +45,21 @@ export async function invalidateAfterApplied(
   lessonId: string,
 ): Promise<void> {
   await Promise.all([
+    invalidateQueue(queryClient),
+    invalidateAroundTheQueue(queryClient, lessonId),
+  ]);
+}
+
+/** The queue of the applications (`/applications`, whatever its parameters). */
+function invalidateQueue(queryClient: QueryClient): Promise<void> {
+  return queryClient.invalidateQueries({ queryKey: getListPendingApplicationsQueryKey() });
+}
+
+/** What an application changes besides the queue: the agenda, the lessons with a vacancy, the lesson's assignments. */
+function invalidateAroundTheQueue(queryClient: QueryClient, lessonId: string): Promise<unknown> {
+  return Promise.all([
     queryClient.invalidateQueries({ queryKey: getListMyAssignmentsQueryKey() }),
     queryClient.invalidateQueries({ queryKey: getListOpenLessonsQueryKey() }),
-    queryClient.invalidateQueries({ queryKey: getListPendingApplicationsQueryKey() }),
     queryClient.invalidateQueries({ queryKey: getListLessonAssignmentsQueryKey(lessonId) }),
   ]);
 }
@@ -61,14 +73,23 @@ export async function invalidateAfterApplied(
  * - the detail of that lesson;
  * - the assignments of the member of the application, when the person still exists.
  *
+ * It settles when **the queue** has been read again, and only then: the dialog that asked is the
+ * one waiting, for its own list, and what is behind it (the agenda and the lessons with a vacancy of
+ * the page, the lists of lessons, the detail) can be slow, so it is read again in the background
+ * instead of holding the buttons of the dialog. Everything is marked out of date at once, though, so
+ * what is not on the screen is read again the next time somebody looks.
+ *
  * Importing the keys of `lessons` is importing the contract, not the module: they are generated.
  */
 export async function invalidateAfterReviewed(
   queryClient: QueryClient,
   application: LessonAssignmentResponseDto,
 ): Promise<void> {
-  await Promise.all([
-    invalidateAfterApplied(queryClient, application.lessonId),
+  // The queue first, so its request is the first one on its way; the rest follows without waiting.
+  const queueRead = invalidateQueue(queryClient);
+
+  void Promise.all([
+    invalidateAroundTheQueue(queryClient, application.lessonId),
     queryClient.invalidateQueries({ queryKey: getListLessonsQueryKey() }),
     queryClient.invalidateQueries({ queryKey: getListLessonsCalendarQueryKey() }),
     queryClient.invalidateQueries({ queryKey: getGetLessonQueryKey(application.lessonId) }),
@@ -80,4 +101,6 @@ export async function invalidateAfterReviewed(
           }),
         ]),
   ]);
+
+  await queueRead;
 }

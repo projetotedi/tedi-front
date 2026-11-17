@@ -1,5 +1,5 @@
-import { QueryClient } from "@tanstack/react-query";
-import { describe, expect, it } from "vitest";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   getListLessonAssignmentsQueryKey,
@@ -58,6 +58,34 @@ function seededQueryClient() {
   for (const key of Object.values(keys)) queryClient.setQueryData(key, { seeded: true });
 
   return { queryClient, keys };
+}
+
+/** A promise that stays pending until the test opens it. */
+function createGate() {
+  let open!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    open = resolve;
+  });
+  return { promise, open };
+}
+
+/**
+ * Puts a query on the screen, as a mounted component does: it is read once, at once, and every
+ * read after that waits for `gate`. It returns what stops it.
+ */
+function mount(queryClient: QueryClient, queryKey: readonly unknown[], gate: Promise<void>) {
+  let reads = 0;
+  const observer = new QueryObserver(queryClient, {
+    queryKey,
+    retry: false,
+    queryFn: async () => {
+      reads += 1;
+      if (reads > 1) await gate;
+      return { reads };
+    },
+  });
+
+  return observer.subscribe(() => undefined);
 }
 
 describe("PENDING_APPLICATIONS_PARAMS", () => {
@@ -176,5 +204,54 @@ describe("invalidateAfterReviewed", () => {
     expect(isInvalidated(queryClient, keys.otherMemberAssignments)).toBe(false);
     expect(isInvalidated(queryClient, keys.lesson)).toBe(true);
     expect(isInvalidated(queryClient, keys.pending)).toBe(true);
+  });
+
+  it("settles when the queue has been read again, and not when the reads behind the dialog end: a slow one does not hold the buttons", async () => {
+    const queryClient = new QueryClient();
+    const queue = createGate();
+    const behind = createGate();
+    const keys = {
+      queue: [...getListPendingApplicationsQueryKey(PENDING_APPLICATIONS_PARAMS)],
+      agenda: [...getListMyAssignmentsQueryKey()],
+      open: [...getListOpenLessonsQueryKey()],
+      lesson: [...getGetLessonQueryKey(LESSON_ID)],
+    };
+    const stops = [
+      mount(queryClient, keys.queue, queue.promise),
+      mount(queryClient, keys.agenda, behind.promise),
+      mount(queryClient, keys.open, behind.promise),
+      mount(queryClient, keys.lesson, behind.promise),
+    ];
+    await vi.waitFor(() => {
+      for (const key of Object.values(keys)) {
+        expect(queryClient.getQueryState(key)?.status, JSON.stringify(key)).toBe("success");
+      }
+    });
+
+    let settled = false;
+    const done = invalidateAfterReviewed(
+      queryClient,
+      buildApplication({ lessonId: LESSON_ID }),
+    ).then(() => {
+      settled = true;
+    });
+
+    // It waits for the queue...
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryState(keys.queue)?.fetchStatus).toBe("fetching"),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(settled).toBe(false);
+
+    // ...and for nothing else: the queue is read, and it settles with the others still on their way.
+    queue.open();
+    await done;
+    expect(settled).toBe(true);
+    for (const key of [keys.agenda, keys.open, keys.lesson]) {
+      expect(queryClient.getQueryState(key)?.fetchStatus, JSON.stringify(key)).toBe("fetching");
+    }
+
+    behind.open();
+    for (const stop of stops) stop();
   });
 });

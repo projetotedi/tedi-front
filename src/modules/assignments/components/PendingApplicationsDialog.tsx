@@ -179,8 +179,9 @@ function ApplicationGroup({ group, idPrefix, acting, onAct }: ApplicationGroupPr
  * - **Confirmar and Recusar.** While one is on its way, the others are turned off and the dialog
  *   cannot be closed. On success the toast says who, which role and which day, the cache is told
  *   (the queue, the agenda, the coverage of the lesson in the lists, the detail and the calendar)
- *   and the row goes away when the queue is read again. The button that was pressed went with its
- *   row, so the focus goes to the list (or, when the queue is empty, to its message).
+ *   and the row goes away when the queue is read again: that is the only read the dialog waits
+ *   for, the others (the page behind it) go on in the background. The button that was pressed went
+ *   with its row, so the focus goes to the list (or, when the queue is empty, to its message).
  * - **A cancelled lesson** shows the tag Cancelada and a line saying it can only be declined:
  *   Confirmar is turned off and tied to that line, since the API would refuse it (409
  *   `LESSON_CANCELLED`).
@@ -206,7 +207,8 @@ export function PendingApplicationsDialog({
     query: { refetchOnMount: "always" },
   });
   // The cache is told even if the dialog is gone by the time the answer arrives, and the callbacks
-  // of `mutate` run only after it has read the queue again.
+  // of `mutate` run only after the queue has been read again. What is behind the dialog is read
+  // again in the background, so a slow read there does not hold the buttons.
   const approve = useApproveApplication({
     mutation: { onSuccess: (application) => invalidateAfterReviewed(queryClient, application) },
   });
