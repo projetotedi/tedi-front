@@ -427,10 +427,13 @@ function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptio
   );
 }
 
+/** A refusal, or a function of the call that gives it (`undefined` answers normally) for a test that fails one request only. */
+type ErrorOption<TCall> = ApiErrorOptions | ((call: TCall) => ApiErrorOptions | undefined);
+
 interface HandlerOptions<TCall, TResponse> {
   /** The answer, or a function of the call, for a test whose answer follows what it was asked. */
   response?: TResponse | ((call: TCall) => TResponse);
-  error?: ApiErrorOptions;
+  error?: ErrorOption<TCall>;
   networkError?: boolean;
   /** Holds the answer until the test resolves it, to look at the loading state. */
   delay?: Promise<void>;
@@ -442,6 +445,13 @@ function resolveResponse<TCall, TResponse>(
   call: TCall,
 ): TResponse {
   return typeof response === "function" ? (response as (call: TCall) => TResponse)(call) : response;
+}
+
+function resolveError<TCall>(
+  error: ErrorOption<TCall> | undefined,
+  call: TCall,
+): ApiErrorOptions | undefined {
+  return typeof error === "function" ? error(call) : error;
 }
 
 function numberOrNull(value: string | null): number | null {
@@ -475,7 +485,8 @@ export function createAssignmentHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call), { status: 201 });
   });
 }
@@ -494,7 +505,8 @@ export function listLessonAssignmentsHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }
@@ -513,7 +525,8 @@ export function listMemberAssignmentsHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }
@@ -536,7 +549,8 @@ export function cancelAssignmentHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }
@@ -555,7 +569,8 @@ export function getLessonHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }
@@ -574,7 +589,8 @@ export function getClassHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }
@@ -605,7 +621,8 @@ export function listMembersHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }
@@ -640,7 +657,8 @@ export function listLessonsHandler({
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
     return HttpResponse.json(resolveResponse(response, call));
   });
 }

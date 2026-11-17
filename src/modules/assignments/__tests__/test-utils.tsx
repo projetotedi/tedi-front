@@ -126,3 +126,18 @@ export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
     );
   }
 }
+
+/**
+ * Fails if a query was ever on its way, with no waiting: the screen kept it turned off. The query
+ * is in the cache even then (an observer builds it), idle and with nothing in it, so what tells
+ * "never asked" is that it is not fetching and has never had an answer, data or error.
+ */
+export function expectQueryNeverRan(queryClient: QueryClient, queryKey: readonly unknown[]): void {
+  for (const query of queryClient.getQueryCache().findAll({ queryKey })) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
+}
