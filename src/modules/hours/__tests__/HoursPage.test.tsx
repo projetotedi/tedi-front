@@ -5,10 +5,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { HoursMemberTotalDto } from "@api/generated/model";
 
+import { BEATRIZ_ID, RAFAEL_ID } from "./bank-fixtures";
 import { apiError, createBankSpies, createBankStore, requestsTo } from "./bank-handlers";
 import {
   createDeferred,
   renderBankRoutes,
+  server,
   setupBankTestServer,
   type BankRenderOptions,
 } from "./bank-test-utils";
@@ -16,6 +18,19 @@ import {
 setupBankTestServer();
 
 const MARCH = "/hours?period=2026-03";
+const BEATRIZ_VIEW = `/hours?period=2026-03&member=${BEATRIZ_ID}`;
+
+function searchOf(location: { search: string }) {
+  return new URLSearchParams(location.search);
+}
+
+function viewGroup() {
+  return screen.getByRole("group", { name: "Visão" });
+}
+
+function categoriesTable() {
+  return screen.findByRole("table", { name: /^Horas do membro por categoria/ });
+}
 
 function renderHoursPage(options: BankRenderOptions = {}) {
   return renderBankRoutes({ route: MARCH, ...options });
@@ -277,5 +292,137 @@ describe("HoursPage", () => {
         "Fevereiro/2026",
       ]),
     );
+  });
+
+  it("opens the member view from Ver membro and from the row", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderHoursPage();
+    const table = await membersTable();
+    await within(table).findByText("Beatriz Nunes");
+
+    await user.click(within(table).getByRole("button", { name: "Ver membro Beatriz Nunes" }));
+
+    expect(searchOf(router.state.location).get("member")).toBe(BEATRIZ_ID);
+    expect(searchOf(router.state.location).get("period")).toBe("2026-03");
+    expect(await within(viewGroup()).findByText("Beatriz Nunes")).toBeInTheDocument();
+    expect(within(viewGroup()).getByRole("button", { name: "Todos" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    expect(screen.getByText("Horas por categoria do membro")).toHaveFocus();
+
+    await user.click(within(viewGroup()).getByRole("button", { name: "Todos" }));
+    await user.click(await within(await membersTable()).findByText("Rafael Souza"));
+
+    expect(searchOf(router.state.location).get("member")).toBe(RAFAEL_ID);
+    expect(await within(viewGroup()).findByText("Rafael Souza")).toBeInTheDocument();
+  });
+
+  it("shows the totals of the member: 46h, 36h, 8h and 2h", async () => {
+    await renderHoursPage({ route: BEATRIZ_VIEW });
+
+    const totals = await screen.findByRole("list", { name: "Totais do período" });
+    await within(totals).findByText("46h");
+    expect(
+      within(totals)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "Total de horas lançadas46h",
+      "Horas validadas36h",
+      "Pendentes de validação8h",
+      "Ajustadas / rejeitadas2h",
+    ]);
+    expect(screen.queryByRole("table", { name: /^Horas por membro/ })).not.toBeInTheDocument();
+  });
+
+  it("shows the hours by category of the member, only the categories with entries, without Observação", async () => {
+    await renderHoursPage({ route: BEATRIZ_VIEW });
+
+    const table = await categoriesTable();
+    await within(table).findByText("Aula");
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Categoria", "Horas", "Pendentes"]);
+    expect(bodyRows(table)).toEqual([
+      ["Aula", "28h", "—Sem pendência"],
+      ["Planejamento", "8h", "8h"],
+      ["Evento", "4h", "—Sem pendência"],
+      ["Gestão", "4h", "—Sem pendência"],
+      ["Outros", "2h", "—Sem pendência"],
+    ]);
+    expect(screen.queryByText(/Observação/i)).not.toBeInTheDocument();
+  });
+
+  it("goes back to Todos by the × of the chip and by Todos", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderHoursPage({ route: BEATRIZ_VIEW });
+    await within(viewGroup()).findByText("Beatriz Nunes");
+
+    await user.click(within(viewGroup()).getByRole("button", { name: "Voltar para Todos" }));
+
+    expect(searchOf(router.state.location).has("member")).toBe(false);
+    expect(within(viewGroup()).getByRole("button", { name: "Todos" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByText("Horas por membro")).toHaveFocus();
+
+    await user.click(
+      await within(await membersTable()).findByRole("button", { name: "Ver membro Beatriz Nunes" }),
+    );
+    await within(viewGroup()).findByText("Beatriz Nunes");
+    await user.click(within(viewGroup()).getByRole("button", { name: "Todos" }));
+
+    expect(searchOf(router.state.location).has("member")).toBe(false);
+    expect(within(viewGroup()).queryByText("Beatriz Nunes")).not.toBeInTheDocument();
+    expect(screen.getByText("Horas por membro")).toHaveFocus();
+  });
+
+  it("goes back to Todos when the person types in the member view", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderHoursPage({ route: BEATRIZ_VIEW });
+    await within(viewGroup()).findByText("Beatriz Nunes");
+    const search = screen.getByRole("textbox", { name: "Buscar membro" });
+
+    await user.type(search, "Car");
+
+    expect(searchOf(router.state.location).has("member")).toBe(false);
+    expect(search).toHaveValue("Car");
+    expect(search).toHaveFocus();
+    expect(await within(await membersTable()).findByText("Carla Mendes")).toBeInTheDocument();
+  });
+
+  it("shows Não foi possível abrir este membro with Voltar para Todos when the member is not found", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderHoursPage({
+      route: "/hours?period=2026-03&member=0197a000-0000-7000-8000-00000000ffff",
+    });
+
+    expect(await screen.findByText("Não foi possível abrir este membro")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Totais do período" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Voltar para Todos" }));
+
+    expect(searchOf(router.state.location).has("member")).toBe(false);
+    const table = await membersTable();
+    await within(table).findByText("Beatriz Nunes");
+
+    // A member out of the department of the director answers 403 FORBIDDEN_SCOPE.
+    server.use(http.get("*/members/:id/hours", () => apiError(403, "FORBIDDEN_SCOPE")));
+    await user.click(within(table).getByRole("button", { name: "Ver membro Beatriz Nunes" }));
+
+    expect(await screen.findByText("Não foi possível abrir este membro")).toBeInTheDocument();
+  });
+
+  it("labels Exportar in the member view as the report of everyone", async () => {
+    await renderHoursPage({ route: BEATRIZ_VIEW });
+
+    expect(
+      await screen.findByRole("button", { name: "Exportar relatório de todos" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Exportar relatório" })).not.toBeInTheDocument();
   });
 });

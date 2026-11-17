@@ -1,5 +1,5 @@
 import type { UseQueryResult } from "@tanstack/react-query";
-import type { ReactElement } from "react";
+import type { ReactElement, Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { HoursMemberTotalDto, HoursOverviewResponseDto } from "@api/generated/model";
@@ -22,11 +22,16 @@ export interface MemberHoursTableProps {
   onShowAll: () => void;
   onPageChange: (page: number) => void;
   onClearSearch: () => void;
+  /** Opens the view of a member, by "Ver membro" or by the row. */
+  onOpenMember: (personId: string) => void;
+  /** The title of the card, which takes the focus when the view of everyone comes back. */
+  titleRef: Ref<HTMLSpanElement>;
 }
 
 /**
  * "Horas por membro": the members with entries in the period, in the order of the API (the pending
- * ones first), with their department, the hours logged and the pending hours. The first load shows
+ * ones first), with their department, the hours logged and the pending hours. "Ver membro" and the
+ * row open the view of the member; a member who is no longer found has neither. The first load shows
  * four, with "Ver todos"; after it, twenty by page. The header of the columns stays in every state.
  */
 export function MemberHoursTable({
@@ -37,6 +42,8 @@ export function MemberHoursTable({
   onShowAll,
   onPageChange,
   onClearSearch,
+  onOpenMember,
+  titleRef,
 }: MemberHoursTableProps): ReactElement {
   const { t } = useTranslation("hours");
   const members = query.data?.members;
@@ -91,6 +98,20 @@ export function MemberHoursTable({
       headerClassName: "w-[16%] uppercase",
       render: (row) => <PendingHours minutes={row.pendingMinutes} />,
     },
+    {
+      header: t("bank.members.actions"),
+      headerClassName: "w-[15%] uppercase",
+      render: (row) =>
+        row.member === null ? null : (
+          <Button
+            variant="secondary"
+            aria-label={t("bank.members.viewMemberLabel", { name: row.member.name })}
+            onPress={() => onOpenMember(row.personId)}
+          >
+            {t("bank.members.viewMember")}
+          </Button>
+        ),
+    },
   ];
 
   function renderListState(): ReactElement | null {
@@ -133,7 +154,14 @@ export function MemberHoursTable({
   }
 
   return (
-    <Card className="rounded-3xl" title={t("bank.members.title")}>
+    <Card
+      className="rounded-3xl"
+      title={
+        <span ref={titleRef} tabIndex={-1} className="outline-none">
+          {t("bank.members.title")}
+        </span>
+      }
+    >
       <div
         aria-busy={query.isPlaceholderData || undefined}
         className={query.isPlaceholderData ? "opacity-75" : undefined}
@@ -142,6 +170,9 @@ export function MemberHoursTable({
           columns={columns}
           rows={rows}
           rowKey={(row) => row.personId}
+          onRowClick={(row) => {
+            if (row.member !== null) onOpenMember(row.personId);
+          }}
           caption={t("bank.members.caption")}
           tableClassName="table-fixed min-w-180"
         />

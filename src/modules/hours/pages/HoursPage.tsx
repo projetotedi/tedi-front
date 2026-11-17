@@ -1,10 +1,14 @@
 import { keepPreviousData } from "@tanstack/react-query";
-import { useRef, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useTranslation } from "react-i18next";
 
-import { useGetHoursOverview } from "@api/generated/hours/hours";
+import { useGetHoursOverview, useGetMemberHours } from "@api/generated/hours/hours";
+import { ListState } from "@shared/components/ListState";
 import { useDebounce } from "@shared/hooks/useDebounce";
+import { Card } from "@shared/ui";
 
 import { BankFilters } from "../components/BankFilters";
+import { CategoryHoursTable } from "../components/CategoryHoursTable";
 import { ExportHoursButton } from "../components/ExportHoursButton";
 import { HoursTotals } from "../components/HoursTotals";
 import { MemberHoursTable } from "../components/MemberHoursTable";
@@ -18,15 +22,19 @@ const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * "Banco de horas" (`/hours`, `hours.viewOthers`): the hours of the period of everyone the person
- * can see (the director, her department: the API cuts it). The month lives in the URL
- * (`?period=AAAA-MM`). The search narrows the members and the totals. The title (h1) comes from the
- * route (`handle.title`).
+ * can see (the director, her department: the API cuts it), or of one member. The month and the
+ * member live in the URL (`?period=AAAA-MM&member=<personId>`). The search narrows the members and
+ * the totals, and typing in the view of a member goes back to everyone. The title (h1) comes from
+ * the route (`handle.title`).
  */
 export function HoursPage(): ReactElement {
-  const { period, setPeriod } = useBankParams();
+  const { t } = useTranslation("hours");
+  const { period, memberId, setPeriod, openMember, closeMember } = useBankParams();
   const { from, to } = periodRange(period);
   const periodOptions = usePeriodOptions(period);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const focusTitleRef = useRef(false);
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [membersPage, setMembersPage] = useState(1);
@@ -44,12 +52,27 @@ export function HoursPage(): ReactElement {
       limit: showAll ? MEMBERS_PAGE_SIZE : MEMBERS_PREVIEW_LIMIT,
       search: appliedSearch === "" ? undefined : appliedSearch,
     },
-    { query: { placeholderData: keepPreviousData } },
+    { query: { enabled: memberId === null, placeholderData: keepPreviousData } },
   );
+  // Only the summary is drawn: one entry is enough.
+  const member = useGetMemberHours(
+    memberId ?? "",
+    { from, to, page: 1, limit: 1 },
+    { query: { enabled: memberId !== null } },
+  );
+
+  // The button pressed to change the view leaves the screen with it: the focus goes to the title of
+  // the first block of the new view.
+  useEffect(() => {
+    if (!focusTitleRef.current) return;
+    focusTitleRef.current = false;
+    titleRef.current?.focus();
+  }, [memberId]);
 
   function onSearchChange(value: string) {
     setSearch(value);
     setMembersPage(1);
+    if (memberId !== null) closeMember();
   }
 
   function onPeriodChange(next: string) {
@@ -62,6 +85,42 @@ export function HoursPage(): ReactElement {
     searchInputRef.current?.focus();
   }
 
+  function showMember(personId: string) {
+    focusTitleRef.current = true;
+    openMember(personId);
+  }
+
+  function showEveryone() {
+    focusTitleRef.current = true;
+    closeMember();
+  }
+
+  function renderMemberView(): ReactElement {
+    if (member.isError && member.data === undefined) {
+      return (
+        <Card className="rounded-3xl">
+          <ListState
+            variant="error"
+            title={t("bank.states.memberError")}
+            description={t("bank.states.errorDescription")}
+            action={{ label: t("bank.states.backToAll"), onPress: showEveryone }}
+          />
+        </Card>
+      );
+    }
+
+    return (
+      <>
+        <HoursTotals summary={member.data?.summary} isLoading={member.isPending} />
+        <CategoryHoursTable
+          summary={member.data?.summary}
+          isLoading={member.isPending}
+          titleRef={titleRef}
+        />
+      </>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -72,20 +131,32 @@ export function HoursPage(): ReactElement {
           period={period}
           periodOptions={periodOptions}
           onPeriodChange={onPeriodChange}
+          isMemberView={memberId !== null}
+          memberName={member.data?.member.name}
+          onShowAll={showEveryone}
+          onClearMember={showEveryone}
         />
-        <ExportHoursButton period={period} scope="view" />
+        <ExportHoursButton period={period} scope={memberId === null ? "view" : "allMembers"} />
       </div>
 
-      <HoursTotals summary={overview.data?.summary} isLoading={overview.isPending} />
-      <MemberHoursTable
-        query={overview}
-        hasSearch={appliedSearch !== ""}
-        showAll={showAll}
-        page={membersPage}
-        onShowAll={() => setShowAll(true)}
-        onPageChange={setMembersPage}
-        onClearSearch={clearSearch}
-      />
+      {memberId === null ? (
+        <>
+          <HoursTotals summary={overview.data?.summary} isLoading={overview.isPending} />
+          <MemberHoursTable
+            query={overview}
+            hasSearch={appliedSearch !== ""}
+            showAll={showAll}
+            page={membersPage}
+            onShowAll={() => setShowAll(true)}
+            onPageChange={setMembersPage}
+            onClearSearch={clearSearch}
+            onOpenMember={showMember}
+            titleRef={titleRef}
+          />
+        </>
+      ) : (
+        renderMemberView()
+      )}
     </div>
   );
 }

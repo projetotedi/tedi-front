@@ -3,9 +3,9 @@ import { useTranslation } from "react-i18next";
 
 import { Select, TextField, type SelectOption } from "@shared/ui";
 
-import { BankViewChips } from "./BankViewChips";
+import { BankViewChips, type BankViewChipsProps } from "./BankViewChips";
 
-export interface BankFiltersProps {
+export interface BankFiltersProps extends BankViewChipsProps {
   search: string;
   onSearchChange: (value: string) => void;
   searchInputRef: Ref<HTMLInputElement>;
@@ -22,6 +22,7 @@ export function BankFilters({
   period,
   periodOptions,
   onPeriodChange,
+  ...view
 }: BankFiltersProps): ReactElement {
   const { t } = useTranslation("hours");
 
@@ -45,7 +46,7 @@ export function BankFilters({
           onChange={onPeriodChange}
         />
       </div>
-      <BankViewChips />
+      <BankViewChips {...view} />
     </div>
   );
 }
