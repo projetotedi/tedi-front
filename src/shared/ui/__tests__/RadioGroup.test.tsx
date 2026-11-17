@@ -125,6 +125,17 @@ describe("RadioGroup", () => {
     expect(screen.getByRole("radiogroup").textContent).not.toContain("*");
   });
 
+  it("keeps the asterisk and the red of an invalid group off the options: only the label of the group shows them", () => {
+    render(<Harness isRequired errorMessage="Escolha o papel na aula." />);
+
+    // The style of the label draws the asterisk on every label under a required element, and
+    // paints it red under an invalid one; the options opt out of both.
+    for (const name of ["Monitor(a)", "Professor(a)"]) {
+      expect(screen.getByText(name)).toHaveClass("after:hidden", "text-foreground");
+    }
+    expect(screen.getByText("Papel na aula")).not.toHaveClass("after:hidden");
+  });
+
   it("links the description to the group and hides it behind the error", () => {
     const { rerender } = render(<Harness description="Escolha uma das opções." />);
     expect(screen.getByRole("radiogroup")).toHaveAccessibleDescription("Escolha uma das opções.");

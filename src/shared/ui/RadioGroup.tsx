@@ -36,7 +36,10 @@ export interface RadioGroupProps {
  * each option. The options sit in a wrapper of their own, so the label, the options, the help text
  * and the error stay stacked whatever the orientation (the group of the HeroUI would put them all
  * in one row when it is horizontal). The required asterisk comes from the HeroUI style of the
- * label of a required group, the same way as in `TextArea`.
+ * label of a required group, the same way as in `TextArea`; the same style would draw one on the
+ * label of every option too (each is marked required as well), which `after:hidden` takes away, and
+ * would turn them red when the group is invalid, so they keep the text color (the group's own
+ * label and the error say what is wrong).
  */
 export function RadioGroup({
   label,
@@ -83,7 +86,7 @@ export function RadioGroup({
               <HeroRadio.Control className="size-5">
                 <HeroRadio.Indicator />
               </HeroRadio.Control>
-              <Label className="text-base">{option.label}</Label>
+              <Label className="text-base text-foreground after:hidden">{option.label}</Label>
             </HeroRadio.Content>
             {option.description ? (
               <Description className="-mt-2 pb-1 ps-8 text-sm">{option.description}</Description>
