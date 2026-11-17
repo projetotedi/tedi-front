@@ -6,6 +6,7 @@ import { Button } from "@shared/ui";
 
 import clockIcon from "../../../assets/icons/clock.svg";
 import { formatEntryDay } from "../lib/bank-format";
+import { memberNameOf } from "../lib/bank-labels";
 
 export interface ReviewRowActionsProps {
   entry: MemberHourEntryResponseDto;
@@ -39,7 +40,7 @@ export function ReviewRowActions({
 }: ReviewRowActionsProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
   const labels = {
-    name: entry.member?.name ?? t("bank.members.removed"),
+    name: memberNameOf(entry, t),
     date: formatEntryDay(entry.date, i18n.language),
   };
   const isOff = isOwn || isBusy;

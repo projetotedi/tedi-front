@@ -1,4 +1,14 @@
-import { HourEntryCategory } from "@api/generated/model";
+import type { TFunction } from "i18next";
+
+import { HourEntryCategory, type MemberHourEntryResponseDto } from "@api/generated/model";
+
+/** The name of the member of an entry, or "Membro removido" when the API no longer finds her. */
+export function memberNameOf(
+  entry: Pick<MemberHourEntryResponseDto, "member">,
+  t: TFunction<"hours">,
+): string {
+  return entry.member?.name ?? t("bank.members.removed");
+}
 
 /**
  * The label of each category, under the namespace `hours`. It duplicates `entry-labels.ts` of

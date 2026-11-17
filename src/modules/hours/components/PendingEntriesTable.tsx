@@ -4,19 +4,19 @@ import { useTranslation } from "react-i18next";
 
 import { useListPendingHourEntries, useValidateHourEntries } from "@api/generated/hours/hours";
 import type { MemberHourEntryResponseDto } from "@api/generated/model";
-import { DataTable, type Column } from "@shared/components/DataTable";
+import { DataTable } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
 import { formatHours } from "@shared/lib/format";
 import { resolveListState } from "@shared/lib/list-state";
-import { Badge, Card, Checkbox, Pagination, toast } from "@shared/ui";
+import { Card, Pagination, toast } from "@shared/ui";
 
 import { useReviewPermission } from "../hooks/useReviewPermission";
-import { CATEGORY_LABEL_KEYS } from "../lib/bank-labels";
-import { formatEntryDay } from "../lib/bank-format";
+import { memberNameOf } from "../lib/bank-labels";
 import { STALE_QUEUE_ERRORS, toReviewError, type ReviewErrorKind } from "../lib/review-errors";
 import { invalidateAfterReview } from "../lib/review-queries";
 import { AdjustEntryDialog } from "./AdjustEntryDialog";
 import { EntryHistoryDialog } from "./EntryHistoryDialog";
+import { pendingEntryColumns } from "./pending-entry-columns";
 import { RejectEntryDialog } from "./RejectEntryDialog";
 import { ReviewRowActions } from "./ReviewRowActions";
 import { ReviewSelectionBar } from "./ReviewSelectionBar";
@@ -129,12 +129,8 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     hasActiveFilters: false,
   });
 
-  function nameOf(entry: MemberHourEntryResponseDto): string {
-    return entry.member?.name ?? t("bank.members.removed");
-  }
-
   function listNames(entries: MemberHourEntryResponseDto[]): string {
-    const names = [...new Set(entries.map(nameOf))];
+    const names = [...new Set(entries.map((entry) => memberNameOf(entry, t)))];
     return new Intl.ListFormat(i18n.language, { style: "long", type: "conjunction" }).format(names);
   }
 
@@ -201,7 +197,7 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     closeActionToast();
     actionToastRef.current = toast.success(t("adjust.success"), {
       description: t("adjust.successDescription", {
-        name: nameOf(updated),
+        name: memberNameOf(updated, t),
         declared: formatHours(updated.declaredMinutes),
         validated: formatHours(updated.validatedMinutes ?? 0),
       }),
@@ -219,7 +215,7 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     closeDialogAndFocusTitle();
     closeActionToast();
     toast.neutral(t("reject.success"), {
-      description: t("reject.successDescription", { name: nameOf(entry) }),
+      description: t("reject.successDescription", { name: memberNameOf(entry, t) }),
     });
   }
 
@@ -229,105 +225,33 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     toast.error(t("review.errors.entryGone"));
   }
 
-  const reviewColumns: Column<MemberHourEntryResponseDto>[] = [
-    {
-      header: t("review.select"),
-      headerClassName: "w-11",
-      headerContent: (
-        <Checkbox
-          isLabelHidden
-          label={t("review.selectAll")}
-          isSelected={selectable.length > 0 && selectedRows.length === selectable.length}
-          isIndeterminate={selectedRows.length > 0 && selectedRows.length < selectable.length}
-          isDisabled={selectable.length === 0 || isBusy}
-          onChange={(isSelected) =>
-            setSelected(new Set(isSelected ? selectable.map((row) => row.id) : []))
-          }
-        />
-      ),
-      render: (row) => (
-        <Checkbox
-          isLabelHidden
-          label={t("review.selectEntry", {
-            name: nameOf(row),
-            date: formatEntryDay(row.date, i18n.language),
-          })}
-          isSelected={selected.has(row.id)}
-          isDisabled={!canReviewEntry(row) || isBusy}
-          onChange={(isSelected) => toggle(row.id, isSelected)}
-        />
-      ),
-    },
-  ];
-
-  const widths = canReview
-    ? {
-        date: "w-[9%]",
-        member: "w-[16%]",
-        activity: "w-[26%]",
-        category: "w-[14%]",
-        hours: "w-[8%]",
-      }
-    : {
-        date: "w-[12%]",
-        member: "w-[22%]",
-        activity: "w-[36%]",
-        category: "w-[18%]",
-        hours: "w-[12%]",
-      };
-
-  const entryColumns: Column<MemberHourEntryResponseDto>[] = [
-    {
-      header: t("review.date"),
-      headerClassName: `${widths.date} uppercase`,
-      cellClassName: "whitespace-nowrap",
-      render: (row) => formatEntryDay(row.date, i18n.language),
-    },
-    {
-      header: t("review.member"),
-      headerClassName: `${widths.member} uppercase`,
-      render: (row) =>
-        row.member === null ? (
-          <span className="text-muted">{t("bank.members.removed")}</span>
-        ) : (
-          row.member.name
-        ),
-    },
-    {
-      header: t("review.activity"),
-      headerClassName: `${widths.activity} uppercase`,
-      render: (row) => row.activity,
-    },
-    {
-      header: t("review.category"),
-      headerClassName: `${widths.category} uppercase`,
-      render: (row) => <Badge tone="info">{t(CATEGORY_LABEL_KEYS[row.category])}</Badge>,
-    },
-    {
-      header: t("review.hours"),
-      headerClassName: `${widths.hours} uppercase`,
-      render: (row) => formatHours(row.declaredMinutes),
-    },
-  ];
-
-  const actionsColumn: Column<MemberHourEntryResponseDto> = {
-    header: t("review.actions"),
-    headerClassName: "w-[24%] uppercase",
-    render: (row) => (
-      <ReviewRowActions
-        entry={row}
-        isOwn={!canReviewEntry(row)}
-        isBusy={isBusy}
-        isValidating={validatingIds?.length === 1 && validatingIds[0] === row.id}
-        onValidate={() => validateEntries([row])}
-        onAdjust={() => setDialog({ kind: "adjust", entry: row })}
-        onReject={() => setDialog({ kind: "reject", entry: row })}
-        onHistory={() => setDialog({ kind: "history", entry: row })}
-      />
-    ),
-  };
-
-  const columns = canReview ? [...reviewColumns, ...entryColumns, actionsColumn] : entryColumns;
+  const columns = pendingEntryColumns(
+    t,
+    i18n.language,
+    canReview
+      ? {
+          selectable,
+          selectedRows,
+          canReviewEntry,
+          isBusy,
+          onSelectAll: (isSelected) =>
+            setSelected(new Set(isSelected ? selectable.map((row) => row.id) : [])),
+          onToggle: (row, isSelected) => toggle(row.id, isSelected),
+          renderActions: (row) => (
+            <ReviewRowActions
+              entry={row}
+              isOwn={!canReviewEntry(row)}
+              isBusy={isBusy}
+              isValidating={validatingIds?.length === 1 && validatingIds[0] === row.id}
+              onValidate={() => validateEntries([row])}
+              onAdjust={() => setDialog({ kind: "adjust", entry: row })}
+              onReject={() => setDialog({ kind: "reject", entry: row })}
+              onHistory={() => setDialog({ kind: "history", entry: row })}
+            />
+          ),
+        }
+      : null,
+  );
 
   function renderListState(): ReactElement | null {
     switch (listState) {

@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { HourEntryOrigin, type MemberHourEntryResponseDto } from "@api/generated/model";
 
 import { formatEntryDay, formatInstantDay } from "../lib/bank-format";
-import { CATEGORY_LABEL_KEYS } from "../lib/bank-labels";
+import { CATEGORY_LABEL_KEYS, memberNameOf } from "../lib/bank-labels";
 
 export interface EntrySummaryProps {
   entry: MemberHourEntryResponseDto;
@@ -25,7 +25,7 @@ export function EntrySummary({ entry, detail }: EntrySummaryProps): ReactElement
     <div className="flex flex-col gap-1.5 rounded-xl bg-tedi-surface-subtle px-4 py-3.5 text-foreground">
       <p className="text-base font-semibold">
         {t("review.entrySummary.line", {
-          name: entry.member?.name ?? t("bank.members.removed"),
+          name: memberNameOf(entry, t),
           category: t(CATEGORY_LABEL_KEYS[entry.category]),
           date: formatEntryDay(entry.date, i18n.language),
         })}
