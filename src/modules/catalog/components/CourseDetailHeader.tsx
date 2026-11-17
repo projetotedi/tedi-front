@@ -12,6 +12,10 @@ export interface CourseDetailHeaderProps {
   isArchived: boolean;
   /** Duplicar curso was pressed: the screen opens the dialog that names the copy. */
   onDuplicate: () => void;
+  /** Arquivar curso was pressed (the course is active): the screen opens `ArchiveCourseDialog`. */
+  onArchive: () => void;
+  /** Reativar curso was pressed (the course is archived): the screen asks for confirmation. */
+  onUnarchive: () => void;
 }
 
 /**
@@ -26,16 +30,19 @@ export interface CourseDetailHeaderProps {
  * permission of the `classes` module for + Nova turma; and, for an archived course, the editing
  * ones stay turned off with the reason on the page (see `CoursePlanCard`).
  *
- * Duplicar curso is the only one that exists so far. It stays on an archived course: the API
- * accepts it and the copy is born active, which is how the content of an archived course gets
- * back into use (RN-27). The container of the actions is there only when the person has at least
- * one of them, so a member sees the name and the tags and nothing else; the next actions go
- * inside it, after this one.
+ * Duplicar curso stays on an archived course: the API accepts it and the copy is born active,
+ * which is how the content of an archived course gets back into use (RN-27). Arquivar curso
+ * (GUS-139) becomes Reativar curso when the course is archived. Editar curso (GUS-129) and + Nova
+ * turma do not exist here yet: when they come, they are turned off with a hint while
+ * `isArchived`, as Editar sequência already is. The container of the actions is there only when
+ * the person has at least one of them, so a member sees the name and the tags and nothing else.
  */
 export function CourseDetailHeader({
   course,
   isArchived,
   onDuplicate,
+  onArchive,
+  onUnarchive,
 }: CourseDetailHeaderProps): ReactElement {
   const { t } = useTranslation("catalog");
   const canDuplicate = useCan("courses.duplicateArchive");
@@ -73,6 +80,15 @@ export function CourseDetailHeader({
             <Button variant="tertiary" onPress={onDuplicate}>
               {t("course.duplicate.action")}
             </Button>
+            {isArchived ? (
+              <Button variant="secondary" onPress={onUnarchive}>
+                {t("course.unarchive.action")}
+              </Button>
+            ) : (
+              <Button variant="danger-soft" onPress={onArchive}>
+                {t("course.archive.action")}
+              </Button>
+            )}
           </div>
         ) : null}
       </div>

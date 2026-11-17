@@ -61,6 +61,11 @@ export const GenerateClassLessonsResponse = zod.object({
   lessons: zod
     .array(
       zod.object({
+        belowExpectedMonitors: zod
+          .boolean()
+          .describe(
+            "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+          ),
         cancelReason: zod
           .string()
           .nullable()
@@ -93,6 +98,33 @@ export const GenerateClassLessonsResponse = zod.object({
             name: zod.string(),
           })
           .describe("The course the class offers."),
+        coverage: zod
+          .object({
+            monitors: zod.object({
+              confirmed: zod
+                .int()
+                .describe(
+                  "Monitors confirmed for the lesson. A pending assignment is not counted.",
+                ),
+              expected: zod
+                .int()
+                .nullable()
+                .describe(
+                  "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+                ),
+            }),
+            teacher: zod.object({
+              confirmed: zod
+                .int()
+                .describe(
+                  "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+                ),
+              expected: zod.int().describe("Always 1: a lesson has one teacher."),
+            }),
+          })
+          .describe(
+            "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet.",
+          ),
         createdAt: zod.iso.datetime({ offset: true }),
         createdById: zod.uuid().describe("Id of the person who created the lesson."),
         date: zod.iso
@@ -384,7 +416,7 @@ export const ListLessonsResponse = zod.object({
       belowExpectedMonitors: zod
         .boolean()
         .describe(
-          "True when the lesson has fewer monitors allocated than it expects (F4.4, RF-050). Always false until the allocation exists (GUS-158).",
+          "True when the lesson has fewer CONFIRMED monitors than it expects (F4.4, F5.4, RF-050): a pending monitor does not count. False for a cancelled lesson and when the lesson does not say how many monitors it expects (expectedMonitors null, so nothing is missing). The teacher is not part of it: a lesson without a teacher shows a dash in teacher. It is the same rule as belowExpectedMonitors of the lesson in full.",
         ),
       class: zod.object({
         code: zod.string().describe("Unique inside its edition."),
@@ -421,7 +453,7 @@ export const ListLessonsResponse = zod.object({
         })
         .nullable()
         .describe(
-          "The teacher of the lesson. Always null until the allocation exists (E5, GUS-158): the front shows a dash.",
+          "The CONFIRMED teacher of the lesson (F5.2, RN-02): her id and her name. Null when the lesson has none, and the front shows a dash: a pending assignment is a candidate, not the teacher. A cancelled lesson keeps the teacher that was confirmed in it, because cancelling a lesson does not cancel its assignments.",
         ),
       title: zod.string().describe("The lesson's own title (RN-18)."),
     }),
@@ -533,6 +565,11 @@ export const createLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[
 export const createLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const CreateLessonResponse = zod.object({
+  belowExpectedMonitors: zod
+    .boolean()
+    .describe(
+      "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+    ),
   cancelReason: zod
     .string()
     .nullable()
@@ -565,6 +602,31 @@ export const CreateLessonResponse = zod.object({
       name: zod.string(),
     })
     .describe("The course the class offers."),
+  coverage: zod
+    .object({
+      monitors: zod.object({
+        confirmed: zod
+          .int()
+          .describe("Monitors confirmed for the lesson. A pending assignment is not counted."),
+        expected: zod
+          .int()
+          .nullable()
+          .describe(
+            "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+          ),
+      }),
+      teacher: zod.object({
+        confirmed: zod
+          .int()
+          .describe(
+            "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+          ),
+        expected: zod.int().describe("Always 1: a lesson has one teacher."),
+      }),
+    })
+    .describe(
+      "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the lesson."),
   date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD, inside the period of the class."),
@@ -706,7 +768,7 @@ export const ListLessonsCalendarResponseItem = zod.object({
   belowExpectedMonitors: zod
     .boolean()
     .describe(
-      "True when the lesson has fewer monitors allocated than it expects (F4.4, RF-050). Always false until the allocation exists (GUS-158).",
+      "True when the lesson has fewer CONFIRMED monitors than it expects (F4.4, F5.4, RF-050): a pending monitor does not count. False for a cancelled lesson and when the lesson does not say how many monitors it expects (expectedMonitors null, so nothing is missing). The teacher is not part of it: a lesson without a teacher shows a dash in teacher. It is the same rule as belowExpectedMonitors of the lesson in full.",
     ),
   class: zod.object({
     code: zod.string().describe("Unique inside its edition."),
@@ -743,7 +805,7 @@ export const ListLessonsCalendarResponseItem = zod.object({
     })
     .nullable()
     .describe(
-      "The teacher of the lesson. Always null until the allocation exists (E5, GUS-158): the front shows a dash.",
+      "The CONFIRMED teacher of the lesson (F5.2, RN-02): her id and her name. Null when the lesson has none, and the front shows a dash: a pending assignment is a candidate, not the teacher. A cancelled lesson keeps the teacher that was confirmed in it, because cancelling a lesson does not cancel its assignments.",
     ),
   title: zod.string().describe("The lesson's own title (RN-18)."),
 });
@@ -757,6 +819,11 @@ export const getLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5
 export const getLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const GetLessonResponse = zod.object({
+  belowExpectedMonitors: zod
+    .boolean()
+    .describe(
+      "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+    ),
   cancelReason: zod
     .string()
     .nullable()
@@ -789,6 +856,31 @@ export const GetLessonResponse = zod.object({
       name: zod.string(),
     })
     .describe("The course the class offers."),
+  coverage: zod
+    .object({
+      monitors: zod.object({
+        confirmed: zod
+          .int()
+          .describe("Monitors confirmed for the lesson. A pending assignment is not counted."),
+        expected: zod
+          .int()
+          .nullable()
+          .describe(
+            "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+          ),
+      }),
+      teacher: zod.object({
+        confirmed: zod
+          .int()
+          .describe(
+            "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+          ),
+        expected: zod.int().describe("Always 1: a lesson has one teacher."),
+      }),
+    })
+    .describe(
+      "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the lesson."),
   date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD, inside the period of the class."),
@@ -964,6 +1056,11 @@ export const updateLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[
 export const updateLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const UpdateLessonResponse = zod.object({
+  belowExpectedMonitors: zod
+    .boolean()
+    .describe(
+      "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+    ),
   cancelReason: zod
     .string()
     .nullable()
@@ -996,6 +1093,31 @@ export const UpdateLessonResponse = zod.object({
       name: zod.string(),
     })
     .describe("The course the class offers."),
+  coverage: zod
+    .object({
+      monitors: zod.object({
+        confirmed: zod
+          .int()
+          .describe("Monitors confirmed for the lesson. A pending assignment is not counted."),
+        expected: zod
+          .int()
+          .nullable()
+          .describe(
+            "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+          ),
+      }),
+      teacher: zod.object({
+        confirmed: zod
+          .int()
+          .describe(
+            "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+          ),
+        expected: zod.int().describe("Always 1: a lesson has one teacher."),
+      }),
+    })
+    .describe(
+      "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the lesson."),
   date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD, inside the period of the class."),
@@ -1101,6 +1223,11 @@ export const cancelLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[
 export const cancelLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const CancelLessonResponse = zod.object({
+  belowExpectedMonitors: zod
+    .boolean()
+    .describe(
+      "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+    ),
   cancelReason: zod
     .string()
     .nullable()
@@ -1133,6 +1260,31 @@ export const CancelLessonResponse = zod.object({
       name: zod.string(),
     })
     .describe("The course the class offers."),
+  coverage: zod
+    .object({
+      monitors: zod.object({
+        confirmed: zod
+          .int()
+          .describe("Monitors confirmed for the lesson. A pending assignment is not counted."),
+        expected: zod
+          .int()
+          .nullable()
+          .describe(
+            "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+          ),
+      }),
+      teacher: zod.object({
+        confirmed: zod
+          .int()
+          .describe(
+            "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+          ),
+        expected: zod.int().describe("Always 1: a lesson has one teacher."),
+      }),
+    })
+    .describe(
+      "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the lesson."),
   date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD, inside the period of the class."),
@@ -1274,6 +1426,11 @@ export const rescheduleLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3
 export const rescheduleLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const RescheduleLessonResponse = zod.object({
+  belowExpectedMonitors: zod
+    .boolean()
+    .describe(
+      "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+    ),
   cancelReason: zod
     .string()
     .nullable()
@@ -1306,6 +1463,31 @@ export const RescheduleLessonResponse = zod.object({
       name: zod.string(),
     })
     .describe("The course the class offers."),
+  coverage: zod
+    .object({
+      monitors: zod.object({
+        confirmed: zod
+          .int()
+          .describe("Monitors confirmed for the lesson. A pending assignment is not counted."),
+        expected: zod
+          .int()
+          .nullable()
+          .describe(
+            "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+          ),
+      }),
+      teacher: zod.object({
+        confirmed: zod
+          .int()
+          .describe(
+            "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+          ),
+        expected: zod.int().describe("Always 1: a lesson has one teacher."),
+      }),
+    })
+    .describe(
+      "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the lesson."),
   date: zod.iso.date().describe("Day of the lesson, YYYY-MM-DD, inside the period of the class."),

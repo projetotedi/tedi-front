@@ -10,11 +10,19 @@ import {
 } from "@api/generated/catalog/catalog";
 import type { CourseDetailDto } from "@api/generated/model";
 
-import { applyReplacedSequence, invalidateAfterCourseDuplicated } from "../lib/course-queries";
 import {
+  applyReplacedSequence,
+  invalidateAfterCourseArchiveChanged,
+  invalidateAfterCourseDuplicated,
+} from "../lib/course-queries";
+import {
+  buildArchivedCourse,
   buildCourseDetail,
   buildCourseSequence,
   buildSequenceItem,
+  buildReactivatedCourse,
+  COURSE_ARCHIVE_REASON,
+  COURSE_ARCHIVED_AT,
   COURSE_ID,
   LESSON_PLAN_ID,
 } from "./handlers";
@@ -180,5 +188,59 @@ describe("invalidateAfterCourseDuplicated", () => {
     await invalidateAfterCourseDuplicated(queryClient);
 
     expect(queryClient.getQueryCache().getAll()).toHaveLength(0);
+  });
+});
+
+describe("invalidateAfterCourseArchiveChanged", () => {
+  it("writes the status, the date and the reason of the archive into the cached detail at once", async () => {
+    queryClient.setQueryData(getGetCourseQueryKey(COURSE_ID), buildCourseDetail());
+
+    await invalidateAfterCourseArchiveChanged(queryClient, buildArchivedCourse());
+
+    const detail = queryClient.getQueryData<CourseDetailDto>(getGetCourseQueryKey(COURSE_ID));
+    expect(detail).toMatchObject({
+      status: "archived",
+      archivedAt: COURSE_ARCHIVED_AT,
+      archiveReason: COURSE_ARCHIVE_REASON,
+      updatedAt: COURSE_ARCHIVED_AT,
+    });
+    // The rest of the detail (sequence, workload, prerequisites) stays as it was.
+    expect(detail?.lessonPlans).toEqual(buildCourseDetail().lessonPlans);
+  });
+
+  it("clears the archive from the cached detail when the course is reactivated", async () => {
+    queryClient.setQueryData(
+      getGetCourseQueryKey(COURSE_ID),
+      buildCourseDetail({ status: "archived", archivedAt: COURSE_ARCHIVED_AT }),
+    );
+
+    await invalidateAfterCourseArchiveChanged(queryClient, buildReactivatedCourse());
+
+    expect(
+      queryClient.getQueryData<CourseDetailDto>(getGetCourseQueryKey(COURSE_ID)),
+    ).toMatchObject({ status: "active", archivedAt: null, archiveReason: null });
+  });
+
+  it("does not create a detail that was not in the cache", async () => {
+    await invalidateAfterCourseArchiveChanged(queryClient, buildArchivedCourse());
+
+    expect(queryClient.getQueryData(getGetCourseQueryKey(COURSE_ID))).toBeUndefined();
+  });
+
+  it("invalidates every key under /courses (lists and details) and leaves the rest alone", async () => {
+    const listKey = ["/courses", { status: "active" }] as const;
+    const otherDetailKey = getGetCourseQueryKey(OTHER_COURSE_ID);
+    const classesKey = ["/classes/summary-by-course", { courseIds: COURSE_ID }] as const;
+    queryClient.setQueryData(listKey, { data: [], total: 0, page: 1, limit: 20 });
+    queryClient.setQueryData(otherDetailKey, buildCourseDetail({ id: OTHER_COURSE_ID }));
+    queryClient.setQueryData(classesKey, []);
+    queryClient.setQueryData(getMeQueryKey(), {});
+
+    await invalidateAfterCourseArchiveChanged(queryClient, buildArchivedCourse());
+
+    expect(isInvalidated(listKey)).toBe(true);
+    expect(isInvalidated(otherDetailKey)).toBe(true);
+    expect(isInvalidated(classesKey)).toBe(false);
+    expect(isInvalidated(getMeQueryKey())).toBe(false);
   });
 });

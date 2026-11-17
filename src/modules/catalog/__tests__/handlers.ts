@@ -6,6 +6,7 @@ import {
   LessonPlanUsageStatus,
   type ApiFieldErrorDto,
   type ArchiveDto,
+  type ClassesSummaryByCourseResponseDto,
   type CourseDetailDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
@@ -533,6 +534,8 @@ export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): Cou
   return {
     id: COURSE_ID,
     name: COURSE_SOCIAL_NETWORKS.courseName,
+    archivedAt: null,
+    archiveReason: null,
     category: CourseCategory.intermediate,
     status: CourseStatus.active,
     createdAt: "2024-02-12T12:00:00.000Z",
@@ -559,10 +562,19 @@ export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): Cou
   };
 }
 
+/** When and why the course of `buildArchivedCourseDetail` was archived (noon UTC: same day anywhere). */
+export const COURSE_ARCHIVED_AT = "2026-10-14T12:00:00.000Z";
+export const COURSE_ARCHIVE_REASON = "Conteúdo substituído pelo curso Redes Sociais 2026.";
+
 export function buildArchivedCourseDetail(
   overrides: Partial<CourseDetailDto> = {},
 ): CourseDetailDto {
-  return buildCourseDetail({ status: CourseStatus.archived, ...overrides });
+  return buildCourseDetail({
+    status: CourseStatus.archived,
+    archivedAt: COURSE_ARCHIVED_AT,
+    archiveReason: COURSE_ARCHIVE_REASON,
+    ...overrides,
+  });
 }
 
 /**
@@ -769,5 +781,105 @@ export function duplicateCourseHandler({
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
     return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+/** Response of `PATCH /courses/:id/archive`: the course of the Figma, archived with the reason. */
+export function buildArchivedCourse(overrides: Partial<CourseResponseDto> = {}): CourseResponseDto {
+  const detail = buildCourseDetail();
+
+  return {
+    id: detail.id,
+    name: detail.name,
+    category: detail.category,
+    status: CourseStatus.archived,
+    description: detail.description,
+    objective: detail.objective,
+    prerequisites: [],
+    archivedAt: COURSE_ARCHIVED_AT,
+    archivedById: buildMeUser().id,
+    archiveReason: COURSE_ARCHIVE_REASON,
+    createdById: buildMeUser().id,
+    createdAt: detail.createdAt,
+    updatedAt: COURSE_ARCHIVED_AT,
+    ...overrides,
+  };
+}
+
+/** Response of `PATCH /courses/:id/unarchive`: the same course, active again. */
+export function buildReactivatedCourse(
+  overrides: Partial<CourseResponseDto> = {},
+): CourseResponseDto {
+  return buildArchivedCourse({
+    status: CourseStatus.active,
+    archivedAt: null,
+    archivedById: null,
+    archiveReason: null,
+    ...overrides,
+  });
+}
+
+export function archiveCourseHandler({
+  response = buildArchivedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ArchiveCall, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id/archive", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody<ArchiveDto>(request) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export function unarchiveCourseHandler({
+  response = buildReactivatedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id/unarchive", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/**
+ * `GET /classes/summary-by-course`, read by Arquivar curso for "As N turmas…". By default the
+ * course has 2 classes, as in the Figma.
+ */
+export function classesSummaryHandler({
+  response,
+  total = 2,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ courseIds: string }, ClassesSummaryByCourseResponseDto[]> & {
+  total?: number;
+} = {}) {
+  return http.get("*/classes/summary-by-course", async ({ request }) => {
+    const courseIds = new URL(request.url).searchParams.get("courseIds") ?? "";
+    onCall?.({ courseIds });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(
+      response ??
+        courseIds
+          .split(",")
+          .filter(Boolean)
+          .map((courseId) => ({ courseId, total, active: total })),
+    );
   });
 }

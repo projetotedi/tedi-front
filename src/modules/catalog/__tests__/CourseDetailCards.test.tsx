@@ -14,6 +14,8 @@ import {
   buildArchivedCourseDetail,
   buildCourseDetail,
   buildMeUser,
+  COURSE_ARCHIVE_REASON,
+  COURSE_ARCHIVED_AT,
   COURSE_CREATOR_NAME,
 } from "./handlers";
 import { renderWithProviders, setupCatalogTestServer } from "./test-utils";
@@ -55,11 +57,19 @@ function renderHeader(
     course = buildCourseDetail(),
     isArchived = false,
     onDuplicate = vi.fn(),
+    onArchive = vi.fn(),
+    onUnarchive = vi.fn(),
   }: Partial<CourseDetailHeaderProps> = {},
   role: Role = Role.coordinator,
 ) {
   return renderWithProviders(
-    <CourseDetailHeader course={course} isArchived={isArchived} onDuplicate={onDuplicate} />,
+    <CourseDetailHeader
+      course={course}
+      isArchived={isArchived}
+      onDuplicate={onDuplicate}
+      onArchive={onArchive}
+      onUnarchive={onUnarchive}
+    />,
     { user: buildMeUser(role) },
   );
 }
@@ -121,11 +131,12 @@ describe("CourseDetailHeader", () => {
   });
 
   describe("the actions", () => {
-    it("has Duplicar curso as the only action so far, and no tag of classes, which waits for its own task", async () => {
+    it("has Duplicar curso and Arquivar curso, in the order of the Figma, and no tag of classes, which waits for its own task", async () => {
       await renderHeader();
 
       expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
         "Duplicar curso",
+        "Arquivar curso",
       ]);
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.queryByText(/turma/)).not.toBeInTheDocument();
@@ -161,6 +172,40 @@ describe("CourseDetailHeader", () => {
       await renderHeader({ isArchived: true });
 
       expect(screen.getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
+    });
+
+    it("draws Arquivar curso as the danger-soft button and asks the screen to open its dialog", async () => {
+      const onArchive = vi.fn();
+      const onUnarchive = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({ onArchive, onUnarchive });
+
+      const archive = screen.getByRole("button", { name: "Arquivar curso" });
+      expect(archive).toHaveClass("button--danger-soft", "min-h-11");
+
+      await user.click(archive);
+
+      expect(onArchive).toHaveBeenCalledTimes(1);
+      expect(onUnarchive).not.toHaveBeenCalled();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("turns Arquivar curso into Reativar curso for an archived course", async () => {
+      const onArchive = vi.fn();
+      const onUnarchive = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({
+        course: buildArchivedCourseDetail(),
+        isArchived: true,
+        onArchive,
+        onUnarchive,
+      });
+
+      expect(screen.queryByRole("button", { name: "Arquivar curso" })).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Reativar curso" }));
+
+      expect(onUnarchive).toHaveBeenCalledTimes(1);
+      expect(onArchive).not.toHaveBeenCalled();
     });
 
     it("shows the member the name and the tags, and no action at all", async () => {
@@ -354,7 +399,13 @@ describe("CoursePrerequisitesCard", () => {
 
 describe("CourseHistoryCard", () => {
   it("shows Criado por", async () => {
-    await renderWithProviders(<CourseHistoryCard createdBy={buildCourseDetail().createdBy} />);
+    await renderWithProviders(
+      <CourseHistoryCard
+        createdBy={buildCourseDetail().createdBy}
+        archivedAt={null}
+        archiveReason={null}
+      />,
+    );
 
     expect(valueOf(card("Catálogo e histórico"), "Criado por")).toHaveTextContent(
       COURSE_CREATOR_NAME,
@@ -362,12 +413,44 @@ describe("CourseHistoryCard", () => {
   });
 
   it("shows a dash when createdBy is null, read as Não informado", async () => {
-    await renderWithProviders(<CourseHistoryCard createdBy={null} />);
+    await renderWithProviders(
+      <CourseHistoryCard createdBy={null} archivedAt={null} archiveReason={null} />,
+    );
 
     const createdBy = valueOf(card("Catálogo e histórico"), "Criado por");
 
     expect(createdBy).toHaveTextContent("—Não informado");
     expect(within(createdBy).getByText("—")).toHaveAttribute("aria-hidden", "true");
+  });
+});
+
+describe("CourseHistoryCard of an archived course", () => {
+  it("shows Arquivado em and Motivo after Criado por", async () => {
+    await renderWithProviders(
+      <CourseHistoryCard
+        createdBy={buildCourseDetail().createdBy}
+        archivedAt={COURSE_ARCHIVED_AT}
+        archiveReason={COURSE_ARCHIVE_REASON}
+      />,
+    );
+
+    const history = card("Catálogo e histórico");
+
+    expect(
+      within(history)
+        .getAllByRole("term")
+        .map((label) => label.textContent),
+    ).toEqual(["Criado por", "Arquivado em", "Motivo"]);
+    expect(valueOf(history, "Arquivado em")).toHaveTextContent("14/10/2026");
+    expect(valueOf(history, "Motivo")).toHaveTextContent(COURSE_ARCHIVE_REASON);
+  });
+
+  it("shows Não informado when the course was archived without a reason", async () => {
+    await renderWithProviders(
+      <CourseHistoryCard createdBy={null} archivedAt={COURSE_ARCHIVED_AT} archiveReason={null} />,
+    );
+
+    expect(valueOf(card("Catálogo e histórico"), "Motivo")).toHaveTextContent("Não informado");
   });
 });
 
@@ -392,7 +475,11 @@ describe("the side cards", () => {
           prerequisites={course.prerequisites}
           requiredBy={course.requiredBy}
         />
-        <CourseHistoryCard createdBy={course.createdBy} />
+        <CourseHistoryCard
+          createdBy={course.createdBy}
+          archivedAt={course.archivedAt}
+          archiveReason={course.archiveReason}
+        />
       </>,
     );
 

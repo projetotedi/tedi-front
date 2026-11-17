@@ -280,6 +280,12 @@ export const ListMembersQueryParams = zod.object({
   role: zod.enum(["member", "director", "coordinator", "superadmin"]).optional(),
   departmentId: zod.uuid().optional(),
   registrationStatus: zod.enum(["pending", "approved", "rejected"]).optional(),
+  status: zod
+    .enum(["active", "inactive"])
+    .optional()
+    .describe(
+      "Participation in the project. Omitted lists every status; a person without member profile counts as active.",
+    ),
   enabled: zod.boolean().optional(),
 });
 
@@ -293,6 +299,11 @@ export const ListMembersResponse = zod.object({
           name: zod.string(),
         })
         .nullable(),
+      exitDate: zod.iso
+        .date()
+        .nullable()
+        .describe("Day the member left (YYYY-MM-DD). Null while active."),
+      exitReason: zod.string().nullable().describe("Why the member left. Null while active."),
       id: zod.uuid(),
       joinedAt: zod.iso.date().nullable(),
       mainFunction: zod.string().nullable(),
@@ -300,6 +311,14 @@ export const ListMembersResponse = zod.object({
       ra: zod.string().nullable(),
       registrationStatus: zod.union([zod.enum(["pending", "approved", "rejected"]), zod.null()]),
       role: zod.union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()]),
+      status: zod
+        .enum(["active", "inactive"])
+        .describe(
+          "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+        )
+        .describe(
+          "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+        ),
     }),
   ),
   limit: zod.int(),
@@ -425,6 +444,11 @@ export const GetMemberResponse = zod.object({
       "Department of the member profile (the one suggested at sign-up while the registration is pending). Null without a member profile or without a department.",
     ),
   email: zod.string().nullable().describe("Personal e-mail."),
+  exitDate: zod.iso
+    .date()
+    .nullable()
+    .describe("Day the member left (YYYY-MM-DD). Null while active."),
+  exitReason: zod.string().nullable().describe("Why the member left. Null while active."),
   id: zod.uuid().describe("Id of the Person."),
   institutionalEmail: zod
     .string()
@@ -472,6 +496,482 @@ export const GetMemberResponse = zod.object({
     .string()
     .nullable()
     .describe("UF. Null for a person without a member profile (e.g. the seeded admin)."),
+  status: zod
+    .enum(["active", "inactive"])
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    )
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    ),
+  volunteerTermUrl: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+});
+
+export const UpdateMemberParams = zod.object({
+  id: zod.uuid().describe("Person id."),
+});
+
+export const updateMemberBodyAddressMax = 200;
+
+export const updateMemberBodyCityMax = 100;
+
+export const updateMemberBodyClassNameMax = 50;
+
+export const updateMemberBodyCourseMax = 100;
+
+export const updateMemberBodyEmailMax = 200;
+
+export const updateMemberBodyInstitutionalEmailMax = 200;
+
+export const updateMemberBodyMainFunctionMax = 100;
+
+export const updateMemberBodyNameMax = 200;
+
+export const updateMemberBodyRaMax = 20;
+
+export const updateMemberBodySemesterMax = 20;
+
+export const updateMemberBodyVolunteerTermUrlMax = 500;
+
+export const UpdateMemberBody = zod
+  .object({
+    address: zod.string().max(updateMemberBodyAddressMax).nullish(),
+    birthDate: zod.iso
+      .date()
+      .optional()
+      .describe("YYYY-MM-DD, between 1900-01-01 and today (America/Sao_Paulo)."),
+    city: zod.string().max(updateMemberBodyCityMax).nullish(),
+    className: zod
+      .string()
+      .max(updateMemberBodyClassNameMax)
+      .optional()
+      .describe("Class (turma) at the university."),
+    course: zod.string().max(updateMemberBodyCourseMax).optional(),
+    cpf: zod
+      .string()
+      .optional()
+      .describe("Digits only after normalization. Visible only to coordination (RNF-14)."),
+    departmentId: zod
+      .uuid()
+      .optional()
+      .describe(
+        "Omit to keep. Never null. A director can only keep the department of the member (403 DEPARTMENT_SCOPE); an unknown id answers 400 DEPARTMENT_NOT_FOUND.",
+      ),
+    email: zod
+      .string()
+      .max(updateMemberBodyEmailMax)
+      .optional()
+      .describe(
+        "Personal e-mail. Omit to keep. Never null. Trimmed and lower-cased; unique among people (409 EMAIL_ALREADY_IN_USE).",
+      ),
+    institutionalEmail: zod
+      .string()
+      .max(updateMemberBodyInstitutionalEmailMax)
+      .optional()
+      .describe("Trimmed and lower-cased."),
+    joinedAt: zod.iso
+      .date()
+      .optional()
+      .describe("YYYY-MM-DD, between 2000-01-01 and today (America/Sao_Paulo)."),
+    mainFunction: zod.string().max(updateMemberBodyMainFunctionMax).optional(),
+    name: zod.string().max(updateMemberBodyNameMax).optional(),
+    phone: zod
+      .string()
+      .optional()
+      .describe("Formatting is stripped; stored as 10 to 13 digits (DDD, optional country code)."),
+    ra: zod
+      .string()
+      .max(updateMemberBodyRaMax)
+      .optional()
+      .describe("Trimmed and lower-cased. It is the login (RN-09)."),
+    semester: zod.int().min(1).max(updateMemberBodySemesterMax).optional(),
+    state: zod
+      .union([
+        zod
+          .enum([
+            "AC",
+            "AL",
+            "AP",
+            "AM",
+            "BA",
+            "CE",
+            "DF",
+            "ES",
+            "GO",
+            "MA",
+            "MT",
+            "MS",
+            "MG",
+            "PA",
+            "PB",
+            "PR",
+            "PE",
+            "PI",
+            "RJ",
+            "RN",
+            "RS",
+            "RO",
+            "RR",
+            "SC",
+            "SP",
+            "SE",
+            "TO",
+          ])
+          .describe("Federative unit (UF). Upper-cased."),
+        zod.null(),
+      ])
+      .optional()
+      .describe("Federative unit (UF). Upper-cased."),
+    volunteerTermUrl: zod
+      .string()
+      .max(updateMemberBodyVolunteerTermUrlMax)
+      .nullish()
+      .describe("Link to the volunteer term in Drive (RF-011). HTTPS only."),
+  })
+  .describe(
+    "Every field is optional: omit to keep. Null clears address, city, state and volunteerTermUrl; every other field is never null. The access profile (role) and the access are not edited here: see PATCH /access/:id/role and /enabled.",
+  );
+
+export const UpdateMemberResponse = zod.object({
+  accessEnabled: zod.boolean(),
+  address: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  birthDate: zod.iso.date().nullable(),
+  city: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  className: zod
+    .string()
+    .nullable()
+    .describe(
+      "Class (turma) at the university. Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  course: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  cpfMasked: zod
+    .string()
+    .nullable()
+    .describe(
+      "CPF with only the last five digits visible; the full CPF is only on GET /member-registrations/:id (RNF-14). Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  department: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Department of the member profile (the one suggested at sign-up while the registration is pending). Null without a member profile or without a department.",
+    ),
+  email: zod.string().nullable().describe("Personal e-mail."),
+  exitDate: zod.iso
+    .date()
+    .nullable()
+    .describe("Day the member left (YYYY-MM-DD). Null while active."),
+  exitReason: zod.string().nullable().describe("Why the member left. Null while active."),
+  id: zod.uuid().describe("Id of the Person."),
+  institutionalEmail: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  joinedAt: zod.iso
+    .date()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  mainFunction: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  name: zod.string(),
+  phone: zod.string().nullable().describe("Digits only."),
+  ra: zod.string().nullable(),
+  registrationStatus: zod
+    .union([zod.enum(["pending", "approved", "rejected"]), zod.null()])
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  reviewedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe(
+      "When the registration was approved or rejected (UTC). Null while pending and for profiles approved by the backfill, before the validation existed.",
+    ),
+  reviewedBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Who approved or rejected the registration. Null while pending, for profiles approved by the backfill, or when that person was deleted.",
+    ),
+  role: zod
+    .union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()])
+    .describe(
+      "Access profile. Null while the registration is pending or rejected: the role is only granted on approval.",
+    ),
+  semester: zod
+    .int()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  state: zod
+    .string()
+    .nullable()
+    .describe("UF. Null for a person without a member profile (e.g. the seeded admin)."),
+  status: zod
+    .enum(["active", "inactive"])
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    )
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    ),
+  volunteerTermUrl: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+});
+
+export const DeactivateMemberParams = zod.object({
+  id: zod.uuid().describe("Person id."),
+});
+
+export const deactivateMemberBodyNoteMax = 2000;
+
+export const deactivateMemberBodyReasonMax = 200;
+
+export const DeactivateMemberBody = zod.object({
+  exitDate: zod.iso
+    .date()
+    .describe(
+      "YYYY-MM-DD, between 2000-01-01 and today (America/Sao_Paulo), and not before the join date of the member (400 EXIT_DATE_BEFORE_JOINED_AT).",
+    ),
+  note: zod
+    .string()
+    .max(deactivateMemberBodyNoteMax)
+    .nullish()
+    .describe(
+      "Optional note. Stored, never returned by the API nor kept in the audit event. Do not record health information or diagnosis (RNF-13).",
+    ),
+  reason: zod
+    .string()
+    .min(1)
+    .max(deactivateMemberBodyReasonMax)
+    .describe(
+      "Why the member left. Required, and not blank. Shown in GET /members and kept in the audit event: do not record health information or diagnosis (RNF-13).",
+    ),
+});
+
+export const DeactivateMemberResponse = zod.object({
+  accessEnabled: zod.boolean(),
+  address: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  birthDate: zod.iso.date().nullable(),
+  city: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  className: zod
+    .string()
+    .nullable()
+    .describe(
+      "Class (turma) at the university. Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  course: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  cpfMasked: zod
+    .string()
+    .nullable()
+    .describe(
+      "CPF with only the last five digits visible; the full CPF is only on GET /member-registrations/:id (RNF-14). Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  department: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Department of the member profile (the one suggested at sign-up while the registration is pending). Null without a member profile or without a department.",
+    ),
+  email: zod.string().nullable().describe("Personal e-mail."),
+  exitDate: zod.iso
+    .date()
+    .nullable()
+    .describe("Day the member left (YYYY-MM-DD). Null while active."),
+  exitReason: zod.string().nullable().describe("Why the member left. Null while active."),
+  id: zod.uuid().describe("Id of the Person."),
+  institutionalEmail: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  joinedAt: zod.iso
+    .date()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  mainFunction: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  name: zod.string(),
+  phone: zod.string().nullable().describe("Digits only."),
+  ra: zod.string().nullable(),
+  registrationStatus: zod
+    .union([zod.enum(["pending", "approved", "rejected"]), zod.null()])
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  reviewedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe(
+      "When the registration was approved or rejected (UTC). Null while pending and for profiles approved by the backfill, before the validation existed.",
+    ),
+  reviewedBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Who approved or rejected the registration. Null while pending, for profiles approved by the backfill, or when that person was deleted.",
+    ),
+  role: zod
+    .union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()])
+    .describe(
+      "Access profile. Null while the registration is pending or rejected: the role is only granted on approval.",
+    ),
+  semester: zod
+    .int()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  state: zod
+    .string()
+    .nullable()
+    .describe("UF. Null for a person without a member profile (e.g. the seeded admin)."),
+  status: zod
+    .enum(["active", "inactive"])
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    )
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    ),
+  volunteerTermUrl: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+});
+
+export const ReactivateMemberParams = zod.object({
+  id: zod.uuid().describe("Person id."),
+});
+
+export const ReactivateMemberResponse = zod.object({
+  accessEnabled: zod.boolean(),
+  address: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  birthDate: zod.iso.date().nullable(),
+  city: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  className: zod
+    .string()
+    .nullable()
+    .describe(
+      "Class (turma) at the university. Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  course: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  cpfMasked: zod
+    .string()
+    .nullable()
+    .describe(
+      "CPF with only the last five digits visible; the full CPF is only on GET /member-registrations/:id (RNF-14). Null for a person without a member profile (e.g. the seeded admin).",
+    ),
+  department: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Department of the member profile (the one suggested at sign-up while the registration is pending). Null without a member profile or without a department.",
+    ),
+  email: zod.string().nullable().describe("Personal e-mail."),
+  exitDate: zod.iso
+    .date()
+    .nullable()
+    .describe("Day the member left (YYYY-MM-DD). Null while active."),
+  exitReason: zod.string().nullable().describe("Why the member left. Null while active."),
+  id: zod.uuid().describe("Id of the Person."),
+  institutionalEmail: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  joinedAt: zod.iso
+    .date()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  mainFunction: zod
+    .string()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  name: zod.string(),
+  phone: zod.string().nullable().describe("Digits only."),
+  ra: zod.string().nullable(),
+  registrationStatus: zod
+    .union([zod.enum(["pending", "approved", "rejected"]), zod.null()])
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  reviewedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe(
+      "When the registration was approved or rejected (UTC). Null while pending and for profiles approved by the backfill, before the validation existed.",
+    ),
+  reviewedBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe(
+      "Who approved or rejected the registration. Null while pending, for profiles approved by the backfill, or when that person was deleted.",
+    ),
+  role: zod
+    .union([zod.enum(["member", "director", "coordinator", "superadmin"]), zod.null()])
+    .describe(
+      "Access profile. Null while the registration is pending or rejected: the role is only granted on approval.",
+    ),
+  semester: zod
+    .int()
+    .nullable()
+    .describe("Null for a person without a member profile (e.g. the seeded admin)."),
+  state: zod
+    .string()
+    .nullable()
+    .describe("UF. Null for a person without a member profile (e.g. the seeded admin)."),
+  status: zod
+    .enum(["active", "inactive"])
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    )
+    .describe(
+      "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+    ),
   volunteerTermUrl: zod
     .string()
     .nullable()

@@ -7,11 +7,14 @@
  */
 import type { LessonClassRefDto } from "./lessonClassRefDto.ts";
 import type { LessonCourseRefDto } from "./lessonCourseRefDto.ts";
+import type { LessonCoverageDto } from "./lessonCoverageDto.ts";
 import type { LessonEditionRefDto } from "./lessonEditionRefDto.ts";
 import type { LessonPlanRefDto } from "./lessonPlanRefDto.ts";
 import type { LessonStatus } from "./lessonStatus.ts";
 
 export interface LessonResponseDto {
+  /** True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher. */
+  belowExpectedMonitors: boolean;
   /**
    * Why the lesson was cancelled. Set exactly when the status is cancelled.
    * @nullable
@@ -30,6 +33,8 @@ export interface LessonResponseDto {
   class: LessonClassRefDto;
   /** The course the class offers. */
   course: LessonCourseRefDto;
+  /** Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet. */
+  coverage: LessonCoverageDto;
   createdAt: string;
   /** Id of the person who created the lesson. */
   createdById: string;
