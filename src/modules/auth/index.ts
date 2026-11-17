@@ -14,6 +14,7 @@ export { RequireRole } from "./components/RequireRole";
 export { SignOutButton } from "./components/SignOutButton";
 export { useAuth } from "./hooks/useAuth";
 export { useCan } from "./hooks/useCan";
+export { roleBadgeTone } from "./lib/role-label";
 export { authMenuItems } from "./menu";
 export { ForbiddenPage } from "./pages/ForbiddenPage";
 export { authProtectedRoutes, authRoutes } from "./routes";
