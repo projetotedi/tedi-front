@@ -15,11 +15,14 @@ export interface ReviewRowActionsProps {
   /** This row is the one being validated alone (its spinner). */
   isValidating: boolean;
   onValidate: () => void;
+  onAdjust: () => void;
+  onReject: () => void;
 }
 
 /**
- * The actions of a pending entry, for who reviews: Validar. On the person's own entry it is turned
- * off, and the row says why to assistive technology.
+ * The actions of a pending entry, for who reviews, in the order of the Figma: Validar, Ajustar and
+ * Rejeitar. On the person's own entry they are turned off, and the row says why to assistive
+ * technology.
  */
 export function ReviewRowActions({
   entry,
@@ -27,12 +30,15 @@ export function ReviewRowActions({
   isBusy,
   isValidating,
   onValidate,
+  onAdjust,
+  onReject,
 }: ReviewRowActionsProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
   const labels = {
     name: entry.member?.name ?? t("bank.members.removed"),
     date: formatEntryDay(entry.date, i18n.language),
   };
+  const isOff = isOwn || isBusy;
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -44,6 +50,22 @@ export function ReviewRowActions({
         onPress={onValidate}
       >
         {t("review.validate")}
+      </Button>
+      <Button
+        variant="secondary"
+        aria-label={t("review.adjustLabel", labels)}
+        isDisabled={isOff}
+        onPress={onAdjust}
+      >
+        {t("review.adjust")}
+      </Button>
+      <Button
+        variant="danger-soft"
+        aria-label={t("review.rejectLabel", labels)}
+        isDisabled={isOff}
+        onPress={onReject}
+      >
+        {t("review.reject")}
       </Button>
       {isOwn ? <span className="sr-only">{t("review.selfReviewHint")}</span> : null}
     </div>

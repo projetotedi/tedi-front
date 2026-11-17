@@ -81,6 +81,50 @@ function storeWith(entries: MemberHourEntryResponseDto[]): BankStore {
 }
 
 describe("PendingEntriesTable", () => {
+  it("lists date, member, activity, category and hours with Validar, Ajustar and Rejeitar", async () => {
+    await renderQueue();
+    const table = await queueTable();
+
+    expect(screen.getByText("Lançamentos pendentes de validação (3)")).toBeInTheDocument();
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      "Selecionar todos os lançamentos",
+      "Data",
+      "Membro",
+      "Atividade",
+      "Categoria",
+      "Horas",
+      "Ações",
+    ]);
+    const first = row(table, "05/03");
+    expect(
+      within(first)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent),
+    ).toEqual([
+      "Selecionar lançamento de Beatriz Nunes em 05/03",
+      "05/03",
+      "Beatriz Nunes",
+      "Planejamento de aula — WhatsApp",
+      "Planejamento",
+      "4h",
+      "ValidarAjustarRejeitar",
+    ]);
+    expect(
+      within(first).getByRole("button", { name: "Validar lançamento de Beatriz Nunes em 05/03" }),
+    ).toBeEnabled();
+    expect(
+      within(first).getByRole("button", { name: "Ajustar lançamento de Beatriz Nunes em 05/03" }),
+    ).toBeEnabled();
+    expect(
+      within(first).getByRole("button", { name: "Rejeitar lançamento de Beatriz Nunes em 05/03" }),
+    ).toBeEnabled();
+    expect(within(row(table, "12/03")).getByText("Evento")).toBeInTheDocument();
+  });
+
   it("shows the selection bar with the count and the hours, and the mixed header checkbox", async () => {
     const user = userEvent.setup();
     await renderQueue();
@@ -247,9 +291,11 @@ describe("PendingEntriesTable", () => {
     const own = row(table, "16/03");
 
     expect(entryBox("Ana Paula Torres", "16/03")).toBeDisabled();
-    for (const button of within(own).getAllByRole("button", { name: /lançamento de Ana/ })) {
-      expect(button).toBeDisabled();
-    }
+    const reviewing = within(own).getAllByRole("button", {
+      name: /^(Validar|Ajustar|Rejeitar) lançamento de Ana/,
+    });
+    expect(reviewing).toHaveLength(3);
+    for (const button of reviewing) expect(button).toBeDisabled();
     expect(own).toHaveTextContent("Você não pode revisar o próprio lançamento.");
 
     await user.click(selectAllBox());

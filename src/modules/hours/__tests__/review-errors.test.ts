@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { STALE_QUEUE_ERRORS, toReviewError, type ReviewErrorKind } from "../lib/review-errors";
+import {
+  invalidFields,
+  STALE_QUEUE_ERRORS,
+  toReviewError,
+  type ReviewErrorKind,
+} from "../lib/review-errors";
 
 function apiError(statusCode: number, error: string) {
   return { statusCode, error, message: error, details: [] };
@@ -27,5 +32,24 @@ describe("toReviewError", () => {
 
   it("calls only notPending and notFound a stale queue", () => {
     expect([...STALE_QUEUE_ERRORS].sort()).toEqual(["notFound", "notPending"]);
+  });
+
+  it("invalidFields reads the fields of a VALIDATION_FAILED", () => {
+    const error = {
+      statusCode: 400,
+      error: "VALIDATION_FAILED",
+      message: "Validation failed",
+      details: [
+        { field: "justification", message: "must not be blank" },
+        { message: "no field" },
+        "not an object",
+        { field: 3, message: "not a name" },
+        { field: "validatedMinutes", message: "must be at most 1440" },
+      ],
+    };
+
+    expect(invalidFields(error)).toEqual(["justification", "validatedMinutes"]);
+    expect(invalidFields({ statusCode: 400, error: "VALIDATION_FAILED" })).toEqual([]);
+    expect(invalidFields(new TypeError("Failed to fetch"))).toEqual([]);
   });
 });

@@ -50,5 +50,20 @@ export function toReviewError(error: unknown): ReviewErrorKind {
   return "generic";
 }
 
+/** The fields a 400 `VALIDATION_FAILED` points at (`details[].field`), in the order it sends them. */
+export function invalidFields(error: unknown): string[] {
+  const { details } = readApiError(error);
+  if (!Array.isArray(details)) return [];
+
+  return details.flatMap((detail: unknown) =>
+    typeof detail === "object" &&
+    detail !== null &&
+    "field" in detail &&
+    typeof detail.field === "string"
+      ? [detail.field]
+      : [],
+  );
+}
+
 /** The refusals after which the queue on the screen is out of date: it is read again. */
 export const STALE_QUEUE_ERRORS: ReadonlySet<ReviewErrorKind> = new Set(["notPending", "notFound"]);
