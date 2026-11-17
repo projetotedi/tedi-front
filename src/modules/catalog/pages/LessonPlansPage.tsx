@@ -1,355 +1,200 @@
-import { useState, type ReactElement } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState, type ReactElement } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
+import { useListLessonPlans, useUnarchiveLessonPlan } from "@api/generated/catalog/catalog";
 import { useCan } from "@modules/auth";
-import { DataTable, type Column } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
-import { formatHours } from "@shared/lib/format";
-import { Badge, Button, Card, Pagination, Select, TextField } from "@shared/ui";
-import pencilIcon from "@shared/assets/icons/pencil.svg";
-import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
+import { useDebounce } from "@shared/hooks/useDebounce";
+import { resolveListState } from "@shared/lib/list-state";
+import { Button, Card, Pagination, toast } from "@shared/ui";
 import graduationCapIcon from "../../../assets/icons/graduation-cap.svg";
 
-import { MockArchiveLessonPlanDialog } from "../components/MockArchiveLessonPlanDialog";
+import { ArchiveLessonPlanDialog } from "../components/ArchiveLessonPlanDialog";
+import { LessonPlanFilters } from "../components/LessonPlanFilters";
 import { LessonPlanFormDialog } from "../components/LessonPlanFormDialog";
-import { MockLessonPlanFormDialog } from "../components/MockLessonPlanFormDialog";
+import { LessonPlansTable } from "../components/LessonPlansTable";
 import {
-  DURATION_FILTERS,
-  filterLessonPlans,
-  getDurationFilter,
-  getDurationRange,
-  normalizePage,
+  hasActiveLessonPlanFilters,
+  readLessonPlanFilters,
+  toListLessonPlansParams,
+  withDurationFilter,
+  withLessonPlanFilters,
+  withoutLessonPlanFilters,
 } from "../lib/lesson-plan-filters";
-import { MOCK_LESSON_PLANS, type LessonPlanMock } from "../mocks/lesson-plans.mock";
+import { invalidateLessonPlans } from "../lib/lesson-plan-queries";
 
 const PAGE_SIZE = 7;
+const TYPING_DEBOUNCE_MS = 300;
 
+type OpenDialog = { kind: "create" } | { kind: "edit" | "archive"; lessonPlanId: string } | null;
+
+/**
+ * Planos de aula (GUS-127): the catalog of lesson plans from `listLessonPlans`, with the search by
+ * title, Conteúdo, Duração, Uso and the page in the URL, so a link or a reload brings the same list
+ * back. Any filter sends the list back to page 1, and the page on the screen stays while the next
+ * one loads (`keepPreviousData`). The search and Conteúdo go to the URL after the typing stops.
+ *
+ * + Novo plano de aula, the pencil, the bin and Reativar are only for who manages lesson plans
+ * (`lessonPlans.manage`). They open the dialogs of GUS-126 over the list; a new plan opens its
+ * detail after the save, and the rest leave the list where it was.
+ */
 export function LessonPlansPage(): ReactElement {
   const { t } = useTranslation("catalog");
-  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const canManage = useCan("lessonPlans.manage");
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<LessonPlanMock | null>(null);
-  const [archivingPlan, setArchivingPlan] = useState<LessonPlanMock | null>(null);
+  const [params, setParams] = useSearchParams();
+  const filters = readLessonPlanFilters(params);
+  const [searchText, setSearchText] = useState(filters.search);
+  const [contentText, setContentText] = useState(filters.content);
+  const debouncedSearch = useDebounce(searchText.trim(), TYPING_DEBOUNCE_MS);
+  const debouncedContent = useDebounce(contentText.trim(), TYPING_DEBOUNCE_MS);
+  const [openDialog, setOpenDialog] = useState<OpenDialog>(null);
 
-  const search = params.get("search") ?? "";
-  const content = params.get("content") ?? "";
-  const usage = params.get("usage") ?? "";
-  const page = normalizePage(params.get("page"));
-  const durationFilterId = getDurationFilter(params);
-  const mockState = params.get("mockState");
-  const filtered = filterLessonPlans(MOCK_LESSON_PLANS, {
-    search,
-    content,
-    usage,
-    minDuration: params.get("minDuration") ?? undefined,
-    maxDuration: params.get("maxDuration") ?? undefined,
+  useEffect(() => {
+    if (debouncedSearch === (params.get("search") ?? "")) return;
+    setParams((current) => withLessonPlanFilters(current, { search: debouncedSearch }), {
+      replace: true,
+    });
+  }, [debouncedSearch, params, setParams]);
+
+  useEffect(() => {
+    if (debouncedContent === (params.get("content") ?? "")) return;
+    setParams((current) => withLessonPlanFilters(current, { content: debouncedContent }), {
+      replace: true,
+    });
+  }, [debouncedContent, params, setParams]);
+
+  const plansQuery = useListLessonPlans(toListLessonPlansParams(filters, PAGE_SIZE), {
+    query: { placeholderData: keepPreviousData },
   });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const rows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const page = plansQuery.data;
+  const plans = page?.data ?? [];
+  const total = page?.total ?? 0;
 
-  function updateParams(updates: Record<string, string | undefined>, resetPage = true) {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        for (const [key, value] of Object.entries(updates)) {
-          if (value) next.set(key, value);
-          else next.delete(key);
-        }
-        if (resetPage) next.delete("page");
-        return next;
+  const unarchivePlan = useUnarchiveLessonPlan({
+    mutation: {
+      onSuccess: () => {
+        toast.success(t("toast.unarchived"));
+        void invalidateLessonPlans(queryClient);
       },
-      { replace: true },
-    );
-  }
+      onError: () => toast.error(t("toast.unarchiveFailed")),
+    },
+  });
+
+  const listState = resolveListState({
+    isPending: plansQuery.isPending,
+    isError: plansQuery.isError,
+    total: page?.total,
+    hasActiveFilters: hasActiveLessonPlanFilters(filters),
+  });
+  const totalPages = page ? Math.max(1, Math.ceil(page.total / page.limit)) : 1;
 
   function clearFilters() {
-    updateParams({
-      search: undefined,
-      content: undefined,
-      usage: undefined,
-      minDuration: undefined,
-      maxDuration: undefined,
-      mockState: undefined,
-    });
+    setSearchText("");
+    setContentText("");
+    setParams((current) => withoutLessonPlanFilters(current), { replace: true });
   }
 
-  function openCreateDialog() {
-    setIsCreateOpen(true);
-  }
-
-  const contentOptions = [...new Set(MOCK_LESSON_PLANS.flatMap((plan) => plan.contents))].sort(
-    (left, right) => left.localeCompare(right),
-  );
-  const durationOptions = DURATION_FILTERS.map((filter) => ({
-    id: filter.id,
-    label: filter.id
-      ? t(
-          `duration${filter.id === "up-to-90" ? "UpTo90" : filter.id === "91-to-120" ? "91To120" : "Over120"}`,
-        )
-      : t("durationAll"),
-  }));
-  const usageOptions = [
-    { id: "", label: t("all").toLocaleLowerCase() },
-    { id: "in_use", label: t("inUse") },
-    { id: "unused", label: t("unused") },
-    { id: "archived", label: t("archived") },
-  ];
-
-  const columns: Column<LessonPlanMock>[] = [
-    {
-      header: t("lessonPlan").toLocaleUpperCase(),
-      headerClassName: "w-[22%]",
-      cellClassName:
-        "relative w-[22%] pl-0 before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:bg-accent before:opacity-0 before:content-[''] group-hover:before:opacity-100",
-      render: (plan) => (
-        <Link
-          to={`/lesson-plans/${plan.id}`}
-          className="font-medium text-foreground hover:underline focus-visible:underline"
-          title={plan.title}
-        >
-          {plan.title}
-        </Link>
-      ),
-    },
-    {
-      header: t("contents").toLocaleUpperCase(),
-      headerClassName: "w-[18%]",
-      cellClassName: "w-[18%]",
-      render: (plan) => <span>{plan.contents.join(", ")}</span>,
-    },
-    {
-      header: t("duration").toLocaleUpperCase(),
-      headerClassName: "w-[9%]",
-      cellClassName: "w-[9%] whitespace-nowrap",
-      render: (plan) => <span>{formatHours(plan.expectedDurationMinutes)}</span>,
-    },
-    {
-      header: t("coursesUsing").toLocaleUpperCase(),
-      headerClassName: "w-[10%]",
-      cellClassName: "w-[10%] whitespace-nowrap",
-      render: (plan) =>
-        plan.courseCount > 0 ? t("courseCount", { count: plan.courseCount }) : "—",
-    },
-    {
-      header: t("classesUsed").toLocaleUpperCase(),
-      headerClassName: "w-[12%]",
-      cellClassName: "w-[12%]",
-      render: (plan) =>
-        plan.classesUsedCount == null ? (
-          <span aria-label={t("classesCountUnavailable")}>—</span>
-        ) : (
-          t("classesUsedCount", { count: plan.classesUsedCount })
-        ),
-    },
-    {
-      header: t("material").toLocaleUpperCase(),
-      headerClassName: "w-[8%]",
-      cellClassName: "w-[8%] whitespace-nowrap",
-      render: (plan) => (
-        <a
-          href={plan.materialUrl}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(event) => event.stopPropagation()}
-          className="text-sky-800 underline-offset-2 hover:underline focus-visible:underline"
-          aria-label={t("openMaterial", { title: plan.title })}
-        >
-          {t("openMaterialLabel")}
-        </a>
-      ),
-    },
-    {
-      header: t("status").toLocaleUpperCase(),
-      headerClassName: "w-[11%]",
-      cellClassName: "w-[11%]",
-      render: (plan) => (
-        <Badge tone={plan.usage === "in_use" ? "success" : "neutral"}>
-          {t(plan.usage === "in_use" ? "inUse" : plan.usage === "archived" ? "archived" : "unused")}
-        </Badge>
-      ),
-    },
-    {
-      header: t("actionsHeader").toLocaleUpperCase(),
-      headerClassName: "w-[10%]",
-      cellClassName: "w-[10%]",
-      render: (plan) =>
-        canManage ? (
-          <div className="flex items-center gap-3">
-            <span title={t("edit", { title: plan.title })}>
-              <Button
-                variant="ghost"
-                isIconOnly
-                aria-label={t("edit", { title: plan.title })}
-                onPress={() => {
-                  setEditingPlan(plan);
-                }}
-              >
-                <img src={pencilIcon} alt="" aria-hidden="true" width={16} height={16} />
-              </Button>
-            </span>
-            <span title={t("archiveAction", { title: plan.title })}>
-              <Button
-                variant="ghost"
-                isIconOnly
-                aria-label={t("archiveAction", { title: plan.title })}
-                className="text-danger"
-                onPress={() => setArchivingPlan(plan)}
-              >
-                <img src={trashBinIcon} alt="" aria-hidden="true" width={16} height={16} />
-              </Button>
-            </span>
-          </div>
-        ) : null,
-    },
-  ];
-
-  const showingEmpty = mockState === "empty";
-  const isLoading = mockState === "loading";
-  const hasError = mockState === "error";
-  const noResults = !isLoading && !hasError && !showingEmpty && filtered.length === 0;
-  const visibleCount = isLoading || hasError || showingEmpty || noResults ? 0 : rows.length;
-  const totalCount = showingEmpty ? 0 : filtered.length;
-  const headingCount = showingEmpty ? 0 : filtered.length;
+  const openCreate = () => setOpenDialog({ kind: "create" });
+  const closeDialog = () => setOpenDialog(null);
 
   return (
-    <section
-      aria-labelledby="lesson-plans-title"
-      className="-mx-4 -my-6 min-h-[calc(100vh-8.75rem)] bg-sky-50 px-4 py-6 lg:-mx-10 lg:-my-8 lg:px-10 lg:py-8"
+    <Card
+      title={<span id="lesson-plans-title">{t("title", { count: total })}</span>}
+      aside={canManage ? <Button onPress={openCreate}>{t("newPlan")}</Button> : null}
     >
-      <Card
-        className="min-h-[calc(100vh-9rem)] rounded-3xl"
-        title={<span id="lesson-plans-title">{t("title", { count: headingCount })}</span>}
-        aside={canManage ? <Button onPress={openCreateDialog}>{t("newPlan")}</Button> : null}
-      >
-        <div className="flex min-h-[calc(100vh-15rem)] flex-col gap-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1fr_1fr]">
-            <TextField
-              label={t("search")}
-              isLabelHidden
-              placeholder={t("searchPlaceholder")}
-              value={search}
-              onChange={(value) => updateParams({ search: value })}
-            />
-            <Select
-              label={t("content")}
-              isLabelHidden
-              value={content}
-              onChange={(value) => updateParams({ content: value })}
-              formatValue={(selected) =>
-                `${t("content")}: ${selected?.label ?? t("all").toLocaleLowerCase()}`
-              }
-              options={[
-                { id: "", label: t("all").toLocaleLowerCase() },
-                ...contentOptions.map((item) => ({ id: item, label: item })),
-              ]}
-            />
-            <Select
-              label={t("duration")}
-              isLabelHidden
-              value={durationFilterId}
-              onChange={(value) => {
-                const range = getDurationRange(value);
-                updateParams({
-                  minDuration:
-                    range.minDuration === undefined ? undefined : String(range.minDuration),
-                  maxDuration:
-                    range.maxDuration === undefined ? undefined : String(range.maxDuration),
-                });
-              }}
-              formatValue={(selected) =>
-                `${t("duration")}: ${selected?.label ?? t("durationAll").toLocaleLowerCase()}`
-              }
-              options={durationOptions}
-            />
-            <Select
-              label={t("usage")}
-              isLabelHidden
-              value={usage}
-              onChange={(value) => updateParams({ usage: value })}
-              formatValue={(selected) =>
-                `${t("usage")}: ${selected?.label ?? t("all").toLocaleLowerCase()}`
-              }
-              options={usageOptions}
-            />
-          </div>
+      <section aria-labelledby="lesson-plans-title" className="flex flex-col gap-3">
+        <LessonPlanFilters
+          search={searchText}
+          onSearchChange={setSearchText}
+          content={contentText}
+          onContentChange={setContentText}
+          filters={filters}
+          onUsageChange={(usage) =>
+            setParams((current) => withLessonPlanFilters(current, { usage }))
+          }
+          onDurationChange={(id) => setParams((current) => withDurationFilter(current, id))}
+        />
+        <hr className="border-tedi-divider" />
 
-          <hr className="border-tedi-divider" />
-          <DataTable
-            columns={columns}
-            rows={isLoading || hasError || showingEmpty || noResults ? [] : rows}
-            rowKey={(plan) => plan.id}
-            caption={t("title", { count: totalCount })}
-            onRowClick={(plan) => navigate(`/lesson-plans/${plan.id}`)}
+        {listState === "loading" ? (
+          <ListState variant="loading" title={t("loading")} />
+        ) : listState === "error" ? (
+          <ListState
+            variant="error"
+            title={t("error")}
+            description={t("errorDescription")}
+            action={{
+              label: t("retry"),
+              onPress: () => void plansQuery.refetch(),
+              isLoading: plansQuery.isFetching,
+            }}
           />
-
-          {isLoading ? (
-            <ListState variant="loading" title={t("loading")} />
-          ) : hasError ? (
-            <ListState
-              variant="error"
-              title={t("error")}
-              description={t("errorDescription")}
-              action={{
-                label: t("retry"),
-                onPress: () => updateParams({ mockState: undefined }, false),
-              }}
-            />
-          ) : showingEmpty ? (
-            <ListState
-              variant="empty"
-              title={t("empty")}
-              description={t("emptyDescription")}
-              icon={graduationCapIcon}
-              action={canManage ? { label: t("newPlan"), onPress: openCreateDialog } : undefined}
-            />
-          ) : noResults ? (
-            <ListState
-              variant="noResults"
-              title={t("noResults")}
-              icon={graduationCapIcon}
-              action={{ label: t("clearFilters"), onPress: clearFilters }}
-            />
-          ) : null}
-
-          <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
-            <p className="text-base text-muted">
-              {t("summary", { shown: visibleCount, total: totalCount })}
-            </p>
-            {!isLoading && !hasError && !showingEmpty && totalPages > 1 ? (
-              <Pagination
-                page={currentPage}
-                totalPages={totalPages}
-                onPageChange={(nextPage) => updateParams({ page: String(nextPage) }, false)}
-                label={t("actionsHeader")}
-                previousLabel={t("previous")}
-                nextLabel={t("next")}
-                pageLabel={(number) => t("page", { page: number })}
-              />
-            ) : null}
-          </div>
-        </div>
-
-        {isCreateOpen ? (
-          <LessonPlanFormDialog
-            mode="create"
-            onClose={() => setIsCreateOpen(false)}
-            onSaved={(plan) => navigate(`/lesson-plans/${plan.id}`)}
+        ) : listState === "empty" ? (
+          <ListState
+            variant="empty"
+            title={t("empty")}
+            description={t("emptyDescription")}
+            icon={graduationCapIcon}
+            action={canManage ? { label: t("newPlan"), onPress: openCreate } : undefined}
           />
-        ) : null}
-        {editingPlan ? (
-          <MockLessonPlanFormDialog plan={editingPlan} onClose={() => setEditingPlan(null)} />
-        ) : null}
-        {archivingPlan && (
-          <MockArchiveLessonPlanDialog
-            plan={archivingPlan}
-            onClose={() => setArchivingPlan(null)}
+        ) : listState === "noResults" ? (
+          <ListState
+            variant="noResults"
+            title={t("noResults")}
+            icon={graduationCapIcon}
+            action={{ label: t("clearFilters"), onPress: clearFilters }}
           />
+        ) : (
+          <>
+            <LessonPlansTable
+              plans={plans}
+              caption={t("title", { count: total })}
+              onEdit={(plan) => setOpenDialog({ kind: "edit", lessonPlanId: plan.id })}
+              onArchive={(plan) => setOpenDialog({ kind: "archive", lessonPlanId: plan.id })}
+              onUnarchive={(plan) => unarchivePlan.mutate({ id: plan.id })}
+              unarchivingId={unarchivePlan.isPending ? unarchivePlan.variables?.id : null}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
+              <p className="text-base text-muted">{t("summary", { shown: plans.length, total })}</p>
+              {totalPages > 1 ? (
+                <Pagination
+                  page={Math.min(filters.page, totalPages)}
+                  totalPages={totalPages}
+                  onPageChange={(next) =>
+                    setParams((current) => withLessonPlanFilters(current, { page: String(next) }))
+                  }
+                  label={t("pagination")}
+                  previousLabel={t("previous")}
+                  nextLabel={t("next")}
+                  pageLabel={(number) => t("page", { page: number })}
+                />
+              ) : null}
+            </div>
+          </>
         )}
-      </Card>
-    </section>
+      </section>
+
+      {openDialog?.kind === "create" ? (
+        <LessonPlanFormDialog
+          mode="create"
+          onClose={closeDialog}
+          onSaved={(plan) => navigate(`/lesson-plans/${plan.id}`)}
+        />
+      ) : null}
+      {openDialog?.kind === "edit" ? (
+        <LessonPlanFormDialog
+          mode="edit"
+          lessonPlanId={openDialog.lessonPlanId}
+          onClose={closeDialog}
+        />
+      ) : null}
+      {openDialog?.kind === "archive" ? (
+        <ArchiveLessonPlanDialog lessonPlanId={openDialog.lessonPlanId} onClose={closeDialog} />
+      ) : null}
+    </Card>
   );
 }

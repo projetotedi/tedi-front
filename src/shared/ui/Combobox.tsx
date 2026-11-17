@@ -12,6 +12,7 @@ import chevronDownUrl from "../assets/icons/chevron-down.svg";
 
 export interface ComboboxProps {
   label: ReactNode;
+  isLabelHidden?: boolean;
   /** The suggestions, as the text each one puts in the field. */
   options: string[];
   /** What is in the field: a suggestion or anything typed. */
@@ -35,6 +36,7 @@ export interface ComboboxProps {
  */
 export function Combobox({
   label,
+  isLabelHidden = false,
   options,
   value,
   onChange,
@@ -73,7 +75,7 @@ export function Combobox({
       isInvalid={Boolean(errorMessage)}
       validationBehavior="aria"
     >
-      <Label className="text-base">{label}</Label>
+      <Label className={isLabelHidden ? "sr-only" : "text-base"}>{label}</Label>
       <HeroComboBox.InputGroup>
         <Input
           ref={inputRef}

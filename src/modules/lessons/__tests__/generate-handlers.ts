@@ -212,6 +212,7 @@ export function buildLesson(
     title: plan.title,
     objective: `Objetivo da aula ${plan.title}.`,
     belowExpectedMonitors: false,
+    attendance: { pending: false, students: { signed: 0, total: 0 } },
     coverage: {
       teacher: { confirmed: 0, expected: 1 },
       monitors: { confirmed: 0, expected: null },
@@ -276,6 +277,7 @@ export function buildLessonListItem(
     status: LessonStatus.planned,
     teacher: null,
     belowExpectedMonitors: false,
+    attendancePending: false,
     class: { id: CLASS_ID, code: "INFO-A", name: "Informática Básica — Turma A", colorIndex: 0 },
     ...overrides,
   };

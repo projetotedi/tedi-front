@@ -609,6 +609,89 @@ export const UnarchiveCourseResponse = zod.object({
     ),
 });
 
+export const listLessonPlansQueryLimitMax = 100;
+
+export const listLessonPlansQuerySearchMax = 100;
+
+export const listLessonPlansQueryContentMax = 100;
+
+export const ListLessonPlansQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listLessonPlansQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listLessonPlansQuerySearchMax)
+    .optional()
+    .describe("Search by title, ignoring case and accents."),
+  content: zod
+    .string()
+    .max(listLessonPlansQueryContentMax)
+    .optional()
+    .describe("Only the plans with a content that contains this text, ignoring case and accents."),
+  usage: zod
+    .enum(["in_use", "unused", "archived"])
+    .optional()
+    .describe(
+      "in_use: not archived and in at least one course; unused: not archived and in no course; archived: only the archived ones. Omitted lists every plan that is not archived.",
+    ),
+  minDuration: zod
+    .number()
+    .min(1)
+    .optional()
+    .describe("Only the plans of at least this many minutes."),
+  maxDuration: zod
+    .number()
+    .min(1)
+    .optional()
+    .describe("Only the plans of at most this many minutes. Not below minDuration."),
+  excludeCourseId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Leaves out the plans that are in the sequence of this course: the picker of the sequence sends it.",
+    ),
+  sort: zod
+    .enum(["title", "updatedAt"])
+    .optional()
+    .describe("title is alphabetical; updatedAt puts the plan changed last first."),
+});
+
+export const listLessonPlansResponseDataItemCourseCountMin = 0;
+
+export const ListLessonPlansResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      archivedAt: zod.iso
+        .datetime({ offset: true })
+        .nullable()
+        .describe("Null while the plan is not archived (RN-27)."),
+      contents: zod.array(zod.string()).describe("The contents of the plan, in their order."),
+      courseCount: zod
+        .number()
+        .min(listLessonPlansResponseDataItemCourseCountMin)
+        .describe(
+          "Courses whose sequence has the plan, archived courses included: the same count as the sequence and the detail of the plan.",
+        ),
+      expectedDurationMinutes: zod.number(),
+      id: zod.uuid(),
+      materialUrl: zod.string().nullable(),
+      status: zod
+        .enum(["in_use", "unused", "archived"])
+        .describe(
+          "archived when the plan is archived; else in_use when courseCount > 0, unused when not.",
+        )
+        .describe(
+          "archived when the plan is archived; else in_use when courseCount > 0, unused when not.",
+        ),
+      title: zod.string(),
+      updatedAt: zod.iso.datetime({ offset: true }),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
 export const createLessonPlanBodyContentsItemMax = 500;
 
 export const createLessonPlanBodyContentsMax = 50;
@@ -669,6 +752,19 @@ export const CreateLessonPlanResponse = zod.object({
     .datetime({ offset: true })
     .describe("The most recent change to the lesson plan or to its contents."),
 });
+
+export const listLessonPlanContentsQuerySearchMax = 100;
+
+export const ListLessonPlanContentsQueryParams = zod.object({
+  search: zod
+    .string()
+    .max(listLessonPlanContentsQuerySearchMax)
+    .optional()
+    .describe("Only the contents that contain this text, ignoring case and accents."),
+});
+
+export const ListLessonPlanContentsResponseItem = zod.string();
+export const ListLessonPlanContentsResponse = zod.array(ListLessonPlanContentsResponseItem);
 
 export const GetLessonPlanParams = zod.object({
   id: zod.uuid().describe("Id of the lesson plan."),

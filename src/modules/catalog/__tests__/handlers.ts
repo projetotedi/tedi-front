@@ -24,9 +24,14 @@ import {
   type UpdateCourseDto,
   type UpdateLessonPlanDto,
 } from "@api/generated/model";
+import {
+  LessonPlanListStatus,
+  type LessonPlanListItemDto,
+  type ListLessonPlans200,
+} from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { MOCK_LESSON_PLANS, type LessonPlanMock } from "../mocks/lesson-plans.mock";
+import { MOCK_LESSON_PLANS, type LessonPlanMock } from "./lesson-plan-catalog";
 
 function permissionsWith(granted: Partial<PermissionsDto>): PermissionsDto {
   return granted as PermissionsDto;
@@ -167,6 +172,8 @@ export function buildSequenceItem(
     ...overrides,
   };
 }
+
+const LESSON_PLAN_CONTENTS_SEGMENT = "contents";
 
 const ARCHIVED_AT = "2026-10-10T13:00:00.000Z";
 
@@ -421,6 +428,8 @@ export function getLessonPlanHandler({
   onCall,
 }: HandlerOptions<IdCall, LessonPlanDetailDto> = {}) {
   return http.get("*/lesson-plans/:id", async ({ params }) => {
+    // The API declares GET /lesson-plans/contents before :id; so does the server of the tests.
+    if (params.id === LESSON_PLAN_CONTENTS_SEGMENT) return undefined;
     onCall?.({ id: String(params.id) });
     if (delay) await delay;
 
@@ -704,6 +713,7 @@ export function getLessonPlansByIdHandler(
   onCall?: (call: IdCall) => void,
 ) {
   return http.get("*/lesson-plans/:id", ({ params }) => {
+    if (params.id === LESSON_PLAN_CONTENTS_SEGMENT) return undefined;
     const id = String(params.id);
     onCall?.({ id });
 
@@ -1029,3 +1039,76 @@ export const PREREQUISITE_CYCLE_ERROR: ApiErrorOptions = {
   error: "PREREQUISITE_CYCLE",
   message: "The prerequisites would form a cycle.",
 };
+
+const LIST_UPDATED_AT = "2026-10-01T12:00:00.000Z";
+
+/** A plan of the catalog of the tests as a line of `GET /lesson-plans`. */
+export function toLessonPlanListItem(
+  plan: LessonPlanMock,
+  overrides: Partial<LessonPlanListItemDto> = {},
+): LessonPlanListItemDto {
+  return {
+    id: plan.id,
+    title: plan.title,
+    contents: plan.contents,
+    expectedDurationMinutes: plan.expectedDurationMinutes,
+    materialUrl: plan.materialUrl,
+    courseCount: plan.courseCount,
+    status: LessonPlanListStatus[plan.usage],
+    archivedAt: plan.usage === "archived" ? ARCHIVED_AT : null,
+    updatedAt: LIST_UPDATED_AT,
+    ...overrides,
+  };
+}
+
+/** A page of `GET /lesson-plans`: `total` can be more than the items of the page. */
+export function buildLessonPlansPage(
+  items: LessonPlanListItemDto[],
+  {
+    total = items.length,
+    page = 1,
+    limit = 7,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListLessonPlans200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a `GET /lesson-plans`, as an object of the parameters that were sent. */
+export type ListLessonPlansCall = Record<string, string>;
+
+/**
+ * `GET /lesson-plans`. Without `response` it answers the catalog of the tests that is not archived,
+ * by title, in one page, as the API answers the picker of the sequence. It is a default handler of
+ * the server of this module (`test-utils`), since the dialog of the sequence asks for it.
+ */
+export function listLessonPlansHandler({
+  response,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListLessonPlansCall, ListLessonPlans200> = {}) {
+  return http.get("*/lesson-plans", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    if (response) return HttpResponse.json(response);
+    const items = MOCK_LESSON_PLANS.filter((plan) => plan.usage !== "archived")
+      .map((plan) => toLessonPlanListItem(plan))
+      .sort((first, second) => first.title.localeCompare(second.title, "pt-BR"));
+    return HttpResponse.json(buildLessonPlansPage(items, { limit: 100 }));
+  });
+}
+
+/** `GET /lesson-plans/contents`: the suggestions of the filter Conteúdo. */
+export function listLessonPlanContentsHandler({
+  response = ["Janelas do sistema", "Janela anônima"],
+  onCall,
+}: { response?: string[]; onCall?: (search: string | null) => void } = {}) {
+  return http.get("*/lesson-plans/contents", ({ request }) => {
+    onCall?.(new URL(request.url).searchParams.get("search"));
+    return HttpResponse.json(response);
+  });
+}
