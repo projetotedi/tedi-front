@@ -37,7 +37,7 @@ src/
 ├── assets/                           # SVGs baixados do Figma (ícones, marca, textura da sidebar)
 │
 ├── api/                              # fronteira com o back
-│   ├── http-client.ts                # mutator do Orval: base URL /api, cookie de sessão, 401, ApiError
+│   ├── http-client.ts                # mutator do Orval: base URL /api, cookie de sessão, 401, ApiError, download (`File` com o nome do `Content-Disposition`)
 │   ├── query-client.ts               # QueryClient com defaults (retry, staleTime)
 │   └── generated/                    # Orval. Versionado. Ninguém edita à mão.
 │       ├── model/                    # todos os DTOs
@@ -55,7 +55,7 @@ src/
     ├── hooks/                        # useDocumentTitle, useDebounce, useLiveAnnouncement...
     ├── i18n/                         # init do i18next + registerModuleLocales + locales/common
     ├── assets/icons/                 # SVGs do Figma, importados como URL (<img alt="" aria-hidden>)
-    └── lib/                          # role, session-events, menu (MenuItem, MenuGroup, agrupamento), active-path (rota ativa), route-handle (título da rota), pagination, format (formatHours, formatCalendarDate), list-state (resolveListState), reorder (moveItem, dropIndex)...
+    └── lib/                          # role, session-events, menu (MenuItem, MenuGroup, agrupamento), active-path (rota ativa), route-handle (título da rota), pagination, format (formatHours, formatCalendarDate), list-state (resolveListState), reorder (moveItem, dropIndex), save-file (saveFile)...
 ```
 
 Fora de `src/`: `openapi/openapi.json` (cópia versionada do contrato da API), `orval.config.ts`, `vitest.setup.ts`, `.dependency-cruiser.cjs`.
@@ -448,3 +448,40 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
     - **F12 (invalidação).** As chaves acima: só as funções geradas.
 
     **Pendências da GUS-161, de propósito.** (1) **GUS-155:** o botão "Candidaturas pendentes (N)" na listagem de aulas, ligado por slot em `app/` ao `PendingApplicationsButton`; quando existir, o PO decide se ele continua em Minhas aulas. (2) **GUS-156:** o "Ver candidaturas ›" no detalhe da aula (no card Cobertura da aula da GUS-159, que hoje mostra só o número, F9 dela), por slot, com o `PendingApplicationsDialog`; ele lista a fila inteira, e filtrar por aula é outra tarefa. (3) Outro período em Minhas aulas (`from` e `to`), a paginação das listas (a fila e as do membro não são paginadas, A10) e a rota só do contador (`GET /applications/count`, C9). (4) Cancelar ou retirar a própria candidatura, e expirá-la. (5) O preview pede login real: com `DEV_FAKE_ROLE` as rotas `/me/*` respondem 500 (risco 5 da GUS-160). (6) Migrar para `shared` o `LINK_CLASSES` (agora com mais uma cópia, a deste módulo, além das de `lessons`, `classes` e `catalog`) e o formato de data.
+
+11. Módulo `hours`: a **GUS-165** fez o Banco de horas e a validação no front (E7): a página **Banco de horas** (`/hours`, `hours.viewOthers`), com a visão de todos e a de um membro, e a página **Validação de horas** (`/hours/review`, `hours.review`), com a fila de lançamentos pendentes. A GUS-163 (lançar horas, Meu perfil e extrato) acrescenta as peças dela neste mesmo módulo.
+
+    **Módulo, rotas e menu.** `src/modules/hours` exporta só `hoursRoutes` e `hoursMenuItems` (nenhuma peça é usada por outro módulo ainda). As duas rotas são planas, sem `lazy` (como `assignments`), com o `RequirePermission` do item de menu (decisão 18), e os dois itens saíram de `prototypeMenuItems`: Banco de horas e Validação de horas formam o grupo Horas, nessa ordem, e o diretor vê só o primeiro. O título da topbar vem do `handle` ("Banco de horas" e "Validação de horas").
+
+    **Banco de horas.** O mês fica na URL (`?period=AAAA-MM`, por `replace`; mês inválido, futuro ou anterior a 2000 vira o mês atual) e o membro aberto também (`?member=<personId>`, por push, então o Voltar do navegador volta a Todos; é o link que a ficha do membro, GUS-145, vai usar). Cada bloco pede o primeiro e o último dia do mês. Filtros: **Buscar membro** (pausa de 300 ms, `search` do overview, que estreita membros e totais; digitar na visão de um membro volta para Todos), **Período** e **Visão** (os chips Todos e o do membro, com × para voltar). Os quatro cards de totais saem de `bankTotals` (`lib/bank-totals.ts`): lançadas = soma dos declarados; validadas = `bankMinutes`; pendentes = declarados pendentes; ajustadas/rejeitadas = o que os ajustes cortaram mais os rejeitados, nunca negativo. Visão Todos: **Horas por membro** na ordem da API (pendências primeiro), com Ver membro e a linha clicável, 4 na primeira carga e "Ver todos" com 20 por página. Visão por membro (`getMemberHours`, só o resumo): os totais do membro e **Horas por categoria do membro** (só as categorias lançadas, na ordem do contrato, sem a coluna Observação até a GUS-173). As duas visões terminam com a fila de pendentes do período (e do membro). **Exportar relatório** (`hours.export`) chama a função gerada `exportHours` dentro de uma `useMutation` (o hook gerado é uma query, que pediria o arquivo ao montar e o guardaria no cache) e entrega o CSV com o nome do `Content-Disposition`; na visão do membro o botão diz "Exportar relatório de todos", porque a API não filtra por membro.
+
+    **Fila de validação** (`PendingEntriesTable`, usada pelas duas páginas). Vinte por página, do dia mais antigo. Quem tem `hours.review` seleciona (o "selecionar todos" fica misto com parte marcada) e valida em lote ou por linha; Ajustar, Rejeitar e o relógio do Histórico ficam em cada linha. A seleção é por página e é derivada das linhas da tela a cada render, então um lote nunca manda um id que saiu da fila. O lançamento da própria pessoa fica com caixa e botões desligados e fora do "selecionar todos" (`can` não deixa `hours.review` valer sobre a própria pessoa, como já fazia com `attendance.confirmMember`; a API responde 409 `SELF_REVIEW_NOT_ALLOWED`). O diretor vê a fila sem seleção nem ações.
+
+    **Releitura e invalidação.** `invalidateAfterReview` (`lib/review-queries.ts`) avisa a fila (`/hour-entries`, que também é o prefixo das sondas do Período), o overview, o banco de cada membro dos lançamentos e o histórico de cada lançamento, e termina quando a fila foi relida. Ela roda no `onSuccess`/`onError` passados ao hook gerado, que o TanStack espera antes de a mutação terminar: o botão fica ocupado e as linhas na tela até a fila responder, sem janela para mandar os mesmos ids de novo. Os callbacks do `mutate` só fazem toast, seleção e foco. Um 409 `ENTRY_NOT_PENDING` ou um `HOUR_ENTRY_NOT_FOUND` (400 no lote, 404 num lançamento) relê a fila e limpa a seleção.
+
+    **Ajustar, Rejeitar e Histórico.** Os formulários usam React Hook Form com schemas próprios (`schemas/adjust-entry.schema.ts`, que lê "2h"/"2h30" em minutos e recusa o valor declarado, e `schemas/reject-entry.schema.ts`, que apara o motivo), com os limites do contrato. O erro de campo aparece no campo (inclusive o 400 `ADJUSTED_MINUTES_UNCHANGED`); o lançamento que já não está pendente fecha o diálogo; o resto é um alerta no diálogo, que fica aberto. Depois de ajustar, o toast "Lançamento ajustado" traz "Ver histórico", que abre o Histórico do lançamento (situação atual e linha do tempo, do mais recente para o mais antigo). Rejeitar mostra um toast neutro.
+
+    **Extensões de `shared`.** `toast.success` aceita `action` (o botão "success" do Figma; com ação o toast não some sozinho, WCAG 2.2.1), e há `toast.neutral` (variante `default`) e `toast.close(key)`; a posição continua embaixo. A fila fecha o toast com ação antes do toast da próxima revisão e quando sai da tela. `Checkbox` ganhou `isIndeterminate` e `isLabelHidden`, e o preenchimento marcado e o misto passaram ao token `tedi-action-primary` (#2563eb, o checkbox do kit) no app inteiro. `DataTable` aceita `headerContent` (o checkbox do cabeçalho; `header` continua sendo a chave e o texto lido). O `http-client` devolve um download (`Content-Disposition: attachment`) como `File`, com o nome do header e os bytes intactos (o BOM do CSV incluído), e `shared/lib/save-file.ts` (`saveFile`) entrega o arquivo ao navegador. Os tokens do Banco de horas (`tedi-status-*`, `tedi-surface-subtle`, `tedi-text-link`, `tedi-action-primary`, `tedi-action-success`) entraram no `@theme` com o mesmo bloco da GUS-163.
+
+    Decisões da GUS-165 (D1 a D18):
+
+    - **D1 (páginas).** Duas páginas e um componente de fila: o Banco de horas desenha a fila embaixo dos membros ou das categorias; a Validação de horas, só a fila, paginada e sem filtros.
+    - **D2 (URL).** `?period=AAAA-MM` (replace) e `?member=<personId>` (push).
+    - **D3 (Período).** Do mês do lançamento mais antigo ao mês atual, mais o escolhido; o contrato não tem a rota dos meses com lançamento, então quatro sondas `GET /hour-entries?status=<s>&limit=1` dão o mais antigo. Um mês vazio no meio aparece (sugestão: uma rota no back).
+    - **D4 (busca).** `TextField` com pausa de 300 ms no `search` do overview; a fila não é filtrada pela busca (o contrato não tem `search` nela).
+    - **D5 (Ver todos).** 4 na primeira carga; depois 20 por página com paginação, sem "Ver menos".
+    - **D6 (membro).** A visão do membro mostra a fila de pendentes dele (Figma), não a lista completa de `getMemberHours`.
+    - **D7 (toast).** Ação "Ver histórico" que não some sozinha, variante neutra, posição embaixo; o toast de ação é fechado antes da próxima revisão e ao sair da tela.
+    - **D8 (auto-revisão).** `hours.review` nunca vale sobre a própria pessoa em `can`; a linha fica desligada e fora do "selecionar todos".
+    - **D9 (seleção).** Por página, derivada das linhas atuais, zerada ao trocar de página, depois de validar e depois de fila desatualizada; o lote nunca passa de 20 ids.
+    - **D10 (histórico).** Também pelo relógio de cada linha (decisão do usuário), só para quem revisa.
+    - **D11 (exportar).** `useMutation` com a função gerada; nome do `Content-Disposition`; "Exportar relatório de todos" na visão do membro.
+    - **D12 (totais).** "Ajustadas / rejeitadas" mostra 0 quando a conta dá negativa (ajuste acima do declarado).
+    - **D13 (checkbox).** O preenchimento `tedi-action-primary` vale para o `Checkbox` do app inteiro (o filtro de status de Turmas muda de #0466d9 para #2563eb).
+    - **D14 (cores).** Os tokens novos onde a ficha tinha provisório; a tag de pendentes continua o `Badge warning` (#92400e, o Figma tem #854d0e).
+    - **D15 (foco).** Depois de validar, ajustar ou rejeitar, o foco vai ao título da fila; ao trocar de visão, ao título do primeiro bloco; o erro de envio no diálogo recebe o foco.
+    - **D16 (duplicações com a GUS-163).** `lib/bank-labels.ts` × `entry-labels.ts`, `parseHoursInput` × o parser do Lançar horas e as chaves `bank.categories.labels.*`/`bank.status.*` × `entries.*`: unificar no segundo merge.
+    - **D17 (origem).** O resumo diz "Registrado pela presença da aula em {data}" para `origin: attendance` (o Figma não desenha).
+    - **D18 (releitura).** A fila é relida dentro da mutação (callbacks do hook), e os callbacks do `mutate` só fazem toast, seleção e foco.
+
+    **Pendências da GUS-165, de propósito.** O card Banco de horas da ficha do membro, com "Ver extrato ›" para `/hours?member=<id>` (GUS-145); a coluna Observação (GUS-173 e um card de front pequeno); uma rota de meses com lançamento no back, para o Período (D3).
