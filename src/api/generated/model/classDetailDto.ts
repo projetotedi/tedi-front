@@ -32,7 +32,7 @@ export interface ClassDetailDto {
   createdBy: PersonRefDto | null;
   edition: EditionResponseDto;
   endDate: string;
-  /** Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments (GUS-108). Empty when there are none. */
+  /** Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments. Empty when there are none. */
   enrollmentsPreview: ClassEnrollmentPreviewItemResponseDto[];
   /**
    * Active enrollments of the class, the same as summary.enrolledCount.

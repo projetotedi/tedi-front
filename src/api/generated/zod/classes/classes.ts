@@ -7,6 +7,97 @@
  */
 import * as zod from "zod";
 
+export const listClassesQueryLimitMax = 100;
+
+export const listClassesQuerySearchMax = 100;
+
+export const ListClassesQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listClassesQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listClassesQuerySearchMax)
+    .optional()
+    .describe(
+      "Search by the code or the name of the class, or by the name of its course, ignoring case and accents.",
+    ),
+  editionId: zod.uuid().optional().describe("Only the classes of this edition."),
+  courseId: zod.uuid().optional().describe("Only the classes of this course."),
+  category: zod
+    .enum(["basic", "intermediate", "advanced"])
+    .optional()
+    .describe("Only the classes whose course has this category (RN-14)."),
+  status: zod
+    .string()
+    .optional()
+    .describe(
+      "One or more statuses, comma separated (planned, in_progress, completed, cancelled). Omitted lists every status.",
+    ),
+  archived: zod
+    .boolean()
+    .optional()
+    .describe(
+      "true lists only the archived classes. Omitted (or false) lists only the classes that are not archived (RN-27).",
+    ),
+  sort: zod
+    .enum(["startDate", "code"])
+    .optional()
+    .describe("startDate puts the class that starts last first; code is alphabetical."),
+});
+
+export const listClassesResponseDataItemEnrolledCountMin = 0;
+
+export const ListClassesResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      archivedAt: zod.iso
+        .datetime({ offset: true })
+        .nullable()
+        .describe("Null while the class is not archived (RN-27)."),
+      capacity: zod.number().min(1),
+      code: zod.string(),
+      course: zod
+        .object({
+          category: zod
+            .enum(["basic", "intermediate", "advanced"])
+            .describe(
+              "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+            )
+            .describe(
+              "Always the current category of the course: a class has no category of its own (RN-14).",
+            ),
+          id: zod.uuid(),
+          name: zod.string(),
+          status: zod
+            .enum(["active", "archived"])
+            .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+            .describe(
+              "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+            ),
+        })
+        .describe("The course of the class, with its current category (RN-14)."),
+      edition: zod.object({
+        id: zod.uuid(),
+        name: zod.string().describe('Year and term, "<year>.<term>".'),
+      }),
+      endDate: zod.iso.date(),
+      enrolledCount: zod
+        .number()
+        .min(listClassesResponseDataItemEnrolledCountMin)
+        .describe("Active enrollments only: dropped, completed and removed ones are left out."),
+      id: zod.uuid(),
+      name: zod.string().nullable(),
+      startDate: zod.iso.date(),
+      status: zod
+        .enum(["planned", "in_progress", "completed", "cancelled"])
+        .describe("Status of the class (RF-034). Omit for planned."),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
 export const createClassBodyCapacityMax = 1000;
 
 export const createClassBodyCodeMax = 30;
@@ -223,7 +314,7 @@ export const GetClassResponse = zod.object({
       }),
     )
     .describe(
-      "Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments (GUS-108). Empty when there are none.",
+      "Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments. Empty when there are none.",
     ),
   enrollmentsTotal: zod
     .int()
@@ -248,7 +339,7 @@ export const GetClassResponse = zod.object({
     enrolledCount: zod
       .int()
       .min(getClassResponseSummaryEnrolledCountMin)
-      .describe("Active enrollments. 0 until enrollments exist (GUS-108)."),
+      .describe("Active enrollments."),
     lessonsDone: zod
       .int()
       .nullable()
@@ -302,7 +393,7 @@ export const UpdateClassBody = zod
       .uuid()
       .optional()
       .describe(
-        "Omit to keep. Never null. Id of another course. It changes only while the class is planned and has no active enrollments (409 COURSE_CHANGE_NOT_ALLOWED), and the new course must be active (400 COURSE_NOT_FOUND, 409 COURSE_ARCHIVED). The course the class already has is not a change.",
+        "Omit to keep. Never null. Id of another course. It changes only while the class is planned and has no enrollments, in any status (409 COURSE_CHANGE_NOT_ALLOWED), and the new course must be active (400 COURSE_NOT_FOUND, 409 COURSE_ARCHIVED). The course the class already has is not a change.",
       ),
     editionName: zod
       .string()
@@ -341,7 +432,7 @@ export const UpdateClassBody = zod
       .describe("Omit to keep. Never null. No rule limits the moves between statuses yet."),
   })
   .describe(
-    "Every field is optional: omit to keep. courseId moves the class to another course, only while it is planned and has no active enrollments. There is no category: the class shows the one of its course, and a category in the body is ignored.",
+    "Every field is optional: omit to keep. courseId moves the class to another course, only while it is planned and has no enrollments (active, dropped or completed; a removed one does not count). There is no category: the class shows the one of its course, and a category in the body is ignored.",
   );
 
 export const UpdateClassResponse = zod.object({
@@ -458,6 +549,202 @@ export const ArchiveClassResponse = zod.object({
   updatedAt: zod.iso.datetime({ offset: true }),
 });
 
+export const ListAvailableStudentsParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const listAvailableStudentsQueryLimitMax = 100;
+
+export const listAvailableStudentsQuerySearchMax = 100;
+
+export const ListAvailableStudentsQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listAvailableStudentsQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listAvailableStudentsQuerySearchMax)
+    .optional()
+    .describe("Part of the name of the student, ignoring case and accents."),
+});
+
+export const ListAvailableStudentsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      age: zod.int().describe("Whole years today in America/Sao_Paulo."),
+      currentClasses: zod
+        .array(
+          zod.object({
+            code: zod.string(),
+            edition: zod.object({
+              id: zod.uuid(),
+              name: zod.string().describe('Year and term, "<year>.<term>".'),
+            }),
+            id: zod.uuid(),
+            name: zod.string().nullable(),
+          }),
+        )
+        .describe(
+          "The other classes where the student has an active enrollment, the most recent edition first.",
+        ),
+      id: zod.uuid().describe("Person id of the student."),
+      name: zod.string(),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
+export const ListClassEnrollmentsParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const listClassEnrollmentsQueryLimitMax = 100;
+
+export const listClassEnrollmentsQuerySearchMax = 100;
+
+export const ListClassEnrollmentsQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listClassEnrollmentsQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listClassEnrollmentsQuerySearchMax)
+    .optional()
+    .describe("Part of the name of the student, ignoring case and accents."),
+  status: zod
+    .enum(["active", "dropped", "completed"])
+    .optional()
+    .describe(
+      "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+    ),
+});
+
+export const ListClassEnrollmentsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      attendanceRate: zod
+        .number()
+        .nullable()
+        .describe("Always null until the student roll call (GUS-166)."),
+      enrolledAt: zod.iso.datetime({ offset: true }),
+      id: zod.uuid().describe("Id of the enrollment."),
+      status: zod
+        .enum(["active", "dropped", "completed"])
+        .describe(
+          "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        )
+        .describe(
+          "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        ),
+      statusChangedAt: zod.iso
+        .date()
+        .describe("From when the current status holds, YYYY-MM-DD in America/Sao_Paulo."),
+      student: zod.object({
+        accessibilityNeed: zod
+          .union([
+            zod
+              .enum(["none", "visual", "hearing", "motor", "cognitive", "other"])
+              .describe("Category. What the person needs in class, never a diagnosis (RNF-13)."),
+            zod.null(),
+          ])
+          .describe("null when the caller cannot see students (students.view)."),
+        age: zod.int().describe("Whole years today in America/Sao_Paulo."),
+        id: zod.uuid().describe("Person id of the student."),
+        name: zod.string(),
+        phone: zod
+          .string()
+          .nullable()
+          .describe(
+            "Digits only. Null when the student has none or when the caller cannot see students (students.view).",
+          ),
+      }),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
+export const EnrollStudentsParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const enrollStudentsBodyStudentIdsMax = 100;
+
+export const EnrollStudentsBody = zod.object({
+  studentIds: zod
+    .array(zod.uuid())
+    .min(1)
+    .max(enrollStudentsBodyStudentIdsMax)
+    .describe(
+      "Person ids of the students, from 1 to 100. The same student twice, in any letter case, is 400 DUPLICATE_STUDENT.",
+    ),
+});
+
+export const EnrollStudentsResponse = zod.object({
+  enrolled: zod
+    .array(
+      zod.object({
+        classId: zod.uuid(),
+        enrolledAt: zod.iso.datetime({ offset: true }),
+        id: zod.uuid().describe("Id of the enrollment."),
+        status: zod
+          .enum(["active", "dropped", "completed"])
+          .describe(
+            "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+          )
+          .describe(
+            "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+          ),
+        statusChangedAt: zod.iso
+          .date()
+          .describe(
+            "From when the current status holds, YYYY-MM-DD in America/Sao_Paulo: the day of the enrollment, or the effectiveDate of the last change.",
+          ),
+        statusReason: zod
+          .string()
+          .nullable()
+          .describe("The reason of the last change of status; null without one."),
+        student: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .describe("The enrolled student."),
+      }),
+    )
+    .describe("The enrollments made now, in the order of the body."),
+  skipped: zod
+    .array(
+      zod.object({
+        enrollmentId: zod.uuid().describe("The enrollment the student already has in the class."),
+        reason: zod.enum(["ALREADY_ENROLLED"]),
+        status: zod
+          .enum(["active", "dropped", "completed"])
+          .describe(
+            "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+          )
+          .describe(
+            "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+          ),
+        studentId: zod.uuid(),
+      }),
+    )
+    .describe("The students left out because they already have an enrollment in the class."),
+  warnings: zod
+    .array(
+      zod.object({
+        code: zod.enum(["PREREQUISITE_NOT_COMPLETED"]),
+        courseId: zod.uuid().describe("The prerequisite course the student did not complete."),
+        courseName: zod.string(),
+        studentId: zod.uuid(),
+      }),
+    )
+    .describe(
+      "One item per enrolled student and prerequisite she did not complete, in the order of the body and then of the name of the course.",
+    ),
+});
+
 export const UnarchiveClassParams = zod.object({
   id: zod.uuid().describe("Id of the class."),
 });
@@ -542,9 +829,7 @@ export const ListCourseClassesResponse = zod.object({
       enrolledCount: zod
         .int()
         .min(listCourseClassesResponseDataItemEnrolledCountMin)
-        .describe(
-          "Active enrollments of the class. Always 0 until the enrollments exist (GUS-108).",
-        ),
+        .describe("Active enrollments of the class."),
       id: zod.uuid(),
       name: zod.string().nullable().describe("Optional label. Null when not informed."),
       startDate: zod.iso.date(),
@@ -564,3 +849,199 @@ export const ListEditionsResponseItem = zod.object({
   name: zod.string().describe('Year and term, "<year>.<term>".'),
 });
 export const ListEditionsResponse = zod.array(ListEditionsResponseItem);
+
+export const listStudentsByEnrollmentQueryLimitMax = 100;
+
+export const listStudentsByEnrollmentQuerySearchMax = 100;
+
+export const ListStudentsByEnrollmentQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listStudentsByEnrollmentQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listStudentsByEnrollmentQuerySearchMax)
+    .optional()
+    .describe("Part of the name of the student, ignoring case and accents."),
+  classId: zod
+    .uuid()
+    .optional()
+    .describe(
+      "Only the enrollments of this class. An id that is not a class answers no one enrolled and everybody not enrolled.",
+    ),
+  situation: zod
+    .enum(["enrolled", "not_enrolled"])
+    .optional()
+    .describe(
+      "enrolled: students with an active enrollment (in classId, or in any class); not_enrolled: students not archived without one. Omitted = enrolled.",
+    ),
+});
+
+export const ListStudentsByEnrollmentResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      accessibilityNeed: zod
+        .enum(["none", "visual", "hearing", "motor", "cognitive", "other"])
+        .describe("Category. What the person needs in class, never a diagnosis (RNF-13).")
+        .describe("Category of what the student needs in class, never a diagnosis (RNF-13)."),
+      age: zod.int().describe("Whole years today in America/Sao_Paulo."),
+      currentClasses: zod
+        .array(
+          zod.object({
+            code: zod.string(),
+            edition: zod.object({
+              id: zod.uuid(),
+              name: zod.string().describe('Year and term, "<year>.<term>".'),
+            }),
+            id: zod.uuid(),
+            name: zod.string().nullable(),
+          }),
+        )
+        .describe(
+          "The classes where the student has an active enrollment, the most recent edition first.",
+        ),
+      id: zod.uuid().describe("Person id of the student."),
+      name: zod.string(),
+      phone: zod.string().nullable().describe("Digits only."),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
+export const RemoveEnrollmentParams = zod.object({
+  id: zod.uuid().describe("Id of the enrollment."),
+});
+
+export const RemoveEnrollmentResponse = zod.void();
+
+export const UpdateEnrollmentStatusParams = zod.object({
+  id: zod.uuid().describe("Id of the enrollment."),
+});
+
+export const updateEnrollmentStatusBodyReasonMax = 500;
+
+export const UpdateEnrollmentStatusBody = zod.object({
+  effectiveDate: zod.iso
+    .date()
+    .describe(
+      'From when the new status holds ("A partir de"), YYYY-MM-DD, between the day of the enrollment and today (America/Sao_Paulo), both included.',
+    ),
+  reason: zod
+    .string()
+    .max(updateEnrollmentStatusBodyReasonMax)
+    .nullish()
+    .describe(
+      "Optional reason; it replaces the reason of the last change, and a change without one clears it. Never in a listing nor in an event (RNF-13).",
+    ),
+  status: zod
+    .enum(["active", "dropped", "completed"])
+    .describe(
+      "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+    )
+    .describe(
+      "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+    ),
+});
+
+export const UpdateEnrollmentStatusResponse = zod.object({
+  classId: zod.uuid(),
+  enrolledAt: zod.iso.datetime({ offset: true }),
+  id: zod.uuid().describe("Id of the enrollment."),
+  status: zod
+    .enum(["active", "dropped", "completed"])
+    .describe(
+      "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+    )
+    .describe(
+      "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+    ),
+  statusChangedAt: zod.iso
+    .date()
+    .describe(
+      "From when the current status holds, YYYY-MM-DD in America/Sao_Paulo: the day of the enrollment, or the effectiveDate of the last change.",
+    ),
+  statusReason: zod
+    .string()
+    .nullable()
+    .describe("The reason of the last change of status; null without one."),
+  student: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .describe("The enrolled student."),
+});
+
+export const ListStudentEnrollmentsParams = zod.object({
+  id: zod.uuid().describe("Person id of the student."),
+});
+
+export const ListStudentEnrollmentsResponse = zod.object({
+  enrollments: zod
+    .array(
+      zod.object({
+        class: zod.object({
+          code: zod.string(),
+          edition: zod.object({
+            id: zod.uuid(),
+            name: zod.string().describe('Year and term, "<year>.<term>".'),
+          }),
+          id: zod.uuid(),
+          name: zod.string().nullable(),
+        }),
+        course: zod.object({
+          category: zod
+            .enum(["basic", "intermediate", "advanced"])
+            .describe(
+              "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+            )
+            .describe(
+              "Always the current category of the course: a class has no category of its own (RN-14).",
+            ),
+          id: zod.uuid(),
+          name: zod.string(),
+          status: zod
+            .enum(["active", "archived"])
+            .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+            .describe(
+              "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+            ),
+        }),
+        enrolledAt: zod.iso.datetime({ offset: true }),
+        id: zod.uuid().describe("Id of the enrollment."),
+        status: zod
+          .enum(["active", "dropped", "completed"])
+          .describe(
+            "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+          )
+          .describe(
+            "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+          ),
+        statusChangedAt: zod.iso
+          .date()
+          .describe("From when the current status holds, YYYY-MM-DD in America/Sao_Paulo."),
+      }),
+    )
+    .describe("Every enrollment that is not removed, the newest first; archived classes too."),
+  summary: zod.object({
+    activeClasses: zod.int().describe("Active enrollments."),
+    completedCourses: zod
+      .array(
+        zod.object({
+          completedAt: zod.iso
+            .date()
+            .describe(
+              "The latest statusChangedAt of the completed enrollments of the course, YYYY-MM-DD.",
+            ),
+          courseId: zod.uuid(),
+          name: zod.string(),
+        }),
+      )
+      .describe("One item per course with a completed enrollment, by completedAt and then name."),
+    firstEnrollmentAt: zod.iso
+      .datetime({ offset: true })
+      .nullable()
+      .describe("The earliest enrolledAt; null without enrollments."),
+  }),
+});

@@ -19,12 +19,15 @@ export const server = setupServer();
 
 /**
  * The routes of the catalog as the tests of this module render them. The card "Turmas deste curso"
- * belongs to the `classes` module, which `catalog` does not import, so here the slot is a stand-in
- * that only says which course it was asked for. The real card is tested with the `classes` module
+ * and + Nova turma belong to the `classes` module, which `catalog` does not import, so here the
+ * slots are stand-ins that only say which course they were asked for. The real card is tested with the `classes` module
  * and put together with these routes in `app/__tests__/catalog-slots.test.tsx`.
  */
 export const catalogRoutes = createCatalogRoutes({
   renderCourseClasses: (courseId) => <p>{`Turmas do curso ${courseId}`}</p>,
+  renderNewClassAction: (course) => (
+    <button type="button" disabled={course.isArchived}>{`Nova turma ${course.id}`}</button>
+  ),
 });
 
 export function setupCatalogTestServer(): void {
