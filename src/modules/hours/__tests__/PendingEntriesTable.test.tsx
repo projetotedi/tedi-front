@@ -340,6 +340,32 @@ describe("PendingEntriesTable", () => {
     expect(within(table).getByText("14/03")).toBeInTheDocument();
   });
 
+  it("goes back to the last page when validating empties the current one", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    // 21 pending: the 29/03 is alone on page 2.
+    await renderQueue({ spies, store: storeWith(morePending(18)) });
+    const table = await queueTable();
+    const pages = screen.getByRole("navigation", { name: "Páginas dos lançamentos pendentes" });
+    await user.click(within(pages).getByRole("button", { name: "Página 2" }));
+    await within(table).findByText("29/03");
+
+    await user.click(
+      within(row(table, "29/03")).getByRole("button", {
+        name: "Validar lançamento de Beatriz Nunes em 29/03",
+      }),
+    );
+
+    expect(await screen.findByText("1 lançamento validado")).toBeInTheDocument();
+    await waitFor(() => expect(within(table).getAllByRole("row")).toHaveLength(21));
+    expect(within(table).getByText("05/03")).toBeInTheDocument();
+    expect(screen.getByText("Lançamentos pendentes de validação (20)")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("navigation", { name: "Páginas dos lançamentos pendentes" }),
+    ).not.toBeInTheDocument();
+    expect(queueRequests(spies).at(-1)?.url.searchParams.get("page")).toBe("1");
+  });
+
   it("paginates a queue longer than 20 and clears the selection on another page", async () => {
     const user = userEvent.setup();
     const spies = createBankSpies();

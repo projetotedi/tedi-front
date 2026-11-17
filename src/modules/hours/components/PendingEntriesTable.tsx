@@ -112,6 +112,15 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
   const totalPages =
     query.data === undefined ? 1 : Math.max(1, Math.ceil(query.data.total / query.data.limit));
 
+  // A review that empties the last page leaves `page` past the end, and the queue would keep asking
+  // for an empty page with no pagination to leave it: it goes back to the last page that exists,
+  // during the render (React renders again at once, before the empty page reaches the screen). The
+  // selection was of the page that is gone, so it is cleared.
+  if (query.data !== undefined && !query.isPlaceholderData && page > totalPages) {
+    setPage(totalPages);
+    setSelected(new Set());
+  }
+
   const isRetrying = query.isPending && query.isFetching && query.errorUpdateCount > 0;
   const listState = resolveListState({
     isPending: (query.isPending && !isRetrying) || (query.isPlaceholderData && total === 0),
