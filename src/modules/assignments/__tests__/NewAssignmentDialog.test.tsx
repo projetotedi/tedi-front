@@ -118,6 +118,18 @@ const saveButton = () => screen.getByRole("button", { name: /^(Salvar alocação
 
 const optionLabels = () => screen.getAllByRole("option").map((option) => option.textContent);
 
+const retryButton = () => screen.getByRole("button", { name: "Tentar de novo" });
+
+/**
+ * Waits for "Tentar de novo" to go away, which is the answer of the list: the message of the failure
+ * goes as soon as the list is asked again (the query is pending then), so it says nothing about the
+ * answer, while the button is kept on the screen until the answer comes.
+ */
+const waitForRetryToEnd = () =>
+  waitFor(() =>
+    expect(screen.queryByRole("button", { name: "Tentar de novo" })).not.toBeInTheDocument(),
+  );
+
 interface RenderOptions {
   /** Waits for the lists of the selects to arrive. Off for a test that holds an answer back on purpose. */
   waitForOptions?: boolean;
@@ -163,6 +175,8 @@ async function fillWholeForm(user: UserEvent, role = "Professor(a)") {
   await choose(user, lessonSelect, LESSON_OPTION);
   await choose(user, roleSelect, role);
 }
+
+const CLASS_CONTEXT = { id: CLASS_ID, label: CLASS_NAME };
 
 const LESSON_CONTEXT: AssignmentLessonContext = {
   id: LESSON_ID,
@@ -332,6 +346,40 @@ describe("NewAssignmentDialog", () => {
 
       expect(message.closest("[role='status']")).not.toBeNull();
     });
+
+    it("offers Tentar de novo when the members cannot be loaded, and the options and the focus come with the answer", async () => {
+      let isFailing = true;
+      server.use(
+        listMembersHandler({
+          response: buildMembersPage([BEATRIZ, RAFAEL]),
+          error: () => (isFailing ? SERVER_ERROR : undefined),
+        }),
+      );
+      const user = userEvent.setup();
+      await renderDialog();
+      await screen.findByText(ptBR.newAssignment.membersError);
+      const retry = retryButton();
+      expect(retry).toHaveClass("min-h-11");
+      expect(retry).toHaveAccessibleDescription(ptBR.newAssignment.membersError);
+
+      isFailing = false;
+      await user.click(retry);
+
+      await waitForRetryToEnd();
+      expect(screen.queryByText(ptBR.newAssignment.membersError)).not.toBeInTheDocument();
+      // The focus was on the button that went away: it goes to the select that has options now.
+      await waitFor(() => expect(memberSelect()).toHaveFocus());
+      await user.click(memberSelect());
+      expect(optionLabels()).toEqual([MEMBER_NAME, "Rafael Souza"]);
+    });
+
+    it("draws no Tentar de novo for a list that loaded, empty or not", async () => {
+      server.use(listMembersHandler({ response: buildMembersPage([]) }));
+      await renderDialog();
+      await screen.findByText("Não há membro ativo para alocar.");
+
+      expect(screen.queryByRole("button", { name: "Tentar de novo" })).not.toBeInTheDocument();
+    });
   });
 
   describe("the classes and the lessons", () => {
@@ -469,6 +517,28 @@ describe("NewAssignmentDialog", () => {
       expect(await screen.findByText(ptBR.newAssignment.classesError)).toBeInTheDocument();
     });
 
+    it("offers Tentar de novo when the classes cannot be loaded, and the options and the focus come with the answer", async () => {
+      let isFailing = true;
+      server.use(
+        listLessonsHandler({
+          response: lessonsFor,
+          error: () => (isFailing ? SERVER_ERROR : undefined),
+        }),
+      );
+      const user = userEvent.setup();
+      await renderDialog();
+      await screen.findByText(ptBR.newAssignment.classesError);
+
+      isFailing = false;
+      await user.click(retryButton());
+
+      await waitForRetryToEnd();
+      expect(screen.queryByText(ptBR.newAssignment.classesError)).not.toBeInTheDocument();
+      await waitFor(() => expect(classSelect()).toHaveFocus());
+      await user.click(classSelect());
+      expect(optionLabels()).toEqual([CLASS_NAME, OTHER_CLASS_NAME]);
+    });
+
     it("says the class has no lesson that takes an assignment when all of them are cancelled", async () => {
       server.use(
         listLessonsHandler({
@@ -505,6 +575,60 @@ describe("NewAssignmentDialog", () => {
       expect(
         screen.queryByText("Esta turma não tem aulas que recebam alocação."),
       ).not.toBeInTheDocument();
+    });
+
+    it("offers Tentar de novo when the lessons of the fixed class cannot be loaded, and the options come with the answer", async () => {
+      let isFailing = true;
+      server.use(
+        listLessonsHandler({
+          response: lessonsFor,
+          error: () => (isFailing ? SERVER_ERROR : undefined),
+        }),
+      );
+      const user = userEvent.setup();
+      // From the screen of the class there is no class to choose again: the message cannot ask for it.
+      await renderDialog({ lessonClass: CLASS_CONTEXT });
+      expect(await screen.findByText(ptBR.newAssignment.lessonsError)).toBeInTheDocument();
+      const retry = retryButton();
+      expect(retry).toHaveClass("min-h-11");
+      expect(retry).toHaveAccessibleDescription(ptBR.newAssignment.lessonsError);
+
+      isFailing = false;
+      await user.click(retry);
+
+      await waitForRetryToEnd();
+      expect(screen.queryByText(ptBR.newAssignment.lessonsError)).not.toBeInTheDocument();
+      await waitFor(() => expect(lessonSelect()).toHaveFocus());
+      await user.click(lessonSelect());
+      expect(optionLabels()).toEqual([LESSON_OPTION, LESSON_A2_OPTION]);
+    });
+
+    it("keeps Tentar de novo, with the focus, while the list is asked again and when it fails again", async () => {
+      server.use(listLessonsHandler({ response: lessonsFor, error: SERVER_ERROR }));
+      const user = userEvent.setup();
+      await renderDialog({ lessonClass: CLASS_CONTEXT });
+      await screen.findByText(ptBR.newAssignment.lessonsError);
+      const retry = retryButton();
+      // The next answer is held back, and then it is a failure again.
+      const answer = createDeferred();
+      server.use(
+        listLessonsHandler({ response: lessonsFor, error: SERVER_ERROR, delay: answer.promise }),
+      );
+
+      await user.click(retry);
+
+      // Asked again: the list says it is loading and the message is gone, but the button stays, with
+      // the focus, so it is not taken away from whoever pressed it.
+      expect(await screen.findByText("Carregando as aulas…")).toBeInTheDocument();
+      expect(screen.queryByText(ptBR.newAssignment.lessonsError)).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Tentar de novo/ })).toBe(retry);
+      expect(retry).toHaveFocus();
+
+      answer.resolve();
+
+      expect(await screen.findByText(ptBR.newAssignment.lessonsError)).toBeInTheDocument();
+      expect(retryButton()).toBe(retry);
+      expect(retry).toHaveFocus();
     });
   });
 
@@ -604,8 +728,6 @@ describe("NewAssignmentDialog", () => {
   });
 
   describe("opened from the screen of a class", () => {
-    const CLASS_CONTEXT = { id: CLASS_ID, label: CLASS_NAME };
-
     it("fixes the class as a read-only field and offers the lessons of that class only", async () => {
       const onLessons = vi.fn<(call: ListLessonsCall) => void>();
       server.use(listLessonsHandler({ response: lessonsFor, onCall: onLessons }));

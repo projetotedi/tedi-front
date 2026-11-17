@@ -31,13 +31,13 @@
     "cancel": "Cancel",
     "membersLoading": "Loading the members…",
     "membersEmpty": "There is no active member to assign.",
-    "membersError": "The members could not be loaded. Close this window and open it again to try once more.",
+    "membersError": "The members could not be loaded.",
     "classesLoading": "Loading the classes…",
     "classesEmpty": "No class has lessons from today on.",
-    "classesError": "The classes could not be loaded. Close this window and open it again to try once more.",
+    "classesError": "The classes could not be loaded.",
     "lessonsLoading": "Loading the lessons…",
     "lessonsEmpty": "This class has no lesson that takes assignments.",
-    "lessonsError": "The lessons of the class could not be loaded. Choose the class again to try once more.",
+    "lessonsError": "The lessons could not be loaded.",
     "chooseClassFirst": "Choose the class to see its lessons."
   },
   "warnings": {

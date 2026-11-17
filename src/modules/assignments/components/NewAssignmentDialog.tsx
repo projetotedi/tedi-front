@@ -109,6 +109,47 @@ function focusSelect(wrapper: RefObject<HTMLDivElement | null>): void {
   wrapper.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
 }
 
+/** The lists the form asks the API for: each has its own failure and its own "Tentar de novo". */
+type OptionsList = "members" | "classes" | "lessons";
+
+interface ListRetryProps {
+  /** The list could not be loaded. */
+  isFailed: boolean;
+  /** The list is being asked again: the button stays, with a spinner, until the answer. */
+  isRetrying: boolean;
+  /** The message of the failure, which tells what the button retries (there can be more than one on the screen). */
+  describedBy: string;
+  onRetry: () => void;
+}
+
+/**
+ * "Tentar de novo" of a list that could not be loaded, below the status region that says it. It is
+ * a `secondary` button of the usual 44px, named by the `retry` text and described by the message, so
+ * two lists that failed at once are not two buttons with the same name.
+ */
+function ListRetry({
+  isFailed,
+  isRetrying,
+  describedBy,
+  onRetry,
+}: ListRetryProps): ReactElement | null {
+  const { t } = useTranslation("assignments");
+
+  if (!isFailed && !isRetrying) return null;
+
+  return (
+    <Button
+      variant="secondary"
+      className="self-start"
+      isLoading={isRetrying}
+      aria-describedby={describedBy}
+      onPress={onRetry}
+    >
+      {t("retry")}
+    </Button>
+  );
+}
+
 /**
  * "Nova alocação de membro" (F5.2, RF-047): the member, the class and the lesson of the class, the
  * role in the lesson (teacher or monitor) and the status of the assignment, in the order of the
@@ -134,6 +175,11 @@ function focusSelect(wrapper: RefObject<HTMLDivElement | null>): void {
  * focus. While the request is on its way the dialog cannot be closed (X, Esc and Cancelar are off)
  * and a second press is ignored.
  *
+ * A list of options that could not be loaded (the members, the classes or the lessons of the class) says
+ * so in its status region, with a "Tentar de novo" that asks it again, and the focus goes to the select
+ * when it loads. The message does not ask for anything the person cannot do: the class, for instance,
+ * is fixed when the dialog comes from its screen.
+ *
  * It is mounted only while it is open, so each opening starts clean.
  */
 export function NewAssignmentDialog({
@@ -153,7 +199,10 @@ export function NewAssignmentDialog({
   const roleFieldRef = useRef<HTMLDivElement>(null);
   const statusFieldRef = useRef<HTMLDivElement>(null);
   const inFlightRef = useRef(false);
+  const listMessageId = useId();
   const [issue, setIssue] = useState<AssignmentIssue | null>(null);
+  // The lists that "Tentar de novo" is asking again: the button stays on the screen until the answer.
+  const [retrying, setRetrying] = useState<OptionsList[]>([]);
 
   // A lesson has its own class, so it is the one that fixes it.
   const fixedClass = lesson?.lessonClass ?? lessonClass;
@@ -241,6 +290,29 @@ export function NewAssignmentDialog({
     if (state.isError) return t(`newAssignment.${name}Error`);
     if (!state.isPending && state.options.length === 0) return t(`newAssignment.${name}Empty`);
     return null;
+  }
+
+  /**
+   * "Tentar de novo" of a list that failed: asks it again. The query leaves the error to be pending
+   * while it runs, so the button is kept for as long as `retrying` says (a button that goes away takes
+   * the focus with it). When the list loads, the button goes and the focus it had goes to the select
+   * that now has options, unless the person moved it meanwhile; when it fails again the button is
+   * still there, with the focus.
+   */
+  async function retryList(
+    name: OptionsList,
+    state: OptionsState,
+    wrapper: RefObject<HTMLDivElement | null>,
+  ) {
+    if (retrying.includes(name)) return;
+    setRetrying((current) => [...current, name]);
+
+    const { isError } = await state.refetch();
+
+    const active = document.activeElement;
+    const hadFocus = active === document.body || wrapper.current?.contains(active) === true;
+    if (!isError && hadFocus) focusSelect(wrapper);
+    setRetrying((current) => current.filter((item) => item !== name));
   }
 
   function focusFirstInvalid(errors: FieldErrors<NewAssignmentFormInput>) {
@@ -360,7 +432,15 @@ export function NewAssignmentDialog({
                 />
                 {/* The failure comes after the field is on the screen, so it goes in a status region
                     that stays mounted: one that is born filled is not announced. */}
-                <Alert variant="info">{optionsMessage(members, "members")}</Alert>
+                <Alert variant="info" id={`${listMessageId}-members`}>
+                  {optionsMessage(members, "members")}
+                </Alert>
+                <ListRetry
+                  isFailed={members.isError}
+                  isRetrying={retrying.includes("members")}
+                  describedBy={`${listMessageId}-members`}
+                  onRetry={() => void retryList("members", members, memberFieldRef)}
+                />
               </div>
             )}
           />
@@ -399,7 +479,15 @@ export function NewAssignmentDialog({
                   isRequired
                   autoFocus={firstEditable === "classId"}
                 />
-                <Alert variant="info">{optionsMessage(classes, "classes")}</Alert>
+                <Alert variant="info" id={`${listMessageId}-classes`}>
+                  {optionsMessage(classes, "classes")}
+                </Alert>
+                <ListRetry
+                  isFailed={classes.isError}
+                  isRetrying={retrying.includes("classes")}
+                  describedBy={`${listMessageId}-classes`}
+                  onRetry={() => void retryList("classes", classes, classFieldRef)}
+                />
               </div>
             )}
           />
@@ -436,7 +524,15 @@ export function NewAssignmentDialog({
                   isRequired
                   autoFocus={firstEditable === "lessonId"}
                 />
-                <Alert variant="info">{lessonsMessage}</Alert>
+                <Alert variant="info" id={`${listMessageId}-lessons`}>
+                  {lessonsMessage}
+                </Alert>
+                <ListRetry
+                  isFailed={lessons.isError}
+                  isRetrying={retrying.includes("lessons")}
+                  describedBy={`${listMessageId}-lessons`}
+                  onRetry={() => void retryList("lessons", lessons, lessonFieldRef)}
+                />
               </div>
             )}
           />

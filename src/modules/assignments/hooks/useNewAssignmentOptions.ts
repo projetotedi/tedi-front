@@ -26,6 +26,11 @@ export interface OptionsState {
    */
   isPending: boolean;
   isError: boolean;
+  /**
+   * Asks the list again: it is what "Tentar de novo" does when the list failed. It answers with
+   * whether the list failed again, so the screen knows where the focus goes.
+   */
+  refetch: () => Promise<{ isError: boolean }>;
 }
 
 interface OptionsQueryOptions {
@@ -50,7 +55,12 @@ export function useAssignableMemberOptions({ enabled }: OptionsQueryOptions): Op
     [members],
   );
 
-  return { options, isPending: enabled && query.isPending, isError: query.isError };
+  return {
+    options,
+    isPending: enabled && query.isPending,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
 }
 
 /**
@@ -67,7 +77,12 @@ export function useAssignableClassOptions({ enabled }: OptionsQueryOptions): Opt
   const lessons = query.data?.data;
   const options = useMemo(() => toClassOptions(lessons ?? []), [lessons]);
 
-  return { options, isPending: enabled && query.isPending, isError: query.isError };
+  return {
+    options,
+    isPending: enabled && query.isPending,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
 }
 
 /**
@@ -88,5 +103,10 @@ export function useClassLessonOptions(
     [lessons, i18n.language],
   );
 
-  return { options, isPending: isOn && query.isPending, isError: query.isError };
+  return {
+    options,
+    isPending: isOn && query.isPending,
+    isError: query.isError,
+    refetch: query.refetch,
+  };
 }

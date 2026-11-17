@@ -31,13 +31,13 @@
     "cancel": "Cancelar",
     "membersLoading": "Carregando os membros…",
     "membersEmpty": "Não há membro ativo para alocar.",
-    "membersError": "Não foi possível carregar os membros. Feche esta janela e abra de novo para tentar outra vez.",
+    "membersError": "Não foi possível carregar os membros.",
     "classesLoading": "Carregando as turmas…",
     "classesEmpty": "Nenhuma turma tem aulas a partir de hoje.",
-    "classesError": "Não foi possível carregar as turmas. Feche esta janela e abra de novo para tentar outra vez.",
+    "classesError": "Não foi possível carregar as turmas.",
     "lessonsLoading": "Carregando as aulas…",
     "lessonsEmpty": "Esta turma não tem aulas que recebam alocação.",
-    "lessonsError": "Não foi possível carregar as aulas da turma. Escolha a turma de novo para tentar outra vez.",
+    "lessonsError": "Não foi possível carregar as aulas.",
     "chooseClassFirst": "Escolha a turma para ver as aulas."
   },
   "warnings": {

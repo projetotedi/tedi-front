@@ -29,6 +29,18 @@ describe("assignments locales", () => {
     }
   });
 
+  it("the failure of a list of options asks for nothing the person cannot do", () => {
+    // The class is fixed when the dialog comes from its screen, and a window that is closed and opened
+    // again is not an answer to a list that failed: the way out is the button "Tentar de novo".
+    const ptAsks = /escolha|feche|abra|abrir|fechar/i;
+    const enAsks = /choose|close|open|again/i;
+
+    for (const key of ["membersError", "classesError", "lessonsError"] as const) {
+      expect(ptBR.newAssignment[key], key).not.toMatch(ptAsks);
+      expect(enUS.newAssignment[key], key).not.toMatch(enAsks);
+    }
+  });
+
   it("uses the same interpolation variables in both languages", () => {
     const variables = (locale: object, key: string): string[] => {
       const value = key
