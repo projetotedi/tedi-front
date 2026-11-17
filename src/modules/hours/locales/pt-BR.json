@@ -1,5 +1,6 @@
 {
   "entries": {
+    "close": "Fechar",
     "categories": {
       "lesson": "Aula",
       "planning": "Planejamento",
@@ -14,6 +15,46 @@
       "approved": "Aprovado",
       "adjusted": "Ajustado",
       "rejected": "Rejeitado"
+    }
+  },
+  "logHours": {
+    "open": "Lançar horas",
+    "title": "Lançar horas",
+    "titleOnBehalf": "Lançar horas para {{name}}",
+    "onBehalfNotice": "Você está lançando em nome de {{name}}. Fica registrado quem fez o lançamento, e ele entra como pendente de validação da coordenação.",
+    "activity": "Atividade",
+    "activityPlaceholder": "Ex.: Preparação de material da aula 12",
+    "category": "Categoria",
+    "categoryPlaceholder": "Selecione a categoria",
+    "date": "Data",
+    "hours": "Horas",
+    "hoursPlaceholder": "Ex.: 2h30",
+    "notes": "Observações",
+    "cancel": "Cancelar",
+    "submit": "Lançar horas",
+    "submitting": "Lançando…",
+    "toastTitle": "Horas lançadas",
+    "toastTitleOnBehalf": "Horas lançadas para {{name}}",
+    "toastDescription": "{{hours}} em {{date}}, aguardando a validação da coordenação.",
+    "fieldErrors": {
+      "activityRequired": "Descreva a atividade.",
+      "activityTooLong": "Use no máximo 200 caracteres.",
+      "categoryRequired": "Escolha a categoria.",
+      "dateRequired": "Informe a data.",
+      "dateInFuture": "A data não pode ser depois de hoje.",
+      "dateTooOld": "Informe uma data a partir de 01/01/2000.",
+      "hoursRequired": "Informe as horas.",
+      "hoursFormat": "Use o formato 2h30.",
+      "hoursRange": "Informe de 0h01 a 24h.",
+      "notesTooLong": "Use no máximo 2.000 caracteres.",
+      "serverInvalid": "Confira este campo."
+    },
+    "errors": {
+      "network": "Não foi possível lançar as horas. Verifique a conexão e tente de novo.",
+      "forbidden": "Você não pode lançar horas para esta pessoa.",
+      "memberNotFound": "Não encontramos este membro. Atualize a página e tente de novo.",
+      "selfOnBehalf": "Para lançar as suas próprias horas, use + Lançar horas no Meu perfil.",
+      "unknown": "Não foi possível lançar as horas. Tente de novo."
     }
   }
 }

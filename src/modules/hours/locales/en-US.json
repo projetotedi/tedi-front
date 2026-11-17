@@ -1,5 +1,6 @@
 {
   "entries": {
+    "close": "Close",
     "categories": {
       "lesson": "Class",
       "planning": "Planning",
@@ -14,6 +15,46 @@
       "approved": "Approved",
       "adjusted": "Adjusted",
       "rejected": "Rejected"
+    }
+  },
+  "logHours": {
+    "open": "Log hours",
+    "title": "Log hours",
+    "titleOnBehalf": "Log hours for {{name}}",
+    "onBehalfNotice": "You are logging on behalf of {{name}}. Who made the entry is recorded, and it goes in as awaiting validation by the coordination.",
+    "activity": "Activity",
+    "activityPlaceholder": "E.g.: Preparing the material of lesson 12",
+    "category": "Category",
+    "categoryPlaceholder": "Select the category",
+    "date": "Date",
+    "hours": "Hours",
+    "hoursPlaceholder": "E.g.: 2h30",
+    "notes": "Notes",
+    "cancel": "Cancel",
+    "submit": "Log hours",
+    "submitting": "Logging…",
+    "toastTitle": "Hours logged",
+    "toastTitleOnBehalf": "Hours logged for {{name}}",
+    "toastDescription": "{{hours}} on {{date}}, awaiting validation by the coordination.",
+    "fieldErrors": {
+      "activityRequired": "Describe the activity.",
+      "activityTooLong": "Use at most 200 characters.",
+      "categoryRequired": "Choose the category.",
+      "dateRequired": "Enter the date.",
+      "dateInFuture": "The date cannot be after today.",
+      "dateTooOld": "Enter a date from 01/01/2000 on.",
+      "hoursRequired": "Enter the hours.",
+      "hoursFormat": "Use the format 2h30.",
+      "hoursRange": "Enter from 0h01 to 24h.",
+      "notesTooLong": "Use at most 2,000 characters.",
+      "serverInvalid": "Check this field."
+    },
+    "errors": {
+      "network": "We could not log the hours. Check your connection and try again.",
+      "forbidden": "You cannot log hours for this person.",
+      "memberNotFound": "We could not find this member. Reload the page and try again.",
+      "selfOnBehalf": "To log your own hours, use + Log hours in My profile.",
+      "unknown": "We could not log the hours. Try again."
     }
   }
 }

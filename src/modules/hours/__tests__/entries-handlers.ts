@@ -1,4 +1,12 @@
-import type { HourEntryResponseDto, HoursSummaryResponseDto } from "@api/generated/model";
+import { http, HttpResponse } from "msw";
+
+import type {
+  ApiFieldErrorDto,
+  CreateHourEntryDto,
+  HourEntryResponseDto,
+  HoursSummaryResponseDto,
+} from "@api/generated/model";
+import { LogMyHoursBody } from "@api/generated/zod/hours/hours";
 
 /*
  * The data of the tests of the entries of hours (GUS-163), the ones of the Figma ("Telas · Conta" and
@@ -245,3 +253,110 @@ export const ATTENDANCE_PENDING: HourEntryResponseDto = buildEntry({
 
 /** The card of the profile as the Figma draws it: e1, e2, e3, e4 and e6 (it skips the 05/03). */
 export const RECENT_ENTRIES: HourEntryResponseDto[] = [1, 2, 3, 4, 6].map(statementEntry);
+
+/*
+ * The handlers MSW, written by hand over the contract. The paths have a wildcard prefix because
+ * `http-client.ts` prefixes the URL with `VITE_API_URL` at runtime: the test does not need to know it.
+ */
+
+/** The `ApiErrorDto` an error handler answers with, and its status. */
+export interface ApiErrorBody {
+  statusCode: number;
+  error: string;
+  message?: string;
+  details?: ApiFieldErrorDto[];
+}
+
+interface HandlerOptions<TCall> {
+  /** Answers with the `ApiErrorDto` shape and its status. */
+  error?: ApiErrorBody;
+  /** Answers with a failed connection (`fetch` rejects with a `TypeError`). */
+  networkError?: boolean;
+  /** Holds the response until the promise settles. */
+  delay?: Promise<void>;
+  onCall?: (call: TCall) => void;
+}
+
+function apiErrorResponse(error: ApiErrorBody) {
+  return HttpResponse.json(
+    { message: error.message ?? error.error, ...error },
+    { status: error.statusCode },
+  );
+}
+
+/** What a `POST` of an entry sent: the member of the path (`null` for `/me`) and the body, as JSON. */
+export interface LogCall {
+  memberId: string | null;
+  body: unknown;
+}
+
+/** The entry the API creates for a body: pending, waiting for validation. */
+export function createdEntry(
+  body: CreateHourEntryDto,
+  overrides: Partial<HourEntryResponseDto> = {},
+): HourEntryResponseDto {
+  return buildEntry({
+    id: entryId(10),
+    date: body.date,
+    activity: body.activity,
+    category: body.category,
+    declaredMinutes: body.declaredMinutes,
+    notes: body.notes ?? null,
+    createdAt: "2026-03-16T15:00:00.000Z",
+    updatedAt: "2026-03-16T15:00:00.000Z",
+    ...overrides,
+  });
+}
+
+interface LogHandlerOptions extends HandlerOptions<LogCall> {
+  /** What else the API does when it creates the entry (the in-memory store of the profile). */
+  onCreated?: (entry: HourEntryResponseDto) => void;
+}
+
+/** `POST /me/hour-entries`: Ana logs her own hours. */
+export function logMyHoursHandler({
+  error,
+  networkError = false,
+  delay,
+  onCall,
+  onCreated,
+}: LogHandlerOptions = {}) {
+  return http.post("*/me/hour-entries", async ({ request }) => {
+    const json: unknown = await request.json();
+    onCall?.({ memberId: null, body: json });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    const entry = createdEntry(LogMyHoursBody.parse(json));
+    onCreated?.(entry);
+    return HttpResponse.json(entry, { status: 201 });
+  });
+}
+
+/** `POST /members/:id/hour-entries`: the director logs hours on behalf of a member. */
+export function logHoursForMemberHandler({
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<LogCall> = {}) {
+  return http.post("*/members/:id/hour-entries", async ({ request, params }) => {
+    const json: unknown = await request.json();
+    const memberId = String(params.id);
+    onCall?.({ memberId, body: json });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(
+      createdEntry(LogMyHoursBody.parse(json), {
+        id: entryId(11),
+        personId: memberId,
+        createdById: DIRECTOR_ID,
+        origin: "on_behalf",
+      }),
+      { status: 201 },
+    );
+  });
+}
