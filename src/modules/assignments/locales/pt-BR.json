@@ -104,5 +104,131 @@
   "toast": {
     "created": "Alocação salva",
     "cancelled": "Alocação cancelada"
+  },
+  "timeRange": "{{start}}–{{end}}",
+  "lessonLabel": "Aula {{order}} · {{title}}",
+  "rolesInline": {
+    "teacher": "professor(a)",
+    "monitor": "monitor(a)"
+  },
+  "vacancies": {
+    "teacher": "Professor(a) {{confirmed}} de {{expected}}",
+    "monitors": "Monitores {{confirmed}} de {{expected}}",
+    "complete": "Equipe completa",
+    "summary": "Vagas: {{coverage}}"
+  },
+  "myLessons": {
+    "summary": {
+      "title": "Resumo das suas aulas",
+      "upcoming": "Próximas aulas (4 semanas)",
+      "confirmed": "Confirmadas",
+      "pending": "Aguardando confirmação",
+      "openLessons": "Aulas com vaga para você",
+      "loading": "Carregando o resumo das suas aulas…"
+    },
+    "upcoming": {
+      "title": "Minhas próximas aulas",
+      "caption": "Suas próximas aulas, com data, horário, turma, aula, papel e situação",
+      "columns": {
+        "date": "Data",
+        "time": "Horário",
+        "class": "Turma",
+        "lesson": "Aula",
+        "role": "Papel",
+        "status": "Situação"
+      },
+      "footer": "Aulas em que você está alocado(a) ou se candidatou, nas próximas 4 semanas",
+      "viewCalendar": "Ver calendário",
+      "empty": "Você não está alocado(a) nem se candidatou a nenhuma aula nas próximas 4 semanas.",
+      "loading": "Carregando as suas próximas aulas…",
+      "error": "Não foi possível carregar as suas próximas aulas."
+    },
+    "open": {
+      "title": "Aulas com vaga para candidatura ({{count}})",
+      "titleWithoutCount": "Aulas com vaga para candidatura",
+      "caption": "Aulas com vaga para candidatura, com data, horário, turma, aula, vagas e o botão Candidatar-se",
+      "columns": {
+        "date": "Data",
+        "time": "Horário",
+        "class": "Turma",
+        "lesson": "Aula",
+        "vacancies": "Vagas",
+        "actions": "Ações"
+      },
+      "apply": "Candidatar-se",
+      "applyLabel": "Candidatar-se à {{lesson}}, {{day}}",
+      "empty": "Nenhuma aula com vaga para você nas próximas 4 semanas.",
+      "loading": "Carregando as aulas com vaga…",
+      "error": "Não foi possível carregar as aulas com vaga."
+    },
+    "status": {
+      "pending": "Aguardando confirmação",
+      "confirmed": "Confirmada",
+      "declined": "Recusada",
+      "cancelled": "Cancelada"
+    }
+  },
+  "apply": {
+    "title": "Candidatar-se à aula",
+    "role": "Papel na aula",
+    "monitorDescription": "Apoia os alunos individualmente",
+    "teacherDescription": "Conduz a aula",
+    "noVacancy": "Sem vaga nesta aula",
+    "descriptionWithoutVacancy": "{{description}} · {{reason}}",
+    "note": "Observação para quem vai aprovar",
+    "noteHint": "Opcional.",
+    "notePlaceholder": "Posso chegar 15 min antes para ligar os computadores.",
+    "info": "A diretoria ou a coordenação confirma ou recusa a candidatura, e você acompanha a situação em Minhas aulas. Não é possível ser professor(a) e monitor(a) na mesma aula.",
+    "back": "Voltar",
+    "submit": "Enviar candidatura",
+    "submitting": "Enviando…",
+    "toastTitle": "Candidatura enviada",
+    "toastDescription": "A diretoria ou a coordenação vai confirmar sua participação como {{role}} em {{day}}.",
+    "fieldErrors": {
+      "roleRequired": "Escolha o papel na aula.",
+      "noteTooLong": "A observação pode ter no máximo {{max}} caracteres.",
+      "serverInvalid": "Revise este campo e tente de novo."
+    },
+    "errors": {
+      "roleFull": "Este papel acabou de ser preenchido. Escolha outro papel, se ainda houver vaga, ou volte para ver as aulas com vaga.",
+      "alreadyApplied": "Você já tem um lugar nesta aula, como professor(a) ou monitor(a). Acompanhe a situação em Minhas aulas.",
+      "lessonClosed": "Esta aula não recebe mais candidaturas.",
+      "lessonNotFound": "Aula não encontrada. Ela pode ter sido removida.",
+      "memberInactive": "Seu cadastro de membro não está ativo. Fale com a coordenação.",
+      "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      "unknown": "Não foi possível enviar a candidatura. Tente novamente."
+    }
+  },
+  "pendingApplications": {
+    "button": "Candidaturas pendentes ({{count}})",
+    "buttonLoading": "Candidaturas pendentes",
+    "title": "Candidaturas pendentes ({{count}})",
+    "titleWithoutCount": "Candidaturas pendentes",
+    "requestedBy": "{{name}} · {{role}}",
+    "sentOn": "Enviada em {{day}}",
+    "sentOnWithNote": "Enviada em {{day}} · “{{note}}”",
+    "removedPerson": "Pessoa removida",
+    "confirm": "Confirmar",
+    "confirmLabel": "Confirmar a candidatura de {{name}}",
+    "reject": "Recusar",
+    "rejectLabel": "Recusar a candidatura de {{name}}",
+    "lessonCancelledBadge": "Cancelada",
+    "lessonCancelled": "Aula cancelada: só é possível recusar.",
+    "info": "Confirmar aloca o membro na aula com o papel pedido. Recusar libera a vaga e o membro vê a situação em Minhas aulas. Um membro não pode ter dois papéis na mesma aula.",
+    "empty": "Nenhuma candidatura pendente.",
+    "loading": "Carregando as candidaturas pendentes…",
+    "error": "Não foi possível carregar as candidaturas pendentes.",
+    "toastConfirmed": "Candidatura confirmada",
+    "toastRejected": "Candidatura recusada",
+    "toastDescription": "{{name}} · {{role}} em {{day}}",
+    "errors": {
+      "roleFull": "A vaga deste papel já foi preenchida. A lista foi atualizada: recuse a candidatura se ela não for mais necessária.",
+      "notPending": "Esta candidatura já foi decidida. A lista foi atualizada.",
+      "notFound": "Candidatura não encontrada. Ela pode ter sido removida. A lista foi atualizada.",
+      "lessonCancelled": "A aula foi cancelada: só é possível recusar a candidatura.",
+      "memberInactive": "O cadastro deste membro não está ativo, então a candidatura não pode ser confirmada.",
+      "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      "unknown": "Não foi possível concluir a ação. Tente novamente."
+    }
   }
 }

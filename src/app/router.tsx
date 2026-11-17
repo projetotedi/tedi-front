@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
+import { assignmentsRoutes } from "@modules/assignments";
 import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { createCatalogRoutes } from "@modules/catalog";
 import { peopleRoutes } from "@modules/people";
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
               ...createCatalogRoutes(catalogRouteSlots),
               ...createClassesRoutes(classesRouteSlots),
               ...lessonsRoutes,
+              ...assignmentsRoutes,
               ...prototypeRoutes,
               ...authProtectedRoutes,
               { path: "*", element: <Navigate to="/" replace /> },

@@ -28,6 +28,8 @@ export { Pagination } from "./Pagination";
 export type { PaginationProps } from "./Pagination";
 export { PasswordField } from "./PasswordField";
 export type { PasswordFieldProps } from "./PasswordField";
+export { RadioGroup } from "./RadioGroup";
+export type { RadioGroupProps, RadioOption } from "./RadioGroup";
 export { Select } from "./Select";
 export type { SelectOption, SelectProps } from "./Select";
 export { Skeleton } from "./Skeleton";

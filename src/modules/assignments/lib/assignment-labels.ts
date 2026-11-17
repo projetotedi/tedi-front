@@ -1,4 +1,11 @@
-import { AssignmentRole, AssignmentSource, AssignmentStatus } from "@api/generated/model";
+import type { TFunction } from "i18next";
+
+import {
+  AssignmentRole,
+  AssignmentSource,
+  AssignmentStatus,
+  type AssignmentLessonResponseDto,
+} from "@api/generated/model";
 import type { BadgeProps } from "@shared/ui";
 
 /**
@@ -10,6 +17,18 @@ export const ASSIGNMENT_ROLE_LABEL_KEYS = {
   [AssignmentRole.teacher]: "role.teacher",
   [AssignmentRole.monitor]: "role.monitor",
 } as const satisfies Record<AssignmentRole, string>;
+
+/**
+ * The role inside a sentence ("como monitor(a)"), in lower case. The API has no gender for the
+ * person, so the text keeps both forms instead of guessing one.
+ */
+export const ROLE_INLINE_KEYS = {
+  [AssignmentRole.teacher]: "rolesInline.teacher",
+  [AssignmentRole.monitor]: "rolesInline.monitor",
+} as const satisfies Record<AssignmentRole, string>;
+
+/** The order the roles are offered in when applying: Monitor(a) first, as in the Figma. */
+export const APPLY_ROLE_ORDER = [AssignmentRole.monitor, AssignmentRole.teacher] as const;
 
 const ASSIGNMENT_STATUS_LABEL_KEYS = {
   [AssignmentStatus.pending]: "status.pending",
@@ -70,3 +89,29 @@ export function assignmentRoleTone(role: AssignmentRole): BadgeProps["tone"] {
 export const ASSIGNABLE_STATUSES = [AssignmentStatus.confirmed, AssignmentStatus.pending] as const;
 
 export type AssignableStatus = (typeof ASSIGNABLE_STATUSES)[number];
+
+/**
+ * The key of the label of each status in "Minhas aulas", under `myLessons.status`. It is not the one
+ * of `assignmentStatusLabelKey`: there the member reads their own agenda, and the Figma says
+ * "Aguardando confirmação" for what is waiting (an application or a direct allocation alike), the
+ * way the summary on top of the page counts it.
+ */
+export const MY_LESSON_STATUS_LABEL_KEYS = {
+  [AssignmentStatus.pending]: "myLessons.status.pending",
+  [AssignmentStatus.confirmed]: "myLessons.status.confirmed",
+  [AssignmentStatus.declined]: "myLessons.status.declined",
+  [AssignmentStatus.cancelled]: "myLessons.status.cancelled",
+} as const satisfies Record<AssignmentStatus, string>;
+
+/**
+ * The name of a lesson as the screens of this module show it: "Aula 3 · Arquivos e pastas", the
+ * place of its plan in the sequence of the course and its title. A lesson on its own has no place,
+ * so it shows only the title.
+ */
+export function lessonLabel(
+  lesson: Pick<AssignmentLessonResponseDto, "title" | "sequenceOrder">,
+  t: TFunction<"assignments">,
+): string {
+  if (lesson.sequenceOrder === null) return lesson.title;
+  return t("lessonLabel", { order: lesson.sequenceOrder, title: lesson.title });
+}

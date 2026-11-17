@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { assignmentsMenuItems } from "@modules/assignments";
 import { lessonsMenuItems } from "@modules/lessons";
 import i18n from "@shared/i18n";
 import { groupMenuItems, MENU_GROUP_IDS } from "@shared/lib/menu";
@@ -31,7 +32,7 @@ describe("app menu", () => {
     expect(outline).toEqual([
       ["Catálogo", ["Cursos", "Planos de aula"]],
       ["Turmas", ["Turmas", "Matrículas"]],
-      ["Aulas", ["Aulas", "Calendário"]],
+      ["Aulas", ["Aulas", "Calendário", "Minhas aulas"]],
       ["Pessoas", ["Alunos", "Membros"]],
       ["Horas", ["Banco de horas", "Validação de horas"]],
     ]);
@@ -72,11 +73,24 @@ describe("app menu", () => {
     expect(appMenuItems).toEqual(expect.arrayContaining(lessonsMenuItems));
   });
 
+  it("takes Minhas aulas from the assignments module", () => {
+    expect(prototypeMenuItems.map((item) => item.path)).not.toContain("/my-lessons");
+    expect(prototypeRoutes.map((route) => `/${route.path}`)).not.toContain("/my-lessons");
+    expect(appMenuItems).toContainEqual(
+      expect.objectContaining({
+        path: "/my-lessons",
+        permission: "assignments.manageOwn",
+        group: "lessons",
+      }),
+    );
+    expect(appMenuItems).toEqual(expect.arrayContaining(assignmentsMenuItems));
+  });
+
   it("keeps every item in a listed group", () => {
     const grouped = groupMenuItems(appMenuItems, appMenuGroups).flatMap((section) => section.items);
 
     expect(grouped).toHaveLength(appMenuItems.length);
-    expect(appMenuItems).toHaveLength(10);
+    expect(appMenuItems).toHaveLength(11);
   });
 
   it("does not repeat a path", () => {
