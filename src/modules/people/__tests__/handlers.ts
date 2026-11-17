@@ -2,15 +2,18 @@ import { http, HttpResponse } from "msw";
 
 import {
   AccessibilityNeed,
+  MemberRegistrationStatus,
+  MemberStatus,
+  type MemberDetailResponseDto,
   type MyProfileResponseDto,
   type StudentDetailDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
 /**
- * Handlers MSW written by hand over the real contract (GET /members/me, GET /students/:id). The path has a wildcard
- * prefix because http-client.ts prefixes the URL with VITE_API_URL at runtime: the test does not
- * need to know it.
+ * Handlers MSW written by hand over the real contract (GET /members/me, GET /members/:id,
+ * GET /students/:id). The path has a wildcard prefix because http-client.ts prefixes the URL with
+ * VITE_API_URL at runtime: the test does not need to know it.
  */
 
 /** A member whose registration was approved: every field of the contract example is filled. */
@@ -180,5 +183,134 @@ export function getStudentHandler({
       );
     }
     return HttpResponse.json(student);
+  });
+}
+
+/** A UUID v7 as well, and not the `m1` of a draft: `GetMemberParams` accepts only a real UUID. */
+export const MEMBER_ID = "01952ef7-0000-7000-8000-0000000000c1";
+
+export const MEMBER_NAME = "Beatriz Nunes Carvalho";
+export const MEMBER_APPROVER_NAME = "Ana Paula Torres";
+
+/** The 404 of `GET /members/:id` for an id that does not exist. */
+export const MEMBER_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 404,
+  error: "MEMBER_NOT_FOUND",
+  message: "Member not found.",
+};
+
+/** The 403 of `GET /members/:id` for a member outside the scope of who asks (another department). */
+export const FORBIDDEN_SCOPE_ERROR: ApiErrorOptions = {
+  statusCode: 403,
+  error: "FORBIDDEN_SCOPE",
+  message: "Forbidden.",
+};
+
+/**
+ * A member with every field of the contract filled, the one of the Figma: Beatriz, of Tecnologia,
+ * active, with the registration approved by Ana Paula on 01/03/2024. The instant is at 13:00 UTC on
+ * purpose: the day is the same in every time zone from UTC-12 to UTC+10, so a test that reads the
+ * date does not depend on the machine that runs the suite.
+ */
+export function buildMemberDetail(
+  overrides: Partial<MemberDetailResponseDto> = {},
+): MemberDetailResponseDto {
+  return {
+    id: MEMBER_ID,
+    name: MEMBER_NAME,
+    ra: "202400003",
+    role: Role.member,
+    accessEnabled: true,
+    status: MemberStatus.active,
+    registrationStatus: MemberRegistrationStatus.approved,
+    birthDate: "2003-09-14",
+    phone: "11991912020",
+    email: "bia.nunes@email.com",
+    address: "Rua Domingos de Morais, 45 — apto 32",
+    city: "São Paulo",
+    state: "SP",
+    institutionalEmail: "beatriz.nunes@inst.edu.br",
+    course: "Sistemas de Informação",
+    semester: 5,
+    className: "SI-2024-N",
+    volunteerTermUrl: "https://drive.google.com/file/d/termo-beatriz/view",
+    mainFunction: "Ministrar aulas e apoio pedagógico",
+    department: { id: "01952ef7-0000-7000-8000-0000000000d1", name: "Tecnologia" },
+    joinedAt: "2024-03-01",
+    exitDate: null,
+    exitReason: null,
+    cpfMasked: "***.***.789-00",
+    reviewedBy: { id: "01952ef7-0000-7000-8000-0000000000f2", name: MEMBER_APPROVER_NAME },
+    reviewedAt: "2024-03-01T13:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * The seeded coordinator opened as a member: a Person with an access profile and no member
+ * profile, so every field of the member is `null` (the contract says so) and the registration has
+ * no reviewer.
+ */
+export function buildSeedMemberDetail(
+  overrides: Partial<MemberDetailResponseDto> = {},
+): MemberDetailResponseDto {
+  return buildMemberDetail({
+    name: "Marina Albuquerque",
+    ra: "a0000001",
+    role: Role.coordinator,
+    registrationStatus: null,
+    birthDate: null,
+    phone: null,
+    email: null,
+    address: null,
+    city: null,
+    state: null,
+    institutionalEmail: null,
+    course: null,
+    semester: null,
+    className: null,
+    volunteerTermUrl: null,
+    mainFunction: null,
+    department: null,
+    joinedAt: null,
+    cpfMasked: null,
+    reviewedBy: null,
+    reviewedAt: null,
+    ...overrides,
+  });
+}
+
+interface GetMemberHandlerOptions {
+  member?: MemberDetailResponseDto;
+  /** Answers with the `ApiErrorDto` shape and this status instead of the member. */
+  error?: ApiErrorOptions;
+  /** Holds the response until the promise settles. */
+  delay?: Promise<void>;
+  /** Called with the id of the path every time the API is asked. */
+  onCall?: (call: { id: string }) => void;
+}
+
+/**
+ * `GET /members/:id`. `GET /members/me` (the profile) has the same shape of path: a test that needs
+ * both registers each one with `server.use`, and the test of the profile never registers this one,
+ * so `me` is never taken for an id.
+ */
+export function getMemberHandler({
+  member = buildMemberDetail(),
+  error,
+  delay,
+  onCall,
+}: GetMemberHandlerOptions = {}) {
+  return http.get("*/members/:id", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (error) {
+      return HttpResponse.json(
+        { statusCode: error.statusCode, error: error.error, message: error.message ?? error.error },
+        { status: error.statusCode },
+      );
+    }
+    return HttpResponse.json(member);
   });
 }
