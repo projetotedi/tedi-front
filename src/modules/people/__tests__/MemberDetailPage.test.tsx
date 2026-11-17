@@ -185,7 +185,7 @@ describe("MemberDetailPage", () => {
       ["coordinator", Role.coordinator],
       ["director", Role.director],
     ])(
-      "has no button for the %s: the actions come with GUS-148, GUS-149, GUS-163 and E5",
+      "has no action button in the header, for the %s: they come with GUS-148, GUS-149, GUS-163 and E5",
       async (_label, role) => {
         await renderPage({ role });
 
@@ -297,7 +297,7 @@ describe("MemberDetailPage", () => {
       expect(screen.queryByText("Concluiu a graduação")).not.toBeInTheDocument();
     });
 
-    it("shows a dash, read as Não informado, in every field a person with no member profile does not have", async () => {
+    it("shows a dash, read as Não informado, in every empty field, as for a person with no member profile", async () => {
       await renderPage({ member: buildSeedMemberDetail() });
 
       for (const label of [
@@ -372,7 +372,7 @@ describe("MemberDetailPage", () => {
       expect(valueOf(record(), "Cadastro aprovado por")).toHaveTextContent(/^Em 01\/03\/2024$/);
     });
 
-    it("shows a dash, read as Não informado, when nobody approved it", async () => {
+    it("shows a dash when nobody approved it, read as Não informado", async () => {
       await renderPage({ member: buildMemberDetail({ reviewedBy: null, reviewedAt: null }) });
 
       expectNoValue(valueOf(record(), "Cadastro aprovado por"), "Cadastro aprovado por");
@@ -471,7 +471,7 @@ describe("MemberDetailPage", () => {
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
     });
 
-    it("does not take a 404 that did not come from the API for a member that does not exist", async () => {
+    it("does not take a 404 that did not come from the API for a missing member", async () => {
       server.use(meHandler(), getMemberHandler({ error: { statusCode: 404, error: "Not Found" } }));
       await renderRoutes(peopleRoutes, { route: MEMBER_ROUTE });
 
@@ -488,7 +488,7 @@ describe("MemberDetailPage", () => {
       ["a word", "abc"],
       ["me, the profile of who is signed in", "me"],
     ])(
-      "shows not found at once for an id that is not a UUID (%s), with no request",
+      "shows not found at once for an id that is not a UUID, with no request: %s",
       async (_label, id) => {
         const onGet = vi.fn();
         const requests = trackRequests();
