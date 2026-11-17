@@ -218,10 +218,6 @@
         "objective": "Objective"
       }
     },
-    "classes": {
-      "title": "Classes of this course",
-      "unavailable": "The classes of this course will show up here soon."
-    },
     "workload": {
       "title": "Planned workload",
       "total": "Planned total",
@@ -234,7 +230,9 @@
     },
     "history": {
       "title": "Catalog and history",
-      "createdBy": "Created by"
+      "createdBy": "Created by",
+      "archivedAt": "Archived on",
+      "archiveReason": "Reason"
     },
     "plan": {
       "title": "Course plan",
@@ -293,6 +291,64 @@
         "network": "Could not connect. Check your connection and try again.",
         "unknown": "Could not save the sequence. Try again."
       }
+    },
+    "duplicate": {
+      "action": "Duplicate course",
+      "title": "Duplicate course",
+      "nameLabel": "Name of the new course",
+      "suggestedName": "{{name}} (copy)",
+      "copiedTitle": "What is copied",
+      "copiedDescription_zero": "This course has no lesson plans in its sequence yet. Description, objective and category are copied. Prerequisites and classes are not copied.",
+      "copiedDescription_one": "The {{count}} lesson plan and its order. Description, objective and category too. Prerequisites and classes are not copied.",
+      "copiedDescription_other": "The {{count}} lesson plans and their order. Description, objective and category too. Prerequisites and classes are not copied.",
+      "back": "Back",
+      "submit": "Duplicate course",
+      "submitting": "Duplicating…",
+      "success": "Course duplicated",
+      "fieldErrors": {
+        "nameRequired": "Enter the name of the new course.",
+        "nameTooLong": "The name can have at most {{nameMax}} characters.",
+        "nameTaken": "A course with this name already exists. Choose another name.",
+        "nameInvalid": "Check the name of the new course."
+      },
+      "errors": {
+        "courseNotFound": "Could not duplicate: this course no longer exists.",
+        "network": "Could not duplicate the course. Check your connection and try again.",
+        "unknown": "Could not duplicate the course. Try again."
+      }
+    },
+    "archive": {
+      "action": "Archive course",
+      "title": "Archive course",
+      "warningTitle": "Archiving blocks new classes",
+      "keepsClasses_one": "The {{count}} class already created stays as it is and remains visible. The course leaves the options when creating a class and can be reactivated later.",
+      "keepsClasses_other": "The {{count}} classes already created stay as they are and remain visible. The course leaves the options when creating a class and can be reactivated later.",
+      "keepsClassesNoCount": "The classes already created stay as they are and remain visible. The course leaves the options when creating a class and can be reactivated later.",
+      "reason": "Reason (optional)",
+      "reasonExample": "Content replaced by the course Social Networks 2026.",
+      "reasonHelp": "It is kept in the history of the course.",
+      "back": "Back",
+      "confirm": "Archive course",
+      "confirming": "Archiving…",
+      "success": "Course archived.",
+      "errors": {
+        "reasonTooLong": "The reason can have at most {{reasonMax}} characters."
+      }
+    },
+    "unarchive": {
+      "action": "Reactivate course",
+      "title": "Reactivate course",
+      "description": "The course accepts new classes again and comes back to the lists of options. The classes already created do not change.",
+      "back": "Back",
+      "confirm": "Reactivate course",
+      "confirming": "Reactivating…",
+      "success": "Course reactivated."
+    },
+    "actionErrors": {
+      "archived": "This course is archived.",
+      "notFound": "Course not found. It may have been removed.",
+      "network": "Could not connect. Check your connection and try again.",
+      "unknown": "Could not complete the action. Try again."
     }
   },
   "mock": {

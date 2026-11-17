@@ -218,10 +218,6 @@
         "objective": "Objetivo"
       }
     },
-    "classes": {
-      "title": "Turmas deste curso",
-      "unavailable": "As turmas deste curso vão aparecer aqui em breve."
-    },
     "workload": {
       "title": "Carga horária prevista",
       "total": "Total previsto",
@@ -234,7 +230,9 @@
     },
     "history": {
       "title": "Catálogo e histórico",
-      "createdBy": "Criado por"
+      "createdBy": "Criado por",
+      "archivedAt": "Arquivado em",
+      "archiveReason": "Motivo"
     },
     "plan": {
       "title": "Plano do curso",
@@ -293,6 +291,64 @@
         "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
         "unknown": "Não foi possível salvar a sequência. Tente novamente."
       }
+    },
+    "duplicate": {
+      "action": "Duplicar curso",
+      "title": "Duplicar curso",
+      "nameLabel": "Nome do novo curso",
+      "suggestedName": "{{name}} (cópia)",
+      "copiedTitle": "O que é copiado",
+      "copiedDescription_zero": "Este curso ainda não tem planos de aula na sequência. Descrição, objetivo e categoria são copiados. Pré-requisitos e turmas não são copiados.",
+      "copiedDescription_one": "O {{count}} plano de aula e a ordem dele. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+      "copiedDescription_other": "Os {{count}} planos de aula e a ordem deles. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+      "back": "Voltar",
+      "submit": "Duplicar curso",
+      "submitting": "Duplicando…",
+      "success": "Curso duplicado",
+      "fieldErrors": {
+        "nameRequired": "Informe o nome do novo curso.",
+        "nameTooLong": "O nome pode ter no máximo {{nameMax}} caracteres.",
+        "nameTaken": "Já existe um curso com este nome. Escolha outro nome.",
+        "nameInvalid": "Revise o nome do novo curso."
+      },
+      "errors": {
+        "courseNotFound": "Não foi possível duplicar: este curso não existe mais.",
+        "network": "Não foi possível duplicar o curso. Verifique sua conexão e tente novamente.",
+        "unknown": "Não foi possível duplicar o curso. Tente novamente."
+      }
+    },
+    "archive": {
+      "action": "Arquivar curso",
+      "title": "Arquivar curso",
+      "warningTitle": "Arquivar impede novas turmas",
+      "keepsClasses_one": "A {{count}} turma já criada continua como está e segue visível. O curso sai da lista de opções ao criar turma e pode ser reativado depois.",
+      "keepsClasses_other": "As {{count}} turmas já criadas continuam como estão e seguem visíveis. O curso sai da lista de opções ao criar turma e pode ser reativado depois.",
+      "keepsClassesNoCount": "As turmas já criadas continuam como estão e seguem visíveis. O curso sai da lista de opções ao criar turma e pode ser reativado depois.",
+      "reason": "Motivo (opcional)",
+      "reasonExample": "Conteúdo substituído pelo curso Redes Sociais 2026.",
+      "reasonHelp": "Fica registrado no histórico do curso.",
+      "back": "Voltar",
+      "confirm": "Arquivar curso",
+      "confirming": "Arquivando…",
+      "success": "Curso arquivado.",
+      "errors": {
+        "reasonTooLong": "O motivo pode ter no máximo {{reasonMax}} caracteres."
+      }
+    },
+    "unarchive": {
+      "action": "Reativar curso",
+      "title": "Reativar curso",
+      "description": "O curso volta a aceitar novas turmas e a aparecer nas listas de opções. As turmas já criadas não mudam.",
+      "back": "Voltar",
+      "confirm": "Reativar curso",
+      "confirming": "Reativando…",
+      "success": "Curso reativado."
+    },
+    "actionErrors": {
+      "archived": "Este curso está arquivado.",
+      "notFound": "Curso não encontrado. Ele pode ter sido removido.",
+      "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      "unknown": "Não foi possível concluir a ação. Tente novamente."
     }
   },
   "mock": {

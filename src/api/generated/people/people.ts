@@ -27,16 +27,19 @@ import type {
   ArchiveDto,
   CreateDepartmentDto,
   CreateStudentDto,
+  DeactivateMemberDto,
   DepartmentResponseDto,
   ListMemberRegistrations200,
   ListMemberRegistrationsParams,
   ListMembers200,
   ListMembersParams,
+  MemberDetailResponseDto,
   MemberRegistrationResponseDto,
   MyProfileResponseDto,
   RejectMemberRegistrationDto,
   StudentDetailDto,
   StudentResponseDto,
+  UpdateMemberDto,
   UpdateStudentDto,
 } from "../model";
 
@@ -973,6 +976,385 @@ export function useGetMyProfile<
   return withQueryKey(query, queryOptions.queryKey);
 }
 
+export const getGetMemberUrl = (id: string) => {
+  return `/members/${id}`;
+};
+
+export const getMember = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<MemberDetailResponseDto> => {
+  return httpClient<MemberDetailResponseDto>(getGetMemberUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMemberQueryKey = (id: string) => {
+  return [`/members/${id}`] as const;
+};
+
+export const getGetMemberQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMember>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMemberQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMember>>> = ({ signal }) =>
+    getMember(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetMemberQueryResult = NonNullable<Awaited<ReturnType<typeof getMember>>>;
+export type GetMemberQueryError = ApiErrorDto;
+
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMember>>,
+          TError,
+          Awaited<ReturnType<typeof getMember>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getMember>>,
+          TError,
+          Awaited<ReturnType<typeof getMember>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetMember<TData = Awaited<ReturnType<typeof getMember>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getMember>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetMemberQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getUpdateMemberUrl = (id: string) => {
+  return `/members/${id}`;
+};
+
+export const updateMember = async (
+  id: string,
+  updateMemberDto: UpdateMemberDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<MemberDetailResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<MemberDetailResponseDto>(getUpdateMemberUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateMemberDto),
+  });
+};
+
+export const getUpdateMemberMutationKey = () => ["updateMember"] as const;
+
+export const getUpdateMemberMutationOptions = <TError = ApiErrorDto, TContext = unknown>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateMember>>,
+    TError,
+    UpdateMemberMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateMember>>,
+  TError,
+  UpdateMemberMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateMemberMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateMember>>,
+    UpdateMemberMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateMember(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateMemberMutationResult = NonNullable<Awaited<ReturnType<typeof updateMember>>>;
+export type UpdateMemberMutationBody = UpdateMemberDto;
+export type UpdateMemberMutationError = ApiErrorDto;
+export type UpdateMemberMutationVariables = { id: string; data: UpdateMemberDto };
+
+export const useUpdateMember = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateMember>>,
+      TError,
+      UpdateMemberMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateMember>>,
+  TError,
+  UpdateMemberMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateMemberMutationOptions(options), queryClient);
+};
+export const getDeactivateMemberUrl = (id: string) => {
+  return `/members/${id}/deactivate`;
+};
+
+export const deactivateMember = async (
+  id: string,
+  deactivateMemberDto: DeactivateMemberDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<MemberDetailResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<MemberDetailResponseDto>(getDeactivateMemberUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(deactivateMemberDto),
+  });
+};
+
+export const getDeactivateMemberMutationKey = () => ["deactivateMember"] as const;
+
+export const getDeactivateMemberMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deactivateMember>>,
+    TError,
+    DeactivateMemberMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deactivateMember>>,
+  TError,
+  DeactivateMemberMutationVariables,
+  TContext
+> => {
+  const mutationKey = getDeactivateMemberMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deactivateMember>>,
+    DeactivateMemberMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return deactivateMember(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeactivateMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deactivateMember>>
+>;
+export type DeactivateMemberMutationBody = DeactivateMemberDto;
+export type DeactivateMemberMutationError = ApiErrorDto;
+export type DeactivateMemberMutationVariables = { id: string; data: DeactivateMemberDto };
+
+export const useDeactivateMember = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof deactivateMember>>,
+      TError,
+      DeactivateMemberMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof deactivateMember>>,
+  TError,
+  DeactivateMemberMutationVariables,
+  TContext
+> => {
+  return useMutation(getDeactivateMemberMutationOptions(options), queryClient);
+};
+export const getReactivateMemberUrl = (id: string) => {
+  return `/members/${id}/reactivate`;
+};
+
+export const reactivateMember = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<MemberDetailResponseDto> => {
+  return httpClient<MemberDetailResponseDto>(getReactivateMemberUrl(id), {
+    ...options,
+    method: "PATCH",
+  });
+};
+
+export const getReactivateMemberMutationKey = () => ["reactivateMember"] as const;
+
+export const getReactivateMemberMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reactivateMember>>,
+    TError,
+    ReactivateMemberMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reactivateMember>>,
+  TError,
+  ReactivateMemberMutationVariables,
+  TContext
+> => {
+  const mutationKey = getReactivateMemberMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reactivateMember>>,
+    ReactivateMemberMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return reactivateMember(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReactivateMemberMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reactivateMember>>
+>;
+
+export type ReactivateMemberMutationError = ApiErrorDto;
+export type ReactivateMemberMutationVariables = { id: string };
+
+export const useReactivateMember = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof reactivateMember>>,
+      TError,
+      ReactivateMemberMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof reactivateMember>>,
+  TError,
+  ReactivateMemberMutationVariables,
+  TContext
+> => {
+  return useMutation(getReactivateMemberMutationOptions(options), queryClient);
+};
 export const getCreateStudentUrl = () => {
   return `/students`;
 };

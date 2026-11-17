@@ -3,17 +3,23 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import "../index";
+import { CourseCategory } from "@api/generated/model";
 import i18n from "@shared/i18n";
+import { mockCourses } from "../mocks/classes.mock";
 import { ClassesListPage } from "../pages/ClassesListPage";
+
+function pageAt(route: string) {
+  return (
+    <MemoryRouter initialEntries={[route]}>
+      <ClassesListPage />
+    </MemoryRouter>
+  );
+}
 
 function renderPage(route = "/classes") {
   void i18n.changeLanguage("pt-BR");
   window.history.replaceState({}, "", route);
-  return render(
-    <MemoryRouter initialEntries={[route]}>
-      <ClassesListPage />
-    </MemoryRouter>,
-  );
+  return render(pageAt(route));
 }
 
 describe("classes list", () => {
@@ -59,6 +65,169 @@ describe("classes list", () => {
       within(state.parentElement as HTMLElement).getByRole("button", { name: "Limpar filtros" }),
     );
     expect(await screen.findByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
+  });
+
+  it("filters by the level of the course: a class has no level of its own", () => {
+    renderPage("/classes?level=intermediate");
+
+    expect(screen.getByRole("heading", { name: "Turmas (4)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Turma 2025\.2/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Navegação segura" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Redes Sociais com Segurança — C" }),
+    ).toBeInTheDocument();
+    // This class used to carry the level "Intermediário" on its own; now it follows its course.
+    expect(screen.queryByRole("link", { name: /Informática Básica — B/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
+  });
+
+  it("follows the category of the course when it changes: the filter reads the course, not the class", () => {
+    const computer = mockCourses.find((course) => course.id === "computer");
+    if (computer === undefined) throw new Error('No mock course "computer"');
+    const original = computer.category;
+
+    try {
+      const view = renderPage("/classes?level=basic");
+      expect(screen.getByRole("link", { name: "Turma 2026.2" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (8)" })).toBeInTheDocument();
+
+      // The category is a data of the course: no class is touched, and the list is drawn again.
+      computer.category = CourseCategory.advanced;
+      view.rerender(pageAt("/classes?level=basic"));
+
+      expect(screen.queryByRole("link", { name: "Turma 2026.2" })).not.toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (3)" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("link", { name: "Smartphones no dia a dia — B" }),
+      ).toBeInTheDocument();
+    } finally {
+      computer.category = original;
+    }
+  });
+
+  it("puts every class of a basic course under the basic level", () => {
+    renderPage("/classes?level=basic");
+
+    expect(screen.getByRole("heading", { name: "Turmas (8)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Informática Básica — B (2025)" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Informática Básica — C" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Turma 2025\.2/ })).not.toBeInTheDocument();
+  });
+
+  it("offers the three levels of a course in the level filter and every course in the course filter", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: /Nível: todos/ }));
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual([
+      "Todos",
+      "Básico",
+      "Intermediário",
+      "Avançado",
+    ]);
+    await user.keyboard("{Escape}");
+
+    // The filter finds the classes of an archived course too: the classes keep their course.
+    await user.click(screen.getByRole("button", { name: /Curso: todos/ }));
+    expect(screen.getByRole("option", { name: "Fotografia digital" })).toBeInTheDocument();
+  });
+
+  it("does not offer an archived course in the select of a new class", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: /Curso/ }));
+
+    expect(screen.getByRole("option", { name: "Informática Básica" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Fotografia digital/ })).not.toBeInTheDocument();
+  });
+
+  describe("a course in the URL that this list does not know", () => {
+    // What "Ver todas" of the course screen brings: the id of a real course, which no class of the
+    // prototype list has.
+    const REAL_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
+    const route = `/classes?courseId=${REAL_COURSE_ID}`;
+
+    it("does not say the course filter is on every course: it says a course is selected", () => {
+      renderPage(route);
+
+      expect(screen.getByRole("button", { name: /Curso selecionado/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Curso: todos/ })).not.toBeInTheDocument();
+    });
+
+    it("shows that the list has nothing for it, as it does for any filter with no result", () => {
+      renderPage(route);
+
+      expect(screen.getByRole("heading", { name: "Turmas (0)" })).toBeInTheDocument();
+      expect(screen.getByText("Nada encontrado")).toBeInTheDocument();
+    });
+
+    it("offers that choice as the selected option, after Todos and the courses", async () => {
+      const user = userEvent.setup();
+      renderPage(route);
+
+      await user.click(screen.getByRole("button", { name: /Curso selecionado/ }));
+
+      const options = screen.getAllByRole("option");
+      expect(options.map((option) => option.textContent)).toEqual([
+        "Todos",
+        "Informática Básica",
+        "Smartphones no dia a dia",
+        "Internet",
+        "Redes Sociais com Segurança",
+        "Fotografia digital",
+        "Segurança digital",
+        "Curso selecionado",
+      ]);
+      expect(screen.getByRole("option", { name: "Curso selecionado" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      expect(screen.getByRole("option", { name: "Todos" })).toHaveAttribute(
+        "aria-selected",
+        "false",
+      );
+    });
+
+    it("goes back to every course when Todos is chosen, and the option for the id goes away", async () => {
+      const user = userEvent.setup();
+      renderPage(route);
+
+      await user.click(screen.getByRole("button", { name: /Curso selecionado/ }));
+      await user.click(screen.getByRole("option", { name: "Todos" }));
+
+      expect(screen.getByRole("button", { name: /Curso: todos/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (12)" })).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: /Curso: todos/ }));
+      expect(screen.queryByRole("option", { name: "Curso selecionado" })).not.toBeInTheDocument();
+    });
+
+    it("goes back to every course with Limpar filtros too", async () => {
+      const user = userEvent.setup();
+      renderPage(route);
+
+      await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+      expect(screen.getByRole("button", { name: /Curso: todos/ })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Turmas (12)" })).toBeInTheDocument();
+    });
+
+    it("leaves a course the list knows as it was: its name, and no option for the selection", async () => {
+      const user = userEvent.setup();
+      renderPage("/classes?courseId=internet");
+
+      expect(screen.getByRole("button", { name: /Curso: internet/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Curso selecionado/ })).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: /Curso: internet/ }));
+
+      expect(screen.queryByRole("option", { name: "Curso selecionado" })).not.toBeInTheDocument();
+      expect(screen.getByRole("option", { name: "Internet" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    });
   });
 
   it.each([

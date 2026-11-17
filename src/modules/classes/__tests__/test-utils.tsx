@@ -1,0 +1,132 @@
+import type { ReactElement } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, waitFor } from "@testing-library/react";
+import { setupServer } from "msw/node";
+import { createMemoryRouter, RouterProvider, type RouteObject } from "react-router-dom";
+import { afterAll, afterEach, beforeAll, expect } from "vitest";
+
+import { getMeQueryKey } from "@api/generated/auth/auth";
+import type { MeResponseDto } from "@api/generated/model";
+import { AuthProvider } from "@modules/auth";
+import i18n from "@shared/i18n";
+
+import "../index";
+import { createClassesRoutes } from "../routes";
+import { buildMeUser, meHandler } from "./handlers";
+
+export const server = setupServer();
+
+/**
+ * The routes of the classes as the tests of this module render them. What belongs to the `lessons`
+ * module (the actions of the header and the card "Aulas da turma") is a slot, and `classes` does not
+ * import `lessons`, so here the slots are stand-ins that only say which class they were asked for.
+ * The real ones are tested with the `lessons` module and put together with these routes in
+ * `app/__tests__/classes-slots.test.tsx`.
+ */
+export const classesRoutes = createClassesRoutes({
+  renderLessonActions: (classDetail) => (
+    <button type="button">{`Ações de aulas ${classDetail.id}`}</button>
+  ),
+  renderClassLessons: (classId) => <p>{`Aulas da turma ${classId}`}</p>,
+});
+
+/** The time zone of the people who use the system. The suite runs in it, whatever the machine. */
+const TEST_TIME_ZONE = "America/Sao_Paulo";
+
+/**
+ * Starts the MSW server of the file. A request nobody answered fails the test instead of passing.
+ * It also pins the time zone: the screen shows an instant (`createdAt`, the day of an enrollment)
+ * in the time zone of the browser, so without this the expected text would depend on the machine
+ * that runs the suite.
+ */
+export function setupClassesTestServer(): void {
+  let originalTimeZone: string | undefined;
+
+  beforeAll(() => {
+    originalTimeZone = process.env.TZ;
+    process.env.TZ = TEST_TIME_ZONE;
+    server.listen({ onUnhandledRequest: "error" });
+  });
+  afterEach(() => server.resetHandlers());
+  afterAll(() => {
+    server.close();
+    if (originalTimeZone === undefined) delete process.env.TZ;
+    else process.env.TZ = originalTimeZone;
+  });
+}
+
+interface RenderOptions {
+  route?: string;
+  user?: MeResponseDto | null;
+}
+
+async function renderRouter(
+  routes: RouteObject[],
+  { route = "/", user = buildMeUser() }: RenderOptions,
+) {
+  await i18n.changeLanguage("pt-BR");
+  server.use(meHandler({ user }));
+
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const router = createMemoryRouter(routes, { initialEntries: [route] });
+
+  const view = render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+
+  // The session is what `useCan` reads: wait until it is known, so a test never looks at the
+  // moment before the permissions arrive.
+  await waitFor(() => {
+    const session = queryClient.getQueryState(getMeQueryKey());
+    expect(session?.status).toBeDefined();
+    expect(session?.status).not.toBe("pending");
+  });
+
+  return { ...view, router, queryClient };
+}
+
+/** Renders `ui` on any route, under the session provider, with a query client that does not retry. */
+export function renderWithProviders(ui: ReactElement, options: RenderOptions = {}) {
+  return renderRouter([{ path: "*", element: <AuthProvider>{ui}</AuthProvider> }], options);
+}
+
+/** Renders the routes of a module under the session provider, as the app does. */
+export function renderRoutes(routes: RouteObject[], options: RenderOptions = {}) {
+  return renderRouter([{ element: <AuthProvider />, children: routes }], options);
+}
+
+export function createDeferred() {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+}
+
+/**
+ * Fails if the screen asked the API for anything besides the session, with no waiting.
+ *
+ * A query that is mounted turned on is already `fetching` when the render ends, and later holds a
+ * result (data or error). A query that is turned off (`enabled: false`) sits in the cache idle and
+ * never runs. So reading the cache is a check that does not depend on how long a request that was
+ * never made would have taken to show up, which a pause and a spy on the handler cannot say.
+ */
+export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
+  const [sessionKey] = getMeQueryKey();
+  const queries = queryClient
+    .getQueryCache()
+    .findAll()
+    .filter((query) => query.queryKey[0] !== sessionKey);
+
+  for (const query of queries) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
+}

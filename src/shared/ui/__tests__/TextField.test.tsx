@@ -123,6 +123,19 @@ describe("TextField", () => {
     expect(screen.getByLabelText("Matrícula (RA)")).toHaveAttribute("inputmode", "numeric");
   });
 
+  it("renders a time input with its label", async () => {
+    const onChange = vi.fn();
+    render(<Harness label="Hora de início" type="time" onChange={onChange} />);
+
+    const input = screen.getByLabelText("Hora de início");
+    expect(input).toHaveAttribute("type", "time");
+
+    await userEvent.type(input, "09:00");
+
+    expect(onChange).toHaveBeenLastCalledWith("09:00");
+    expect(input).toHaveValue("09:00");
+  });
+
   it("focuses the input on mount when autoFocus is set", () => {
     render(<Harness autoFocus />);
 
@@ -135,6 +148,14 @@ describe("TextField", () => {
     const input = screen.getByLabelText("Matrícula (RA)");
     expect(input).toHaveAttribute("type", "email");
     expect(input).toHaveAttribute("autocomplete", "email");
+  });
+
+  it("renders a time input with its label", () => {
+    render(<Harness label="Hora" type="time" />);
+
+    const input = screen.getByLabelText("Hora");
+    expect(input).toHaveAttribute("type", "time");
+    expect(input.tagName).toBe("INPUT");
   });
 
   it("forwards the input ref", () => {

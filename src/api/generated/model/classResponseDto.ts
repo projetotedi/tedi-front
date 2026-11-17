@@ -5,6 +5,7 @@
  * Documentação da API do projeto TEDI
  * OpenAPI spec version: 0.1.0
  */
+import type { ClassCourseResponseDto } from "./classCourseResponseDto.ts";
 import type { ClassStatus } from "./classStatus.ts";
 import type { EditionResponseDto } from "./editionResponseDto.ts";
 
@@ -22,7 +23,9 @@ export interface ClassResponseDto {
   capacity: number;
   /** Unique inside its edition. */
   code: string;
-  /** Id of the course this class offers. It never changes (RN-13). */
+  /** The course this class offers, read now: its category is the one of the course (RN-14), and changing it there changes it here. */
+  course: ClassCourseResponseDto;
+  /** Id of the course this class offers. Same as course.id. */
   courseId: string;
   createdAt: string;
   /** Id of the person who created the class. */

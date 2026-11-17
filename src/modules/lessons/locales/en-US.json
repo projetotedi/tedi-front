@@ -1,0 +1,229 @@
+{
+  "close": "Close",
+  "status": {
+    "planned": "Planned",
+    "confirmed": "Confirmed",
+    "done": "Done",
+    "cancelled": "Cancelled"
+  },
+  "actions": {
+    "new": "New lesson",
+    "edit": "Edit lesson",
+    "editFor": "Edit the lesson {{title}}",
+    "cancel": "Cancel lesson",
+    "cancelFor": "Cancel the lesson {{title}}",
+    "reschedule": "Reschedule lesson"
+  },
+  "form": {
+    "newTitle": "New lesson",
+    "editTitle": "Edit lesson",
+    "loading": "Loading the lesson…",
+    "class": "Class",
+    "lessonPlan": "Lesson plan (origin)",
+    "noLessonPlan": "No plan (standalone lesson)",
+    "title": "Lesson title",
+    "objective": "Objective",
+    "date": "Lesson date",
+    "location": "Location",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "expectedStudents": "Expected students",
+    "expectedMonitors": "Expected monitors",
+    "subject": "Lesson subject",
+    "status": "Status",
+    "postNotes": "Post-lesson notes",
+    "periodHint": "Class period: {{start}} to {{end}}",
+    "scheduleLockedHint": "To change the date and time, use Reschedule lesson.",
+    "originLockedHint": "The origin plan does not change after the lesson is created.",
+    "lessonPlansLoading": "Loading the plans of the course…",
+    "lessonPlansError": "Could not load the plans of the course. The lesson can still be created without a plan.",
+    "objectiveUnavailable": "Could not bring the objective of the plan. Fill it in by hand, if you like.",
+    "cancel": "Cancel",
+    "save": "Save lesson",
+    "saving": "Saving…"
+  },
+  "cancel": {
+    "title": "Cancel lesson",
+    "warningTitle": "Cancelling the lesson reverses the hours",
+    "warningDescription": "The hours already logged for the members present are reversed. The lesson stays on the calendar, marked as cancelled.",
+    "reason": "Reason for cancelling",
+    "reasonHint": "Required. It shows on the lesson page and on the class calendar.",
+    "back": "Back",
+    "submit": "Cancel lesson",
+    "submitting": "Cancelling…"
+  },
+  "reschedule": {
+    "title": "Reschedule lesson",
+    "date": "New date",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "location": "Location",
+    "reason": "Reason for rescheduling",
+    "note": "Note",
+    "infoTitle": "The original date is kept on record",
+    "infoCurrentDate": "Current date of the lesson: {{date}}. It becomes the original date.",
+    "infoOriginalDate": "Original date: {{date}}. It stays on record, even if rescheduled again.",
+    "back": "Back",
+    "submit": "Reschedule lesson",
+    "submitting": "Rescheduling…"
+  },
+  "toast": {
+    "created": "Lesson created",
+    "updated": "Lesson updated",
+    "cancelled": "Lesson cancelled",
+    "rescheduled": "Lesson rescheduled. The original date, {{originalDate}}, is kept on record."
+  },
+  "fieldErrors": {
+    "titleRequired": "Enter the lesson title.",
+    "titleTooLong": "The title can have at most {{titleMax}} characters.",
+    "objectiveTooLong": "The objective can have at most {{objectiveMax}} characters.",
+    "dateRequired": "Enter the date.",
+    "startTimeRequired": "Enter the start time.",
+    "endTimeRequired": "Enter the end time.",
+    "invalidTimeRange": "The end time must be after the start time.",
+    "outsideClassPeriod": "The date must be inside the class period ({{start}} to {{end}}).",
+    "countInvalid": "Enter a whole number from 0 to {{max}}.",
+    "locationTooLong": "The location can have at most {{locationMax}} characters.",
+    "subjectTooLong": "The subject can have at most {{subjectMax}} characters.",
+    "postNotesTooLong": "The notes can have at most {{postNotesMax}} characters.",
+    "reasonRequired": "Enter the reason for cancelling.",
+    "reasonTooLong": "The reason can have at most {{reasonMax}} characters.",
+    "noteTooLong": "The note can have at most {{noteMax}} characters.",
+    "lessonPlanUnavailable": "This plan cannot be the origin of the lesson. Choose another plan of the course sequence.",
+    "serverInvalid": "Review this field and try again."
+  },
+  "errors": {
+    "lessonCancelled": "This lesson is cancelled and can no longer be changed.",
+    "classArchived": "The class is archived. The lessons of an archived class are read-only.",
+    "classNotFound": "The class of this lesson was not found.",
+    "lessonNotFound": "Lesson not found. It may have been removed.",
+    "network": "Could not connect. Check your connection and try again.",
+    "unknown": "Could not complete the action. Try again.",
+    "loadError": "Could not load the lesson.",
+    "retry": "Try again"
+  },
+  "retry": "Try again",
+  "weekdays": {
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday"
+  },
+  "generate": {
+    "action": "Generate lessons",
+    "title": "Generate the lessons of the class",
+    "summaryTitle_one": "{{count}} lesson will be created",
+    "summaryTitle_other": "{{count}} lessons will be created",
+    "summaryPending": "The lessons will be created from the plan of the course",
+    "summaryDescription": "One per lesson plan of the course {{course}}, in the order of the plan. Title and objective are copied to each lesson.",
+    "quote": "“{{title}}”",
+    "skipped_one": "The archived plan {{titles}} is left out.",
+    "skipped_other": "The {{count}} archived plans are left out: {{titles}}.",
+    "fields": {
+      "weekday": "Day of the week",
+      "weekdayPlaceholder": "Choose the day",
+      "startTime": "Start time",
+      "endTime": "End time",
+      "firstDate": "Date of the first lesson",
+      "firstDateHint": "The first lesson falls on the first chosen weekday on or after this date.",
+      "location": "Default location"
+    },
+    "fieldErrors": {
+      "weekdayRequired": "Choose the day of the week.",
+      "startTimeInvalid": "Enter the start time.",
+      "endTimeInvalid": "Enter the end time.",
+      "endTimeBeforeStart": "The end time must be after the start time.",
+      "firstDateInvalid": "Enter the date of the first lesson.",
+      "locationTooLong": "The location can have at most {{locationMax}} characters."
+    },
+    "preview": {
+      "title": "Preview of the dates",
+      "listLabel": "Dates of the lessons",
+      "lessonNumber": "Lesson {{number}}",
+      "incomplete": "Fill in the day of the week, the times and the date of the first lesson to see the preview of the dates.",
+      "loading": "Updating the preview…",
+      "error": "The preview of the dates could not be loaded.",
+      "outsidePeriod": "outside the period",
+      "schedule": {
+        "monday": "Every Monday, {{start}}–{{end}}",
+        "tuesday": "Every Tuesday, {{start}}–{{end}}",
+        "wednesday": "Every Wednesday, {{start}}–{{end}}",
+        "thursday": "Every Thursday, {{start}}–{{end}}",
+        "friday": "Every Friday, {{start}}–{{end}}",
+        "saturday": "Every Saturday, {{start}}–{{end}}",
+        "sunday": "Every Sunday, {{start}}–{{end}}"
+      },
+      "announcement_one": "Preview updated: {{count}} lesson, on {{first}}.",
+      "announcement_other": "Preview updated: from {{first}} to {{last}}.",
+      "announcementOutside_one": "{{count}} lesson falls outside the period of the class.",
+      "announcementOutside_other": "{{count}} lessons fall outside the period of the class."
+    },
+    "outside": {
+      "afterEndTitle": "The last lesson falls after the end of the class",
+      "afterEndDescription_one": "The class ends on {{endDate}} and lesson number {{position}} would be on {{date}}. Extend the period of the class or start a week earlier: the system does not save a lesson outside the period.",
+      "afterEndDescription_other": "The class ends on {{endDate}} and {{count}} lessons would come after it, from number {{position}} on, starting {{date}}. Extend the period of the class or start earlier: the system does not save a lesson outside the period.",
+      "beforeStartTitle": "The first lesson falls before the start of the class",
+      "beforeStartDescription": "The class starts on {{startDate}}. Choose a date for the first lesson inside the period of the class: the system does not save a lesson outside it.",
+      "editClass": "Edit class"
+    },
+    "errors": {
+      "alreadyGenerated": {
+        "title": "The lessons of this class were already generated",
+        "description": "Each class generates the lessons of the course plan only once. Close this window to see the lessons of the class."
+      },
+      "courseWithoutSequence": {
+        "title": "The course of this class has no active lesson plan",
+        "description": "Build the sequence of lesson plans of the course before generating the lessons of the class."
+      },
+      "outsideClassPeriod": {
+        "title": "Some lessons fall outside the period of the class",
+        "description": "The system does not save a lesson outside the period. Extend the period of the class or choose a start date that leaves every lesson inside it."
+      },
+      "classArchived": {
+        "title": "This class is archived",
+        "description": "An archived class does not receive new lessons."
+      },
+      "classNotFound": {
+        "title": "This class no longer exists",
+        "description": "It may have been removed. Go back to the list of classes and choose another."
+      },
+      "network": {
+        "title": "The lessons could not be generated",
+        "description": "Check your connection and try again."
+      },
+      "unknown": {
+        "title": "The lessons could not be generated",
+        "description": "Try again in a moment."
+      }
+    },
+    "back": "Back",
+    "submit_one": "Generate {{count}} lesson",
+    "submit_other": "Generate {{count}} lessons",
+    "submitIdle": "Generate lessons",
+    "submitting": "Generating…",
+    "success_one": "{{count}} lesson generated",
+    "success_other": "{{count}} lessons generated"
+  },
+  "classLessons": {
+    "title": "Lessons of the class",
+    "caption": "First lessons of the class",
+    "loading": "Loading the lessons of the class…",
+    "error": "The lessons of the class could not be loaded.",
+    "empty": "No lesson yet.",
+    "columns": {
+      "date": "Date",
+      "time": "Time",
+      "title": "Lesson",
+      "teacher": "Teacher",
+      "status": "Status"
+    },
+    "timeRange": "{{start}}–{{end}}",
+    "viewAll_one": "See the {{count}} lesson",
+    "viewAll_other": "See all {{count}}",
+    "viewAllLabel_one": "See the {{count}} lesson of this class",
+    "viewAllLabel_other": "See all {{count}} lessons of this class"
+  }
+}

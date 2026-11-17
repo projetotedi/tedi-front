@@ -10,11 +10,20 @@ import { Role } from "@shared/lib/role";
 // Registers the "people" namespace.
 import "../index";
 import { peopleRoutes } from "../routes";
-import { buildStudentDetail, getStudentHandler, myProfileHandler, STUDENT_ID } from "./handlers";
+import {
+  buildMemberDetail,
+  buildStudentDetail,
+  getMemberHandler,
+  getStudentHandler,
+  MEMBER_ID,
+  myProfileHandler,
+  STUDENT_ID,
+} from "./handlers";
 
 setupAuthTestServer();
 
 const studentRoute = peopleRoutes.find((route) => route.path === "students/:studentId");
+const memberRoute = peopleRoutes.find((route) => route.path === "members/:memberId");
 
 describe("peopleRoutes", () => {
   it("keeps My profile at /profile, with its own title", async () => {
@@ -68,6 +77,46 @@ describe("peopleRoutes (student detail)", () => {
     expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: buildStudentDetail().name })).toBeNull();
     expect(screen.queryByRole("heading", { name: "Dados pessoais" })).toBeNull();
+    expect(onGet).not.toHaveBeenCalled();
+  });
+});
+
+describe("peopleRoutes (member detail)", () => {
+  it("declares the static title used by the topbar, and it is translated", () => {
+    expect(memberRoute?.handle).toEqual({ title: "people:member.routeTitle" });
+    expect(i18n.t("people:member.routeTitle", { lng: "pt-BR" })).toBe("Membro");
+    expect(i18n.t("people:member.routeTitle", { lng: "en-US" })).toBe("Member");
+  });
+
+  it("asks for members.view, the permission of GET /members/:id", () => {
+    const guard = memberRoute?.element as ReactElement<{ permission: string }> | undefined;
+
+    expect(guard?.props.permission).toBe("members.view");
+  });
+
+  it.each([
+    ["director", Role.director],
+    ["coordinator", Role.coordinator],
+  ])("the %s can open /members/:id", async (_label, role) => {
+    server.use(meHandler({ user: buildMeUser({ role }) }), getMemberHandler());
+    await renderRoutes(peopleRoutes, { route: `/members/${MEMBER_ID}` });
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: buildMemberDetail().name }),
+    ).toBeInTheDocument();
+  });
+
+  it("the member gets the forbidden page and never asks for the member", async () => {
+    const onGet = vi.fn();
+    server.use(
+      meHandler({ user: buildMeUser({ role: Role.member }) }),
+      getMemberHandler({ onCall: onGet }),
+    );
+    await renderRoutes(peopleRoutes, { route: `/members/${MEMBER_ID}` });
+
+    expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: buildMemberDetail().name })).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Dados do membro" })).toBeNull();
     expect(onGet).not.toHaveBeenCalled();
   });
 });

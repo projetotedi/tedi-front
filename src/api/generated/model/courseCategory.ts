@@ -7,7 +7,7 @@
  */
 
 /**
- * Level of the content. A class takes the category of its course when created.
+ * Level of the content. A class has no category of its own: it shows the one of its course (RN-14).
  */
 export type CourseCategory = (typeof CourseCategory)[keyof typeof CourseCategory];
 

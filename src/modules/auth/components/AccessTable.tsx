@@ -1,15 +1,26 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import type { AccessResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge, Button } from "@shared/ui";
 
+import { memberDetailPath } from "../lib/member-path";
 import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: AccessResponseDto[];
+  /**
+   * Abre a ficha do membro (GUS-145). Clicar nos ícones da linha não chama isto. Sem esta prop a
+   * linha não é clicável e não ganha o realce de hover.
+   */
+  onRowClick?: (row: AccessResponseDto) => void;
 }
+
+// Realce de linha do Figma: fundo claro (do DataTable) + barra de 3px da cor de ação à esquerda.
+const CLICKABLE_ROW_CLASS =
+  "hover:shadow-[inset_3px_0_0_var(--accent)] focus-within:shadow-[inset_3px_0_0_var(--accent)]";
 
 function KebabIcon(): ReactElement {
   return (
@@ -21,14 +32,22 @@ function KebabIcon(): ReactElement {
   );
 }
 
-export function AccessTable({ rows }: AccessTableProps): ReactElement {
+export function AccessTable({ rows, onRowClick }: AccessTableProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
 
   const columns: Column<AccessResponseDto>[] = [
     {
       header: t("access.people.columns.member"),
       headerClassName: "w-[245px] uppercase",
-      render: (row) => row.name,
+      // O nome é o caminho do teclado e do leitor de tela até a ficha: a linha (`<tr>`) não recebe foco.
+      render: (row) => (
+        <Link
+          to={memberDetailPath(row.id)}
+          className="inline-flex min-h-11 items-center rounded-sm font-medium underline-offset-2 hover:underline outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+        >
+          {row.name}
+        </Link>
+      ),
     },
     {
       header: t("access.people.columns.role"),
@@ -80,6 +99,8 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
       rowKey={(row) => row.id}
       caption={t("access.people.caption")}
       tableClassName="table-fixed min-w-[840px]"
+      onRowClick={onRowClick}
+      rowClassName={onRowClick ? CLICKABLE_ROW_CLASS : undefined}
     />
   );
 }

@@ -189,5 +189,68 @@
       "registeredBy": "Cadastrada por",
       "updatedAt": "Última atualização"
     }
+  },
+  "member": {
+    "routeTitle": "Membro",
+    "loading": "Carregando o membro…",
+    "loadError": "Não foi possível carregar o membro. Tente novamente.",
+    "retry": "Tentar de novo",
+    "notFoundTitle": "Membro não encontrado",
+    "notFoundDescription": "Este membro não existe ou foi removido.",
+    "backToList": "Voltar para Membros",
+    "breadcrumb": "Trilha de navegação",
+    "status": {
+      "active": "Ativa",
+      "inactive": "Inativa"
+    },
+    "chips": {
+      "ra": "RA {{ra}}"
+    },
+    "data": {
+      "title": "Dados do membro",
+      "fullName": "Nome completo",
+      "birthDate": "Data de nascimento",
+      "phone": "Telefone",
+      "personalEmail": "E-mail pessoal",
+      "address": "Endereço",
+      "city": "Cidade",
+      "state": "Estado (UF)",
+      "ra": "RA",
+      "department": "Departamento",
+      "mainFunction": "Função principal",
+      "course": "Curso da faculdade",
+      "className": "Turma da faculdade",
+      "semester": "Período",
+      "semesterValue": "{{count}}º",
+      "institutionalEmail": "E-mail institucional",
+      "cpf": "CPF",
+      "volunteerTerm": "Termo de voluntariado",
+      "role": "Perfil de acesso",
+      "status": "Status",
+      "joinedAt": "Entrada no projeto",
+      "exitDate": "Saída"
+    },
+    "record": {
+      "title": "Registro e permissões",
+      "approvedBy": "Cadastro aprovado por",
+      "approvedByValue": "{{name}} em {{date}}",
+      "approvedOn": "Em {{date}}"
+    },
+    "assignments": {
+      "title": "Alocações em aulas",
+      "unavailable": "As alocações do membro em aulas vão aparecer aqui em breve."
+    },
+    "entries": {
+      "title": "Lançamentos de horas",
+      "unavailable": "Os lançamentos de horas do membro vão aparecer aqui em breve."
+    },
+    "hoursBank": {
+      "title": "Banco de horas",
+      "unavailable": "O banco de horas do membro vai aparecer aqui em breve."
+    },
+    "attendance": {
+      "title": "Presença",
+      "unavailable": "A presença do membro nas aulas vai aparecer aqui em breve."
+    }
   }
 }

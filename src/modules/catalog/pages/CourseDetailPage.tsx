@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -7,14 +7,16 @@ import { getGetCourseQueryKey, useGetCourse } from "@api/generated/catalog/catal
 import { CourseStatus, type CourseDetailDto } from "@api/generated/model";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
+import { ArchiveCourseDialog } from "../components/ArchiveCourseDialog";
 import { BuildSequenceDialog } from "../components/BuildSequenceDialog";
-import { CourseClassesCard } from "../components/CourseClassesCard";
 import { CourseDataCard } from "../components/CourseDataCard";
 import { CourseDetailHeader } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { CoursePlanCard } from "../components/CoursePlanCard";
 import { CoursePrerequisitesCard } from "../components/CoursePrerequisitesCard";
 import { CourseWorkloadCard } from "../components/CourseWorkloadCard";
+import { DuplicateCourseDialog } from "../components/DuplicateCourseDialog";
+import { UnarchiveCourseDialog } from "../components/UnarchiveCourseDialog";
 import { isCourseId, isCourseNotFound, toCourseSequence } from "../lib/course-detail";
 
 /**
@@ -54,16 +56,29 @@ function CourseNotFound(): ReactElement {
   );
 }
 
+/** The slot for the card "Turmas deste curso": see `CatalogRouteSlots.renderCourseClasses`. */
+type RenderCourseClasses = (courseId: string) => ReactNode;
+
 interface CourseDetailViewProps {
   /** The id of the route, which is what the cache keys of the course are made from. */
   courseId: string;
   course: CourseDetailDto;
+  renderCourseClasses: RenderCourseClasses;
 }
 
-/** The course that was loaded: header, the two columns of cards and the dialog of the sequence. */
-function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactElement {
+/**
+ * The course that was loaded: header, the two columns of cards and the dialogs (the sequence and
+ * Duplicar curso, which never are open together: each one is modal).
+ */
+function CourseDetailView({
+  courseId,
+  course,
+  renderCourseClasses,
+}: CourseDetailViewProps): ReactElement {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const [archiveDialog, setArchiveDialog] = useState<"archive" | "unarchive" | null>(null);
   const [archivedBySave, setArchivedBySave] = useState(false);
   const archivedHintRef = useRef<HTMLParagraphElement>(null);
   const wasEditingRef = useRef(false);
@@ -88,7 +103,13 @@ function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactEle
 
   return (
     <div className="flex flex-col gap-5">
-      <CourseDetailHeader course={course} isArchived={isArchived} />
+      <CourseDetailHeader
+        course={course}
+        isArchived={isArchived}
+        onDuplicate={() => setIsDuplicating(true)}
+        onArchive={() => setArchiveDialog("archive")}
+        onUnarchive={() => setArchiveDialog("unarchive")}
+      />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <CourseDataCard course={course} isArchived={isArchived} />
@@ -98,7 +119,7 @@ function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactEle
             onEditSequence={() => setIsEditing(true)}
             archivedHintRef={archivedHintRef}
           />
-          <CourseClassesCard />
+          {renderCourseClasses(courseId)}
         </div>
         <div className="flex min-w-0 flex-col gap-5">
           <CourseWorkloadCard
@@ -109,7 +130,11 @@ function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactEle
             prerequisites={course.prerequisites}
             requiredBy={course.requiredBy}
           />
-          <CourseHistoryCard createdBy={course.createdBy} />
+          <CourseHistoryCard
+            createdBy={course.createdBy}
+            archivedAt={course.archivedAt}
+            archiveReason={course.archiveReason}
+          />
         </div>
       </div>
 
@@ -121,11 +146,35 @@ function CourseDetailView({ courseId, course }: CourseDetailViewProps): ReactEle
           onCourseArchived={handleCourseArchived}
         />
       ) : null}
+
+      {isDuplicating ? (
+        <DuplicateCourseDialog course={course} onClose={() => setIsDuplicating(false)} />
+      ) : null}
+
+      {archiveDialog === "archive" ? (
+        <ArchiveCourseDialog course={course} onClose={() => setArchiveDialog(null)} />
+      ) : null}
+
+      {archiveDialog === "unarchive" ? (
+        <UnarchiveCourseDialog
+          course={course}
+          onClose={() => {
+            // Active again by the answer of the API: the notice of a refused save no longer holds.
+            setArchivedBySave(false);
+            setArchiveDialog(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }
 
-function CourseDetail({ courseId }: { courseId: string }): ReactElement {
+interface CourseDetailProps {
+  courseId: string;
+  renderCourseClasses: RenderCourseClasses;
+}
+
+function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): ReactElement {
   const { t } = useTranslation("catalog");
   const courseQuery = useGetCourse(courseId);
   const course = courseQuery.data;
@@ -149,32 +198,56 @@ function CourseDetail({ courseId }: { courseId: string }): ReactElement {
     );
   }
 
-  return <CourseDetailView courseId={courseId} course={course} />;
+  return (
+    <CourseDetailView
+      courseId={courseId}
+      course={course}
+      renderCourseClasses={renderCourseClasses}
+    />
+  );
 }
 
 /**
- * The screen of a course (RF-014, RF-016, RF-018, RF-020, RF-021). The page asks the API for one
- * thing, `getCourse`, and everything on it comes from that answer: the header (name and tags), the
- * data, the plan (the sequence of lesson plans, with the dialog that builds it), the workload, the
- * prerequisites and who created it. The sequence is not asked for apart: `toCourseSequence` gives
- * the plan card and the dialog the view of it that they read, and when a sequence is saved the
- * answer of the `PUT` is written into this same detail (`applyReplacedSequence`), so everything
- * changes together and nothing is fetched again.
+ * The screen of a course (RF-014, RF-016, RF-018, RF-019, RF-020, RF-021). The page asks the API
+ * for one thing, `getCourse`, and everything on it comes from that answer: the header (name and
+ * tags), the data, the plan (the sequence of lesson plans, with the dialog that builds it), the
+ * workload, the prerequisites and who created it. The sequence is not asked for apart:
+ * `toCourseSequence` gives the plan card and the dialog the view of it that they read, and when a
+ * sequence is saved the answer of the `PUT` is written into this same detail
+ * (`applyReplacedSequence`), so everything changes together and nothing is fetched again.
  *
- * The one card that will have a query of its own is "Turmas deste curso" (`listCourseClasses`,
- * GUS-102), and it keeps the query to itself so that its failure shows only there. The title of the
- * page is on the topbar (`handle.title` of the route), so there is no `<h1>`.
+ * The one card that has a query of its own is "Turmas deste curso" (`listCourseClasses`), and it
+ * keeps the query to itself so that its failure shows only there. It is not drawn by this module:
+ * the classes belong to the `classes` module, which `catalog` does not import, so the page calls
+ * `renderCourseClasses(courseId)`, the slot that the composition in `app/` fills with that card.
+ * The title of the page is on the topbar (`handle.title` of the route), so there is no `<h1>`.
  *
  * An id that is not a UUID is "not found" at once, with no request. The id is also the `key` of the
  * detail: a prerequisite opens another course on this same route, and the dialog and the notice
  * that the last save was refused as archived belong to the course that was open, not to the next.
  * When the next course is not loaded yet the loading state already throws the old view away; the
  * `key` is for when it is in the cache, and the page shows it with no loading step in between.
+ *
+ * Arquivar curso and Reativar curso (RF-020, GUS-139, in the header, for who has
+ * `courses.duplicateArchive`) open `ArchiveCourseDialog` and `UnarchiveCourseDialog`; the answer of
+ * the API is written into this detail at once (`invalidateAfterCourseArchiveChanged`), so the tag,
+ * Editar sequência and the history change together.
+ *
+ * Duplicar curso (RF-019, in the header, for who has `courses.duplicateArchive`) opens
+ * `DuplicateCourseDialog` over the page. The copy opens on this same route with another id, so the
+ * `key` throws away the view of the original, dialog included, and the copy is shown after its own
+ * `getCourse`.
  */
-export function CourseDetailPage(): ReactElement {
+export function CourseDetailPage({
+  renderCourseClasses,
+}: {
+  renderCourseClasses: RenderCourseClasses;
+}): ReactElement {
   const { courseId = "" } = useParams();
 
   if (!isCourseId(courseId)) return <CourseNotFound />;
 
-  return <CourseDetail key={courseId} courseId={courseId} />;
+  return (
+    <CourseDetail key={courseId} courseId={courseId} renderCourseClasses={renderCourseClasses} />
+  );
 }

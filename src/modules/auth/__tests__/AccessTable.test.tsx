@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { Role } from "@shared/lib/role";
 
@@ -73,13 +73,19 @@ describe("AccessTable", () => {
     expect(screen.getAllByRole("button")).toHaveLength(ROWS.length);
   });
 
-  it("row actions are reachable by keyboard", async () => {
+  it("row actions are reachable by keyboard, after the link of the name of each person", async () => {
     const user = userEvent.setup();
     await renderWithProviders(<AccessTable rows={ROWS} />);
 
     await user.tab();
+    expect(screen.getByRole("link", { name: "Ana Torres" })).toHaveFocus();
+
+    await user.tab();
     const ana = screen.getByRole("button", { name: "Ações de Ana Torres" });
     expect(ana).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Beto Nunes" })).toHaveFocus();
 
     await user.tab();
     expect(screen.getByRole("button", { name: "Ações de Beto Nunes" })).toHaveFocus();
@@ -137,5 +143,81 @@ describe("AccessTable", () => {
 
     expect(screen.getAllByRole("columnheader")).toHaveLength(6);
     expect(screen.queryAllByRole("cell")).toHaveLength(0);
+  });
+
+  it("renders the name as a link to /members/:id", async () => {
+    await renderWithProviders(<AccessTable rows={ROWS} />);
+
+    for (const { id, name } of ROWS) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", `/members/${id}`);
+    }
+    expect(screen.getAllByRole("link")).toHaveLength(ROWS.length);
+  });
+
+  it("opens the member with the keyboard, from the link of the name", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderWithProviders(<AccessTable rows={ROWS} />);
+
+    await user.tab();
+    await user.keyboard("{Enter}");
+
+    expect(router.state.location.pathname).toBe("/members/1");
+  });
+
+  it("calls onRowClick when a cell of the row is clicked", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={onRowClick} />);
+
+    // The Departamento cell has nothing in it: the click lands on the cell, not on a control.
+    const beto = screen.getByRole("row", { name: /Beto Nunes/ });
+    await user.click(within(beto).getAllByRole("cell")[2]);
+
+    expect(onRowClick).toHaveBeenCalledExactlyOnceWith(ROWS[1]);
+  });
+
+  it("calls onRowClick when the badge of the status is clicked", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={onRowClick} />);
+
+    const caio = screen.getByRole("row", { name: /Caio Lopes/ });
+    await user.click(within(caio).getByText("Ativo"));
+
+    expect(onRowClick).toHaveBeenCalledExactlyOnceWith(ROWS[2]);
+  });
+
+  it("does not call onRowClick when the actions button is clicked", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={onRowClick} />);
+
+    await user.click(screen.getByRole("button", { name: "Ações de Ana Torres" }));
+
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it("does not call onRowClick when the link of the name is clicked: the link opens the member itself", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const { router } = await renderWithProviders(
+      <AccessTable rows={ROWS} onRowClick={onRowClick} />,
+    );
+
+    await user.click(screen.getByRole("link", { name: "Caio Lopes" }));
+
+    expect(onRowClick).not.toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/members/3");
+  });
+
+  it("is not clickable without onRowClick", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderWithProviders(<AccessTable rows={ROWS} />);
+
+    // The Departamento cell has nothing in it: the click lands on the cell, not on a control.
+    const ana = screen.getByRole("row", { name: /Ana Torres/ });
+    await expect(user.click(within(ana).getAllByRole("cell")[2])).resolves.toBeUndefined();
+
+    expect(router.state.location.pathname).toBe("/");
   });
 });

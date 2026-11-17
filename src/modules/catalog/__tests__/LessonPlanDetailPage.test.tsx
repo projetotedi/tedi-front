@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import { getGetLessonPlanQueryKey } from "@api/generated/catalog/catalog";
 import { Role } from "@shared/lib/role";
 
-import { catalogRoutes } from "../routes";
 import {
   buildArchivedLessonPlanDetail,
   buildInUseLessonPlanDetail,
@@ -25,7 +24,13 @@ import {
   NOT_FOUND_ERROR,
   updateLessonPlanHandler,
 } from "./handlers";
-import { createDeferred, renderRoutes, server, setupCatalogTestServer } from "./test-utils";
+import {
+  catalogRoutes,
+  createDeferred,
+  renderRoutes,
+  server,
+  setupCatalogTestServer,
+} from "./test-utils";
 
 setupCatalogTestServer();
 
