@@ -60,7 +60,7 @@ export function MyLessonsSummary(): ReactElement {
         {TILES.map(({ key, tile, label }) => (
           <li key={key} className={`flex flex-col gap-1 rounded-[20px] p-4 shadow-surface ${tile}`}>
             <p className={`text-base ${label}`.trim()}>{t(`myLessons.summary.${key}`)}</p>
-            <p className="text-3xl font-bold">{renderValue(key)}</p>
+            <div className="text-3xl font-bold">{renderValue(key)}</div>
           </li>
         ))}
       </ul>

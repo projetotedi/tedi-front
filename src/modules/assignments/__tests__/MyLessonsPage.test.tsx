@@ -144,7 +144,9 @@ describe("MyLessonsPage", () => {
       ]);
     });
 
-    it("shows skeletons for the numbers while they load, with the label read as a status", async () => {
+    it("shows skeletons for the numbers while they load, with the label read as a status, and nothing in the wrong place of the HTML", async () => {
+      // React says so in the console when a block (the skeleton) is put where it cannot go (a paragraph).
+      const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
       const deferred = createDeferred();
       server.use(listMyAssignmentsHandler({ delay: deferred.promise }));
       await renderWithProviders(<MyLessonsPage />);
@@ -155,6 +157,8 @@ describe("MyLessonsPage", () => {
 
       deferred.resolve();
       await waitFor(() => expect(tiles()[0]).toBe("Próximas aulas (4 semanas)3"));
+      expect(consoleError).not.toHaveBeenCalled();
+      consoleError.mockRestore();
     });
 
     it("shows a dash read as Não informado when the agenda cannot be read", async () => {

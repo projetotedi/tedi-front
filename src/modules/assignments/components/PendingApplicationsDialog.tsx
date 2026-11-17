@@ -103,7 +103,7 @@ function ApplicationGroup({ group, idPrefix, acting, onAct }: ApplicationGroupPr
         ) : null}
       </div>
       {/* The body of the dialog is `text-muted`, 4,2:1 on this background: the lines take a darker gray. */}
-      <p className="text-sm text-tedi-neutral-foreground">{meta}</p>
+      <p className="text-sm text-pretty text-tedi-neutral-foreground">{meta}</p>
       {isCancelled ? (
         <p id={hintId} className="text-sm font-medium">
           {t("pendingApplications.lessonCancelled")}

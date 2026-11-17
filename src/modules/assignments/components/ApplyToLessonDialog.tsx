@@ -220,7 +220,7 @@ export function ApplyToLessonDialog({
         {/* The dialog body is `text-muted`, which is 4,2:1 on this background: the text takes the foreground color. */}
         <div className="flex flex-col gap-1 rounded-xl bg-surface-secondary p-3 text-foreground">
           <p className="text-base font-semibold">{lessonLabel(lesson, t)}</p>
-          <p className="text-sm">{meta}</p>
+          <p className="text-sm text-pretty">{meta}</p>
           <p className="text-sm">
             {t("coverage.vacancies", { coverage: formatCoverage(coverage, t) })}
           </p>
