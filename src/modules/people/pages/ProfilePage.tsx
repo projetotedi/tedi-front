@@ -9,14 +9,11 @@ import { DetailsCard } from "../components/DetailsCard";
 import { EntriesCard } from "../components/EntriesCard";
 import { HoursSummary } from "../components/HoursSummary";
 import { ProfileHeaderCard } from "../components/ProfileHeaderCard";
+import { VolunteerTermValue } from "../components/VolunteerTermValue";
 import { formatDate, formatInstant, formatPhone } from "../lib/format";
 import { accountStatusOf } from "../lib/status-colors";
-import { isHttpUrl } from "../lib/url";
 
 const TWO_COLUMNS = "grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_27.5rem]";
-
-const TERM_LINK_CLASS =
-  "-mx-1 inline-flex min-h-11 items-center rounded-sm px-1 font-medium text-sky-800 underline underline-offset-2 outline-hidden focus-visible:ring-3 focus-visible:ring-focus";
 
 function ProfileLoading({ label }: { label: string }) {
   return (
@@ -79,22 +76,6 @@ export function ProfilePage() {
   const department = profile.department?.name ?? null;
   const { birthDate, phone, joinedAt, lastLoginAt, semester, volunteerTermUrl } = profile;
 
-  // A link only for an http(s) URL; anything else the registration holds shows as plain text.
-  const volunteerTerm =
-    volunteerTermUrl && isHttpUrl(volunteerTermUrl) ? (
-      <a
-        href={volunteerTermUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={TERM_LINK_CLASS}
-      >
-        {t("profile.academic.volunteerTermLink")}
-        <span className="sr-only"> {t("profile.academic.opensInNewTab")}</span>
-      </a>
-    ) : (
-      volunteerTermUrl
-    );
-
   return (
     <div className="flex flex-col gap-6">
       <ProfileHeaderCard
@@ -150,7 +131,12 @@ export function ProfilePage() {
                 value: profile.institutionalEmail,
               },
               { label: t("profile.academic.cpf"), value: profile.cpfMasked },
-              { label: t("profile.academic.volunteerTerm"), value: volunteerTerm, wide: true },
+              {
+                label: t("profile.academic.volunteerTerm"),
+                // `null` (and an empty text) is "no value": the card shows the dash, not an empty box.
+                value: volunteerTermUrl && <VolunteerTermValue url={volunteerTermUrl} />,
+                wide: true,
+              },
             ]}
           />
           <DetailsCard
