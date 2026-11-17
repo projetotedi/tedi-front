@@ -107,6 +107,34 @@ describe("MyEntriesDialog", () => {
     expect(within(statement()).getAllByText(/pela coordenação:/)).toHaveLength(2);
   });
 
+  it("does not show a review note on an approved or a pending entry, even if the API sends one", async () => {
+    const entries = [
+      buildEntry({
+        id: entryId(1),
+        activity: "Reunião de coordenação",
+        status: "approved",
+        validatedMinutes: 240,
+        reviewNote: "Nota que não devia aparecer.",
+      }),
+      buildEntry({
+        id: entryId(4),
+        activity: "Feira de tecnologia (evento externo)",
+        status: "pending",
+        reviewNote: "Outra nota que não devia aparecer.",
+      }),
+    ];
+    server.use(myHourEntriesHandler({ response: (call) => pageOf(entries, call) }));
+    await renderStatement();
+    await within(statement()).findByText("Reunião de coordenação");
+
+    expect(cellsOfRow(/Reunião de coordenação/)[1]).toHaveTextContent(/^Reunião de coordenação$/);
+    expect(cellsOfRow(/Feira de tecnologia/)[1]).toHaveTextContent(
+      /^Feira de tecnologia \(evento externo\)$/,
+    );
+    expect(within(statement()).queryByText(/não devia aparecer/)).not.toBeInTheDocument();
+    expect(within(statement()).queryByText(/pela coordenação/)).not.toBeInTheDocument();
+  });
+
   it("shows 1h30 and 1h40 in hours", async () => {
     server.use(myHourEntriesHandler());
     await renderStatement();
