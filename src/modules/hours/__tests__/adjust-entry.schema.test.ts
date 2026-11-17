@@ -4,6 +4,7 @@ import {
   adjustEntryFormSchema,
   parseHoursInput,
   toAdjustBody,
+  validNewMinutes,
 } from "../schemas/adjust-entry.schema";
 
 const schema = adjustEntryFormSchema(240);
@@ -62,6 +63,14 @@ describe("adjust entry schema", () => {
   it("refuses a justification over 500 characters", () => {
     expect(justificationError("a".repeat(501))).toBe("tooLong");
     expect(justificationError("a".repeat(500))).toBeUndefined();
+  });
+
+  it("validNewMinutes gives the minutes the form accepts, and null for what it refuses", () => {
+    expect(validNewMinutes("2h30", 240)).toBe(150);
+    expect(validNewMinutes(" 24H ", 240)).toBe(1440);
+    for (const refused of ["", "2:30", "0h", "25h", "4h"]) {
+      expect(validNewMinutes(refused, 240), refused).toBeNull();
+    }
   });
 
   it("toAdjustBody sends the minutes and the trimmed justification", () => {

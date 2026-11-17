@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 
 import { useAdjustHourEntry } from "@api/generated/hours/hours";
 import type { MemberHourEntryResponseDto } from "@api/generated/model";
-import { adjustHourEntryBodyValidatedMinutesMax } from "@api/generated/zod/hours/hours";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, TextArea, TextField } from "@shared/ui";
 
@@ -15,10 +14,10 @@ import { invalidFields, STALE_QUEUE_ERRORS, toReviewError } from "../lib/review-
 import { invalidateAfterReview, invalidateIfStale } from "../lib/review-queries";
 import {
   adjustEntryFormSchema,
-  parseHoursInput,
   toAdjustBody,
   type AdjustEntryFormInput,
   type AdjustEntryFormValues,
+  validNewMinutes,
 } from "../schemas/adjust-entry.schema";
 import { EntrySummary, loggedByText } from "./EntrySummary";
 
@@ -132,14 +131,7 @@ export function AdjustEntryDialog({
   }
 
   const declared = formatHours(entry.declaredMinutes);
-  const typed = parseHoursInput(newValue);
-  const validated =
-    typed !== null &&
-    typed >= 1 &&
-    typed <= adjustHourEntryBodyValidatedMinutesMax &&
-    typed !== entry.declaredMinutes
-      ? typed
-      : null;
+  const validated = validNewMinutes(newValue, entry.declaredMinutes);
 
   return (
     <Dialog

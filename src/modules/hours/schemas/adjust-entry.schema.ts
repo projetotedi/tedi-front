@@ -51,6 +51,15 @@ export function adjustEntryFormSchema(declaredMinutes: number) {
   });
 }
 
+/**
+ * The minutes of a new value the form accepts for an entry with `declaredMinutes`, or `null` when
+ * the form would refuse it. The notice of the dialog reads this, so it follows the same rule.
+ */
+export function validNewMinutes(value: string, declaredMinutes: number): number | null {
+  const result = adjustEntryFormSchema(declaredMinutes).shape.newValue.safeParse(value);
+  return result.success ? result.data : null;
+}
+
 export type AdjustEntryFormInput = z.input<ReturnType<typeof adjustEntryFormSchema>>;
 export type AdjustEntryFormValues = z.output<ReturnType<typeof adjustEntryFormSchema>>;
 
