@@ -55,7 +55,6 @@ describe("hours locales", () => {
         );
       }
       for (const status of Object.values(HourEntryStatus)) {
-        expect(valueAt(locale, `bank.status.${status}`), status).toEqual(expect.any(String));
         expect(valueAt(locale, `history.current.${status}`), status).toEqual(expect.any(String));
         expect(valueAt(locale, `history.statusDetail.${status}`), status).toEqual(
           expect.any(String),

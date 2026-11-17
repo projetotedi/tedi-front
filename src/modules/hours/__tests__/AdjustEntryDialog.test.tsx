@@ -114,6 +114,23 @@ describe("AdjustEntryDialog", () => {
     expect(adjustBodies(spies)).toEqual([]);
   });
 
+  it("says the limit of the contract when the justification is too long", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog } = await renderAndOpen(user, { spies });
+    await fill(user, dialog, "2h", "");
+    const justification = within(dialog).getByRole("textbox", { name: /Justificativa/ });
+    await user.click(justification);
+    await user.paste("a".repeat(501));
+
+    await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+
+    await waitFor(() =>
+      expect(justification).toHaveAccessibleDescription("Use até 500 caracteres."),
+    );
+    expect(adjustBodies(spies)).toEqual([]);
+  });
+
   it("says the new validated hours in the notice while the value is typed", async () => {
     const user = userEvent.setup();
     const { dialog } = await renderAndOpen(user);

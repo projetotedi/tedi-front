@@ -6,6 +6,10 @@ import { useTranslation } from "react-i18next";
 
 import { useAdjustHourEntry } from "@api/generated/hours/hours";
 import type { MemberHourEntryResponseDto } from "@api/generated/model";
+import {
+  adjustHourEntryBodyJustificationMax,
+  adjustHourEntryBodyValidatedMinutesMax,
+} from "@api/generated/zod/hours/hours";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, TextArea, TextField } from "@shared/ui";
 
@@ -32,6 +36,9 @@ export interface AdjustEntryDialogProps {
   /** The entry is no longer pending (or is gone): the queue was read again. */
   onStale: () => void;
 }
+
+/** The limits of the contract, as the messages of the fields say them ("24h", 500 characters). */
+const NEW_VALUE_MAX = formatHours(adjustHourEntryBodyValidatedMinutesMax);
 
 type AdjustSubmitError = "adjust.errors.generic" | "review.errors.selfReview";
 
@@ -189,7 +196,7 @@ export function AdjustEntryDialog({
                 autoComplete="off"
                 errorMessage={
                   fieldState.error?.message
-                    ? t(`adjust.errors.${fieldState.error.message}`)
+                    ? t(`adjust.errors.${fieldState.error.message}`, { max: NEW_VALUE_MAX })
                     : undefined
                 }
               />
@@ -213,7 +220,9 @@ export function AdjustEntryDialog({
               inputRef={field.ref}
               errorMessage={
                 fieldState.error?.message
-                  ? t(`adjust.errors.${fieldState.error.message}`)
+                  ? t(`adjust.errors.${fieldState.error.message}`, {
+                      max: adjustHourEntryBodyJustificationMax,
+                    })
                   : undefined
               }
             />

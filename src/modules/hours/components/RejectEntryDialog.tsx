@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 
 import { useRejectHourEntry } from "@api/generated/hours/hours";
 import type { MemberHourEntryResponseDto } from "@api/generated/model";
+import { rejectHourEntryBodyReasonMax } from "@api/generated/zod/hours/hours";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, TextArea } from "@shared/ui";
 
@@ -157,7 +158,9 @@ export function RejectEntryDialog({
               inputRef={field.ref}
               errorMessage={
                 fieldState.error?.message
-                  ? t(`reject.errors.${fieldState.error.message}`)
+                  ? t(`reject.errors.${fieldState.error.message}`, {
+                      max: rejectHourEntryBodyReasonMax,
+                    })
                   : undefined
               }
             />

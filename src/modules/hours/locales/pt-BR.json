@@ -65,12 +65,6 @@
         "other": "Outros"
       }
     },
-    "status": {
-      "pending": "Pendente",
-      "approved": "Aprovado",
-      "adjusted": "Ajustado",
-      "rejected": "Rejeitado"
-    },
     "states": {
       "error": "Não foi possível carregar o banco de horas",
       "errorDescription": "Verifique a conexão e tente de novo. Se o problema continuar, avise a coordenação.",
@@ -151,10 +145,10 @@
     "errors": {
       "newValueRequired": "Informe o novo valor.",
       "newValueFormat": "Use o formato 2h ou 2h30.",
-      "newValueRange": "Informe um valor entre 0h01 e 24h.",
+      "newValueRange": "Informe um valor entre 0h01 e {{max}}.",
       "unchanged": "O novo valor precisa ser diferente do declarado.",
       "justificationRequired": "Escreva a justificativa.",
-      "tooLong": "Use até 500 caracteres.",
+      "tooLong": "Use até {{max}} caracteres.",
       "generic": "Não foi possível salvar o ajuste. Tente de novo."
     }
   },
@@ -170,7 +164,7 @@
     "successDescription": "{{name}} vê o motivo no extrato e pode lançar de novo.",
     "errors": {
       "reasonRequired": "Escreva o motivo da rejeição.",
-      "tooLong": "Use até 500 caracteres.",
+      "tooLong": "Use até {{max}} caracteres.",
       "generic": "Não foi possível rejeitar o lançamento. Tente de novo."
     }
   },

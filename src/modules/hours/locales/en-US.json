@@ -65,12 +65,6 @@
         "other": "Other"
       }
     },
-    "status": {
-      "pending": "Pending",
-      "approved": "Approved",
-      "adjusted": "Adjusted",
-      "rejected": "Rejected"
-    },
     "states": {
       "error": "The hours bank could not be loaded",
       "errorDescription": "Check the connection and try again. If the problem persists, tell the coordination team.",
@@ -151,10 +145,10 @@
     "errors": {
       "newValueRequired": "Enter the new value.",
       "newValueFormat": "Use the format 2h or 2h30.",
-      "newValueRange": "Enter a value between 0h01 and 24h.",
+      "newValueRange": "Enter a value between 0h01 and {{max}}.",
       "unchanged": "The new value must differ from the declared one.",
       "justificationRequired": "Write the justification.",
-      "tooLong": "Use up to 500 characters.",
+      "tooLong": "Use up to {{max}} characters.",
       "generic": "The adjustment could not be saved. Try again."
     }
   },
@@ -170,7 +164,7 @@
     "successDescription": "{{name}} sees the reason in the statement and can log it again.",
     "errors": {
       "reasonRequired": "Write the reason for the rejection.",
-      "tooLong": "Use up to 500 characters.",
+      "tooLong": "Use up to {{max}} characters.",
       "generic": "The entry could not be rejected. Try again."
     }
   },

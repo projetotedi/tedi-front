@@ -84,6 +84,21 @@ describe("RejectEntryDialog", () => {
     expect(rejectBodies(spies)).toEqual([]);
   });
 
+  it("says the limit of the contract when the reason is too long", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog } = await renderAndOpen(user, { spies });
+    await user.click(reasonField(dialog));
+    await user.paste("a".repeat(501));
+
+    await user.click(within(dialog).getByRole("button", { name: "Rejeitar lançamento" }));
+
+    await waitFor(() =>
+      expect(reasonField(dialog)).toHaveAccessibleDescription("Use até 500 caracteres."),
+    );
+    expect(rejectBodies(spies)).toEqual([]);
+  });
+
   it("rejects, closes, removes the row and shows the neutral toast", async () => {
     const user = userEvent.setup();
     const spies = createBankSpies();
