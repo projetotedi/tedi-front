@@ -168,11 +168,14 @@ describe("AppLayout", () => {
     expect(drawer).toHaveAttribute("id", "app-menu");
     expect(button).toHaveAttribute("aria-expanded", "true");
 
-    // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer. No jsdom o Tab passa antes
-    // pelo que é focável na página atrás (o Meu perfil, com a ação do slot de horas), daí o limite.
+    // O Drawer leva o foco para dentro dele logo depois de abrir, não no mesmo instante: o primeiro
+    // Tab só vale depois disso (antes, ele sai do <body> e percorre a página atrás).
+    await waitFor(() => expect(drawer.contains(document.activeElement)).toBe(true));
+
+    // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer.
     const people = within(drawer).getByRole("button", { name: "Pessoas" });
     expect(people).toHaveAttribute("aria-expanded", "false");
-    for (let presses = 0; document.activeElement !== people && presses < 20; presses += 1) {
+    for (let presses = 0; document.activeElement !== people && presses < 10; presses += 1) {
       await user.tab();
     }
     expect(people).toHaveFocus();
