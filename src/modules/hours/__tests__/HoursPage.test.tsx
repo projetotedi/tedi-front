@@ -5,7 +5,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { HoursMemberTotalDto } from "@api/generated/model";
 
-import { BEATRIZ_ID, director, ENTRY_0503_ID, ENTRY_1203_ID, RAFAEL_ID } from "./bank-fixtures";
+import {
+  BEATRIZ_ID,
+  buildBeatrizSummary,
+  director,
+  ENTRY_0503_ID,
+  ENTRY_1203_ID,
+  RAFAEL_ID,
+} from "./bank-fixtures";
 import {
   apiError,
   createBankSpies,
@@ -427,6 +434,61 @@ describe("HoursPage", () => {
     expect(search).toHaveValue("Car");
     expect(search).toHaveFocus();
     expect(await within(await membersTable()).findByText("Carla Mendes")).toBeInTheDocument();
+  });
+
+  it("shows Membro removido without Ver membro, and a click on its row does not open the member view", async () => {
+    const user = userEvent.setup();
+    const store = createBankStore();
+    store.members.push({
+      personId: "0197a000-0000-7000-8000-0000000000ff",
+      member: null,
+      entries: 9,
+      declaredMinutes: 2000,
+      bankMinutes: 2000,
+      pendingEntries: 0,
+      pendingMinutes: 0,
+    });
+    const { router } = await renderHoursPage({ store });
+    const table = await membersTable();
+    await within(table).findByText("Membro removido");
+    const removed = within(table).getByRole("row", { name: /Membro removido/ });
+    const location = router.state.location;
+
+    expect(
+      within(removed)
+        .getAllByRole("cell")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Membro removido", "—Não informado", "33h20", "—Sem pendência", ""]);
+    expect(within(removed).queryByRole("button")).not.toBeInTheDocument();
+
+    await user.click(within(removed).getByText("Membro removido"));
+
+    expect(router.state.location).toBe(location);
+    expect(within(viewGroup()).getByRole("button", { name: "Todos" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("shows Nenhum lançamento deste membro no período when the member has no entries in the month", async () => {
+    const store = createBankStore();
+    const summary = buildBeatrizSummary();
+    store.memberSummaries.set(BEATRIZ_ID, {
+      ...summary,
+      byCategory: summary.byCategory.map((total) => ({
+        ...total,
+        entries: 0,
+        declaredMinutes: 0,
+        pendingMinutes: 0,
+        bankMinutes: 0,
+      })),
+    });
+    await renderHoursPage({ route: BEATRIZ_VIEW, store });
+
+    expect(
+      await screen.findByText("Nenhum lançamento deste membro no período"),
+    ).toBeInTheDocument();
+    expect(within(await categoriesTable()).getAllByRole("row")).toHaveLength(1);
   });
 
   it("shows Não foi possível abrir este membro with Voltar para Todos when the member is not found", async () => {

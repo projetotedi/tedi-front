@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -19,6 +19,17 @@ import {
 } from "./bank-test-utils";
 
 setupBankTestServer();
+
+/**
+ * Two presses before React renders again: the second one still sees the button free, which is the
+ * race the guard of the double submit exists for (user-event lets React render between clicks).
+ */
+function pressTwiceAtOnce(element: HTMLElement) {
+  act(() => {
+    element.click();
+    element.click();
+  });
+}
 
 const REASON = "Sem comprovação da feira. Lance de novo com o link da lista de presença.";
 
@@ -191,6 +202,59 @@ describe("RejectEntryDialog", () => {
     expect(screen.queryByRole("dialog", { name: "Rejeitar lançamento" })).not.toBeInTheDocument();
     expect(queueRequests(spies).length).toBeGreaterThan(reads);
     expect(within(queue).getByText("12/03")).toBeInTheDocument();
+  });
+
+  it("keeps the dialog open with the alert of the person's own entry on a 409 SELF_REVIEW_NOT_ALLOWED", async () => {
+    const user = userEvent.setup();
+    const { dialog } = await renderAndOpen(user, {
+      extraHandlers: [
+        http.patch("*/hour-entries/:id/reject", () => apiError(409, "SELF_REVIEW_NOT_ALLOWED")),
+      ],
+    });
+    await user.type(reasonField(dialog), REASON);
+
+    await user.click(within(dialog).getByRole("button", { name: "Rejeitar lançamento" }));
+
+    const alert = await within(dialog).findByRole("alert");
+    expect(alert).toHaveTextContent("Você não pode revisar o próprio lançamento.");
+    expect(screen.getByRole("dialog", { name: "Rejeitar lançamento" })).toBeInTheDocument();
+    expect(screen.queryByText("Lançamento rejeitado")).not.toBeInTheDocument();
+  });
+
+  it("Voltar and Escape close without sending", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog, queue } = await renderAndOpen(user, { spies });
+    await user.type(reasonField(dialog), REASON);
+
+    await user.click(within(dialog).getByRole("button", { name: "Voltar" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Rejeitar lançamento" })).not.toBeInTheDocument(),
+    );
+    await user.click(
+      within(queue).getByRole("button", { name: "Rejeitar lançamento de Rafael Souza em 12/03" }),
+    );
+    await screen.findByRole("dialog", { name: "Rejeitar lançamento" });
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Rejeitar lançamento" })).not.toBeInTheDocument(),
+    );
+    expect(rejectBodies(spies)).toEqual([]);
+    expect(within(queue).getByText("12/03")).toBeInTheDocument();
+  });
+
+  it("sends one PATCH when Rejeitar lançamento is pressed twice in a row", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog } = await renderAndOpen(user, { spies });
+    await user.type(reasonField(dialog), REASON);
+
+    pressTwiceAtOnce(within(dialog).getByRole("button", { name: "Rejeitar lançamento" }));
+
+    expect(await screen.findByText("Lançamento rejeitado")).toBeInTheDocument();
+    expect(rejectBodies(spies)).toHaveLength(1);
   });
 
   it("keeps the dialog open with an alert when rejecting fails", async () => {

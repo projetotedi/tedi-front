@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 import { describe, expect, it } from "vitest";
@@ -32,6 +32,17 @@ import {
 } from "./bank-test-utils";
 
 setupBankTestServer();
+
+/**
+ * Two presses before React renders again: the second one still sees the button free, which is the
+ * race the guard of the double submit exists for (user-event lets React render between clicks).
+ */
+function pressTwiceAtOnce(element: HTMLElement) {
+  act(() => {
+    element.click();
+    element.click();
+  });
+}
 
 const MARCH_FILTER = { from: FROM, to: TO };
 
@@ -441,6 +452,110 @@ describe("PendingEntriesTable", () => {
       screen.getByText("Quando alguém lançar horas, o lançamento aparece aqui para validar."),
     ).toBeInTheDocument();
     expect(screen.getByText("Lançamentos pendentes de validação (0)")).toBeInTheDocument();
+  });
+
+  it("names an entry whose member is no longer found as Membro removido in the row, in the actions and in the toast", async () => {
+    const user = userEvent.setup();
+    const removed = buildEntry({
+      id: "0197a000-0000-7000-8000-0000000000fe",
+      personId: "0197a000-0000-7000-8000-0000000000ff",
+      member: null,
+      date: "2026-03-10",
+      activity: "Oficina de robótica",
+    });
+    await renderQueue({ store: storeWith([removed]) });
+    const table = await queueTable();
+
+    expect(within(row(table, "10/03")).getAllByRole("cell")[2]).toHaveTextContent(
+      "Membro removido",
+    );
+    await user.click(
+      within(row(table, "10/03")).getByRole("button", {
+        name: "Ajustar lançamento de Membro removido em 10/03",
+      }),
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Ajustar lançamento" });
+    expect(within(dialog).getByText("Membro removido · Planejamento · 10/03")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Voltar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    await user.click(
+      within(row(table, "10/03")).getByRole("button", {
+        name: "Validar lançamento de Membro removido em 10/03",
+      }),
+    );
+
+    expect(
+      await screen.findByText("4h entraram no banco de horas de Membro removido."),
+    ).toBeInTheDocument();
+  });
+
+  it("unchecks one entry and the bar counts one less; unchecking the header clears the whole selection", async () => {
+    const user = userEvent.setup();
+    await renderQueue();
+    await queueTable();
+    await user.click(entryBox("Beatriz Nunes", "05/03"));
+    await user.click(entryBox("Rafael Souza", "12/03"));
+    expectSelection("2 de 3 selecionados · 8h");
+
+    await user.click(entryBox("Rafael Souza", "12/03"));
+
+    expectSelection("1 de 3 selecionado · 4h");
+    expect(entryBox("Rafael Souza", "12/03")).not.toBeChecked();
+    expect(selectAllBox()).toBePartiallyChecked();
+
+    await user.click(selectAllBox());
+    expectSelection("3 de 3 selecionados · 12h");
+    await user.click(selectAllBox());
+
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(screen.queryByRole("button", { name: /Validar selecionados/ })).not.toBeInTheDocument();
+    expect(entryBox("Beatriz Nunes", "05/03")).not.toBeChecked();
+    expect(selectAllBox()).not.toBeChecked();
+  });
+
+  it("closes Rejeitar by Voltar and Histórico by Fechar, with the row still in the queue", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    await renderQueue({ spies });
+    const table = await queueTable();
+
+    await user.click(
+      within(row(table, "12/03")).getByRole("button", {
+        name: "Rejeitar lançamento de Rafael Souza em 12/03",
+      }),
+    );
+    const reject = await screen.findByRole("dialog", { name: "Rejeitar lançamento" });
+    await user.click(within(reject).getByRole("button", { name: "Voltar" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+    await user.click(
+      within(row(table, "12/03")).getByRole("button", {
+        name: "Ver histórico do lançamento de Rafael Souza em 12/03",
+      }),
+    );
+    const history = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
+    const closers = within(history).getAllByRole("button", { name: "Fechar" });
+    await user.click(closers[closers.length - 1]);
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(within(table).getByText("12/03")).toBeInTheDocument();
+    expect(requestsTo(spies, "PATCH", "/reject")).toEqual([]);
+  });
+
+  it("sends one PATCH when Validar is pressed twice in a row", async () => {
+    const spies = createBankSpies();
+    await renderQueue({ spies });
+    const table = await queueTable();
+
+    pressTwiceAtOnce(
+      within(row(table, "05/03")).getByRole("button", {
+        name: "Validar lançamento de Beatriz Nunes em 05/03",
+      }),
+    );
+
+    expect(await screen.findByText("1 lançamento validado")).toBeInTheDocument();
+    expect(validateBodies(spies)).toEqual([{ ids: [ENTRY_0503_ID] }]);
   });
 
   it("opens the history of a pending entry from its row", async () => {

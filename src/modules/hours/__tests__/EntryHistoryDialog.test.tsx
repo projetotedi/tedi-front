@@ -265,6 +265,21 @@ describe("EntryHistoryDialog", () => {
     expect(timeline()).toHaveLength(2);
   });
 
+  it("Escape and the × close", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    await renderBankUi(<EntryHistoryDialog entry={ADJUSTED} onClose={onClose} />, {
+      store: storeWithHistory([reviewEvent({})]),
+    });
+    const dialog = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
+
+    await user.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledTimes(1);
+
+    await user.click(within(dialog).getAllByRole("button", { name: "Fechar" })[0]);
+    expect(onClose).toHaveBeenCalledTimes(2);
+  });
+
   it("Fechar closes", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
@@ -19,6 +19,17 @@ import {
 } from "./bank-test-utils";
 
 setupBankTestServer();
+
+/**
+ * Two presses before React renders again: the second one still sees the button free, which is the
+ * race the guard of the double submit exists for (user-event lets React render between clicks).
+ */
+function pressTwiceAtOnce(element: HTMLElement) {
+  act(() => {
+    element.click();
+    element.click();
+  });
+}
 
 const JUSTIFICATION = "Feito em dupla com o Rafael: cada um registra 2h.";
 
@@ -368,6 +379,41 @@ describe("AdjustEntryDialog", () => {
     const alert = await within(dialog).findByRole("alert");
     expect(alert).toHaveTextContent("Não foi possível salvar o ajuste. Tente de novo.");
     expect(screen.getByRole("dialog", { name: "Ajustar lançamento" })).toBeInTheDocument();
+  });
+
+  it("Escape and the × close without sending", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog, queue } = await renderAndOpen(user, { spies });
+    await fill(user, dialog, "2h", JUSTIFICATION);
+
+    await user.keyboard("{Escape}");
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Ajustar lançamento" })).not.toBeInTheDocument(),
+    );
+    await user.click(
+      within(queue).getByRole("button", { name: "Ajustar lançamento de Beatriz Nunes em 14/03" }),
+    );
+    const again = await screen.findByRole("dialog", { name: "Ajustar lançamento" });
+    await user.click(within(again).getByRole("button", { name: "Fechar" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Ajustar lançamento" })).not.toBeInTheDocument(),
+    );
+    expect(adjustBodies(spies)).toEqual([]);
+  });
+
+  it("sends one PATCH when Salvar ajuste is pressed twice in a row", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { dialog } = await renderAndOpen(user, { spies });
+    await fill(user, dialog, "2h", JUSTIFICATION);
+
+    pressTwiceAtOnce(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+
+    expect(await screen.findByText("Lançamento ajustado")).toBeInTheDocument();
+    expect(adjustBodies(spies)).toHaveLength(1);
   });
 
   it("Voltar closes without sending", async () => {
