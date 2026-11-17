@@ -7,8 +7,8 @@ import { describe, expect, it } from "vitest";
 import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { buildMeUser, loginHandler, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
-import { peopleRoutes } from "@modules/people";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
+import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 

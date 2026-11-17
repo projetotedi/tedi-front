@@ -9,8 +9,8 @@ import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { buildMeUser, logoutHandler, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { lessonsRoutes } from "@modules/lessons";
-import { peopleRoutes } from "@modules/people";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
+import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -168,10 +168,11 @@ describe("AppLayout", () => {
     expect(drawer).toHaveAttribute("id", "app-menu");
     expect(button).toHaveAttribute("aria-expanded", "true");
 
-    // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer.
+    // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer. No jsdom o Tab passa antes
+    // pelo que é focável na página atrás (o Meu perfil, com a ação do slot de horas), daí o limite.
     const people = within(drawer).getByRole("button", { name: "Pessoas" });
     expect(people).toHaveAttribute("aria-expanded", "false");
-    for (let presses = 0; document.activeElement !== people && presses < 10; presses += 1) {
+    for (let presses = 0; document.activeElement !== people && presses < 20; presses += 1) {
       await user.tab();
     }
     expect(people).toHaveFocus();

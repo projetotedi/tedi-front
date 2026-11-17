@@ -1,6 +1,8 @@
 {
   "entries": {
     "close": "Close",
+    "retry": "Try again",
+    "loadError": "We could not load your hours.",
     "categories": {
       "lesson": "Class",
       "planning": "Planning",
@@ -15,6 +17,49 @@
       "approved": "Approved",
       "adjusted": "Adjusted",
       "rejected": "Rejected"
+    },
+    "summary": {
+      "title": "Hours summary",
+      "total": "Total hours logged",
+      "validated": "Validated hours",
+      "pending": "Awaiting validation",
+      "adjustedOrRejected": "Adjusted / rejected",
+      "loading": "Loading your hours…"
+    },
+    "recent": {
+      "title": "My entries",
+      "empty": "No entries yet.",
+      "loading": "Loading your entries…",
+      "columns": {
+        "date": "Date",
+        "activity": "Activity",
+        "category": "Category",
+        "declared": "Declared",
+        "validated": "Validated",
+        "status": "Status"
+      }
+    },
+    "byCategory": {
+      "title": "Hours by category",
+      "empty": "No hours logged in {{month}}.",
+      "loading": "Loading hours by category…",
+      "columns": {
+        "category": "Category",
+        "hours": "Hours",
+        "pending": "Pending"
+      },
+      "noPending": "Nothing pending",
+      "pendingLabel": {
+        "hours_one": "{{count}} hour pending",
+        "hours_other": "{{count}} hours pending",
+        "minutes_one": "{{count}} minute pending",
+        "minutes_other": "{{count}} minutes pending",
+        "hourPart_one": "{{count}} hour",
+        "hourPart_other": "{{count}} hours",
+        "minutePart_one": "{{count}} minute",
+        "minutePart_other": "{{count}} minutes",
+        "hoursAndMinutes": "{{hours}} and {{minutes}} pending"
+      }
     }
   },
   "logHours": {

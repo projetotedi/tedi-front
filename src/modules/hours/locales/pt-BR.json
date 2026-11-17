@@ -1,6 +1,8 @@
 {
   "entries": {
     "close": "Fechar",
+    "retry": "Tentar de novo",
+    "loadError": "Não foi possível carregar as suas horas.",
     "categories": {
       "lesson": "Aula",
       "planning": "Planejamento",
@@ -15,6 +17,53 @@
       "approved": "Aprovado",
       "adjusted": "Ajustado",
       "rejected": "Rejeitado"
+    },
+    "summary": {
+      "title": "Resumo de horas",
+      "total": "Total de horas lançadas",
+      "validated": "Horas validadas",
+      "pending": "Pendentes de validação",
+      "adjustedOrRejected": "Ajustadas / rejeitadas",
+      "loading": "Carregando as suas horas…"
+    },
+    "recent": {
+      "title": "Meus lançamentos",
+      "empty": "Nenhum lançamento ainda.",
+      "loading": "Carregando os seus lançamentos…",
+      "columns": {
+        "date": "Data",
+        "activity": "Atividade",
+        "category": "Categoria",
+        "declared": "Declarado",
+        "validated": "Validado",
+        "status": "Status"
+      }
+    },
+    "byCategory": {
+      "title": "Horas por categoria",
+      "empty": "Nenhuma hora lançada em {{month}}.",
+      "loading": "Carregando as horas por categoria…",
+      "columns": {
+        "category": "Categoria",
+        "hours": "Horas",
+        "pending": "Pendentes"
+      },
+      "noPending": "Sem pendência",
+      "pendingLabel": {
+        "hours_one": "{{count}} hora pendente",
+        "hours_many": "{{count}} de horas pendentes",
+        "hours_other": "{{count}} horas pendentes",
+        "minutes_one": "{{count}} minuto pendente",
+        "minutes_many": "{{count}} de minutos pendentes",
+        "minutes_other": "{{count}} minutos pendentes",
+        "hourPart_one": "{{count}} hora",
+        "hourPart_many": "{{count}} de horas",
+        "hourPart_other": "{{count}} horas",
+        "minutePart_one": "{{count}} minuto",
+        "minutePart_many": "{{count}} de minutos",
+        "minutePart_other": "{{count}} minutos",
+        "hoursAndMinutes": "{{hours}} e {{minutes}} pendentes"
+      }
     }
   },
   "logHours": {

@@ -6,4 +6,5 @@ import ptBR from "./locales/pt-BR.json";
 
 registerModuleLocales("people", { "pt-BR": ptBR, "en-US": enUS });
 
-export { peopleRoutes } from "./routes";
+export { createPeopleRoutes } from "./routes";
+export type { PeopleRouteSlots } from "./routes";

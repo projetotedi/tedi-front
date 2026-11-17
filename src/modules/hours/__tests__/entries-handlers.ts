@@ -5,6 +5,7 @@ import type {
   CreateHourEntryDto,
   HourEntryResponseDto,
   HoursSummaryResponseDto,
+  ListMyHourEntries200,
 } from "@api/generated/model";
 import { LogMyHoursBody } from "@api/generated/zod/hours/hours";
 
@@ -359,4 +360,173 @@ export function logHoursForMemberHandler({
       { status: 201 },
     );
   });
+}
+
+/** The period a summary was asked for: `null` when it was not sent. */
+export interface SummaryCall {
+  from: string | null;
+  to: string | null;
+}
+
+interface SummaryHandlerOptions extends HandlerOptions<SummaryCall> {
+  /** The answer with no period (the tiles). */
+  all?: HoursSummaryResponseDto;
+  /** The answer for a period (the month of "Horas por categoria"), whatever the month. */
+  month?: HoursSummaryResponseDto;
+}
+
+/**
+ * `GET /me/hours/summary`: `all` with no period, `month` with one. Any month answers `month`, so a
+ * test that does not freeze the date still sees the rows of the Figma.
+ */
+export function myHoursSummaryHandler({
+  all = SUMMARY_ALL,
+  month = SUMMARY_MONTH,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: SummaryHandlerOptions = {}) {
+  return http.get("*/me/hours/summary", async ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const call = { from: params.get("from"), to: params.get("to") };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    if (call.from === null && call.to === null) return HttpResponse.json(all);
+    return HttpResponse.json({ ...month, from: call.from, to: call.to });
+  });
+}
+
+/** The page asked for, as it went in the URL (`null` when it was not sent). */
+export interface ListCall {
+  page: string | null;
+  limit: string | null;
+}
+
+/** A page of `entries`, as the API pages them (20 by default). */
+export function pageOf(
+  entries: readonly HourEntryResponseDto[],
+  call: ListCall,
+): ListMyHourEntries200 {
+  const page = call.page === null ? 1 : Number(call.page);
+  const limit = call.limit === null ? 20 : Number(call.limit);
+  return {
+    data: entries.slice((page - 1) * limit, page * limit),
+    page,
+    limit,
+    total: entries.length,
+  };
+}
+
+/**
+ * The answer of the Figma: the card of the profile (`limit=5`) shows e1, e2, e3, e4 and e6, out of 8;
+ * the statement pages the 8 of `STATEMENT`.
+ */
+export function figmaEntriesPage(call: ListCall): ListMyHourEntries200 {
+  if (call.limit === "5" && call.page === null) {
+    return { data: RECENT_ENTRIES, page: 1, limit: 5, total: STATEMENT.length };
+  }
+  return pageOf(STATEMENT, call);
+}
+
+interface EntriesHandlerOptions extends HandlerOptions<ListCall> {
+  /** What a page is: the Figma by default. */
+  response?: (call: ListCall) => ListMyHourEntries200;
+}
+
+/** `GET /me/hour-entries`. */
+export function myHourEntriesHandler({
+  response = figmaEntriesPage,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: EntriesHandlerOptions = {}) {
+  return http.get("*/me/hour-entries", async ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    const call = { page: params.get("page"), limit: params.get("limit") };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response(call));
+  });
+}
+
+/** The summary with a pending entry more (`sign` 1) or less (`sign` -1). */
+function withPendingEntry(
+  summary: HoursSummaryResponseDto,
+  entry: HourEntryResponseDto,
+  sign: 1 | -1,
+): HoursSummaryResponseDto {
+  const minutes = sign * entry.declaredMinutes;
+  return {
+    ...summary,
+    byStatus: summary.byStatus.map((item) =>
+      item.status === "pending"
+        ? { ...item, entries: item.entries + sign, declaredMinutes: item.declaredMinutes + minutes }
+        : item,
+    ),
+    byCategory: summary.byCategory.map((item) =>
+      item.category === entry.category
+        ? {
+            ...item,
+            entries: item.entries + sign,
+            declaredMinutes: item.declaredMinutes + minutes,
+            pendingMinutes: item.pendingMinutes + minutes,
+          }
+        : item,
+    ),
+  };
+}
+
+/** Newest day first, and the latest created first within a day: the order of the API. */
+function byNewestDay(first: HourEntryResponseDto, second: HourEntryResponseDto): number {
+  return second.date.localeCompare(first.date) || second.createdAt.localeCompare(first.createdAt);
+}
+
+/**
+ * The hours of Ana kept in memory, as the API would: logging an entry puts it in her entries (in
+ * the order of the API) and in her summaries (the whole period, and March when it is in March). It
+ * starts as the Figma: the tiles of `SUMMARY_ALL`, the month of `SUMMARY_MONTH` and the 8 entries of
+ * `STATEMENT`. Its `handlers` answer the screens of the profile from it.
+ */
+export function createHoursStore() {
+  const state = {
+    entries: [...STATEMENT],
+    all: SUMMARY_ALL,
+    month: SUMMARY_MONTH,
+  };
+
+  function add(entry: HourEntryResponseDto) {
+    state.entries = [...state.entries, entry].sort(byNewestDay);
+    state.all = withPendingEntry(state.all, entry, 1);
+    if (entry.date.startsWith("2026-03")) state.month = withPendingEntry(state.month, entry, 1);
+  }
+
+  return {
+    get entries(): readonly HourEntryResponseDto[] {
+      return state.entries;
+    },
+    handlers: [
+      http.get("*/me/hours/summary", ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        const from = params.get("from");
+        const to = params.get("to");
+        if (from === null && to === null) return HttpResponse.json(state.all);
+        return HttpResponse.json({ ...state.month, from, to });
+      }),
+      http.get("*/me/hour-entries", ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        return HttpResponse.json(
+          pageOf(state.entries, { page: params.get("page"), limit: params.get("limit") }),
+        );
+      }),
+      logMyHoursHandler({ onCreated: add }),
+    ],
+  };
 }

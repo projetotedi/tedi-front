@@ -17,17 +17,21 @@ import { Role } from "@shared/lib/role";
 import "../index";
 import { ProfilePage } from "../pages/ProfilePage";
 import { buildMyProfile, buildSeedProfile, myProfileHandler } from "./handlers";
+import { STUB_PROFILE_PAGE_PROPS } from "./test-routes";
 
 setupAuthTestServer();
-
-const HOURS_UNAVAILABLE = "O banco de horas chega com o módulo de horas.";
 
 function renderPage() {
   return renderWithProviders(
     <AuthProvider>
-      <ProfilePage />
+      <ProfilePage {...STUB_PROFILE_PAGE_PROPS} />
     </AuthProvider>,
   );
+}
+
+/** Whether `first` comes before `second` in the order of the document. */
+function isBefore(first: Node, second: Node): boolean {
+  return (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 }
 
 /**
@@ -88,19 +92,34 @@ describe("ProfilePage", () => {
     expect(valueOf("RA")).toHaveTextContent("Não informado");
   });
 
-  it("renders every section of the prototype", async () => {
+  it("renders the three sections of the registration and the places of the hours", async () => {
     await renderProfile();
 
     for (const title of [
-      "Meus lançamentos",
-      "Horas por categoria",
       "Informações pessoais",
       "Dados acadêmicos e institucionais",
       "Conta e acesso",
     ]) {
       expect(screen.getByRole("heading", { name: title })).toBeInTheDocument();
     }
-    expect(screen.getByRole("region", { name: "Resumo de horas" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Resumo de horas (slot)" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Cards de horas (slot)" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ação de horas (slot)" })).toBeInTheDocument();
+  });
+
+  it("puts the hours summary between the header and the columns, and the hours cards at the top of the main column", async () => {
+    await renderProfile();
+
+    const name = screen.getByText("Ana Torres", { selector: "p" });
+    const summary = screen.getByRole("region", { name: "Resumo de horas (slot)" });
+    const cards = screen.getByRole("region", { name: "Cards de horas (slot)" });
+    const personal = screen.getByRole("heading", { name: "Informações pessoais" });
+
+    expect(isBefore(name, summary)).toBe(true);
+    expect(isBefore(summary, cards)).toBe(true);
+    expect(isBefore(cards, personal)).toBe(true);
+    // The cards open the main column: nothing comes before them in it.
+    expect(cards.parentElement?.firstElementChild).toBe(cards);
   });
 
   it("shows the registration of an approved member", async () => {
@@ -246,27 +265,45 @@ describe("ProfilePage", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
-  it("shows the hours empty state without sample numbers", async () => {
-    await renderProfile();
-
-    expect(screen.getAllByText(HOURS_UNAVAILABLE)).toHaveLength(3);
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
-    expect(screen.queryByText(/^\d+h(\d{2})?$/)).not.toBeInTheDocument();
-    expect(screen.queryByText("Total de horas lançadas")).not.toBeInTheDocument();
-  });
-
   it("does not show the sample data notice", async () => {
     await renderProfile();
 
     expect(screen.queryByText(/Dados de exemplo/)).not.toBeInTheDocument();
   });
 
-  it("keeps the modal actions disabled and offers sign out", async () => {
+  it("keeps Editar meus dados disabled, puts the actions of the slot after it and offers sign out", async () => {
     await renderProfile();
 
-    expect(screen.getByRole("button", { name: "Editar meus dados" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Lançar horas" })).toBeDisabled();
+    const editData = screen.getByRole("button", { name: "Editar meus dados" });
+    const slotAction = screen.getByRole("button", { name: "Ação de horas (slot)" });
+    expect(editData).toBeDisabled();
+    expect(isBefore(editData, slotAction)).toBe(true);
+    expect(slotAction.parentElement).toBe(editData.parentElement);
     expect(screen.getByRole("button", { name: "Sair do sistema" })).toBeEnabled();
+  });
+
+  it("does not draw the slots while the profile loads or fails", async () => {
+    const deferred = createDeferred();
+    server.use(
+      meHandler(),
+      myProfileHandler({
+        delay: deferred.promise,
+        error: { statusCode: 500, error: "Internal Server Error" },
+      }),
+    );
+    await renderPage();
+
+    await screen.findByText("Carregando o seu perfil…");
+    expect(screen.queryByRole("region", { name: /\(slot\)/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ação de horas (slot)" })).not.toBeInTheDocument();
+
+    deferred.resolve();
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível carregar o seu perfil. Tente novamente.",
+    );
+    expect(screen.queryByRole("region", { name: /\(slot\)/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ação de horas (slot)" })).not.toBeInTheDocument();
   });
 
   it("drops the cached profile when the page unmounts", async () => {

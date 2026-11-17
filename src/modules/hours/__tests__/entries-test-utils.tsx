@@ -84,6 +84,7 @@ export function sessionUserWith(
 
 interface RenderOptions {
   user?: MeResponseDto;
+  language?: "pt-BR" | "en-US";
 }
 
 /**
@@ -92,9 +93,9 @@ interface RenderOptions {
  */
 export async function renderWithProviders(
   ui: ReactElement,
-  { user = sessionUser() }: RenderOptions = {},
+  { user = sessionUser(), language = "pt-BR" }: RenderOptions = {},
 ) {
-  await i18n.changeLanguage("pt-BR");
+  await i18n.changeLanguage(language);
   server.use(meHandler({ user }));
 
   const queryClient = new QueryClient({
