@@ -6,6 +6,7 @@ import {
   periodRange,
   periodsBetween,
   resolvePeriod,
+  shiftPeriod,
 } from "../lib/bank-period";
 
 const MID_MARCH = new Date(2026, 2, 16, 12);
@@ -47,6 +48,13 @@ describe("bank period", () => {
     expect(periodsBetween("2026-04", "2026-03")).toEqual(["2026-03"]);
     expect(periodsBetween("", "2026-03")).toEqual(["2026-03"]);
     expect(periodsBetween("1999-12", "2026-03")).toEqual(["2026-03"]);
+  });
+
+  it("shiftPeriod moves by months, across the years", () => {
+    expect(shiftPeriod("2026-03", -3)).toBe("2025-12");
+    expect(shiftPeriod("2026-03", -23)).toBe("2024-04");
+    expect(shiftPeriod("2025-12", 1)).toBe("2026-01");
+    expect(shiftPeriod("2026-03", 0)).toBe("2026-03");
   });
 
   it("periodParts gives Março/2026 in pt-BR and March/2026 in en-US", () => {

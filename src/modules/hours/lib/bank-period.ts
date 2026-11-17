@@ -42,6 +42,13 @@ export function resolvePeriod(value: string | null, now: Date = new Date()): str
   return value;
 }
 
+/** The month `months` away from `period`, back when negative: 2026-03 and -3 → 2025-12. */
+export function shiftPeriod(period: string, months: number): string {
+  const [year, month] = period.split("-").map(Number);
+  const index = year * 12 + month - 1 + months;
+  return toPeriod({ year: Math.floor(index / 12), month: (index % 12) + 1 });
+}
+
 /** The first and the last day of the month, as the API takes them: 2026-02 → 01 to 28. */
 export function periodRange(period: string): { from: string; to: string } {
   const [year, month] = period.split("-").map(Number);

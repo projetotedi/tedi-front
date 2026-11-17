@@ -305,6 +305,29 @@ describe("HoursPage", () => {
     );
   });
 
+  it("offers the last 24 months when the oldest entry of a status could not be read", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-03-16T12:00:00-03:00"));
+    const user = userEvent.setup();
+    await renderBankRoutes({
+      route: "/hours",
+      extraHandlers: [
+        http.get("*/hour-entries", ({ request }) =>
+          new URL(request.url).searchParams.get("status") === "approved"
+            ? apiError(500, "INTERNAL_ERROR")
+            : undefined,
+        ),
+      ],
+    });
+
+    await user.click(screen.getByRole("button", { name: /Período/ }));
+
+    await waitFor(() => expect(screen.getAllByRole("option")).toHaveLength(24));
+    const options = screen.getAllByRole("option").map((option) => option.textContent);
+    expect(options[0]).toBe("Março/2026");
+    expect(options[23]).toBe("Abril/2024");
+  });
+
   it("opens the member view from Ver membro and from the row", async () => {
     const user = userEvent.setup();
     const { router } = await renderHoursPage();
