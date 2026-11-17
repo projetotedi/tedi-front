@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -143,6 +143,23 @@ describe("RemoveEntryDialog", () => {
     response.resolve();
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
     expect(onCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends one DELETE when Remover lançamento is pressed twice in a row", async () => {
+    const response = createDeferred();
+    const onCall = vi.fn<(call: RemoveCall) => void>();
+    server.use(removeMyHourEntryHandler({ delay: response.promise, onCall }));
+    const { onClose } = await renderRemove();
+
+    // Two presses in the same tick, before the dialog draws the request on its way.
+    fireEvent.click(submitButton());
+    fireEvent.click(submitButton());
+
+    await waitFor(() => expect(onCall).toHaveBeenCalledTimes(1));
+    response.resolve();
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onCall).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Este lançamento não existe mais.")).not.toBeInTheDocument();
   });
 
   it.each([
