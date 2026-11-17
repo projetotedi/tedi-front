@@ -21,6 +21,10 @@ function parseCalendarDate(value: string): Date | null {
   return isCalendarDate ? date : null;
 }
 
+function formatDayAndMonth(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit" }).format(date);
+}
+
 /**
  * The day of a lesson as the Figma shows it: day and month with the weekday in short form, "17/03
  * (ter)" in pt-BR and "03/17 (Tue)" in en-US. The locale of the browser decides the period the
@@ -31,14 +35,22 @@ export function formatLessonDay(date: string, locale: string): string {
   const parsed = parseCalendarDate(date);
   if (parsed === null) return date;
 
-  const dayAndMonth = new Intl.DateTimeFormat(locale, { day: "2-digit", month: "2-digit" }).format(
-    parsed,
-  );
   const weekday = new Intl.DateTimeFormat(locale, { weekday: "short" })
     .format(parsed)
     .replace(/\.$/, "");
 
-  return `${dayAndMonth} (${weekday})`;
+  return `${formatDayAndMonth(parsed, locale)} (${weekday})`;
+}
+
+/**
+ * Only the day and the month of a date of the API, "31/03" in pt-BR and "03/31" in en-US, the way
+ * the toast of an application says it (the Figma has no weekday there). It is the same form
+ * `formatSentDate` gives an instant, for a date that has no time zone: read as a local date, so it
+ * never falls on the day before. A value that is not a calendar date is returned as it came.
+ */
+export function formatLessonDayMonth(date: string, locale: string): string {
+  const parsed = parseCalendarDate(date);
+  return parsed === null ? date : formatDayAndMonth(parsed, locale);
 }
 
 /**

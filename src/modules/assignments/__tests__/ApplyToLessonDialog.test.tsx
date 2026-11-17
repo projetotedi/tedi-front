@@ -310,7 +310,7 @@ describe("ApplyToLessonDialog", () => {
       expect(onCall.mock.calls[0][0].body).toEqual({ role: "monitor", note: null });
     });
 
-    it("shows the toast Candidatura enviada with the role and the day, then tells the page and closes", async () => {
+    it("shows the toast Candidatura enviada with the role and the day and month, then tells the page and closes", async () => {
       const application = buildApplication({ id: "01952ef7-0000-7000-8000-0000000000a9" });
       server.use(applyToLessonHandler({ response: application }));
       const user = userEvent.setup();
@@ -322,7 +322,7 @@ describe("ApplyToLessonDialog", () => {
       expect(await screen.findByText("Candidatura enviada")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "A diretoria ou a coordenação vai confirmar sua participação como monitor(a) em 31/03 (ter).",
+          "A diretoria ou a coordenação vai confirmar sua participação como monitor(a) em 31/03.",
         ),
       ).toBeInTheDocument();
       await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
@@ -339,7 +339,7 @@ describe("ApplyToLessonDialog", () => {
 
       expect(
         await screen.findByText(
-          "A diretoria ou a coordenação vai confirmar sua participação como professor(a) em 31/03 (ter).",
+          "A diretoria ou a coordenação vai confirmar sua participação como professor(a) em 31/03.",
         ),
       ).toBeInTheDocument();
     });

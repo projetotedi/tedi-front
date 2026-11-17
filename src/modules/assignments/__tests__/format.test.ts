@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { formatLessonDay, formatSentDate, META_SEPARATOR } from "../lib/format";
+import {
+  formatLessonDay,
+  formatLessonDayMonth,
+  formatSentDate,
+  META_SEPARATOR,
+} from "../lib/format";
 
 describe("formatLessonDay", () => {
   it("writes day and month with the short weekday, as the Figma does: 17/03 (ter)", () => {
@@ -42,6 +47,50 @@ describe("formatLessonDay", () => {
     "returns %j as it came, since it is not a calendar date",
     (value) => {
       expect(formatLessonDay(value, "pt-BR")).toBe(value);
+    },
+  );
+});
+
+describe("formatLessonDayMonth", () => {
+  it("writes only the day and the month, as the toast of the Figma does: 31/03", () => {
+    expect(formatLessonDayMonth("2026-03-31", "pt-BR")).toBe("31/03");
+  });
+
+  it.each([
+    ["2026-03-17", "17/03"],
+    ["2026-04-02", "02/04"],
+    ["2026-12-01", "01/12"],
+  ])("%s is %s, with no weekday", (date, expected) => {
+    expect(formatLessonDayMonth(date, "pt-BR")).toBe(expected);
+  });
+
+  it("is the day of formatLessonDay without the weekday", () => {
+    expect(formatLessonDay("2026-03-31", "pt-BR")).toBe(
+      `${formatLessonDayMonth("2026-03-31", "pt-BR")} (ter)`,
+    );
+  });
+
+  it("follows the locale: 03/31 in en-US", () => {
+    expect(formatLessonDayMonth("2026-03-31", "en-US")).toBe("03/31");
+  });
+
+  it("reads the date as a calendar day, whatever the time zone of the machine", () => {
+    const original = process.env.TZ;
+    try {
+      for (const timeZone of ["America/Sao_Paulo", "Pacific/Auckland", "UTC"]) {
+        process.env.TZ = timeZone;
+        expect(formatLessonDayMonth("2026-03-31", "pt-BR"), timeZone).toBe("31/03");
+      }
+    } finally {
+      if (original === undefined) delete process.env.TZ;
+      else process.env.TZ = original;
+    }
+  });
+
+  it.each(["", "31/03/2026", "2026-3-31", "2026-02-31", "amanhã"])(
+    "returns %j as it came, since it is not a calendar date",
+    (value) => {
+      expect(formatLessonDayMonth(value, "pt-BR")).toBe(value);
     },
   );
 });

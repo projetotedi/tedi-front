@@ -21,7 +21,7 @@ import {
   ROLE_LABEL_KEYS,
 } from "../lib/assignment-labels";
 import { formatCoverage } from "../lib/coverage";
-import { formatLessonDay, META_SEPARATOR } from "../lib/format";
+import { formatLessonDay, formatLessonDayMonth, META_SEPARATOR } from "../lib/format";
 import {
   APPLY_NOTE_MAX,
   applyToLessonFormSchema,
@@ -73,8 +73,9 @@ function toRole(value: string): AssignmentRole | null {
  *   the dialog was open), so the reason is not only the color. The role starts chosen only when one
  *   is open (a single option has nothing to compare); with two, the person chooses. Sending with
  *   no role is refused on the field, with the focus there, and nothing is sent.
- * - **Success.** The toast says the role and the day, the cache is told (the lesson leaves "com
- *   vaga" and enters "Minhas próximas aulas" as "Aguardando confirmação"), and the dialog closes.
+ * - **Success.** The toast says the role and the day and month ("… como monitor(a) em 31/03."), as
+ *   the Figma does. The cache is told (the lesson leaves "com vaga" and enters "Minhas próximas
+ *   aulas" as "Aguardando confirmação"), and the dialog closes.
  * - **The refusals of the API.** A `VALIDATION_FAILED` that points at a field goes there. 409
  *   `ROLE_FULL` turns that role off, clears the choice and refreshes the lists. 409 `ALREADY_APPLIED`
  *   and `LESSON_IN_PAST`/`LESSON_CANCELLED` show as a warning, turn Enviar candidatura off and refresh
@@ -154,7 +155,7 @@ export function ApplyToLessonDialog({
           toast.success(t("apply.toastTitle"), {
             description: t("apply.toastDescription", {
               role: t(ROLE_INLINE_KEYS[values.role]),
-              day: formatLessonDay(lesson.date, i18n.language),
+              day: formatLessonDayMonth(lesson.date, i18n.language),
             }),
           });
           onApplied?.(application);
