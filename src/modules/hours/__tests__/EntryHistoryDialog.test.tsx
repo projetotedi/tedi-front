@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http } from "msw";
 import { describe, expect, it, vi } from "vitest";
@@ -147,6 +147,85 @@ describe("EntryHistoryDialog", () => {
 
     await screen.findByRole("list", { name: "Linha do tempo" });
     expect(timeline()[0]).toEqual(["16/03 · 10:15", ...lines]);
+  });
+
+  it.each([
+    [
+      "created, with no minutes nor status",
+      PENDING,
+      { ...buildCreatedEvent(PENDING), toMinutes: null, toStatus: null },
+      ["14/03 · 18:42", "Beatriz Nunes lançou 4h em Planejamento"],
+    ],
+    [
+      "adjusted, with no minutes nor note",
+      ADJUSTED,
+      reviewEvent({ fromMinutes: null, toMinutes: null, note: null }),
+      ["16/03 · 10:15", "Ana Paula Torres ajustou de 4h para 2h"],
+    ],
+    [
+      "adjusted, of an entry that carries no validated minutes either",
+      { ...ADJUSTED, validatedMinutes: null },
+      reviewEvent({ toMinutes: null, note: null }),
+      ["16/03 · 10:15", "Ana Paula Torres ajustou de 4h para 4h"],
+    ],
+    [
+      "approved, with no minutes",
+      { ...ADJUSTED, status: HourEntryStatus.approved, validatedMinutes: 240 },
+      reviewEvent({ type: HourEntryEventType.approved, toMinutes: null, note: null }),
+      ["16/03 · 10:15", "Ana Paula Torres validou 4h", "Status: aprovado"],
+    ],
+    [
+      "rejected, with no reason",
+      { ...ADJUSTED, status: HourEntryStatus.rejected, validatedMinutes: 0 },
+      reviewEvent({ type: HourEntryEventType.rejected, toMinutes: 0, note: null }),
+      ["16/03 · 10:15", "Ana Paula Torres rejeitou o lançamento"],
+    ],
+  ])("writes the event %s with what the entry knows", async (_case, entry, event, lines) => {
+    const store = createBankStore();
+    store.history.set(ENTRY_1403_ID, [event]);
+    await renderBankUi(<EntryHistoryDialog entry={entry} onClose={vi.fn()} />, { store });
+
+    await screen.findByRole("list", { name: "Linha do tempo" });
+    expect(timeline()).toEqual([lines]);
+  });
+
+  it("says validado — when an adjusted entry carries no validated minutes", async () => {
+    await renderBankUi(
+      <EntryHistoryDialog entry={{ ...ADJUSTED, validatedMinutes: null }} onClose={vi.fn()} />,
+      { store: storeWithHistory([reviewEvent({})]) },
+    );
+
+    expect(
+      await screen.findByText("Situação atual: Ajustado · declarado 4h · validado —"),
+    ).toBeInTheDocument();
+  });
+
+  it("keeps the alert and Tentar de novo, busy and with the focus, while it reads again", async () => {
+    const user = userEvent.setup();
+    const gate = createDeferred();
+    let calls = 0;
+    await renderBankUi(<EntryHistoryDialog entry={ADJUSTED} onClose={vi.fn()} />, {
+      store: storeWithHistory([reviewEvent({})]),
+      extraHandlers: [
+        http.get("*/hour-entries/:id/history", async () => {
+          calls += 1;
+          if (calls === 1) return apiError(500, "INTERNAL");
+          await gate.promise;
+        }),
+      ],
+    });
+    const retry = await screen.findByRole("button", { name: "Tentar de novo" });
+
+    await user.click(retry);
+
+    await waitFor(() => expect(retry).toHaveAttribute("data-pending", "true"));
+    expect(retry).toHaveFocus();
+    expect(screen.getByText("Não foi possível carregar o histórico.")).toBeInTheDocument();
+    expect(screen.queryByText("Carregando o histórico…")).not.toBeInTheDocument();
+
+    gate.resolve();
+
+    expect(await screen.findByRole("list", { name: "Linha do tempo" })).toBeInTheDocument();
   });
 
   it("shows the loading state and then the events", async () => {

@@ -1,9 +1,9 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { http } from "msw";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { ENTRY_1403_ID } from "./bank-fixtures";
+import { buildEntry, ENTRY_1403_ID } from "./bank-fixtures";
 import {
   apiError,
   createBankSpies,
@@ -212,6 +212,48 @@ describe("AdjustEntryDialog", () => {
     expect(await screen.findByText("Lançamento ajustado")).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Ajustar lançamento" })).not.toBeInTheDocument();
     expect(adjustBodies(spies)).toHaveLength(1);
+  });
+
+  it("closes the history opened from Ver histórico with the focus on the title of the queue", async () => {
+    const user = userEvent.setup();
+    const { dialog } = await renderAndOpen(user);
+    await fill(user, dialog, "2h", JUSTIFICATION);
+    await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+    const region = screen.getByRole("region", { name: "Notificações" });
+    await user.click(await within(region).findByRole("button", { name: "Ver histórico" }));
+    const history = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
+    const buttons = within(history).getAllByRole("button", { name: "Fechar" });
+
+    await user.click(buttons[buttons.length - 1]);
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("dialog", { name: "Histórico do lançamento" }),
+      ).not.toBeInTheDocument(),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Lançamentos pendentes de validação (2)")).toHaveFocus(),
+    );
+  });
+
+  it("says in the toast the hours that were sent, whatever the answer carries", async () => {
+    const user = userEvent.setup();
+    const answer = buildEntry({
+      id: ENTRY_1403_ID,
+      date: "2026-03-14",
+      status: "adjusted",
+      validatedMinutes: null,
+    });
+    const { dialog } = await renderAndOpen(user, {
+      extraHandlers: [http.patch("*/hour-entries/:id/adjust", () => HttpResponse.json(answer))],
+    });
+    await fill(user, dialog, "2h", JUSTIFICATION);
+
+    await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+
+    expect(
+      await screen.findByText("Beatriz Nunes: 4h declaradas, 2h validadas."),
+    ).toBeInTheDocument();
   });
 
   it("opens the history from Ver histórico of the toast", async () => {

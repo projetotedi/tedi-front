@@ -189,19 +189,22 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     setDialog(null);
   }
 
-  function onAdjusted(updated: MemberHourEntryResponseDto) {
+  function onAdjusted(updated: MemberHourEntryResponseDto, validatedMinutes: number) {
     closeDialogAndFocusTitle();
     closeActionToast();
     actionToastRef.current = toast.success(t("adjust.success"), {
       description: t("adjust.successDescription", {
         name: memberNameOf(updated, t),
         declared: formatHours(updated.declaredMinutes),
-        validated: formatHours(updated.validatedMinutes ?? 0),
+        validated: formatHours(validatedMinutes),
       }),
       action: {
         label: t("adjust.viewHistory"),
         onPress: () => {
           actionToastRef.current = null;
+          // The button of the toast leaves with it: when the history closes, the focus goes to the
+          // title, not to the body.
+          focusTitleRef.current = true;
           setDialog({ kind: "history", entry: updated });
         },
       },

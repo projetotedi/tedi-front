@@ -24,8 +24,11 @@ import { EntrySummary, loggedByText } from "./EntrySummary";
 export interface AdjustEntryDialogProps {
   entry: MemberHourEntryResponseDto;
   onClose: () => void;
-  /** The entry as the API answered it, over the row (which carries the member). */
-  onAdjusted: (updated: MemberHourEntryResponseDto) => void;
+  /**
+   * The entry as the API answered it, over the row (which carries the member), and the validated
+   * minutes that were sent: those are the ones the toast says.
+   */
+  onAdjusted: (updated: MemberHourEntryResponseDto, validatedMinutes: number) => void;
   /** The entry is no longer pending (or is gone): the queue was read again. */
   onStale: () => void;
 }
@@ -117,7 +120,7 @@ export function AdjustEntryDialog({
     adjust.mutate(
       { id: entry.id, data: toAdjustBody(values) },
       {
-        onSuccess: (updated) => onAdjusted({ ...entry, ...updated }),
+        onSuccess: (updated) => onAdjusted({ ...entry, ...updated }, values.newValue),
         onError: handleError,
         onSettled: () => {
           inFlightRef.current = false;

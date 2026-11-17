@@ -86,7 +86,11 @@ export function EntryHistoryDialog({ entry, onClose }: EntryHistoryDialogProps):
   }
 
   function renderTimeline(): ReactElement {
-    if (history.isPending) {
+    // The refetch of a read that failed with nothing to show goes back to "pending": keeping the
+    // error (and the button, loading) keeps the button, and the focus, on the screen.
+    const isRetrying = history.isPending && history.isFetching && history.errorUpdateCount > 0;
+
+    if (history.isPending && !isRetrying) {
       return (
         <div role="status" className="flex flex-col gap-3">
           <p className="sr-only">{t("history.loading")}</p>
@@ -162,7 +166,11 @@ export function EntryHistoryDialog({ entry, onClose }: EntryHistoryDialogProps):
           entry={entry}
           detail={t(`history.current.${entry.status}`, {
             declared: formatHours(entry.declaredMinutes),
-            validated: formatHours(entry.validatedMinutes ?? 0),
+            // Approved and adjusted entries carry it; without it the line says it is not known.
+            validated:
+              entry.validatedMinutes === null
+                ? t("common:details.empty")
+                : formatHours(entry.validatedMinutes),
           })}
         />
         {renderTimeline()}
