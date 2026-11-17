@@ -20,6 +20,8 @@ export { Drawer } from "./Drawer";
 export type { DrawerProps } from "./Drawer";
 export { Dropdown } from "./Dropdown";
 export type { DropdownItem, DropdownProps } from "./Dropdown";
+export { MultiSelect } from "./MultiSelect";
+export type { MultiSelectProps } from "./MultiSelect";
 export { NavList } from "./NavList";
 export type { NavListItem, NavListProps } from "./NavList";
 export { Pagination } from "./Pagination";

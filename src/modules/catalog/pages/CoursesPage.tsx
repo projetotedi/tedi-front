@@ -5,13 +5,15 @@ import { useTranslation } from "react-i18next";
 
 import { useListCourses } from "@api/generated/catalog/catalog";
 import type { CourseListItemDto } from "@api/generated/model";
+import { useCan } from "@modules/auth";
 import { ListState } from "@shared/components/ListState";
 import { useDebounce } from "@shared/hooks/useDebounce";
 import { resolveListState } from "@shared/lib/list-state";
-import { Card, Pagination } from "@shared/ui";
+import { Button, Card, Pagination } from "@shared/ui";
 
 import { ArchiveCourseDialog } from "../components/ArchiveCourseDialog";
 import { CourseFilters } from "../components/CourseFilters";
+import { CourseFormDialog } from "../components/CourseFormDialog";
 import { CoursesTable } from "../components/CoursesTable";
 import { UnarchiveCourseDialog } from "../components/UnarchiveCourseDialog";
 import { useCourseClassCounts } from "../hooks/useCourseClassCounts";
@@ -26,7 +28,10 @@ import {
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 300;
 
-type OpenDialog = { kind: "archive" | "unarchive"; course: CourseListItemDto } | null;
+type OpenDialog =
+  | { kind: "edit" | "archive" | "unarchive"; course: CourseListItemDto }
+  | { kind: "create" }
+  | null;
 
 /**
  * Cursos (RF-013, GUS-131): the catalog of courses with search, filters and pages, all of it in the
@@ -36,8 +41,8 @@ type OpenDialog = { kind: "archive" | "unarchive"; course: CourseListItemDto } |
  * `getClassesSummaryByCourse` for the column Turmas of the whole page. The page that was on the
  * screen stays while the next one loads (`keepPreviousData`), so the table does not blink.
  *
- * + Novo curso and the pencil of the Figma come with the form of GUS-129; the bin and Reativar
- * open the dialogs of GUS-139 over the list, and the list stays where it was.
+ * + Novo curso and the pencil open the form of GUS-129, and the bin and Reativar the dialogs of
+ * GUS-139, all of them over the list: after a save or Voltar the list stays where it was.
  */
 export function CoursesPage(): ReactElement {
   const { t } = useTranslation("catalog");
@@ -46,6 +51,8 @@ export function CoursesPage(): ReactElement {
   const [searchText, setSearchText] = useState(filters.search);
   const debouncedSearch = useDebounce(searchText, SEARCH_DEBOUNCE_MS);
   const [openDialog, setOpenDialog] = useState<OpenDialog>(null);
+  const canManage = useCan("courses.manage");
+  const openCreate = () => setOpenDialog({ kind: "create" });
 
   useEffect(() => {
     if (debouncedSearch === (params.get("search") ?? "")) return;
@@ -79,7 +86,10 @@ export function CoursesPage(): ReactElement {
   }
 
   return (
-    <Card title={<span id="courses-title">{t("courses.title", { count: page?.total ?? 0 })}</span>}>
+    <Card
+      title={<span id="courses-title">{t("courses.title", { count: page?.total ?? 0 })}</span>}
+      aside={canManage ? <Button onPress={openCreate}>{t("courses.create")}</Button> : undefined}
+    >
       <section aria-labelledby="courses-title" className="flex flex-col gap-3">
         <CourseFilters
           search={searchText}
@@ -105,6 +115,7 @@ export function CoursesPage(): ReactElement {
             variant="empty"
             title={t("courses.empty")}
             description={t("courses.emptyDescription")}
+            action={canManage ? { label: t("courses.create"), onPress: openCreate } : undefined}
           />
         ) : listState === "noResults" ? (
           <ListState
@@ -118,6 +129,7 @@ export function CoursesPage(): ReactElement {
               courses={courses}
               classCounts={classCounts}
               caption={t("courses.title", { count: page?.total ?? 0 })}
+              onEdit={(course) => setOpenDialog({ kind: "edit", course })}
               onArchive={(course) => setOpenDialog({ kind: "archive", course })}
               onUnarchive={(course) => setOpenDialog({ kind: "unarchive", course })}
             />
@@ -141,6 +153,16 @@ export function CoursesPage(): ReactElement {
         )}
       </section>
 
+      {openDialog?.kind === "create" ? (
+        <CourseFormDialog mode="create" onClose={() => setOpenDialog(null)} />
+      ) : null}
+      {openDialog?.kind === "edit" ? (
+        <CourseFormDialog
+          mode="edit"
+          courseId={openDialog.course.id}
+          onClose={() => setOpenDialog(null)}
+        />
+      ) : null}
       {openDialog?.kind === "archive" ? (
         <ArchiveCourseDialog course={openDialog.course} onClose={() => setOpenDialog(null)} />
       ) : null}

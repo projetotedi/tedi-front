@@ -146,3 +146,29 @@ export async function invalidateAfterCourseArchiveChanged(
 
   await queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) });
 }
+
+/** `/classes` and everything under it: the lists, the detail and the summaries of classes. */
+function isClassesKey(queryKey: readonly unknown[]): boolean {
+  const [key] = queryKey;
+  return typeof key === "string" && (key === "/classes" || key.startsWith("/classes/"));
+}
+
+/**
+ * What the app has to know after a course is created or edited (GUS-129):
+ *
+ * - every key under `/courses`: the list (name, category and prerequisites of each course), the
+ *   detail of this course and the detail of the courses that show it as a prerequisite or in
+ *   `requiredBy`, with its name and category;
+ * - every key under `/classes`: a class shows the current category and name of its course
+ *   (RN-14, GUS-102), so its list and its detail are fetched again. The URL is the one of the
+ *   generated client of the classes routes, which this module only reads through its keys.
+ *
+ * Nothing is written into the cache from the answer: it is a `CourseResponseDto`, and the detail
+ * brings more than it (the prerequisites with their status, the sequence and the workload).
+ */
+export async function invalidateAfterCourseSaved(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) }),
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isClassesKey(queryKey) }),
+  ]);
+}

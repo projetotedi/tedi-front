@@ -11,6 +11,7 @@ import {
   buildFigmaCourseList,
   buildMeUser,
   classesSummaryHandler,
+  createCourseHandler,
   getCourseHandler,
   listCoursesHandler,
   unarchiveCourseHandler,
@@ -281,6 +282,48 @@ describe("CoursesPage", () => {
       await waitFor(() => expect(onUnarchive).toHaveBeenCalledWith({ id: FIGMA[5].id }));
     });
 
+    it("opens Novo curso from + Novo curso and stays on the list after saving", async () => {
+      server.use(listCoursesHandler(), classesSummaryHandler(), createCourseHandler());
+      const user = userEvent.setup();
+      const { router } = await renderPage();
+      await screen.findByRole("heading", { name: "Cursos (6)" });
+
+      await user.click(screen.getByRole("button", { name: "+ Novo curso" }));
+
+      expect(await screen.findByRole("dialog", { name: "Novo curso" })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe("/courses");
+    });
+
+    it("opens Editar curso from the pencil of an active row, without opening the course", async () => {
+      server.use(listCoursesHandler(), classesSummaryHandler(), getCourseHandler());
+      const user = userEvent.setup();
+      const { router } = await renderPage();
+      await screen.findByRole("heading", { name: "Cursos (6)" });
+
+      await user.click(screen.getByRole("button", { name: "Editar curso: Fotografia no Celular" }));
+
+      expect(await screen.findByRole("dialog", { name: "Editar curso" })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe("/courses");
+    });
+
+    it("turns the pencil off on an archived course", async () => {
+      server.use(listCoursesHandler(), classesSummaryHandler());
+      await renderPage();
+      await screen.findByRole("heading", { name: "Cursos (6)" });
+
+      expect(
+        screen.getByRole("button", { name: "Editar curso: Informática Básica (2023)" }),
+      ).toBeDisabled();
+    });
+
+    it("offers + Novo curso in the empty state to who can create", async () => {
+      server.use(listCoursesHandler({ courses: [] }));
+      await renderPage();
+
+      await screen.findByText("Nenhum curso ainda");
+      expect(screen.getAllByRole("button", { name: "+ Novo curso" })).toHaveLength(2);
+    });
+
     it("the member sees no column Ações, no bin and no Reativar", async () => {
       server.use(listCoursesHandler(), classesSummaryHandler());
       await renderPage({ role: Role.member });
@@ -289,6 +332,8 @@ describe("CoursesPage", () => {
       expect(screen.queryByRole("columnheader", { name: "Ações" })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Arquivar curso/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Reativar/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Editar curso/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "+ Novo curso" })).not.toBeInTheDocument();
     });
   });
 

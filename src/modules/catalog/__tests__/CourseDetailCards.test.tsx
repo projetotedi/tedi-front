@@ -59,6 +59,7 @@ function renderHeader(
     onDuplicate = vi.fn(),
     onArchive = vi.fn(),
     onUnarchive = vi.fn(),
+    onEdit = vi.fn(),
   }: Partial<CourseDetailHeaderProps> = {},
   role: Role = Role.coordinator,
 ) {
@@ -69,6 +70,7 @@ function renderHeader(
       onDuplicate={onDuplicate}
       onArchive={onArchive}
       onUnarchive={onUnarchive}
+      onEdit={onEdit}
     />,
     { user: buildMeUser(role) },
   );
@@ -131,12 +133,13 @@ describe("CourseDetailHeader", () => {
   });
 
   describe("the actions", () => {
-    it("has Duplicar curso and Arquivar curso, in the order of the Figma, and no tag of classes, which waits for its own task", async () => {
+    it("has Duplicar curso, Arquivar curso and Editar curso, in the order of the Figma, and no tag of classes, which waits for its own task", async () => {
       await renderHeader();
 
       expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
         "Duplicar curso",
         "Arquivar curso",
+        "Editar curso",
       ]);
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.queryByText(/turma/)).not.toBeInTheDocument();
@@ -206,6 +209,30 @@ describe("CourseDetailHeader", () => {
 
       expect(onUnarchive).toHaveBeenCalledTimes(1);
       expect(onArchive).not.toHaveBeenCalled();
+    });
+
+    it("draws Editar curso as the secondary button and asks the screen to open the form", async () => {
+      const onEdit = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({ onEdit });
+
+      const edit = screen.getByRole("button", { name: "Editar curso" });
+      expect(edit).toHaveClass("button--secondary", "min-h-11");
+      await user.click(edit);
+
+      expect(onEdit).toHaveBeenCalledTimes(1);
+    });
+
+    it("turns Editar curso off on an archived course, with the reason for the screen reader", async () => {
+      const onEdit = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({ course: buildArchivedCourseDetail(), isArchived: true, onEdit });
+
+      const edit = screen.getByRole("button", { name: "Editar curso" });
+      expect(edit).toBeDisabled();
+      expect(edit).toHaveAccessibleDescription("Curso arquivado: reative o curso para editar.");
+      await user.click(edit);
+      expect(onEdit).not.toHaveBeenCalled();
     });
 
     it("shows the member the name and the tags, and no action at all", async () => {
