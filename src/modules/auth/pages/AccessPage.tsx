@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type ReactElement } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 
 import { useListAccess } from "@api/generated";
 import { ListState } from "@shared/components/ListState";
@@ -22,6 +23,7 @@ import {
   toListAccessParams,
   type AccessFilterValues,
 } from "../lib/access-filters";
+import { memberDetailPath } from "../lib/member-path";
 
 /**
  * O título da página (h1) e o título da aba vêm do AppLayout via `handle.title` da rota
@@ -31,6 +33,7 @@ export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   // Ações por linha (GUS-88) devem usar `useCan("access.manage")` e a regra de própria conta (decisão 23).
   const canInvite = useCan("invites.manage");
   const [filters, setFilters] = useState<AccessFilterValues>(EMPTY_ACCESS_FILTERS);
@@ -151,7 +154,10 @@ export function AccessPage(): ReactElement {
           aria-busy={query.isPlaceholderData || undefined}
           className={query.isPlaceholderData ? "opacity-75" : undefined}
         >
-          <AccessTable rows={query.data?.data ?? []} />
+          <AccessTable
+            rows={query.data?.data ?? []}
+            onRowClick={(row) => navigate(memberDetailPath(row.id))}
+          />
           {renderListState()}
         </div>
 

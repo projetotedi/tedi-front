@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -102,6 +102,57 @@ describe("route /members", () => {
 });
 
 describe("AccessPage", () => {
+  describe("opening a member", () => {
+    const MEMBER_ID = "01952ef7-0000-7000-8000-0000000000c1";
+
+    /** The list on `/members` and, next to it, a stand-in for the route that `people` declares. */
+    async function renderListWithMemberRoute() {
+      server.use(
+        meHandler({ user: buildMeUser({ role: Role.coordinator }) }),
+        listAccessHandler({ data: [buildAccess({ id: MEMBER_ID, name: "Ana Torres" })] }),
+      );
+      return renderRoutes(
+        [...authProtectedRoutes, { path: "members/:id", element: <p>member page</p> }],
+        { route: "/members" },
+      );
+    }
+
+    it("clicking a row opens /members/:id", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderListWithMemberRoute();
+
+      const row = await screen.findByRole("row", { name: /Ana Torres/ });
+      await user.click(within(row).getByText("Ativo"));
+
+      expect(router.state.location.pathname).toBe(`/members/${MEMBER_ID}`);
+      expect(await screen.findByText("member page")).toBeInTheDocument();
+    });
+
+    it("clicking the name opens /members/:id, with no second navigation", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderListWithMemberRoute();
+
+      await user.click(await screen.findByRole("link", { name: "Ana Torres" }));
+
+      expect(router.state.location.pathname).toBe(`/members/${MEMBER_ID}`);
+      expect(await screen.findByText("member page")).toBeInTheDocument();
+      // One entry for the member: a single step back is the list again, so the click that the row
+      // also receives did not navigate a second time.
+      await act(() => router.navigate(-1));
+      expect(router.state.location.pathname).toBe("/members");
+    });
+
+    it("clicking the actions button of the row does not open the member", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderListWithMemberRoute();
+
+      await user.click(await screen.findByRole("button", { name: "Ações de Ana Torres" }));
+
+      expect(router.state.location.pathname).toBe("/members");
+      expect(screen.queryByText("member page")).not.toBeInTheDocument();
+    });
+  });
+
   it("hides Gerar link de cadastro without invites.manage", async () => {
     server.use(listAccessHandler({ data: buildPeople(1), total: 1 }));
 
