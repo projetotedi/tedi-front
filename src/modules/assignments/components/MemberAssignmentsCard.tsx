@@ -70,10 +70,13 @@ export function MemberAssignmentsCard({
   const assignments = query.data;
   const hasMore =
     assignments !== undefined && assignments.length > MEMBER_ASSIGNMENTS_PREVIEW_LIMIT;
+  // The first five, or all of them once "Ver todas" is open (there is nothing to list before the answer).
   const rows =
-    assignments === undefined || isExpanded
-      ? (assignments ?? [])
-      : assignments.slice(0, MEMBER_ASSIGNMENTS_PREVIEW_LIMIT);
+    assignments === undefined
+      ? []
+      : isExpanded
+        ? assignments
+        : assignments.slice(0, MEMBER_ASSIGNMENTS_PREVIEW_LIMIT);
 
   const columns: Column<MemberAssignmentResponseDto>[] = [
     {
