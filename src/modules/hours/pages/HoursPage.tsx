@@ -12,6 +12,7 @@ import { CategoryHoursTable } from "../components/CategoryHoursTable";
 import { ExportHoursButton } from "../components/ExportHoursButton";
 import { HoursTotals } from "../components/HoursTotals";
 import { MemberHoursTable } from "../components/MemberHoursTable";
+import { PendingEntriesTable } from "../components/PendingEntriesTable";
 import { useBankParams } from "../hooks/useBankParams";
 import { usePeriodOptions } from "../hooks/usePeriodOptions";
 import { periodRange } from "../lib/bank-period";
@@ -117,6 +118,10 @@ export function HoursPage(): ReactElement {
           isLoading={member.isPending}
           titleRef={titleRef}
         />
+        <PendingEntriesTable
+          key={`${from}|${to}|${memberId}`}
+          filter={{ from, to, personId: memberId ?? undefined }}
+        />
       </>
     );
   }
@@ -153,6 +158,7 @@ export function HoursPage(): ReactElement {
             onOpenMember={showMember}
             titleRef={titleRef}
           />
+          <PendingEntriesTable key={`${from}|${to}`} filter={{ from, to }} />
         </>
       ) : (
         renderMemberView()

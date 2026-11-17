@@ -5,8 +5,14 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { HoursMemberTotalDto } from "@api/generated/model";
 
-import { BEATRIZ_ID, RAFAEL_ID } from "./bank-fixtures";
-import { apiError, createBankSpies, createBankStore, requestsTo } from "./bank-handlers";
+import { BEATRIZ_ID, director, ENTRY_0503_ID, ENTRY_1203_ID, RAFAEL_ID } from "./bank-fixtures";
+import {
+  apiError,
+  createBankSpies,
+  createBankStore,
+  queueRequests,
+  requestsTo,
+} from "./bank-handlers";
 import {
   createDeferred,
   renderBankRoutes,
@@ -273,6 +279,11 @@ describe("HoursPage", () => {
       expect(last?.url.searchParams.get("from")).toBe("2026-02-01");
       expect(last?.url.searchParams.get("to")).toBe("2026-02-28");
     });
+    await waitFor(() => {
+      const queue = queueRequests(spies).at(-1);
+      expect(queue?.url.searchParams.get("from")).toBe("2026-02-01");
+      expect(queue?.url.searchParams.get("to")).toBe("2026-02-28");
+    });
     expect(new URLSearchParams(router.state.location.search).get("period")).toBe("2026-02");
   });
 
@@ -415,6 +426,114 @@ describe("HoursPage", () => {
     await user.click(within(table).getByRole("button", { name: "Ver membro Beatriz Nunes" }));
 
     expect(await screen.findByText("Não foi possível abrir este membro")).toBeInTheDocument();
+  });
+
+  it("lists the pending entries of the member in the period", async () => {
+    const spies = createBankSpies();
+    await renderHoursPage({ route: BEATRIZ_VIEW, spies });
+
+    expect(await screen.findByText("Lançamentos pendentes de validação (2)")).toBeInTheDocument();
+    const queue = queueRequests(spies).at(-1);
+    expect(queue?.url.searchParams.get("personId")).toBe(BEATRIZ_ID);
+    expect(queue?.url.searchParams.get("from")).toBe("2026-03-01");
+    expect(queue?.url.searchParams.get("to")).toBe("2026-03-31");
+    const table = screen.getByRole("table", { name: /^Lançamentos pendentes de validação, com/ });
+    await within(table).findByText("05/03");
+    expect(within(table).getByText("14/03")).toBeInTheDocument();
+    expect(within(table).queryByText("12/03")).not.toBeInTheDocument();
+  });
+
+  it("validates the selected entries in batch: the totals change and the rows leave the queue without reloading", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    const { router } = await renderHoursPage({ spies });
+    const totals = await screen.findByRole("list", { name: "Totais do período" });
+    await within(totals).findByText("276h");
+    const queue = await screen.findByRole("table", {
+      name: /^Lançamentos pendentes de validação, com/,
+    });
+    await within(queue).findByText("05/03");
+    const location = router.state.location;
+
+    await user.click(
+      screen.getByRole("checkbox", { name: "Selecionar lançamento de Beatriz Nunes em 05/03" }),
+    );
+    await user.click(
+      screen.getByRole("checkbox", { name: "Selecionar lançamento de Rafael Souza em 12/03" }),
+    );
+    await user.click(screen.getByRole("button", { name: "Validar selecionados (2)" }));
+
+    expect(await screen.findByText("2 lançamentos validados")).toBeInTheDocument();
+    expect(requestsTo(spies, "PATCH", "/hour-entries/validate").map((r) => r.body)).toEqual([
+      { ids: [ENTRY_0503_ID, ENTRY_1203_ID] },
+    ]);
+    await waitFor(() =>
+      expect(
+        within(totals)
+          .getAllByRole("listitem")
+          .map((item) => item.textContent),
+      ).toEqual([
+        "Total de horas lançadas312h",
+        "Horas validadas284h",
+        "Pendentes de validação4h",
+        "Ajustadas / rejeitadas24h",
+      ]),
+    );
+    expect(screen.getByRole("list", { name: "Totais do período" })).toBe(totals);
+    expect(screen.getByText("Lançamentos pendentes de validação (1)")).toBeInTheDocument();
+    expect(within(queue).queryByText("05/03")).not.toBeInTheDocument();
+    expect(within(queue).queryByText("12/03")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        bodyRows(within(document.body).getByRole("table", { name: /^Horas por membro/ })).map(
+          (cells) => cells.slice(0, 4),
+        ),
+      ).toEqual([
+        ["Beatriz Nunes", "Tecnologia", "46h", "4h"],
+        ["Rafael Souza", "Comunicação", "38h", "—Sem pendência"],
+        ["Carla Mendes", "Pedagogia", "32h", "—Sem pendência"],
+        ["Diego Alves", "Tecnologia", "28h", "—Sem pendência"],
+      ]),
+    );
+    expect(router.state.location).toBe(location);
+  });
+
+  it("shows the director the department the API returns, with Exportar and Ver membro", async () => {
+    const spies = createBankSpies();
+    await renderHoursPage({ user: director(), store: createBankStore("department"), spies });
+
+    const totals = await screen.findByRole("list", { name: "Totais do período" });
+    await within(totals).findByText("74h");
+    expect(
+      within(totals)
+        .getAllByRole("listitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "Total de horas lançadas74h",
+      "Horas validadas64h",
+      "Pendentes de validação8h",
+      "Ajustadas / rejeitadas2h",
+    ]);
+    const members = await membersTable();
+    await within(members).findByText("Beatriz Nunes");
+    expect(bodyRows(members).map((cells) => cells[0])).toEqual(["Beatriz Nunes", "Diego Alves"]);
+    expect(within(members).getByRole("button", { name: "Ver membro Diego Alves" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Exportar relatório" })).toBeInTheDocument();
+    for (const request of [
+      ...requestsTo(spies, "GET", "/hours/overview"),
+      ...queueRequests(spies),
+    ]) {
+      expect([...request.url.searchParams.keys()].sort()).toEqual(
+        expect.not.arrayContaining(["department", "departmentId"]),
+      );
+    }
+
+    const queue = screen.getByRole("table", { name: /^Lançamentos pendentes de validação, com/ });
+    await within(queue).findByText("05/03");
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(
+      within(queue).queryByRole("button", { name: /Validar|Ajustar|Rejeitar/ }),
+    ).not.toBeInTheDocument();
   });
 
   it("labels Exportar in the member view as the report of everyone", async () => {
