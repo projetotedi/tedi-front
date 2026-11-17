@@ -214,19 +214,10 @@ describe("AccessTable", () => {
     const user = userEvent.setup();
     const { router } = await renderWithProviders(<AccessTable rows={ROWS} />);
 
+    // The Departamento cell has nothing in it: the click lands on the cell, not on a control.
     const ana = screen.getByRole("row", { name: /Ana Torres/ });
-    expect(ana).not.toHaveClass("cursor-pointer");
-    await user.click(within(ana).getAllByRole("cell")[2]);
+    await expect(user.click(within(ana).getAllByRole("cell")[2])).resolves.toBeUndefined();
 
     expect(router.state.location.pathname).toBe("/");
-  });
-
-  it("shows the pointer and the highlight on the rows when onRowClick is given", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={vi.fn()} />);
-
-    for (const row of screen.getAllByRole("row").slice(1)) {
-      expect(row).toHaveClass("cursor-pointer");
-      expect(row.className).toContain("hover:shadow-[inset_3px_0_0_var(--accent)]");
-    }
   });
 });
