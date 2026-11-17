@@ -71,4 +71,61 @@ describe("httpClient", () => {
     expect(err.message).toBe("Bad");
     expect(err.error).toBe("BAD_REQUEST");
   });
+
+  it("returns a download as a File named by Content-Disposition, with the bytes as they came (BOM included)", async () => {
+    const bytes = [0xef, 0xbb, 0xbf, ...new TextEncoder().encode("data;membro\r\n")];
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(new Uint8Array(bytes), {
+        status: 200,
+        headers: {
+          "Content-Type": "text/csv; charset=utf-8",
+          "Content-Disposition": 'attachment; filename="hours_2026-03-01_2026-03-31.csv"',
+        },
+      }),
+    );
+
+    const result = await httpClient<Blob>("/hours/export?format=csv");
+
+    expect(result).toBeInstanceOf(File);
+    const file = result as File;
+    expect(file.name).toBe("hours_2026-03-01_2026-03-31.csv");
+    expect(file.type).toBe("text/csv; charset=utf-8");
+    expect(await readBytes(file)).toEqual(bytes);
+  });
+
+  it("keeps a JSON error of a download as an ApiError", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({ statusCode: 400, message: "Bad period", error: "INVALID_PERIOD" }),
+        { status: 400, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+
+    const failure = httpClient("/hours/export?format=csv");
+
+    await expect(failure).rejects.toBeInstanceOf(ApiError);
+    await expect(failure).rejects.toMatchObject({ statusCode: 400, error: "INVALID_PERIOD" });
+  });
+
+  it("keeps reading a text answer without attachment as text", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response("ok", { status: 200, headers: { "Content-Type": "text/plain" } }),
+    );
+
+    await expect(httpClient("/health")).resolves.toBe("ok");
+  });
 });
+
+/** The bytes of a blob, through `FileReader` (the Blob of jsdom has no `arrayBuffer`). */
+function readBytes(blob: Blob): Promise<number[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const { result } = reader;
+      if (result instanceof ArrayBuffer) resolve([...new Uint8Array(result)]);
+      else reject(new Error("FileReader gave no ArrayBuffer"));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
+}
