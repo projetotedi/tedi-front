@@ -234,6 +234,7 @@ describe("RemoveEntryDialog", () => {
       ).toBe(true);
       expect(queryClient.getQueryState(getGetMyHoursSummaryQueryKey())?.isInvalidated).toBe(true);
       expect(onStale).toHaveBeenCalledTimes(1);
+      expect(within(dialog()).queryByText("Pendente de validação")).not.toBeInTheDocument();
       expect(onClose).not.toHaveBeenCalled();
     },
   );
@@ -252,6 +253,7 @@ describe("RemoveEntryDialog", () => {
       "Este lançamento não existe mais.",
     );
     expect(onStale).toHaveBeenCalledTimes(1);
+    expect(within(dialog()).queryByText("Pendente de validação")).not.toBeInTheDocument();
     await waitFor(() => expect(issueBox("Este lançamento não existe mais.")).toHaveFocus());
     expect(submitButton()).toBeDisabled();
     expect(
@@ -271,6 +273,8 @@ describe("RemoveEntryDialog", () => {
     expect(await within(dialog()).findByRole("alert")).toHaveTextContent(message);
     await waitFor(() => expect(issueBox(message)).toHaveFocus());
     expect(submitButton()).toBeEnabled();
+    // Nothing says the entry changed: it still waits for validation.
+    expect(within(dialog()).getByText("Pendente de validação")).toBeInTheDocument();
     // Nothing says the entry changed: the lists are not read again.
     expect(
       queryClient.getQueryState(getListMyHourEntriesQueryKey({ limit: 5 }))?.isInvalidated,

@@ -134,7 +134,8 @@ export function RemoveEntryDialog({
             })}
           </p>
           <p className="text-base">{entry.activity}</p>
-          <p className="text-sm text-muted">{t("removeEntry.pendingLabel")}</p>
+          {/* After a refusal that the entry changed, it may not be waiting for validation any more. */}
+          {isSettled ? null : <p className="text-sm text-muted">{t("removeEntry.pendingLabel")}</p>}
         </div>
 
         <Alert variant="warning" id={warningId}>
