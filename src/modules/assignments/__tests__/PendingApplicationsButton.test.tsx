@@ -26,6 +26,12 @@ setupAssignmentsTestServer();
 const openButton = (name: string | RegExp = "Candidaturas pendentes (3)") =>
   screen.getByRole("button", { name });
 const lessonBlock = (name: string) => screen.getByRole("region", { name });
+/**
+ * The Fechar of the footer of the dialog. The X in the corner has the same name, so the name does not
+ * say which is which and neither is found by its place: the footer one is the one with the text.
+ */
+const footerClose = (dialog: HTMLElement) =>
+  within(dialog).getByText("Fechar", { selector: "button" });
 
 describe("PendingApplicationsButton", () => {
   describe("who sees it", () => {
@@ -183,7 +189,7 @@ describe("PendingApplicationsButton", () => {
       await user.click(openButton());
       const dialog = await screen.findByRole("dialog", { name: "Candidaturas pendentes (3)" });
 
-      await user.click(within(dialog).getAllByRole("button", { name: "Fechar" })[1]);
+      await user.click(footerClose(dialog));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       await waitFor(() => expect(openButton()).toHaveFocus());
@@ -258,7 +264,7 @@ describe("PendingApplicationsButton", () => {
       expect(backend.calls.approved).toHaveLength(1);
 
       const dialog = screen.getByRole("dialog");
-      await user.click(within(dialog).getAllByRole("button", { name: "Fechar" })[1]);
+      await user.click(footerClose(dialog));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       expect(openButton("Candidaturas pendentes (2)")).toBeInTheDocument();

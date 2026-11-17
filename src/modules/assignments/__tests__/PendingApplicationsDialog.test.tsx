@@ -51,7 +51,20 @@ beforeEach(() => {
 });
 
 const group = () => screen.getByRole("group", { name: /^Candidaturas pendentes/ });
-const closeButtons = () => screen.getAllByRole("button", { name: "Fechar" });
+/**
+ * The dialog has two buttons named Fechar and does not say which comes first, so neither is found by
+ * its place. The one of the footer is the one with the text; the X in the corner has the same name
+ * and no text of its own, so it is the other.
+ */
+const footerClose = () => screen.getByText("Fechar", { selector: "button" });
+const cornerClose = () => {
+  const footer = footerClose();
+  const corner = screen
+    .getAllByRole("button", { name: "Fechar" })
+    .find((button) => button !== footer);
+  if (corner === undefined) throw new Error("The X of the corner was not found.");
+  return corner;
+};
 
 /** The block of one lesson: a region named by its title. */
 const lessonBlock = (name: string) => screen.getByRole("region", { name });
@@ -204,8 +217,8 @@ describe("PendingApplicationsDialog", () => {
           "Confirmar aloca o membro na aula com o papel pedido. Recusar libera a vaga e o membro vê a situação em Minhas aulas. Um membro não pode ter dois papéis na mesma aula.",
         ),
       ).toBeInTheDocument();
-      expect(closeButtons()).toHaveLength(2);
-      await userEvent.click(closeButtons()[1]);
+      expect(screen.getAllByRole("button", { name: "Fechar" })).toHaveLength(2);
+      await userEvent.click(footerClose());
       expect(onClose).toHaveBeenCalledTimes(1);
     });
 
@@ -216,7 +229,7 @@ describe("PendingApplicationsDialog", () => {
       await user.keyboard("{Escape}");
       await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
 
-      await user.click(closeButtons()[0]);
+      await user.click(cornerClose());
       expect(onClose).toHaveBeenCalledTimes(2);
     });
   });
@@ -448,10 +461,11 @@ describe("PendingApplicationsDialog", () => {
           screen.getByRole("button", { name: `Recusar a candidatura de ${name}` }),
         ).toBeDisabled();
       }
-      expect(closeButtons()[1]).toBeDisabled();
+      expect(footerClose()).toBeDisabled();
+      expect(cornerClose()).toBeDisabled();
 
       await user.keyboard("{Escape}");
-      await user.click(closeButtons()[0]);
+      await user.click(cornerClose());
       await user.click(confirmBeatriz);
       expect(onClose).not.toHaveBeenCalled();
       expect(onCall).toHaveBeenCalledTimes(1);
