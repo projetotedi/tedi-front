@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useListMyHourEntries } from "@api/generated/hours/hours";
@@ -8,6 +8,7 @@ import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
 import { MY_RECENT_ENTRIES_PARAMS } from "../lib/entry-queries";
 import { entryColumns, type EntryColumnWidths } from "./entry-columns";
+import { MyEntriesDialog } from "./MyEntriesDialog";
 
 /** The widths of the Figma (Data 70, Atividade 300, Categoria 130, Declarado 95, Validado 90): Status takes the rest. */
 const CARD_WIDTHS: EntryColumnWidths = {
@@ -22,7 +23,10 @@ const CARD_WIDTHS: EntryColumnWidths = {
 /**
  * "Meus lançamentos" of "Meu perfil": the five most recent entries of the person
  * (`GET /me/hour-entries?limit=5`, the newest day first), with the day, the activity, the category,
- * the declared and the validated hours and the status.
+ * the declared and the validated hours and the status. "Ver extrato completo ›", next to the title,
+ * opens the full statement (`MyEntriesDialog`, where a pending entry can be removed) and is there only
+ * when there are entries; the focus goes back to it when the statement closes. It is a link in look
+ * (#2563eb) with no grey on hover, which would leave it under 4,5:1: the hover underlines it.
  *
  * Only for who manages her own account (`account.manageOwn`): without it nothing is drawn and nothing
  * is asked. While it loads the card shows skeletons; a failed read with nothing in the cache says so
@@ -35,10 +39,21 @@ export function MyEntriesCard(): ReactElement | null {
   const query = useListMyHourEntries(MY_RECENT_ENTRIES_PARAMS, {
     query: { enabled: canView, gcTime: 0 },
   });
+  const [isStatementOpen, setIsStatementOpen] = useState(false);
 
   if (!canView) return null;
 
   const page = query.data;
+  const statementLink =
+    page !== undefined && page.total > 0 ? (
+      <Button
+        variant="ghost"
+        className="-my-2.5 -me-4 font-medium text-tedi-text-link underline-offset-2 [--button-bg-hover:transparent] [--button-bg-pressed:transparent] hover:underline focus-visible:underline"
+        onPress={() => setIsStatementOpen(true)}
+      >
+        {t("entries.recent.viewStatement")} <span aria-hidden="true">›</span>
+      </Button>
+    ) : null;
 
   function renderContent(): ReactElement {
     if (query.isPending) {
@@ -78,10 +93,17 @@ export function MyEntriesCard(): ReactElement | null {
         caption={t("entries.recent.title")}
         rows={page.data}
         rowKey={(entry) => entry.id}
-        columns={entryColumns(t, i18n.language, { widths: CARD_WIDTHS })}
+        columns={entryColumns(t, i18n.language, { widths: CARD_WIDTHS, withReviewNote: false })}
       />
     );
   }
 
-  return <Card title={t("entries.recent.title")}>{renderContent()}</Card>;
+  return (
+    <>
+      <Card title={t("entries.recent.title")} aside={statementLink}>
+        {renderContent()}
+      </Card>
+      {isStatementOpen ? <MyEntriesDialog onClose={() => setIsStatementOpen(false)} /> : null}
+    </>
+  );
 }

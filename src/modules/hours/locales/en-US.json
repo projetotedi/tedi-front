@@ -28,6 +28,7 @@
     },
     "recent": {
       "title": "My entries",
+      "viewStatement": "See full statement",
       "empty": "No entries yet.",
       "loading": "Loading your entries…",
       "columns": {
@@ -100,6 +101,49 @@
       "memberNotFound": "We could not find this member. Reload the page and try again.",
       "selfOnBehalf": "To log your own hours, use + Log hours in My profile.",
       "unknown": "We could not log the hours. Try again."
+    }
+  },
+  "myEntries": {
+    "title": "My entries",
+    "columns": {
+      "actions": "Actions"
+    },
+    "reviewNote": {
+      "adjusted": "Adjusted by the coordination: “{{note}}”",
+      "rejected": "Rejected by the coordination: “{{note}}”"
+    },
+    "remove": "Remove",
+    "removeLabel": "Remove the entry of {{date}}: {{activity}}",
+    "loading": "Loading your entries…",
+    "emptyTitle": "No entries yet",
+    "emptyDescription": "Use + Log hours in your profile to record planning, event and management hours.",
+    "errorTitle": "We could not load your entries",
+    "errorDescription": "Check your connection and try again.",
+    "pagination": {
+      "nav": "Statement pages",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page {{page}}"
+    }
+  },
+  "removeEntry": {
+    "title": "Remove entry",
+    "summary": "{{date}} · {{category}} · {{hours}} declared",
+    "pendingLabel": "Awaiting validation",
+    "warning": "A sent entry cannot be edited. To correct it, remove it and log it again with the right details. It can only be removed while it awaits validation.",
+    "back": "Back",
+    "submit": "Remove entry",
+    "submitting": "Removing…",
+    "toastTitle": "Entry removed",
+    "toastDescription": "{{activity}} ({{date}}) left your statement.",
+    "warnings": {
+      "notPending": "The coordination has already validated this entry. It can no longer be removed.",
+      "attendance": "Class hours come from attendance and cannot be removed here."
+    },
+    "errors": {
+      "notFound": "This entry no longer exists.",
+      "network": "We could not remove the entry. Try again.",
+      "unknown": "We could not remove the entry. Try again."
     }
   }
 }

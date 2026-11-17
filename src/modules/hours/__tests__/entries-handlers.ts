@@ -362,6 +362,36 @@ export function logHoursForMemberHandler({
   });
 }
 
+/** The entry `DELETE /me/hour-entries/:id` was sent for. */
+export interface RemoveCall {
+  id: string;
+}
+
+interface RemoveHandlerOptions extends HandlerOptions<RemoveCall> {
+  /** What else the API does when it removes the entry (the in-memory store of the profile). */
+  onRemoved?: (id: string) => void;
+}
+
+/** `DELETE /me/hour-entries/:id`: 204 with no body. */
+export function removeMyHourEntryHandler({
+  error,
+  networkError = false,
+  delay,
+  onCall,
+  onRemoved,
+}: RemoveHandlerOptions = {}) {
+  return http.delete("*/me/hour-entries/:id", async ({ params }) => {
+    const id = String(params.id);
+    onCall?.({ id });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    onRemoved?.(id);
+    return new HttpResponse(null, { status: 204 });
+  });
+}
+
 /** The period a summary was asked for: `null` when it was not sent. */
 export interface SummaryCall {
   from: string | null;
@@ -491,7 +521,8 @@ function byNewestDay(first: HourEntryResponseDto, second: HourEntryResponseDto):
 
 /**
  * The hours of Ana kept in memory, as the API would: logging an entry puts it in her entries (in
- * the order of the API) and in her summaries (the whole period, and March when it is in March). It
+ * the order of the API) and in her summaries (the whole period, and March when it is in March), and
+ * removing a pending one takes it out of both. It
  * starts as the Figma: the tiles of `SUMMARY_ALL`, the month of `SUMMARY_MONTH` and the 8 entries of
  * `STATEMENT`. Its `handlers` answer the screens of the profile from it.
  */
@@ -506,6 +537,14 @@ export function createHoursStore() {
     state.entries = [...state.entries, entry].sort(byNewestDay);
     state.all = withPendingEntry(state.all, entry, 1);
     if (entry.date.startsWith("2026-03")) state.month = withPendingEntry(state.month, entry, 1);
+  }
+
+  function remove(id: string) {
+    const entry = state.entries.find((item) => item.id === id);
+    if (entry === undefined) return;
+    state.entries = state.entries.filter((item) => item.id !== id);
+    state.all = withPendingEntry(state.all, entry, -1);
+    if (entry.date.startsWith("2026-03")) state.month = withPendingEntry(state.month, entry, -1);
   }
 
   return {
@@ -527,6 +566,7 @@ export function createHoursStore() {
         );
       }),
       logMyHoursHandler({ onCreated: add }),
+      removeMyHourEntryHandler({ onRemoved: remove }),
     ],
   };
 }

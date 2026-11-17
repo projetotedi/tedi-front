@@ -169,4 +169,38 @@ describe("MyEntriesCard", () => {
 
     await waitFor(() => expect(queryClient.getQueryState(RECENT_KEY)).toBeUndefined());
   });
+
+  it("offers Ver extrato completo only when there are entries, and it opens the statement", async () => {
+    const onCall = vi.fn<(call: ListCall) => void>();
+    server.use(myHourEntriesHandler({ onCall }));
+    const user = userEvent.setup();
+    await renderCard();
+    await screen.findByRole("table", { name: "Meus lançamentos" });
+
+    const link = screen.getByRole("button", { name: "Ver extrato completo" });
+    expect(link).toHaveTextContent("Ver extrato completo ›");
+    expect(within(link).getByText("›")).toHaveAttribute("aria-hidden", "true");
+
+    await user.click(link);
+
+    const statement = await screen.findByRole("dialog", { name: "Meus lançamentos" });
+    expect(await within(statement).findByText("Atendimento a membro novo")).toBeInTheDocument();
+    expect(onCall).toHaveBeenLastCalledWith({ page: "1", limit: "20" });
+  });
+
+  it("gives the focus back to Ver extrato completo when the statement closes", async () => {
+    server.use(myHourEntriesHandler());
+    const user = userEvent.setup();
+    await renderCard();
+    await screen.findByRole("table", { name: "Meus lançamentos" });
+    const link = screen.getByRole("button", { name: "Ver extrato completo" });
+
+    await user.click(link);
+    const statement = await screen.findByRole("dialog", { name: "Meus lançamentos" });
+    await within(statement).findByText("Atendimento a membro novo");
+    await user.click(within(statement).getAllByRole("button", { name: "Fechar" })[1]);
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(link).toHaveFocus());
+  });
 });

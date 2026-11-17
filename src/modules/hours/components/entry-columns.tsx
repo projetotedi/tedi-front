@@ -20,7 +20,15 @@ export interface EntryColumnWidths {
 
 export interface EntryColumnsOptions {
   widths: EntryColumnWidths;
+  /** Shows, under the activity of an adjusted or rejected entry, what the coordination wrote. */
+  withReviewNote: boolean;
 }
+
+/** The color of the note of the coordination: the yellow of Ajustado and the red of Rejeitado. */
+const REVIEW_NOTE_CLASSES = {
+  adjusted: "text-tedi-status-warning-foreground",
+  rejected: "text-tedi-status-danger-foreground",
+} as const;
 
 /** The headers are in capitals by CSS; the text in the locale stays "Data", "Atividade"… */
 function headerClass(width: string): string {
@@ -31,12 +39,26 @@ function headerClass(width: string): string {
  * The columns of a list of the person's entries: Data, Atividade, Categoria, Declarado, Validado and
  * Status. The hours are always in the format of the TEDI ("2h30"); a time that was not validated yet
  * is a dash a screen reader reads as "Não informado", and a rejected entry is validated with "0h".
+ * With `withReviewNote`, the justification of an adjustment or the reason of a rejection goes under
+ * the activity, in quotes ("Ajustado pela coordenação: “…”").
  */
 export function entryColumns(
   t: TFunction<"hours">,
   locale: string,
-  { widths }: EntryColumnsOptions,
+  { widths, withReviewNote }: EntryColumnsOptions,
 ): Column<HourEntryResponseDto>[] {
+  function reviewNote(entry: HourEntryResponseDto) {
+    const { status, reviewNote: note } = entry;
+    if (!withReviewNote || note === null) return null;
+    if (status !== "adjusted" && status !== "rejected") return null;
+
+    return (
+      <span className={`mt-0.5 block text-sm ${REVIEW_NOTE_CLASSES[status]}`}>
+        {t(`myEntries.reviewNote.${status}`, { note })}
+      </span>
+    );
+  }
+
   return [
     {
       header: t("entries.recent.columns.date"),
@@ -47,7 +69,12 @@ export function entryColumns(
     {
       header: t("entries.recent.columns.activity"),
       headerClassName: headerClass(widths.activity),
-      render: (entry) => <span className="block">{entry.activity}</span>,
+      render: (entry) => (
+        <>
+          <span className="block">{entry.activity}</span>
+          {reviewNote(entry)}
+        </>
+      ),
     },
     {
       header: t("entries.recent.columns.category"),

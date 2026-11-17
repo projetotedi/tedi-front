@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { logHoursIssueDisplay, toLogHoursError } from "../lib/entry-errors";
+import {
+  isStaleEntry,
+  logHoursIssueDisplay,
+  toLogHoursError,
+  toRemoveEntryError,
+} from "../lib/entry-errors";
 
 /** An error as `ApiError` carries it: the status, the code and, for a validation, the fields. */
 function apiError(statusCode: number, error?: string, details?: unknown) {
@@ -107,5 +112,50 @@ describe("logHoursIssueDisplay", () => {
     expect(logHoursIssueDisplay("memberNotFound")).toEqual({ variant: "error", blocks: true });
     expect(logHoursIssueDisplay("network")).toEqual({ variant: "error", blocks: false });
     expect(logHoursIssueDisplay("unknown")).toEqual({ variant: "error", blocks: false });
+  });
+});
+
+describe("toRemoveEntryError", () => {
+  it("is a warning for 409 ENTRY_NOT_PENDING and 409 ATTENDANCE_ENTRY_NOT_REMOVABLE", () => {
+    expect(toRemoveEntryError(apiError(409, "ENTRY_NOT_PENDING"))).toEqual({
+      kind: "warning",
+      warning: "notPending",
+    });
+    expect(toRemoveEntryError(apiError(409, "ATTENDANCE_ENTRY_NOT_REMOVABLE"))).toEqual({
+      kind: "warning",
+      warning: "attendance",
+    });
+  });
+
+  it("is an alert for 404 HOUR_ENTRY_NOT_FOUND", () => {
+    expect(toRemoveEntryError(apiError(404, "HOUR_ENTRY_NOT_FOUND"))).toEqual({
+      kind: "alert",
+      alert: "notFound",
+    });
+  });
+
+  it("is unknown for a known code with another status, and network for a failed connection", () => {
+    expect(toRemoveEntryError(apiError(400, "ENTRY_NOT_PENDING"))).toEqual({
+      kind: "alert",
+      alert: "unknown",
+    });
+    expect(toRemoveEntryError(apiError(409, "HOUR_ENTRY_NOT_FOUND"))).toEqual({
+      kind: "alert",
+      alert: "unknown",
+    });
+    expect(toRemoveEntryError(apiError(404))).toEqual({ kind: "alert", alert: "unknown" });
+    expect(toRemoveEntryError(new TypeError("Failed to fetch"))).toEqual({
+      kind: "alert",
+      alert: "network",
+    });
+    expect(toRemoveEntryError(apiError(503))).toEqual({ kind: "alert", alert: "network" });
+  });
+
+  it("says the entry changed meanwhile for the warnings and the entry that is gone, and not for the network", () => {
+    expect(isStaleEntry({ kind: "warning", warning: "notPending" })).toBe(true);
+    expect(isStaleEntry({ kind: "warning", warning: "attendance" })).toBe(true);
+    expect(isStaleEntry({ kind: "alert", alert: "notFound" })).toBe(true);
+    expect(isStaleEntry({ kind: "alert", alert: "network" })).toBe(false);
+    expect(isStaleEntry({ kind: "alert", alert: "unknown" })).toBe(false);
   });
 });

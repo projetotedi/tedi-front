@@ -135,3 +135,51 @@ export function logHoursIssueDisplay(issue: LogHoursIssue): {
     }
   }
 }
+
+/** The keys, under `removeEntry.warnings` and `removeEntry.errors`, of the refusals of removing an entry. */
+export type RemoveEntryIssue =
+  | { kind: "warning"; warning: "notPending" | "attendance" }
+  | { kind: "alert"; alert: "notFound" | "network" | "unknown" };
+
+/**
+ * What "Remover lançamento" tells the person when the API refuses, read the same way (code and
+ * status together). The statement only offers removing a pending entry that did not come from the
+ * attendance, so a refusal means it changed meanwhile:
+ *
+ * - 409 `ENTRY_NOT_PENDING`: the coordination validated it first (warning);
+ * - 409 `ATTENDANCE_ENTRY_NOT_REMOVABLE`: it is an hour of a lesson (warning);
+ * - 404 `HOUR_ENTRY_NOT_FOUND`: it is gone (alert);
+ * - a failed connection or a gateway: `network`. Anything else: `unknown`.
+ */
+export function toRemoveEntryError(error: unknown): RemoveEntryIssue {
+  const { statusCode, error: code } = readApiError(error);
+
+  if (statusCode === 409 && code === "ENTRY_NOT_PENDING") {
+    return { kind: "warning", warning: "notPending" };
+  }
+  if (statusCode === 409 && code === "ATTENDANCE_ENTRY_NOT_REMOVABLE") {
+    return { kind: "warning", warning: "attendance" };
+  }
+  if (statusCode === 404 && code === "HOUR_ENTRY_NOT_FOUND") {
+    return { kind: "alert", alert: "notFound" };
+  }
+
+  return { kind: "alert", alert: isNetworkFailure(error, statusCode) ? "network" : "unknown" };
+}
+
+/**
+ * Whether the refusal says the entry is not what the statement showed (validated, a lesson hour or
+ * gone): there is nothing left to remove, and the lists behind are out of date.
+ */
+export function isStaleEntry(issue: RemoveEntryIssue): boolean {
+  switch (issue.kind) {
+    case "warning":
+      return true;
+    case "alert":
+      return issue.alert === "notFound";
+    default: {
+      const unknownIssue: never = issue;
+      return unknownIssue;
+    }
+  }
+}
