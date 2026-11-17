@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { lessonsMenuItems } from "@modules/lessons";
 import i18n from "@shared/i18n";
 import { groupMenuItems, MENU_GROUP_IDS } from "@shared/lib/menu";
 
@@ -58,6 +59,17 @@ describe("app menu", () => {
         group: "catalog",
       }),
     );
+  });
+
+  it("takes lessons and calendar from the lessons module, not from the prototype", () => {
+    for (const path of ["/lessons", "/lessons/calendar"]) {
+      expect(prototypeMenuItems.map((item) => item.path)).not.toContain(path);
+      expect(prototypeRoutes.map((route) => `/${route.path}`)).not.toContain(path);
+      expect(appMenuItems).toContainEqual(
+        expect.objectContaining({ path, permission: "lessons.view", group: "lessons" }),
+      );
+    }
+    expect(appMenuItems).toEqual(expect.arrayContaining(lessonsMenuItems));
   });
 
   it("keeps every item in a listed group", () => {

@@ -1,15 +1,23 @@
 import { screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 
 import { CourseCategory, CourseStatus, type RelatedCourseResponseDto } from "@api/generated/model";
+import { Role } from "@shared/lib/role";
 
-import { CourseClassesCard } from "../components/CourseClassesCard";
 import { CourseDataCard } from "../components/CourseDataCard";
-import { CourseDetailHeader } from "../components/CourseDetailHeader";
+import { CourseDetailHeader, type CourseDetailHeaderProps } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { CoursePrerequisitesCard } from "../components/CoursePrerequisitesCard";
 import { CourseWorkloadCard } from "../components/CourseWorkloadCard";
-import { buildArchivedCourseDetail, buildCourseDetail, COURSE_CREATOR_NAME } from "./handlers";
+import {
+  buildArchivedCourseDetail,
+  buildCourseDetail,
+  buildMeUser,
+  COURSE_ARCHIVE_REASON,
+  COURSE_ARCHIVED_AT,
+  COURSE_CREATOR_NAME,
+} from "./handlers";
 import { renderWithProviders, setupCatalogTestServer } from "./test-utils";
 
 setupCatalogTestServer();
@@ -44,11 +52,31 @@ function valueOf(scope: HTMLElement, label: string): HTMLElement {
   return value;
 }
 
+function renderHeader(
+  {
+    course = buildCourseDetail(),
+    isArchived = false,
+    onDuplicate = vi.fn(),
+    onArchive = vi.fn(),
+    onUnarchive = vi.fn(),
+  }: Partial<CourseDetailHeaderProps> = {},
+  role: Role = Role.coordinator,
+) {
+  return renderWithProviders(
+    <CourseDetailHeader
+      course={course}
+      isArchived={isArchived}
+      onDuplicate={onDuplicate}
+      onArchive={onArchive}
+      onUnarchive={onUnarchive}
+    />,
+    { user: buildMeUser(role) },
+  );
+}
+
 describe("CourseDetailHeader", () => {
   it("shows the name as a heading and the tags: category, status, lesson plans and workload", async () => {
-    await renderWithProviders(
-      <CourseDetailHeader course={buildCourseDetail()} isArchived={false} />,
-    );
+    await renderHeader();
 
     expect(
       screen.getByRole("heading", { level: 2, name: "Redes Sociais com Segurança" }),
@@ -62,9 +90,7 @@ describe("CourseDetailHeader", () => {
   });
 
   it("shows Arquivado in the place of Ativo for an archived course", async () => {
-    await renderWithProviders(
-      <CourseDetailHeader course={buildArchivedCourseDetail()} isArchived />,
-    );
+    await renderHeader({ course: buildArchivedCourseDetail(), isArchived: true });
 
     expect(screen.getAllByRole("listitem").map((tag) => tag.textContent)).toEqual([
       "Intermediário",
@@ -76,7 +102,7 @@ describe("CourseDetailHeader", () => {
   });
 
   it("goes by isArchived, which also says what a refused save learned", async () => {
-    await renderWithProviders(<CourseDetailHeader course={buildCourseDetail()} isArchived />);
+    await renderHeader({ isArchived: true });
 
     expect(screen.getByText("Arquivado")).toBeInTheDocument();
     expect(screen.queryByText("Ativo")).not.toBeInTheDocument();
@@ -89,9 +115,7 @@ describe("CourseDetailHeader", () => {
   ])("says %s lesson plans as %s", async (count, expected) => {
     const lessonPlans = buildCourseDetail().lessonPlans.slice(0, count);
 
-    await renderWithProviders(
-      <CourseDetailHeader course={buildCourseDetail({ lessonPlans })} isArchived={false} />,
-    );
+    await renderHeader({ course: buildCourseDetail({ lessonPlans }) });
 
     expect(screen.getByText(expected)).toBeInTheDocument();
   });
@@ -101,24 +125,96 @@ describe("CourseDetailHeader", () => {
     [420, "7h previstas"],
     [0, "0h previstas"],
   ])("shows %s minutes of workload as %s, in hours", async (minutes, expected) => {
-    await renderWithProviders(
-      <CourseDetailHeader
-        course={buildCourseDetail({ plannedWorkloadMinutes: minutes })}
-        isArchived={false}
-      />,
-    );
+    await renderHeader({ course: buildCourseDetail({ plannedWorkloadMinutes: minutes }) });
 
     expect(screen.getByText(expected)).toBeInTheDocument();
   });
 
-  it("has no actions yet and no tag of classes, which wait for their own tasks", async () => {
-    await renderWithProviders(
-      <CourseDetailHeader course={buildCourseDetail()} isArchived={false} />,
-    );
+  describe("the actions", () => {
+    it("has Duplicar curso and Arquivar curso, in the order of the Figma, and no tag of classes, which waits for its own task", async () => {
+      await renderHeader();
 
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(screen.queryByText(/turma/)).not.toBeInTheDocument();
+      expect(screen.getAllByRole("button").map((button) => button.textContent)).toEqual([
+        "Duplicar curso",
+        "Arquivar curso",
+      ]);
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.queryByText(/turma/)).not.toBeInTheDocument();
+    });
+
+    it("draws Duplicar curso as the tertiary button, with the 44px target", async () => {
+      await renderHeader();
+
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toHaveClass(
+        "button--tertiary",
+        "min-h-11",
+      );
+    });
+
+    it("asks the screen to open the dialog when Duplicar curso is pressed, and does nothing else", async () => {
+      const onDuplicate = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({ onDuplicate });
+
+      await user.click(screen.getByRole("button", { name: "Duplicar curso" }));
+
+      expect(onDuplicate).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("keeps Duplicar curso on an archived course: the copy is born active", async () => {
+      await renderHeader({ course: buildArchivedCourseDetail(), isArchived: true });
+
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
+    });
+
+    it("keeps Duplicar curso when only a refused save says the course is archived", async () => {
+      await renderHeader({ isArchived: true });
+
+      expect(screen.getByRole("button", { name: "Duplicar curso" })).toBeEnabled();
+    });
+
+    it("draws Arquivar curso as the danger-soft button and asks the screen to open its dialog", async () => {
+      const onArchive = vi.fn();
+      const onUnarchive = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({ onArchive, onUnarchive });
+
+      const archive = screen.getByRole("button", { name: "Arquivar curso" });
+      expect(archive).toHaveClass("button--danger-soft", "min-h-11");
+
+      await user.click(archive);
+
+      expect(onArchive).toHaveBeenCalledTimes(1);
+      expect(onUnarchive).not.toHaveBeenCalled();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("turns Arquivar curso into Reativar curso for an archived course", async () => {
+      const onArchive = vi.fn();
+      const onUnarchive = vi.fn();
+      const user = userEvent.setup();
+      await renderHeader({
+        course: buildArchivedCourseDetail(),
+        isArchived: true,
+        onArchive,
+        onUnarchive,
+      });
+
+      expect(screen.queryByRole("button", { name: "Arquivar curso" })).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Reativar curso" }));
+
+      expect(onUnarchive).toHaveBeenCalledTimes(1);
+      expect(onArchive).not.toHaveBeenCalled();
+    });
+
+    it("shows the member the name and the tags, and no action at all", async () => {
+      await renderHeader({}, Role.member);
+
+      expect(screen.getByRole("heading", { level: 2 })).toBeInTheDocument();
+      expect(screen.getAllByRole("listitem")).toHaveLength(4);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
   });
 });
 
@@ -185,21 +281,6 @@ describe("CourseDataCard", () => {
     expect(valueOf(data, "Objetivo")).toHaveTextContent(
       "Participar das redes sociais reconhecendo os riscos.",
     );
-  });
-});
-
-describe("CourseClassesCard", () => {
-  it("says the classes are not available yet, with no table, no link and no button", async () => {
-    await renderWithProviders(<CourseClassesCard />);
-
-    const classes = card("Turmas deste curso");
-
-    expect(
-      within(classes).getByText("As turmas deste curso vão aparecer aqui em breve."),
-    ).toBeInTheDocument();
-    expect(within(classes).queryByRole("table")).not.toBeInTheDocument();
-    expect(within(classes).queryByRole("link")).not.toBeInTheDocument();
-    expect(within(classes).queryByRole("button")).not.toBeInTheDocument();
   });
 });
 
@@ -318,7 +399,13 @@ describe("CoursePrerequisitesCard", () => {
 
 describe("CourseHistoryCard", () => {
   it("shows Criado por", async () => {
-    await renderWithProviders(<CourseHistoryCard createdBy={buildCourseDetail().createdBy} />);
+    await renderWithProviders(
+      <CourseHistoryCard
+        createdBy={buildCourseDetail().createdBy}
+        archivedAt={null}
+        archiveReason={null}
+      />,
+    );
 
     expect(valueOf(card("Catálogo e histórico"), "Criado por")).toHaveTextContent(
       COURSE_CREATOR_NAME,
@@ -326,12 +413,44 @@ describe("CourseHistoryCard", () => {
   });
 
   it("shows a dash when createdBy is null, read as Não informado", async () => {
-    await renderWithProviders(<CourseHistoryCard createdBy={null} />);
+    await renderWithProviders(
+      <CourseHistoryCard createdBy={null} archivedAt={null} archiveReason={null} />,
+    );
 
     const createdBy = valueOf(card("Catálogo e histórico"), "Criado por");
 
     expect(createdBy).toHaveTextContent("—Não informado");
     expect(within(createdBy).getByText("—")).toHaveAttribute("aria-hidden", "true");
+  });
+});
+
+describe("CourseHistoryCard of an archived course", () => {
+  it("shows Arquivado em and Motivo after Criado por", async () => {
+    await renderWithProviders(
+      <CourseHistoryCard
+        createdBy={buildCourseDetail().createdBy}
+        archivedAt={COURSE_ARCHIVED_AT}
+        archiveReason={COURSE_ARCHIVE_REASON}
+      />,
+    );
+
+    const history = card("Catálogo e histórico");
+
+    expect(
+      within(history)
+        .getAllByRole("term")
+        .map((label) => label.textContent),
+    ).toEqual(["Criado por", "Arquivado em", "Motivo"]);
+    expect(valueOf(history, "Arquivado em")).toHaveTextContent("14/10/2026");
+    expect(valueOf(history, "Motivo")).toHaveTextContent(COURSE_ARCHIVE_REASON);
+  });
+
+  it("shows Não informado when the course was archived without a reason", async () => {
+    await renderWithProviders(
+      <CourseHistoryCard createdBy={null} archivedAt={COURSE_ARCHIVED_AT} archiveReason={null} />,
+    );
+
+    expect(valueOf(card("Catálogo e histórico"), "Motivo")).toHaveTextContent("Não informado");
   });
 });
 
@@ -356,7 +475,11 @@ describe("the side cards", () => {
           prerequisites={course.prerequisites}
           requiredBy={course.requiredBy}
         />
-        <CourseHistoryCard createdBy={course.createdBy} />
+        <CourseHistoryCard
+          createdBy={course.createdBy}
+          archivedAt={course.archivedAt}
+          archiveReason={course.archiveReason}
+        />
       </>,
     );
 

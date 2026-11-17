@@ -7,6 +7,7 @@ import personIcon from "../assets/icons/person.svg";
 import { authMenuItems } from "@modules/auth";
 import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
+import { lessonsMenuItems } from "@modules/lessons";
 import type { MenuGroup, MenuItem } from "@shared/lib/menu";
 
 /**
@@ -26,8 +27,9 @@ export const appMenuGroups: MenuGroup[] = [
  * (rotas em `prototypeRoutes`, com o mesmo `RequirePermission` do item). Quando um módulo
  * nascer, ele exporta o próprio `<modulo>MenuItems` e substitui a linha correspondente aqui.
  * "Membros" já saiu daqui: é a tela de gestão de acessos do `auth` (GUS-87), em `authMenuItems`.
- * Calendário (`/lessons/calendar`) e Validação de horas (`/hours/review`) são caminhos
- * provisórios; o módulo dono confirma quando nascer.
+ * Aulas e Calendário também saíram (GUS-152): são do módulo `lessons`, em `lessonsMenuItems`.
+ * Validação de horas (`/hours/review`) é um caminho provisório; o módulo dono confirma quando
+ * nascer.
  */
 export const prototypeMenuItems: MenuItem[] = [
   { label: "common:nav.courses", path: "/courses", permission: "catalog.view", group: "catalog" },
@@ -36,13 +38,6 @@ export const prototypeMenuItems: MenuItem[] = [
     path: "/enrollments",
     permission: "enrollments.manage",
     group: "classes",
-  },
-  { label: "common:nav.lessons", path: "/lessons", permission: "lessons.view", group: "lessons" },
-  {
-    label: "common:nav.calendar",
-    path: "/lessons/calendar",
-    permission: "lessons.view",
-    group: "lessons",
   },
   { label: "common:nav.students", path: "/students", permission: "students.view", group: "people" },
   { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", group: "hours" },
@@ -58,10 +53,11 @@ export const prototypeMenuItems: MenuItem[] = [
  * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale
  * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Planos de
  * aula (`catalogMenuItems`) depois de Cursos, e Membros (`authMenuItems`) depois de Alunos,
- * como no Figma.
+ * como no Figma. Aulas e Calendário (`lessonsMenuItems`) já saem na ordem do Figma.
  */
 export const appMenuItems: MenuItem[] = [
   ...classesMenuItems,
+  ...lessonsMenuItems,
   ...prototypeMenuItems,
   ...catalogMenuItems,
   ...authMenuItems,

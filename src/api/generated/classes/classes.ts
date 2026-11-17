@@ -24,9 +24,14 @@ import type {
 import type {
   ApiErrorDto,
   ArchiveDto,
+  ClassDetailDto,
   ClassResponseDto,
+  ClassesSummaryByCourseResponseDto,
   CreateClassDto,
   EditionResponseDto,
+  GetClassesSummaryByCourseParams,
+  ListCourseClasses200,
+  ListCourseClassesParams,
   UpdateClassDto,
 } from "../model";
 
@@ -143,6 +148,252 @@ export const useCreateClass = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getCreateClassMutationOptions(options), queryClient);
 };
+export const getGetClassesSummaryByCourseUrl = (params: GetClassesSummaryByCourseParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/classes/summary-by-course?${stringifiedParams}`
+    : `/classes/summary-by-course`;
+};
+
+export const getClassesSummaryByCourse = async (
+  params: GetClassesSummaryByCourseParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ClassesSummaryByCourseResponseDto[]> => {
+  return httpClient<ClassesSummaryByCourseResponseDto[]>(getGetClassesSummaryByCourseUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClassesSummaryByCourseQueryKey = (params?: GetClassesSummaryByCourseParams) => {
+  return [`/classes/summary-by-course`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetClassesSummaryByCourseQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+  TError = ApiErrorDto,
+>(
+  params: GetClassesSummaryByCourseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getClassesSummaryByCourse>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClassesSummaryByCourseQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getClassesSummaryByCourse>>> = ({
+    signal,
+  }) => getClassesSummaryByCourse(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type GetClassesSummaryByCourseQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getClassesSummaryByCourse>>
+>;
+export type GetClassesSummaryByCourseQueryError = ApiErrorDto;
+
+export function useGetClassesSummaryByCourse<
+  TData = Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+  TError = ApiErrorDto,
+>(
+  params: GetClassesSummaryByCourseParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getClassesSummaryByCourse>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+          TError,
+          Awaited<ReturnType<typeof getClassesSummaryByCourse>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetClassesSummaryByCourse<
+  TData = Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+  TError = ApiErrorDto,
+>(
+  params: GetClassesSummaryByCourseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getClassesSummaryByCourse>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+          TError,
+          Awaited<ReturnType<typeof getClassesSummaryByCourse>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetClassesSummaryByCourse<
+  TData = Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+  TError = ApiErrorDto,
+>(
+  params: GetClassesSummaryByCourseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getClassesSummaryByCourse>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetClassesSummaryByCourse<
+  TData = Awaited<ReturnType<typeof getClassesSummaryByCourse>>,
+  TError = ApiErrorDto,
+>(
+  params: GetClassesSummaryByCourseParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof getClassesSummaryByCourse>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetClassesSummaryByCourseQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getGetClassUrl = (id: string) => {
+  return `/classes/${id}`;
+};
+
+export const getClass = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ClassDetailDto> => {
+  return httpClient<ClassDetailDto>(getGetClassUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetClassQueryKey = (id: string) => {
+  return [`/classes/${id}`] as const;
+};
+
+export const getGetClassQueryOptions = <
+  TData = Awaited<ReturnType<typeof getClass>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetClassQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getClass>>> = ({ signal }) =>
+    getClass(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type GetClassQueryResult = NonNullable<Awaited<ReturnType<typeof getClass>>>;
+export type GetClassQueryError = ApiErrorDto;
+
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClass>>,
+          TError,
+          Awaited<ReturnType<typeof getClass>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getClass>>,
+          TError,
+          Awaited<ReturnType<typeof getClass>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useGetClass<TData = Awaited<ReturnType<typeof getClass>>, TError = ApiErrorDto>(
+  id: string,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof getClass>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getGetClassQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getUpdateClassUrl = (id: string) => {
   return `/classes/${id}`;
 };
@@ -409,6 +660,144 @@ export const useUnarchiveClass = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getUnarchiveClassMutationOptions(options), queryClient);
 };
+export const getListCourseClassesUrl = (id: string, params?: ListCourseClassesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/courses/${id}/classes?${stringifiedParams}`
+    : `/courses/${id}/classes`;
+};
+
+export const listCourseClasses = async (
+  id: string,
+  params?: ListCourseClassesParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListCourseClasses200> => {
+  return httpClient<ListCourseClasses200>(getListCourseClassesUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCourseClassesQueryKey = (id: string, params?: ListCourseClassesParams) => {
+  return [`/courses/${id}/classes`, ...(params ? [params] : [])] as const;
+};
+
+export const getListCourseClassesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCourseClasses>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListCourseClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCourseClasses>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCourseClassesQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listCourseClasses>>> = ({ signal }) =>
+    listCourseClasses(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listCourseClasses>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListCourseClassesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCourseClasses>>
+>;
+export type ListCourseClassesQueryError = ApiErrorDto;
+
+export function useListCourseClasses<
+  TData = Awaited<ReturnType<typeof listCourseClasses>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params: undefined | ListCourseClassesParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCourseClasses>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCourseClasses>>,
+          TError,
+          Awaited<ReturnType<typeof listCourseClasses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCourseClasses<
+  TData = Awaited<ReturnType<typeof listCourseClasses>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListCourseClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCourseClasses>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCourseClasses>>,
+          TError,
+          Awaited<ReturnType<typeof listCourseClasses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListCourseClasses<
+  TData = Awaited<ReturnType<typeof listCourseClasses>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListCourseClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCourseClasses>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListCourseClasses<
+  TData = Awaited<ReturnType<typeof listCourseClasses>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListCourseClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listCourseClasses>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListCourseClassesQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getListEditionsUrl = () => {
   return `/editions`;
 };

@@ -7,6 +7,72 @@
  */
 import * as zod from "zod";
 
+export const listCoursesQueryLimitMax = 100;
+
+export const listCoursesQuerySearchMax = 100;
+
+export const ListCoursesQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listCoursesQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listCoursesQuerySearchMax)
+    .optional()
+    .describe("Search by name, ignoring case and accents."),
+  category: zod.enum(["basic", "intermediate", "advanced"]).optional(),
+  status: zod
+    .enum(["active", "archived"])
+    .optional()
+    .describe(
+      "Omitted lists active and archived courses. The selectors of a new class and of prerequisites send active.",
+    ),
+  hasPrerequisite: zod
+    .boolean()
+    .optional()
+    .describe("true lists only courses with a prerequisite; false, only courses without one."),
+  sort: zod
+    .enum(["name", "createdAt"])
+    .optional()
+    .describe("name is alphabetical; createdAt puts the newest first."),
+});
+
+export const ListCoursesResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        ),
+      createdAt: zod.iso.datetime({ offset: true }),
+      id: zod.uuid(),
+      lessonPlanCount: zod
+        .number()
+        .describe("Lesson plans in the sequence of the course, archived ones included."),
+      name: zod.string(),
+      plannedWorkloadMinutes: zod
+        .number()
+        .describe("Sum of the expected duration of the lesson plans of the sequence, in minutes."),
+      prerequisites: zod
+        .array(
+          zod.object({
+            id: zod.uuid(),
+            name: zod.string(),
+          }),
+        )
+        .describe(
+          "Courses required before this one, archived ones included, ordered by name. Empty when there are none.",
+        ),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
 export const createCourseBodyDescriptionMax = 2000;
 
 export const createCourseBodyNameMax = 200;
@@ -18,8 +84,12 @@ export const createCourseBodyPrerequisiteIdsMax = 20;
 export const CreateCourseBody = zod.object({
   category: zod
     .enum(["basic", "intermediate", "advanced"])
-    .describe("Level of the content. A class takes the category of its course when created.")
-    .describe("Level of the content. A class takes the category of its course when created."),
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    ),
   description: zod.string().max(createCourseBodyDescriptionMax),
   name: zod
     .string()
@@ -48,7 +118,9 @@ export const CreateCourseResponse = zod.object({
   archivedById: zod.uuid().nullable(),
   category: zod
     .enum(["basic", "intermediate", "advanced"])
-    .describe("Level of the content. A class takes the category of its course when created.")
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
     .describe("Level of the content."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the course."),
@@ -84,9 +156,21 @@ export const getCourseResponseLessonPlanCountMin = 0;
 export const getCourseResponsePlannedWorkloadMinutesMin = 0;
 
 export const GetCourseResponse = zod.object({
+  archiveReason: zod
+    .string()
+    .nullable()
+    .describe(
+      "Reason given when the course was archived, shown in its history. Null while it is active or when none was given.",
+    ),
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("When the course was archived (RN-27, GUS-116). Null while it is active."),
   category: zod
     .enum(["basic", "intermediate", "advanced"])
-    .describe("Level of the content. A class takes the category of its course when created.")
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
     .describe("Level of the content."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdBy: zod
@@ -145,7 +229,9 @@ export const GetCourseResponse = zod.object({
       zod.object({
         category: zod
           .enum(["basic", "intermediate", "advanced"])
-          .describe("Level of the content. A class takes the category of its course when created.")
+          .describe(
+            "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+          )
           .describe("Level of the content."),
         id: zod.uuid(),
         name: zod.string(),
@@ -163,7 +249,9 @@ export const GetCourseResponse = zod.object({
       zod.object({
         category: zod
           .enum(["basic", "intermediate", "advanced"])
-          .describe("Level of the content. A class takes the category of its course when created.")
+          .describe(
+            "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+          )
           .describe("Level of the content."),
         id: zod.uuid(),
         name: zod.string(),
@@ -202,10 +290,12 @@ export const updateCourseBodyPrerequisiteIdsMax = 20;
 export const UpdateCourseBody = zod.object({
   category: zod
     .enum(["basic", "intermediate", "advanced"])
-    .describe("Level of the content. A class takes the category of its course when created.")
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
     .optional()
     .describe(
-      "Omit to keep. Never null. Changing the category does not change the classes already created (RN-18).",
+      "Omit to keep. Never null. A class has no category of its own: changing it changes the category its classes show (RN-14).",
     ),
   description: zod
     .string()
@@ -242,7 +332,112 @@ export const UpdateCourseResponse = zod.object({
   archivedById: zod.uuid().nullable(),
   category: zod
     .enum(["basic", "intermediate", "advanced"])
-    .describe("Level of the content. A class takes the category of its course when created.")
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
+    .describe("Level of the content."),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdById: zod.uuid().describe("Id of the person who created the course."),
+  description: zod.string(),
+  id: zod.uuid(),
+  name: zod.string(),
+  objective: zod.string().nullable(),
+  prerequisites: zod
+    .array(
+      zod.object({
+        id: zod.uuid(),
+        name: zod.string(),
+      }),
+    )
+    .describe("Courses required before this one, ordered by name. Empty when there are none."),
+  status: zod
+    .enum(["active", "archived"])
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+  updatedAt: zod.iso
+    .datetime({ offset: true })
+    .describe(
+      "The most recent change to the course, to its prerequisites or to its lesson plan sequence.",
+    ),
+});
+
+export const ArchiveCourseParams = zod.object({
+  id: zod.uuid().describe("Id of the course."),
+});
+
+export const archiveCourseBodyReasonMax = 500;
+
+export const ArchiveCourseBody = zod.object({
+  reason: zod
+    .string()
+    .max(archiveCourseBodyReasonMax)
+    .nullish()
+    .describe("Optional reason. Do not record health information or diagnosis (RNF-13)."),
+});
+
+export const ArchiveCourseResponse = zod.object({
+  archiveReason: zod.string().nullable(),
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("Null while the course is active (RN-27)."),
+  archivedById: zod.uuid().nullable(),
+  category: zod
+    .enum(["basic", "intermediate", "advanced"])
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
+    .describe("Level of the content."),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdById: zod.uuid().describe("Id of the person who created the course."),
+  description: zod.string(),
+  id: zod.uuid(),
+  name: zod.string(),
+  objective: zod.string().nullable(),
+  prerequisites: zod
+    .array(
+      zod.object({
+        id: zod.uuid(),
+        name: zod.string(),
+      }),
+    )
+    .describe("Courses required before this one, ordered by name. Empty when there are none."),
+  status: zod
+    .enum(["active", "archived"])
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+  updatedAt: zod.iso
+    .datetime({ offset: true })
+    .describe(
+      "The most recent change to the course, to its prerequisites or to its lesson plan sequence.",
+    ),
+});
+
+export const DuplicateCourseParams = zod.object({
+  id: zod.uuid().describe("Id of the course."),
+});
+
+export const duplicateCourseBodyNameMax = 200;
+
+export const DuplicateCourseBody = zod.object({
+  name: zod
+    .string()
+    .max(duplicateCourseBodyNameMax)
+    .describe("Unique among all courses, archived ones included, ignoring case."),
+});
+
+export const DuplicateCourseResponse = zod.object({
+  archiveReason: zod.string().nullable(),
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("Null while the course is active (RN-27)."),
+  archivedById: zod.uuid().nullable(),
+  category: zod
+    .enum(["basic", "intermediate", "advanced"])
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
     .describe("Level of the content."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the course."),
@@ -372,6 +567,48 @@ export const ReplaceCourseLessonPlansResponse = zod.object({
     ),
 });
 
+export const UnarchiveCourseParams = zod.object({
+  id: zod.uuid().describe("Id of the course."),
+});
+
+export const UnarchiveCourseResponse = zod.object({
+  archiveReason: zod.string().nullable(),
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("Null while the course is active (RN-27)."),
+  archivedById: zod.uuid().nullable(),
+  category: zod
+    .enum(["basic", "intermediate", "advanced"])
+    .describe(
+      "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+    )
+    .describe("Level of the content."),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdById: zod.uuid().describe("Id of the person who created the course."),
+  description: zod.string(),
+  id: zod.uuid(),
+  name: zod.string(),
+  objective: zod.string().nullable(),
+  prerequisites: zod
+    .array(
+      zod.object({
+        id: zod.uuid(),
+        name: zod.string(),
+      }),
+    )
+    .describe("Courses required before this one, ordered by name. Empty when there are none."),
+  status: zod
+    .enum(["active", "archived"])
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+    .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27)."),
+  updatedAt: zod.iso
+    .datetime({ offset: true })
+    .describe(
+      "The most recent change to the course, to its prerequisites or to its lesson plan sequence.",
+    ),
+});
+
 export const createLessonPlanBodyContentsItemMax = 500;
 
 export const createLessonPlanBodyContentsMax = 50;
@@ -478,8 +715,12 @@ export const GetLessonPlanResponse = zod.object({
       zod.object({
         category: zod
           .enum(["basic", "intermediate", "advanced"])
-          .describe("Level of the content. A class takes the category of its course when created.")
-          .describe("Level of the content. A class takes the category of its course when created."),
+          .describe(
+            "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+          )
+          .describe(
+            "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+          ),
         courseId: zod.uuid(),
         courseName: zod.string(),
         courseStatus: zod

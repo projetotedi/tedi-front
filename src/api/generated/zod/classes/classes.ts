@@ -29,7 +29,7 @@ export const CreateClassBody = zod.object({
   courseId: zod
     .uuid()
     .describe(
-      "Id of the course this class offers. It cannot be changed after the class is created (RN-13).",
+      "Id of the course this class offers. Must be an active course: 400 COURSE_NOT_FOUND when it does not exist, 409 COURSE_ARCHIVED when it is archived (RF-020). It changes later only while the class is planned and has no enrollments.",
     ),
   editionName: zod
     .string()
@@ -70,7 +70,29 @@ export const CreateClassResponse = zod.object({
   archivedById: zod.uuid().nullable(),
   capacity: zod.int().describe("Number of seats."),
   code: zod.string().describe("Unique inside its edition."),
-  courseId: zod.uuid().describe("Id of the course this class offers. It never changes (RN-13)."),
+  course: zod
+    .object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        )
+        .describe(
+          "Always the current category of the course: a class has no category of its own (RN-14).",
+        ),
+      id: zod.uuid(),
+      name: zod.string(),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+        .describe(
+          "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+        ),
+    })
+    .describe(
+      "The course this class offers, read now: its category is the one of the course (RN-14), and changing it there changes it here.",
+    ),
+  courseId: zod.uuid().describe("Id of the course this class offers. Same as course.id."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the class."),
   edition: zod.object({
@@ -87,6 +109,161 @@ export const CreateClassResponse = zod.object({
     .describe("Status of the class (RF-034). Omit for planned.")
     .describe("Independent of archiving: an archived class keeps its status (RF-034, RN-27)."),
   updatedAt: zod.iso.datetime({ offset: true }),
+});
+
+export const GetClassesSummaryByCourseQueryParams = zod.object({
+  courseIds: zod
+    .string()
+    .describe(
+      "Ids of the courses, comma separated: from 1 to 100 ids (maxItems 100), else 400 VALIDATION_FAILED. A repeated id counts once, and spaces around an id are ignored.",
+    ),
+});
+
+export const getClassesSummaryByCourseResponseActiveMin = 0;
+
+export const getClassesSummaryByCourseResponseTotalMin = 0;
+
+export const GetClassesSummaryByCourseResponseItem = zod.object({
+  active: zod
+    .int()
+    .min(getClassesSummaryByCourseResponseActiveMin)
+    .describe(
+      "Classes of the course that are not archived and are planned or in progress: the ones on offer, apart from the history (completed and cancelled). Never more than total.",
+    ),
+  courseId: zod.uuid(),
+  total: zod
+    .int()
+    .min(getClassesSummaryByCourseResponseTotalMin)
+    .describe(
+      "Classes of the course that are not archived (RN-27). It is the total of GET /courses/{id}/classes without a filter. 0 when the course has none, or when the id is not a course.",
+    ),
+});
+export const GetClassesSummaryByCourseResponse = zod.array(GetClassesSummaryByCourseResponseItem);
+
+export const GetClassParams = zod.object({
+  id: zod.uuid().describe("Id of the class."),
+});
+
+export const getClassResponseCourseOneLessonPlanCountMin = 0;
+
+export const getClassResponseCourseOnePlannedWorkloadMinutesMin = 0;
+
+export const getClassResponseEnrollmentsTotalMin = 0;
+
+export const getClassResponseSummaryAverageAttendanceMin = 0;
+export const getClassResponseSummaryAverageAttendanceMax = 1;
+
+export const getClassResponseSummaryEnrolledCountMin = 0;
+
+export const getClassResponseSummaryOccupancyRateMin = 0;
+
+export const GetClassResponse = zod.object({
+  archivedAt: zod.iso
+    .datetime({ offset: true })
+    .nullable()
+    .describe("Set when archived: the class is then read-only (RN-27). Null while active."),
+  capacity: zod.int().describe("Number of seats."),
+  code: zod.string().describe("Unique inside its edition."),
+  course: zod
+    .object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        )
+        .describe(
+          "Always the current category of the course: a class has no category of its own (RN-14).",
+        ),
+      id: zod.uuid(),
+      lessonPlanCount: zod
+        .int()
+        .min(getClassResponseCourseOneLessonPlanCountMin)
+        .describe(
+          "Lesson plans in the sequence of the course, archived plans that stayed in it included (same number as GET /courses/{id}).",
+        ),
+      name: zod.string(),
+      plannedWorkloadMinutes: zod
+        .int()
+        .min(getClassResponseCourseOnePlannedWorkloadMinutesMin)
+        .describe("Sum of the expected durations of the sequence (RF-018, RN-24), never stored."),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+        .describe(
+          "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+        ),
+    })
+    .describe(
+      "The course this class offers, read now: its category is the one of the course (RN-14, RF-029), and changing it there changes it here.",
+    ),
+  createdAt: zod.iso.datetime({ offset: true }),
+  createdBy: zod
+    .object({
+      id: zod.uuid(),
+      name: zod.string(),
+    })
+    .nullable()
+    .describe("Null when the person who created the class was removed."),
+  edition: zod.object({
+    id: zod.uuid(),
+    name: zod.string().describe('Year and term, "<year>.<term>".'),
+  }),
+  endDate: zod.iso.date(),
+  enrollmentsPreview: zod
+    .array(
+      zod.object({
+        enrolledAt: zod.iso.datetime({ offset: true }),
+        id: zod.uuid().describe("Id of the enrollment."),
+        student: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .describe("The enrolled student."),
+      }),
+    )
+    .describe(
+      "Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments (GUS-108). Empty when there are none.",
+    ),
+  enrollmentsTotal: zod
+    .int()
+    .min(getClassResponseEnrollmentsTotalMin)
+    .describe("Active enrollments of the class, the same as summary.enrolledCount."),
+  id: zod.uuid(),
+  location: zod.string().nullable().describe("Null when not informed."),
+  name: zod.string().nullable().describe("Optional label. Null when not informed."),
+  startDate: zod.iso.date(),
+  status: zod
+    .enum(["planned", "in_progress", "completed", "cancelled"])
+    .describe("Status of the class (RF-034). Omit for planned.")
+    .describe("Independent of archiving: an archived class keeps its status (RF-034, RN-27)."),
+  summary: zod.object({
+    averageAttendance: zod
+      .number()
+      .min(getClassResponseSummaryAverageAttendanceMin)
+      .max(getClassResponseSummaryAverageAttendanceMax)
+      .nullable()
+      .describe("Fraction from 0 to 1. Null until the attendance module exists (E6)."),
+    capacity: zod.int().describe("Number of seats."),
+    enrolledCount: zod
+      .int()
+      .min(getClassResponseSummaryEnrolledCountMin)
+      .describe("Active enrollments. 0 until enrollments exist (GUS-108)."),
+    lessonsDone: zod
+      .int()
+      .nullable()
+      .describe("Null until the lessons module feeds the sheet of the class (RF-035)."),
+    lessonsTotal: zod
+      .int()
+      .nullable()
+      .describe("Null until the lessons module feeds the sheet of the class (RF-035)."),
+    occupancyRate: zod
+      .number()
+      .min(getClassResponseSummaryOccupancyRateMin)
+      .describe(
+        "enrolledCount / capacity, rounded to two decimals. Can pass 1 if the class is over capacity.",
+      ),
+  }),
 });
 
 export const UpdateClassParams = zod.object({
@@ -120,6 +297,12 @@ export const UpdateClassBody = zod
       .optional()
       .describe(
         "Omit to keep. Never null. Unique inside its edition, ignoring case, archived classes included.",
+      ),
+    courseId: zod
+      .uuid()
+      .optional()
+      .describe(
+        "Omit to keep. Never null. Id of another course. It changes only while the class is planned and has no active enrollments (409 COURSE_CHANGE_NOT_ALLOWED), and the new course must be active (400 COURSE_NOT_FOUND, 409 COURSE_ARCHIVED). The course the class already has is not a change.",
       ),
     editionName: zod
       .string()
@@ -158,7 +341,7 @@ export const UpdateClassBody = zod
       .describe("Omit to keep. Never null. No rule limits the moves between statuses yet."),
   })
   .describe(
-    "Every field is optional: omit to keep. courseId is not editable (RN-13): the course of a class never changes, and a courseId in the body is ignored.",
+    "Every field is optional: omit to keep. courseId moves the class to another course, only while it is planned and has no active enrollments. There is no category: the class shows the one of its course, and a category in the body is ignored.",
   );
 
 export const UpdateClassResponse = zod.object({
@@ -170,7 +353,29 @@ export const UpdateClassResponse = zod.object({
   archivedById: zod.uuid().nullable(),
   capacity: zod.int().describe("Number of seats."),
   code: zod.string().describe("Unique inside its edition."),
-  courseId: zod.uuid().describe("Id of the course this class offers. It never changes (RN-13)."),
+  course: zod
+    .object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        )
+        .describe(
+          "Always the current category of the course: a class has no category of its own (RN-14).",
+        ),
+      id: zod.uuid(),
+      name: zod.string(),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+        .describe(
+          "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+        ),
+    })
+    .describe(
+      "The course this class offers, read now: its category is the one of the course (RN-14), and changing it there changes it here.",
+    ),
+  courseId: zod.uuid().describe("Id of the course this class offers. Same as course.id."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the class."),
   edition: zod.object({
@@ -212,7 +417,29 @@ export const ArchiveClassResponse = zod.object({
   archivedById: zod.uuid().nullable(),
   capacity: zod.int().describe("Number of seats."),
   code: zod.string().describe("Unique inside its edition."),
-  courseId: zod.uuid().describe("Id of the course this class offers. It never changes (RN-13)."),
+  course: zod
+    .object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        )
+        .describe(
+          "Always the current category of the course: a class has no category of its own (RN-14).",
+        ),
+      id: zod.uuid(),
+      name: zod.string(),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+        .describe(
+          "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+        ),
+    })
+    .describe(
+      "The course this class offers, read now: its category is the one of the course (RN-14), and changing it there changes it here.",
+    ),
+  courseId: zod.uuid().describe("Id of the course this class offers. Same as course.id."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the class."),
   edition: zod.object({
@@ -244,7 +471,29 @@ export const UnarchiveClassResponse = zod.object({
   archivedById: zod.uuid().nullable(),
   capacity: zod.int().describe("Number of seats."),
   code: zod.string().describe("Unique inside its edition."),
-  courseId: zod.uuid().describe("Id of the course this class offers. It never changes (RN-13)."),
+  course: zod
+    .object({
+      category: zod
+        .enum(["basic", "intermediate", "advanced"])
+        .describe(
+          "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
+        )
+        .describe(
+          "Always the current category of the course: a class has no category of its own (RN-14).",
+        ),
+      id: zod.uuid(),
+      name: zod.string(),
+      status: zod
+        .enum(["active", "archived"])
+        .describe("Derived from archivedAt: archived when it is set, active otherwise (RN-27).")
+        .describe(
+          "Status of the course now. An archived course keeps its classes, and takes no new class (RF-020).",
+        ),
+    })
+    .describe(
+      "The course this class offers, read now: its category is the one of the course (RN-14), and changing it there changes it here.",
+    ),
+  courseId: zod.uuid().describe("Id of the course this class offers. Same as course.id."),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod.uuid().describe("Id of the person who created the class."),
   edition: zod.object({
@@ -261,6 +510,53 @@ export const UnarchiveClassResponse = zod.object({
     .describe("Status of the class (RF-034). Omit for planned.")
     .describe("Independent of archiving: an archived class keeps its status (RF-034, RN-27)."),
   updatedAt: zod.iso.datetime({ offset: true }),
+});
+
+export const ListCourseClassesParams = zod.object({
+  id: zod.uuid().describe("Id of the course."),
+});
+
+export const listCourseClassesQueryLimitMax = 100;
+
+export const ListCourseClassesQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listCourseClassesQueryLimitMax).optional(),
+  status: zod
+    .enum(["planned", "in_progress", "completed", "cancelled"])
+    .optional()
+    .describe("Only the classes with this status. One value. Omit for every status."),
+});
+
+export const listCourseClassesResponseDataItemEnrolledCountMin = 0;
+
+export const ListCourseClassesResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      capacity: zod.int().describe("Number of seats."),
+      code: zod.string().describe("Unique inside its edition."),
+      edition: zod.object({
+        id: zod.uuid(),
+        name: zod.string().describe('Year and term, "<year>.<term>".'),
+      }),
+      endDate: zod.iso.date(),
+      enrolledCount: zod
+        .int()
+        .min(listCourseClassesResponseDataItemEnrolledCountMin)
+        .describe(
+          "Active enrollments of the class. Always 0 until the enrollments exist (GUS-108).",
+        ),
+      id: zod.uuid(),
+      name: zod.string().nullable().describe("Optional label. Null when not informed."),
+      startDate: zod.iso.date(),
+      status: zod
+        .enum(["planned", "in_progress", "completed", "cancelled"])
+        .describe("Status of the class (RF-034). Omit for planned.")
+        .describe("Status of the class now (RF-034)."),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
 });
 
 export const ListEditionsResponseItem = zod.object({

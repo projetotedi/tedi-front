@@ -46,6 +46,10 @@
   "comingSoon": {
     "description": "Esta área ainda está em construção e chega em breve."
   },
+  "details": {
+    "empty": "—",
+    "notInformed": "Não informado"
+  },
   "toast": {
     "region": "Notificações",
     "close": "Fechar notificação"
