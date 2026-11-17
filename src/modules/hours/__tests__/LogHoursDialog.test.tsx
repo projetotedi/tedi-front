@@ -313,6 +313,50 @@ describe("LogHoursDialog", () => {
       expect(onCall).toHaveBeenCalledTimes(1);
     });
 
+    it("sends once when Lançar horas is pressed twice before the first answer", async () => {
+      const response = createDeferred();
+      const onCall = vi.fn<(call: LogCall) => void>();
+      server.use(logMyHoursHandler({ delay: response.promise, onCall }));
+      const user = userEvent.setup();
+      const { onClose } = await renderDialog();
+      await fill(user, FIGMA_OWN);
+
+      // Two presses in the same tick: the button is not off yet, because the validation of the
+      // form runs before anything is sent.
+      fireEvent.click(submitButton());
+      fireEvent.click(submitButton());
+
+      await waitFor(() => expect(onCall).toHaveBeenCalledTimes(1));
+      response.resolve();
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onCall).toHaveBeenCalledTimes(1);
+    });
+
+    it("closes with the X while nothing is being sent, and sends nothing", async () => {
+      const onCall = vi.fn<(call: LogCall) => void>();
+      server.use(logMyHoursHandler({ onCall }));
+      const user = userEvent.setup();
+      const { onClose } = await renderDialog();
+
+      await user.click(closeButton());
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onCall).not.toHaveBeenCalled();
+    });
+
+    it("closes with Esc while nothing is being sent, and sends nothing", async () => {
+      const onCall = vi.fn<(call: LogCall) => void>();
+      server.use(logMyHoursHandler({ onCall }));
+      const user = userEvent.setup();
+      const { onClose } = await renderDialog();
+      await waitFor(() => expect(activityField()).toHaveFocus());
+
+      await user.keyboard("{Escape}");
+
+      expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onCall).not.toHaveBeenCalled();
+    });
+
     it("puts a 400 VALIDATION_FAILED on the fields it points at, with the focus on the first", async () => {
       const error: ApiErrorBody = {
         statusCode: 400,
