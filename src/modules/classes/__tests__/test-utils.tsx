@@ -9,6 +9,7 @@ import { getMeQueryKey } from "@api/generated/auth/auth";
 import type { MeResponseDto } from "@api/generated/model";
 import { AuthProvider } from "@modules/auth";
 import i18n from "@shared/i18n";
+import { toast, ToastProvider } from "@shared/ui";
 
 import "../index";
 import { createClassesRoutes } from "../routes";
@@ -19,13 +20,17 @@ export const server = setupServer();
 /**
  * The routes of the classes as the tests of this module render them. What belongs to the `lessons`
  * module (the actions of the header and the card "Aulas da turma") is a slot, and `classes` does not
- * import `lessons`, so here the slots are stand-ins that only say which class they were asked for.
+ * import `lessons`, so here the slots are stand-ins that only say which class they were asked for;
+ * the stand-in of the actions puts Editar turma, which the screen gives it, after its own button.
  * The real ones are tested with the `lessons` module and put together with these routes in
  * `app/__tests__/classes-slots.test.tsx`.
  */
 export const classesRoutes = createClassesRoutes({
-  renderLessonActions: (classDetail) => (
-    <button type="button">{`Ações de aulas ${classDetail.id}`}</button>
+  renderLessonActions: (classDetail, { editClassAction }) => (
+    <>
+      <button type="button">{`Ações de aulas ${classDetail.id}`}</button>
+      {editClassAction}
+    </>
   ),
   renderClassLessons: (classId) => <p>{`Aulas da turma ${classId}`}</p>,
 });
@@ -47,7 +52,10 @@ export function setupClassesTestServer(): void {
     process.env.TZ = TEST_TIME_ZONE;
     server.listen({ onUnhandledRequest: "error" });
   });
-  afterEach(() => server.resetHandlers());
+  afterEach(() => {
+    server.resetHandlers();
+    toast.clear();
+  });
   afterAll(() => {
     server.close();
     if (originalTimeZone === undefined) delete process.env.TZ;
@@ -75,6 +83,7 @@ async function renderRouter(
   const view = render(
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
+      <ToastProvider regionLabel="Notificações" closeLabel="Fechar notificação" />
     </QueryClientProvider>,
   );
 

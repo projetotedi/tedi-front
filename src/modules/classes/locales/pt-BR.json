@@ -14,9 +14,7 @@
   "period": "Período",
   "seats": "Vagas",
   "actions": "Ações",
-  "edit": "Editar",
-  "archive": "Arquivar",
-  "restore": "Restaurar",
+  "restore": "Reativar",
   "loading": "Carregando turmas…",
   "empty": "Nenhuma turma ainda",
   "emptyDescription": "Comece criando a primeira turma.",
@@ -34,14 +32,10 @@
   "cancelled": "Cancelada",
   "newTitle": "Nova turma",
   "editTitle": "Editar turma",
-  "name": "Nome da turma",
   "code": "Código da turma",
-  "save": "Salvar",
   "saveClass": "Salvar turma",
   "saveChanges": "Salvar alterações",
   "cancel": "Cancelar",
-  "archiveConfirm": "Deseja arquivar esta turma?",
-  "confirm": "Arquivar",
   "close": "Fechar",
   "start": "Data de início",
   "end": "Data de término",
@@ -60,8 +54,23 @@
       "courseChangeNotAllowed": "Esta turma não pode mais trocar de curso: ela já não está Planejada ou já tem matrícula.",
       "courseArchived": "Este curso foi arquivado e não recebe turmas novas.",
       "courseNotFound": "Curso não encontrado. Escolha outro curso.",
-      "unknown": "Não foi possível salvar a turma. Tente novamente."
-    }
+      "unknown": "Não foi possível salvar a turma. Tente novamente.",
+      "codeTooLong": "O código pode ter no máximo {{codeMax}} caracteres.",
+      "codeInvalid": "Código inválido.",
+      "codeTaken": "Já existe uma turma com este código nesta edição.",
+      "locationTooLong": "O local pode ter no máximo {{locationMax}} caracteres.",
+      "capacityTooHigh": "Informe no máximo {{capacityMax}} vagas.",
+      "capacityBelowEnrolled": "As vagas não podem ficar abaixo do número de alunos matriculados."
+    },
+    "codePlaceholder": "Ex.: INFO-A",
+    "editionHint": "Escolha uma edição ou digite uma nova, como 2026.2.",
+    "locationPlaceholder": "Ex.: Laboratório 2 — Bloco B",
+    "archivedCourseHint": "Curso arquivado: reative o curso para criar turmas.",
+    "loading": "Carregando a turma…",
+    "loadError": "Não foi possível carregar a turma. Tente novamente.",
+    "saving": "Salvando…",
+    "created": "Turma criada.",
+    "updated": "Turma atualizada."
   },
   "courseClasses": {
     "title": "Turmas deste curso",
@@ -139,7 +148,9 @@
     },
     "members": {
       "title": "Membros alocados"
-    }
+    },
+    "editAction": "Editar turma",
+    "archivedEditHint": "Turma arquivada: reative a turma para editar."
   },
   "courseOrigin": {
     "title": "Curso de origem",
@@ -163,16 +174,48 @@
     "error": "Não foi possível carregar os dados do curso.",
     "unavailable": "Os dados deste curso não estão disponíveis."
   },
-  "editions": {
-    "2024": "2024",
-    "2026-1": "2026.1",
-    "2026-2": "2026.2",
-    "2025-2": "2025.2",
-    "2025-1": "2025.1"
-  },
   "levels": {
     "basic": "Básico",
     "intermediate": "Intermediário",
     "advanced": "Avançado"
+  },
+  "allFeminine": "Todas",
+  "pagination": "Páginas da lista de turmas",
+  "row": {
+    "subtitle": "{{code}} · {{course}}",
+    "seatsLabel": "{{enrolled}} de {{capacity}} vagas ocupadas",
+    "edit": "Editar turma {{name}}",
+    "archive": "Arquivar turma {{name}}",
+    "unarchive": "Reativar turma {{name}}"
+  },
+  "actionErrors": {
+    "archived": "Esta turma está arquivada e não pode ser alterada.",
+    "notFound": "Turma não encontrada. Ela pode ter sido removida.",
+    "hasActiveEnrollments": "Esta turma ainda tem alunos matriculados. Encerre ou remova as matrículas antes de arquivar.",
+    "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+    "unknown": "Não foi possível concluir a ação. Tente novamente."
+  },
+  "archiveDialog": {
+    "title": "Arquivar turma",
+    "warningTitle": "Arquivar encerra a oferta da turma",
+    "warningDescription": "A turma sai das listagens ativas, mas aulas, chamadas e matrículas continuam no histórico. Nada é excluído (RN-27).",
+    "reason": "Motivo (opcional)",
+    "reasonExample": "Turma cancelada por falta de inscritos.",
+    "reasonHelp": "Fica registrado no histórico de turma.",
+    "back": "Voltar",
+    "confirm": "Arquivar turma",
+    "confirming": "Arquivando…",
+    "success": "Turma arquivada.",
+    "errors": {
+      "reasonTooLong": "O motivo pode ter no máximo {{reasonMax}} caracteres."
+    }
+  },
+  "unarchiveDialog": {
+    "title": "Reativar turma",
+    "description": "A turma volta para as listagens ativas, com aulas, chamadas e matrículas como estavam.",
+    "back": "Voltar",
+    "confirm": "Reativar turma",
+    "confirming": "Reativando…",
+    "success": "Turma reativada."
   }
 }

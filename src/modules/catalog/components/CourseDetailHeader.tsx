@@ -1,4 +1,4 @@
-import { useId, type ReactElement } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { CourseDetailDto } from "@api/generated/model";
@@ -18,6 +18,8 @@ export interface CourseDetailHeaderProps {
   onUnarchive: () => void;
   /** Editar curso was pressed (the course is active): the screen opens `CourseFormDialog`. */
   onEdit: () => void;
+  /** + Nova turma, from the `classes` module by slot: it draws nothing for who cannot create classes. */
+  newClassAction?: ReactNode;
 }
 
 /**
@@ -36,9 +38,9 @@ export interface CourseDetailHeaderProps {
  * which is how the content of an archived course gets back into use (RN-27). Arquivar curso
  * (GUS-139) becomes Reativar curso when the course is archived. Editar curso (GUS-129, after them)
  * is turned off on an archived course, with the reason read by the screen reader, as Editar
- * sequência is; + Nova turma does not exist here yet and follows the same rule when it comes. The
- * container of the actions is there only when the person has at least one of them, so a member
- * sees the name and the tags and nothing else.
+ * sequência is; + Nova turma (GUS-133) belongs to the `classes` module, comes ready in
+ * `newClassAction` and follows the same rule. The container of the actions hides itself when
+ * nothing in it is drawn, so a member sees the name and the tags and nothing else.
  */
 export function CourseDetailHeader({
   course,
@@ -47,6 +49,7 @@ export function CourseDetailHeader({
   onArchive,
   onUnarchive,
   onEdit,
+  newClassAction,
 }: CourseDetailHeaderProps): ReactElement {
   const { t } = useTranslation("catalog");
   const canDuplicate = useCan("courses.duplicateArchive");
@@ -81,8 +84,8 @@ export function CourseDetailHeader({
             </li>
           </ul>
         </div>
-        {canDuplicate || canManage ? (
-          <div className="flex flex-wrap gap-3">
+        {canDuplicate || canManage || newClassAction ? (
+          <div className="flex flex-wrap gap-3 empty:hidden">
             {canDuplicate ? (
               <>
                 <Button variant="tertiary" onPress={onDuplicate}>
@@ -116,6 +119,7 @@ export function CourseDetailHeader({
                 ) : null}
               </>
             ) : null}
+            {newClassAction}
           </div>
         ) : null}
       </div>

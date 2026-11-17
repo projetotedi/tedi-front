@@ -9,11 +9,11 @@ import { ClassDetailPage, type ClassDetailSlots } from "./pages/ClassDetailPage"
  * (a module is a closed box), so what one of its screens shows that belongs to another is a slot:
  * the composition in `app/` (`classes-slots.tsx`) fills it and gives the routes to the router.
  *
- * - `renderLessonActions(classDetail)`: the actions about the lessons of the class, in the header
- *   of its screen: Gerar aulas (GUS-157) and + Nova aula (GUS-152). The lessons are the
- *   data of the `lessons` module, so this module only says where they go and which class they are
- *   for. It gets the whole detail because the buttons depend on what the class is (its course,
- *   its first day, whether it is archived).
+ * - `renderLessonActions(classDetail, classActions)`: the actions of the header of the screen of a
+ *   class: Gerar aulas (GUS-157) and + Nova aula (GUS-152), which are the `lessons` module's, with
+ *   Editar turma (`classActions.editClassAction`, GUS-133) between them, in the order of the Figma.
+ *   It gets the whole detail because the buttons depend on what the class is (its course, its
+ *   first day), and `classActions.onEditClass` for the shortcut of Gerar aulas to the form.
  * - `renderClassLessons(classId)`: the card "Aulas da turma" of the screen of the class, which is
  *   the `lessons` module's.
  */

@@ -209,6 +209,18 @@ describe("Gerar aulas and Aulas da turma, filled by the app", () => {
     expect(await within(card("Aulas da turma")).findByRole("table")).toBeInTheDocument();
   });
 
+  it("puts Editar turma of the classes module between Gerar aulas and + Nova aula", async () => {
+    server.use(getClassHandler());
+    await renderRoutes(routes, { route: CLASS_ROUTE, user: buildUser() });
+    await screen.findByRole("heading", { level: 2, name: CLASS_NAME });
+
+    const names = within(card(CLASS_NAME))
+      .getAllByRole("button")
+      .map((button) => button.textContent);
+
+    expect(names.slice(0, 3)).toEqual(["Gerar aulas", "Editar turma", "+ Nova aula"]);
+  });
+
   it("asks the lessons of the class of the route, five of them", async () => {
     const onCall = vi.fn<(call: ListLessonsCall) => void>();
     server.use(getClassHandler(), listLessonsHandler({ onCall }));

@@ -8,6 +8,11 @@ import {
   type ClassDetailDto,
   type ClassDetailSummaryResponseDto,
   type ClassEnrollmentPreviewItemResponseDto,
+  type ClassListItemDto,
+  type ClassResponseDto,
+  type CourseListItemDto,
+  type EditionResponseDto,
+  type ListClasses200,
   type CourseClassItemResponseDto,
   type CourseDetailDto,
   type ListCourseClasses200,
@@ -356,3 +361,206 @@ export function getClassHandler({
     return HttpResponse.json(response);
   });
 }
+
+export const EDITION_2025_ID = "01952ef7-0000-7000-8000-0000000000e2";
+export const OTHER_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c3";
+export const ARCHIVED_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c4";
+
+/** The editions of `GET /editions`, the latest first. */
+export const EDITIONS: EditionResponseDto[] = [
+  { id: EDITION_ID, name: "2026.1" },
+  { id: EDITION_2025_ID, name: "2025.2" },
+];
+
+export function listEditionsHandler({
+  response = EDITIONS,
+  error,
+}: HandlerOptions<void, EditionResponseDto[]> = {}) {
+  return http.get("*/editions", () =>
+    error ? apiErrorResponse(error) : HttpResponse.json(response),
+  );
+}
+
+/** An item of `GET /courses`, with the fields the class screens read. */
+export function buildCourseListItem(overrides: Partial<CourseListItemDto> = {}): CourseListItemDto {
+  return {
+    id: COURSE_ID,
+    name: COURSE_NAME,
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    createdAt: "2024-02-12T12:00:00.000Z",
+    lessonPlanCount: 6,
+    plannedWorkloadMinutes: 450,
+    prerequisites: [],
+    ...overrides,
+  };
+}
+
+/** Informática Básica and Smartphones, active, and Redes Sociais, archived. */
+export const COURSE_ITEMS: CourseListItemDto[] = [
+  buildCourseListItem(),
+  buildCourseListItem({
+    id: OTHER_COURSE_ID,
+    name: "Smartphones no dia a dia",
+    category: CourseCategory.intermediate,
+  }),
+  buildCourseListItem({
+    id: ARCHIVED_COURSE_ID,
+    name: "Redes Sociais",
+    status: CourseStatus.archived,
+  }),
+];
+
+export function listCoursesHandler({
+  response = COURSE_ITEMS,
+}: { response?: CourseListItemDto[] } = {}) {
+  return http.get("*/courses", () =>
+    HttpResponse.json({ data: response, total: response.length, page: 1, limit: 100 }),
+  );
+}
+
+/** An item of `GET /classes`: "Informática Básica — Turma A", in progress, 12 of 15 seats. */
+export function buildClassListItem(overrides: Partial<ClassListItemDto> = {}): ClassListItemDto {
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    course: {
+      id: COURSE_ID,
+      name: COURSE_NAME,
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+    },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-03",
+    endDate: "2026-06-27",
+    capacity: 15,
+    enrolledCount: 12,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    ...overrides,
+  };
+}
+
+export function buildClassesPage(
+  items: ClassListItemDto[] = [buildClassListItem()],
+  {
+    total = items.length,
+    page = 1,
+    limit = 10,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListClasses200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a `GET /classes`, as an object of the parameters that were sent. */
+export type ListClassesCall = Record<string, string>;
+
+export function listClassesHandler({
+  response = buildClassesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListClassesCall, ListClasses200> = {}) {
+  return http.get("*/classes", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** The answer of the mutations of a class: the class as saved. */
+export function buildClassResponse(overrides: Partial<ClassResponseDto> = {}): ClassResponseDto {
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    courseId: COURSE_ID,
+    course: {
+      id: COURSE_ID,
+      name: COURSE_NAME,
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+    },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-03",
+    endDate: "2026-06-27",
+    location: "Laboratório 3, bloco B",
+    capacity: 15,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    archiveReason: null,
+    archivedById: null,
+    createdAt: "2026-02-12T12:00:00.000Z",
+    createdById: "01999a3e-0000-7000-8000-0000000000aa",
+    updatedAt: "2026-02-12T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+export interface MutationCall {
+  id: string | null;
+  body: unknown;
+}
+
+function classMutationHandler(
+  method: "post" | "patch",
+  path: string,
+  defaultResponse: () => ClassResponseDto,
+  status = 200,
+) {
+  return ({
+    response,
+    error,
+    networkError = false,
+    delay,
+    onCall,
+  }: HandlerOptions<MutationCall, ClassResponseDto> = {}) =>
+    http[method](path, async ({ request, params }) => {
+      const text = await request.text();
+      onCall?.({
+        id: params.id ? String(params.id) : null,
+        body: text ? JSON.parse(text) : undefined,
+      });
+      if (delay) await delay;
+
+      if (networkError) return HttpResponse.error();
+      if (error) return apiErrorResponse(error);
+      return HttpResponse.json(response ?? defaultResponse(), { status });
+    });
+}
+
+export const createClassHandler = classMutationHandler(
+  "post",
+  "*/classes",
+  () => buildClassResponse({ status: ClassStatus.planned }),
+  201,
+);
+export const updateClassHandler = classMutationHandler("patch", "*/classes/:id", () =>
+  buildClassResponse(),
+);
+export const archiveClassHandler = classMutationHandler("patch", "*/classes/:id/archive", () =>
+  buildClassResponse({ archivedAt: "2026-10-10T13:00:00.000Z" }),
+);
+export const unarchiveClassHandler = classMutationHandler("patch", "*/classes/:id/unarchive", () =>
+  buildClassResponse(),
+);
+
+export const CLASS_CODE_TAKEN_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CLASS_CODE_TAKEN",
+};
+export const INVALID_PERIOD_ERROR: ApiErrorOptions = { statusCode: 400, error: "INVALID_PERIOD" };
+export const CAPACITY_BELOW_ENROLLED_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CAPACITY_BELOW_ENROLLED",
+};
+export const CLASS_HAS_ACTIVE_ENROLLMENTS_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CLASS_HAS_ACTIVE_ENROLLMENTS",
+};
+export const COURSE_ARCHIVED_ERROR: ApiErrorOptions = { statusCode: 409, error: "COURSE_ARCHIVED" };

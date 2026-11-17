@@ -18,6 +18,8 @@ import {
   getClassHandler,
   getCourseHandler,
   listCourseClassesHandler,
+  listCoursesHandler,
+  listEditionsHandler,
   STUDENT_NAMES,
 } from "./handlers";
 import {
@@ -300,7 +302,11 @@ describe("ClassDetailPage", () => {
       // The actions come after the name and the tags in the header, in a container of their own.
       expect(name.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
       expect(action.parentElement).toHaveClass("flex", "flex-wrap", "gap-3");
-      expect(header().querySelectorAll("button")).toHaveLength(1);
+      expect(
+        within(header())
+          .getAllByRole("button")
+          .map((button) => button.textContent),
+      ).toEqual([`Ações de aulas ${CLASS_ID}`, "Editar turma"]);
     });
 
     it("does not ask the slot for the lesson actions of an archived class", async () => {
@@ -309,14 +315,32 @@ describe("ClassDetailPage", () => {
       expect(screen.queryByText(/Ações de aulas/)).not.toBeInTheDocument();
     });
 
-    it("has no Editar turma yet: only what the lessons slot gives", async () => {
+    it("gives Editar turma to the slot, which opens the form filled with the class", async () => {
+      server.use(listCoursesHandler(), listEditionsHandler());
+      const user = userEvent.setup();
       await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Editar turma"]) {
-        expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-        expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
-      }
-      expect(screen.getAllByRole("button")).toHaveLength(1);
+      await user.click(within(header()).getByRole("button", { name: "Editar turma" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar turma" });
+      expect(await within(dialog).findByDisplayValue("INFO-A")).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(header()).toBeInTheDocument();
+    });
+
+    it("keeps Editar turma on an archived class, turned off with the reason", async () => {
+      await renderPage({ role: Role.coordinator, classDetail: buildArchivedClassDetail() });
+
+      const edit = within(header()).getByRole("button", { name: "Editar turma" });
+      expect(edit).toBeDisabled();
+      expect(edit).toHaveAccessibleDescription("Turma arquivada: reative a turma para editar.");
+    });
+
+    it("the member has no Editar turma", async () => {
+      await renderPage({ role: Role.member });
+
+      expect(screen.queryByRole("button", { name: "Editar turma" })).not.toBeInTheDocument();
     });
 
     it("keeps the cards of the side column to labels and short values", async () => {

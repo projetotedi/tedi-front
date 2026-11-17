@@ -1,426 +1,336 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ClassStatus } from "@api/generated/model";
-import i18n from "@shared/i18n";
 
-import "../index";
 import { ClassFormDialog } from "../components/ClassFormDialog";
-import { initialClasses, type ClassRecord } from "../mocks/classes.mock";
+import {
+  buildClassDetail,
+  CAPACITY_BELOW_ENROLLED_ERROR,
+  CLASS_CODE_TAKEN_ERROR,
+  CLASS_ID,
+  COURSE_ARCHIVED_ERROR,
+  COURSE_ID,
+  createClassHandler,
+  getClassHandler,
+  INVALID_PERIOD_ERROR,
+  listCoursesHandler,
+  listEditionsHandler,
+  OTHER_COURSE_ID,
+  updateClassHandler,
+} from "./handlers";
+import { renderWithProviders, server, setupClassesTestServer } from "./test-utils";
+
+setupClassesTestServer();
+
+type User = ReturnType<typeof userEvent.setup>;
 
 const LOCKED_HINT = "O curso só pode ser trocado enquanto a turma está Planejada e sem matrículas.";
-const CHANGE_NOT_ALLOWED =
-  "Esta turma não pode mais trocar de curso: ela já não está Planejada ou já tem matrícula.";
 
-function classRecord(id: string): ClassRecord {
-  const found = initialClasses.find((record) => record.id === id);
-  if (found === undefined) throw new Error(`No mock class "${id}"`);
-  return found;
-}
-
-/** An ongoing class with 12 enrollments, of "Informática Básica". */
-const IN_PROGRESS = classRecord("1");
-/** A planned class that already has 6 enrollments. */
-const PLANNED_WITH_ENROLLMENTS = classRecord("3");
-/** A planned class with no enrollment: the only one whose course can change. */
-const PLANNED_EMPTY = classRecord("6");
-
-const NEW_CLASS: ClassRecord = {
-  ...PLANNED_EMPTY,
-  id: "new",
-  code: "",
-  name: "",
-  courseId: "computer",
-  enrolled: 0,
-};
-
-interface RenderOptions {
-  initialClass?: ClassRecord;
-  isEditing?: boolean;
-  onSave?: (record: ClassRecord) => void | Promise<void>;
-  onOpenChange?: (isOpen: boolean) => void;
-}
-
-function renderDialog({
-  initialClass = NEW_CLASS,
-  isEditing = false,
-  onSave = vi.fn(),
-  onOpenChange = vi.fn(),
-}: RenderOptions = {}) {
-  render(
+async function renderDialog({
+  classId,
+  initialCourseId,
+  classDetail = buildClassDetail(),
+}: {
+  classId?: string;
+  initialCourseId?: string;
+  classDetail?: ReturnType<typeof buildClassDetail>;
+} = {}) {
+  server.use(
+    listCoursesHandler(),
+    listEditionsHandler(),
+    getClassHandler({ response: classDetail }),
+  );
+  const onClose = vi.fn();
+  const onSaved = vi.fn();
+  await renderWithProviders(
     <ClassFormDialog
-      initialClass={initialClass}
-      isEditing={isEditing}
-      onOpenChange={onOpenChange}
-      onSave={onSave}
+      classId={classId}
+      initialCourseId={initialCourseId}
+      onClose={onClose}
+      onSaved={onSaved}
     />,
   );
-  return { onSave, onOpenChange };
+  const dialog = await screen.findByRole("dialog", {
+    name: classId ? "Editar turma" : "Nova turma",
+  });
+  return { dialog, onClose, onSaved };
 }
 
 const courseTrigger = () => screen.getByRole("button", { name: /Curso/ });
-const statusTrigger = () => screen.getByRole("button", { name: /Status/ });
-const optionNames = () => screen.getAllByRole("option").map((option) => option.textContent);
+const codeField = () => screen.getByRole("textbox", { name: /Código da turma/ });
+const editionField = () => screen.getByRole("combobox", { name: /Edição/ });
+const locationField = () => screen.getByRole("textbox", { name: /Local/ });
+const capacityField = () => screen.getByRole("textbox", { name: /Vagas totais/ });
+const dateGroup = (name: string) => screen.getByRole("group", { name: new RegExp(name) });
 
-async function pickOption(
-  user: ReturnType<typeof userEvent.setup>,
-  trigger: HTMLElement,
-  name: string,
-) {
-  await user.click(trigger);
-  await user.click(screen.getByRole("option", { name }));
+async function pickCourse(user: User, name: string) {
+  await user.click(courseTrigger());
+  await user.click(await screen.findByRole("option", { name }));
 }
 
-async function submit(user: ReturnType<typeof userEvent.setup>, isEditing: boolean) {
-  await user.click(
-    screen.getByRole("button", { name: isEditing ? "Salvar alterações" : "Salvar turma" }),
-  );
+async function typeDate(user: User, name: string, digits: string) {
+  await user.click(within(dateGroup(name)).getAllByRole("spinbutton")[0]);
+  await user.keyboard(digits);
 }
 
-beforeEach(async () => {
-  await i18n.changeLanguage("pt-BR");
-});
+async function fillNewClass(user: User, { edition = "2026.1" } = {}) {
+  await waitFor(() => expect(courseTrigger()).toBeEnabled());
+  await pickCourse(user, "Informática Básica");
+  await user.type(codeField(), "INFO-B");
+  await user.type(editionField(), edition);
+  // The suggestions close when the focus leaves the field.
+  await user.tab();
+  await typeDate(user, "Data de início", "03032026");
+  await typeDate(user, "Data de término", "27062026");
+  await user.type(locationField(), "Laboratório 2");
+  await user.type(capacityField(), "20");
+}
+
+const submit = (user: User, name = "Salvar turma") =>
+  user.click(screen.getByRole("button", { name }));
 
 describe("ClassFormDialog", () => {
-  describe("the fields", () => {
-    it("has no level field and saves no level", async () => {
-      const user = userEvent.setup();
-      const { onSave } = renderDialog();
+  describe("Nova turma", () => {
+    it("has the fields of the Figma, in order, with Status Planejada", async () => {
+      const { dialog } = await renderDialog();
 
-      expect(within(screen.getByRole("dialog")).queryByText(/Nível/)).not.toBeInTheDocument();
-
-      await user.type(screen.getByRole("textbox", { name: "Código da turma" }), "TUR-NEW");
-      await submit(user, false);
-
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-      const saved = vi.mocked(onSave).mock.calls[0][0];
-      expect(saved).not.toHaveProperty("level");
-      expect(saved).not.toHaveProperty("course");
-      expect(saved).toMatchObject({ code: "TUR-NEW", courseId: "computer" });
+      const names = [
+        courseTrigger(),
+        codeField(),
+        editionField(),
+        dateGroup("Data de início"),
+        dateGroup("Data de término"),
+        locationField(),
+        capacityField(),
+      ];
+      for (let index = 1; index < names.length; index += 1) {
+        expect(
+          names[index - 1].compareDocumentPosition(names[index]) & Node.DOCUMENT_POSITION_FOLLOWING,
+        ).toBeTruthy();
+      }
+      expect(within(dialog).getByRole("button", { name: /Status/ })).toHaveTextContent("Planejada");
+      expect(within(dialog).queryByRole("textbox", { name: /Nome/ })).not.toBeInTheDocument();
     });
 
-    it("titles the dialog by what it does", () => {
-      renderDialog();
-
-      expect(screen.getByRole("dialog", { name: "Nova turma" })).toBeInTheDocument();
-    });
-  });
-
-  describe("the course of a new class", () => {
-    it("offers only the active courses, with no archived one", async () => {
+    it("offers only the active courses", async () => {
       const user = userEvent.setup();
-      renderDialog();
+      await renderDialog();
 
       await user.click(courseTrigger());
 
-      expect(optionNames()).toEqual([
+      expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
         "Informática Básica",
-        "Internet",
-        "Redes Sociais com Segurança",
-        "Segurança digital",
         "Smartphones no dia a dia",
       ]);
-      expect(screen.queryByRole("option", { name: /Fotografia digital/ })).not.toBeInTheDocument();
     });
 
-    it("is free to be chosen and has no hint", () => {
-      renderDialog();
-
-      expect(courseTrigger()).toBeEnabled();
-      expect(screen.queryByText(LOCKED_HINT)).not.toBeInTheDocument();
-    });
-
-    it("saves the course that was chosen", async () => {
+    it("creates the class with an edition typed that is not listed, without leaving the dialog", async () => {
+      const onCall = vi.fn();
+      server.use(createClassHandler({ onCall }));
       const user = userEvent.setup();
-      const { onSave } = renderDialog();
+      const { onClose, onSaved } = await renderDialog();
 
-      await pickOption(user, courseTrigger(), "Internet");
-      await user.type(screen.getByRole("textbox", { name: "Código da turma" }), "TUR-NET");
-      await submit(user, false);
+      await fillNewClass(user, { edition: "2026.2" });
+      await submit(user);
 
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-      expect(vi.mocked(onSave).mock.calls[0][0]).toMatchObject({ courseId: "internet" });
-    });
-  });
-
-  describe("changing the course of a class that exists", () => {
-    it("is turned off, with the hint, when the class is in progress", () => {
-      renderDialog({ initialClass: IN_PROGRESS, isEditing: true });
-
-      expect(courseTrigger()).toBeDisabled();
-      expect(courseTrigger()).toHaveAccessibleDescription(LOCKED_HINT);
-      expect(screen.getByText(LOCKED_HINT)).toBeVisible();
-      expect(courseTrigger()).toHaveTextContent("Informática Básica");
-    });
-
-    it("is turned off when the class is planned but already has an enrollment", () => {
-      renderDialog({ initialClass: PLANNED_WITH_ENROLLMENTS, isEditing: true });
-
-      expect(courseTrigger()).toBeDisabled();
-      expect(courseTrigger()).toHaveAccessibleDescription(LOCKED_HINT);
+      await waitFor(() =>
+        expect(onCall).toHaveBeenCalledWith({
+          id: null,
+          body: {
+            courseId: COURSE_ID,
+            code: "INFO-B",
+            editionName: "2026.2",
+            startDate: "2026-03-03",
+            endDate: "2026-06-27",
+            location: "Laboratório 2",
+            capacity: 20,
+            status: ClassStatus.planned,
+          },
+        }),
+      );
+      expect(await screen.findByText("Turma criada.")).toBeInTheDocument();
+      expect(onSaved).toHaveBeenCalledTimes(1);
+      expect(onClose).toHaveBeenCalledTimes(1);
     });
 
-    it.each([ClassStatus.in_progress, ClassStatus.completed, ClassStatus.cancelled])(
-      "is turned off when the class is %s, even with no enrollment",
-      (status) => {
-        renderDialog({ initialClass: { ...PLANNED_EMPTY, status }, isEditing: true });
+    it("suggests the editions of the API", async () => {
+      const user = userEvent.setup();
+      await renderDialog();
 
-        expect(courseTrigger()).toBeDisabled();
-        expect(screen.getByText(LOCKED_HINT)).toBeVisible();
+      await user.type(editionField(), "2025");
+
+      expect(await screen.findByRole("option", { name: "2025.2" })).toBeInTheDocument();
+    });
+
+    it("starts with the course of the screen it was opened from", async () => {
+      await renderDialog({ initialCourseId: OTHER_COURSE_ID });
+
+      await waitFor(() => expect(courseTrigger()).toHaveTextContent("Smartphones no dia a dia"));
+    });
+
+    it("stops an end before the start, on the end, with no request", async () => {
+      const onCall = vi.fn();
+      server.use(createClassHandler({ onCall }));
+      const user = userEvent.setup();
+      await renderDialog();
+
+      await fillNewClass(user);
+      await typeDate(user, "Data de término", "01012026");
+      await submit(user);
+
+      expect(
+        await screen.findByText("A data de término deve ser igual ou posterior à data de início."),
+      ).toBeInTheDocument();
+      expect(onCall).not.toHaveBeenCalled();
+    });
+
+    it("refuses an edition out of the format", async () => {
+      const user = userEvent.setup();
+      await renderDialog();
+
+      await fillNewClass(user, { edition: "2026" });
+      await submit(user);
+
+      expect(await screen.findByText("Informe a edição no formato 2026.1.")).toBeInTheDocument();
+      expect(editionField()).toHaveFocus();
+    });
+
+    it("says which fields are missing and focuses the first one", async () => {
+      const user = userEvent.setup();
+      await renderDialog();
+      await waitFor(() => expect(courseTrigger()).toBeEnabled());
+
+      await submit(user);
+
+      expect((await screen.findAllByText("Campo obrigatório.")).length).toBeGreaterThan(1);
+      expect(courseTrigger()).toHaveFocus();
+    });
+
+    it.each([
+      [CLASS_CODE_TAKEN_ERROR, "Já existe uma turma com este código nesta edição.", codeField],
+      [
+        INVALID_PERIOD_ERROR,
+        "A data de término deve ser igual ou posterior à data de início.",
+        () => within(dateGroup("Data de término")).getAllByRole("spinbutton")[0],
+      ],
+      [COURSE_ARCHIVED_ERROR, "Este curso foi arquivado e não recebe turmas novas.", courseTrigger],
+    ])(
+      "puts the refusal %# of the API on its field, with the focus",
+      async (error, text, field) => {
+        server.use(createClassHandler({ error }));
+        const user = userEvent.setup();
+        const { onClose } = await renderDialog();
+
+        await fillNewClass(user);
+        await submit(user);
+
+        expect(await screen.findByText(text)).toBeInTheDocument();
+        expect(field()).toHaveFocus();
+        expect(onClose).not.toHaveBeenCalled();
       },
     );
 
-    it("is free when the class is planned and has no enrollment", () => {
-      renderDialog({ initialClass: PLANNED_EMPTY, isEditing: true });
+    it("shows a network failure above the buttons", async () => {
+      server.use(createClassHandler({ networkError: true }));
+      const user = userEvent.setup();
+      await renderDialog();
 
-      expect(courseTrigger()).toBeEnabled();
-      expect(screen.queryByText(LOCKED_HINT)).not.toBeInTheDocument();
+      await fillNewClass(user);
+      await submit(user);
+
+      expect(await screen.findByRole("alert")).toHaveTextContent("Não foi possível conectar.");
+    });
+  });
+
+  describe("Editar turma", () => {
+    it("comes filled with the class", async () => {
+      await renderDialog({ classId: CLASS_ID });
+
+      expect(await screen.findByDisplayValue("INFO-A")).toBeInTheDocument();
+      expect(editionField()).toHaveValue("2026.1");
+      expect(locationField()).toHaveValue("Laboratório 3, bloco B");
+      expect(capacityField()).toHaveValue("15");
+      expect(screen.getByRole("button", { name: /Status/ })).toHaveTextContent("Em andamento");
     });
 
-    it("moves the class to the course that was chosen when it is free", async () => {
+    it("sends only what changed and a cleared location as null", async () => {
+      const onCall = vi.fn();
+      server.use(updateClassHandler({ onCall }));
       const user = userEvent.setup();
-      const { onSave } = renderDialog({ initialClass: PLANNED_EMPTY, isEditing: true });
+      await renderDialog({ classId: CLASS_ID });
+      await screen.findByDisplayValue("INFO-A");
 
-      await pickOption(user, courseTrigger(), "Internet");
-      await submit(user, true);
+      await user.clear(capacityField());
+      await user.type(capacityField(), "18");
+      await user.clear(locationField());
+      await submit(user, "Salvar alterações");
 
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-      expect(vi.mocked(onSave).mock.calls[0][0]).toMatchObject({
-        id: PLANNED_EMPTY.id,
-        courseId: "internet",
-      });
+      await waitFor(() =>
+        expect(onCall).toHaveBeenCalledWith({
+          id: CLASS_ID,
+          body: { capacity: 18, location: null },
+        }),
+      );
+      expect(await screen.findByText("Turma atualizada.")).toBeInTheDocument();
     });
 
-    it("keeps sending the course as it is when the field is off, so the rest can be saved", async () => {
+    it("closes with no request when nothing changed", async () => {
+      const onCall = vi.fn();
+      server.use(updateClassHandler({ onCall }));
       const user = userEvent.setup();
-      const { onSave } = renderDialog({ initialClass: IN_PROGRESS, isEditing: true });
+      const { onClose } = await renderDialog({ classId: CLASS_ID });
+      await screen.findByDisplayValue("INFO-A");
 
-      await submit(user, true);
+      await submit(user, "Salvar alterações");
 
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-      expect(vi.mocked(onSave).mock.calls[0][0]).toMatchObject({
-        id: IN_PROGRESS.id,
-        courseId: "computer",
-      });
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onCall).not.toHaveBeenCalled();
     });
 
-    it("looks at the saved status (P11): picking Em andamento in a planned class does not turn the course off", async () => {
-      const user = userEvent.setup();
-      renderDialog({ initialClass: PLANNED_EMPTY, isEditing: true });
+    it("turns the course off, with the reason, once the class is no longer planned", async () => {
+      await renderDialog({ classId: CLASS_ID });
+      await screen.findByDisplayValue("INFO-A");
 
-      await pickOption(user, statusTrigger(), "Em andamento");
-
-      expect(statusTrigger()).toHaveTextContent("Em andamento");
-      expect(courseTrigger()).toBeEnabled();
-      expect(screen.queryByText(LOCKED_HINT)).not.toBeInTheDocument();
-    });
-
-    it("looks at the saved status (P11): picking Planejada in a class in progress does not free the course", async () => {
-      const user = userEvent.setup();
-      renderDialog({ initialClass: IN_PROGRESS, isEditing: true });
-
-      await pickOption(user, statusTrigger(), "Planejada");
-
-      expect(statusTrigger()).toHaveTextContent("Planejada");
       expect(courseTrigger()).toBeDisabled();
-      expect(screen.getByText(LOCKED_HINT)).toBeVisible();
+      expect(screen.getByText(LOCKED_HINT)).toBeInTheDocument();
     });
 
-    it("keeps the archived course the class already has, marked, and offers no other archived one", async () => {
+    it("lets a planned class with no students change its course", async () => {
+      const onCall = vi.fn();
+      server.use(updateClassHandler({ onCall }));
       const user = userEvent.setup();
-      renderDialog({ initialClass: { ...PLANNED_EMPTY, courseId: "photo" }, isEditing: true });
-
-      expect(courseTrigger()).toHaveTextContent("Fotografia digital (arquivado)");
-
-      await user.click(courseTrigger());
-
-      expect(optionNames()).toContain("Fotografia digital (arquivado)");
-      expect(optionNames()).toContain("Informática Básica");
-    });
-
-    it("does not offer the archived course when the class is being created, even if the form came with it", async () => {
-      const user = userEvent.setup();
-      renderDialog({ initialClass: { ...NEW_CLASS, courseId: "photo" }, isEditing: false });
-
-      await user.click(courseTrigger());
-
-      expect(screen.queryByRole("option", { name: /Fotografia digital/ })).not.toBeInTheDocument();
-    });
-  });
-
-  describe("when the API refuses the save", () => {
-    async function saveRefusedWith(error: unknown, initialClass: ClassRecord = PLANNED_EMPTY) {
-      const user = userEvent.setup();
-      const onSave = vi
-        .fn<(record: ClassRecord) => void | Promise<void>>()
-        .mockRejectedValue(error);
-      const { onOpenChange } = renderDialog({ initialClass, isEditing: true, onSave });
-
-      await submit(user, true);
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-
-      return { user, onSave, onOpenChange };
-    }
-
-    it("shows 409 COURSE_CHANGE_NOT_ALLOWED on the course field, with the dialog still open", async () => {
-      const { onOpenChange } = await saveRefusedWith({
-        statusCode: 409,
-        error: "COURSE_CHANGE_NOT_ALLOWED",
+      await renderDialog({
+        classId: CLASS_ID,
+        classDetail: buildClassDetail({ status: ClassStatus.planned, enrollmentsTotal: 0 }),
       });
+      await screen.findByDisplayValue("INFO-A");
 
-      await waitFor(() => expect(courseTrigger()).toHaveAccessibleDescription(CHANGE_NOT_ALLOWED));
-      expect(screen.getByText(CHANGE_NOT_ALLOWED)).toBeVisible();
-      expect(screen.getByRole("dialog", { name: "Editar turma" })).toBeInTheDocument();
-      expect(onOpenChange).not.toHaveBeenCalled();
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    });
-
-    it("sends the focus to the course field, as the other forms do with the field that has the error", async () => {
-      await saveRefusedWith({ statusCode: 409, error: "COURSE_CHANGE_NOT_ALLOWED" });
-
-      await waitFor(() => expect(courseTrigger()).toHaveFocus());
-    });
-
-    it("shows 409 COURSE_ARCHIVED on the course field", async () => {
-      await saveRefusedWith({ statusCode: 409, error: "COURSE_ARCHIVED" });
+      await pickCourse(user, "Smartphones no dia a dia");
+      await submit(user, "Salvar alterações");
 
       await waitFor(() =>
-        expect(courseTrigger()).toHaveAccessibleDescription(
-          "Este curso foi arquivado e não recebe turmas novas.",
-        ),
-      );
-      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    });
-
-    it("shows 400 COURSE_NOT_FOUND on the course field", async () => {
-      await saveRefusedWith({ statusCode: 400, error: "COURSE_NOT_FOUND" });
-
-      await waitFor(() =>
-        expect(courseTrigger()).toHaveAccessibleDescription(
-          "Curso não encontrado. Escolha outro curso.",
-        ),
+        expect(onCall).toHaveBeenCalledWith({ id: CLASS_ID, body: { courseId: OTHER_COURSE_ID } }),
       );
     });
 
-    it("clears the error of the course when another course is chosen and the form is sent again", async () => {
-      const { user, onSave } = await saveRefusedWith({
-        statusCode: 409,
-        error: "COURSE_CHANGE_NOT_ALLOWED",
-      });
-      await waitFor(() => expect(courseTrigger()).toHaveAccessibleDescription(CHANGE_NOT_ALLOWED));
-      onSave.mockResolvedValue(undefined);
-
-      await pickOption(user, courseTrigger(), "Internet");
-      await submit(user, true);
-
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
-      expect(screen.queryByText(CHANGE_NOT_ALLOWED)).not.toBeInTheDocument();
-    });
-
-    describe("with the course field turned off", () => {
-      it.each([
-        [{ statusCode: 409, error: "COURSE_CHANGE_NOT_ALLOWED" }, CHANGE_NOT_ALLOWED],
-        [
-          { statusCode: 409, error: "COURSE_ARCHIVED" },
-          "Este curso foi arquivado e não recebe turmas novas.",
-        ],
-        [
-          { statusCode: 400, error: "COURSE_NOT_FOUND" },
-          "Curso não encontrado. Escolha outro curso.",
-        ],
-      ])(
-        "announces %j in the warning of the form, since a field that is off takes no focus",
-        async (error, message) => {
-          const { onOpenChange } = await saveRefusedWith(error, IN_PROGRESS);
-
-          // `role="alert"` is a live region: the screen reader says it when it appears.
-          expect(await screen.findByRole("alert")).toHaveTextContent(message);
-          expect(screen.getByRole("dialog", { name: "Editar turma" })).toBeInTheDocument();
-          expect(onOpenChange).not.toHaveBeenCalled();
-          // The field stays off, and what it says is still why it is off, not the error.
-          expect(courseTrigger()).toBeDisabled();
-          expect(courseTrigger()).toHaveAccessibleDescription(LOCKED_HINT);
-          expect(screen.getAllByText(message)).toHaveLength(1);
-        },
-      );
-
-      it("leaves the focus on the button that was pressed: the field that is off cannot take it", async () => {
-        await saveRefusedWith({ statusCode: 409, error: "COURSE_CHANGE_NOT_ALLOWED" }, IN_PROGRESS);
-        await screen.findByRole("alert");
-
-        expect(courseTrigger()).not.toHaveFocus();
-        expect(screen.getByRole("button", { name: "Salvar alterações" })).toHaveFocus();
-      });
-    });
-
-    it("shows any other error as a warning of the form, and not on a field", async () => {
-      await saveRefusedWith(new TypeError("Failed to fetch"));
-
-      expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Não foi possível salvar a turma. Tente novamente.",
-      );
-      expect(courseTrigger()).not.toHaveAccessibleDescription(/.+/);
-      expect(screen.getByRole("dialog", { name: "Editar turma" })).toBeInTheDocument();
-    });
-
-    it("treats an error of the API that is not about the course as the general one", async () => {
-      await saveRefusedWith({ statusCode: 500, error: "INTERNAL_SERVER_ERROR" });
-
-      expect(await screen.findByRole("alert")).toHaveTextContent(
-        "Não foi possível salvar a turma. Tente novamente.",
-      );
-    });
-
-    it("lets the person try again after the warning, and clears the warning", async () => {
-      const { user, onSave } = await saveRefusedWith(new Error("boom"));
-      expect(await screen.findByRole("alert")).toBeInTheDocument();
-      onSave.mockResolvedValue(undefined);
-
-      await submit(user, true);
-
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
-      await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
-    });
-  });
-
-  describe("while it saves", () => {
-    it("shows the button as busy and sends the form once, however many times it is pressed", async () => {
+    it("puts seats below the students on Vagas totais", async () => {
+      server.use(updateClassHandler({ error: CAPACITY_BELOW_ENROLLED_ERROR }));
       const user = userEvent.setup();
-      let finish!: () => void;
-      const onSave = vi.fn(
-        () =>
-          new Promise<void>((resolve) => {
-            finish = resolve;
-          }),
-      );
-      renderDialog({ initialClass: PLANNED_EMPTY, isEditing: true, onSave });
-      const save = screen.getByRole("button", { name: "Salvar alterações" });
+      await renderDialog({ classId: CLASS_ID });
+      await screen.findByDisplayValue("INFO-A");
 
-      await user.click(save);
-      await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
-      await user.click(save);
-      await user.click(save);
+      await user.clear(capacityField());
+      await user.type(capacityField(), "5");
+      await submit(user, "Salvar alterações");
 
-      expect(onSave).toHaveBeenCalledTimes(1);
-      expect(save).toHaveAttribute("aria-disabled", "true");
-
-      finish();
-
-      await waitFor(() => expect(save).not.toHaveAttribute("aria-disabled", "true"));
-      expect(onSave).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("the other validations", () => {
-    it("still asks for the code of the class", async () => {
-      const user = userEvent.setup();
-      const { onSave } = renderDialog();
-
-      await submit(user, false);
-
-      expect(await screen.findByText("Campo obrigatório.")).toBeInTheDocument();
-      expect(onSave).not.toHaveBeenCalled();
+      expect(
+        await screen.findByText(
+          "As vagas não podem ficar abaixo do número de alunos matriculados.",
+        ),
+      ).toBeInTheDocument();
+      expect(capacityField()).toHaveFocus();
     });
   });
 });
