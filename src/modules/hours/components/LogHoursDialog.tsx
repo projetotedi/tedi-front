@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 
 import { useLogHoursForMember, useLogMyHours } from "@api/generated/hours/hours";
 import type { HourEntryResponseDto } from "@api/generated/model";
+import { useCan } from "@modules/auth";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, Select, TextField, toast, type SelectOption } from "@shared/ui";
 
@@ -72,9 +73,10 @@ function focusSelect(wrapper: RefObject<HTMLDivElement | null>): void {
  * - **On behalf of a member** (`member`): the title says her name, and a notice under it says who
  *   logged it is recorded and that it goes in as pending; the dialog is described by that notice, so
  *   it is read when it opens (CA3). `POST /members/:id/hour-entries`; on success the hours of that
- *   member are read again. Who may do it (`hours.logForOthers`: the director for her department, the
- *   coordination for anyone) is for the screen that draws the button to check with `useCan`; the API
- *   is the authority, and its refusals have their own messages.
+ *   member are read again. Only who may log for others (`hours.logForOthers`: the director for her
+ *   department, the coordination for anyone) gets the form: without the permission the dialog draws
+ *   nothing. Whether the member is in the department of the director is for the API to say, and its
+ *   refusals have their own messages. `LogHoursForMemberButton` is the button that opens it.
  * - **The fields.** Data starts with today and refuses a day after it; Horas is typed as "2h30" and
  *   sent as minutes; Categoria never offers Aula (the hours of a lesson come from the attendance).
  *   An invalid field shows its message under it, the first one takes the focus and nothing is sent.
@@ -87,8 +89,13 @@ function focusSelect(wrapper: RefObject<HTMLDivElement | null>): void {
  *
  * Mount it only while it is open, so each opening starts clean.
  */
-export function LogHoursDialog({ member, onClose, onLogged }: LogHoursDialogProps): ReactElement {
+export function LogHoursDialog({
+  member,
+  onClose,
+  onLogged,
+}: LogHoursDialogProps): ReactElement | null {
   const { t, i18n } = useTranslation("hours");
+  const canLogForOthers = useCan("hours.logForOthers");
   const queryClient = useQueryClient();
   const formId = useId();
   const noticeId = useId();
@@ -194,6 +201,9 @@ export function LogHoursDialog({ member, onClose, onLogged }: LogHoursDialogProp
 
   const fieldError = (message: string | undefined) =>
     message === undefined ? undefined : t(`logHours.fieldErrors.${message}`);
+
+  // Logging for somebody else is not for everyone: without the permission there is no form at all.
+  if (member !== undefined && !canLogForOthers) return null;
 
   return (
     <Dialog

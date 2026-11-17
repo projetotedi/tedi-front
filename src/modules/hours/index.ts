@@ -11,7 +11,9 @@ registerModuleLocales("hours", { "pt-BR": ptBR, "en-US": enUS });
  * declare a slot and `app/` fills it with these pieces.
  *
  * - `LogHoursButton` ("+ Lançar horas") and `LogHoursDialog` (the form it opens), for "Meu perfil";
- *   the dialog with a `member` logs on behalf of that member, for the sheet of a member (GUS-145);
+ * - `LogHoursForMemberButton` ("+ Lançar horas" with `member`, only with `hours.logForOthers`), for
+ *   the sheet of a member (GUS-145): it opens `LogHoursDialog` on behalf of that member, which
+ *   without the permission draws nothing;
  * - `MyHoursSummary` (the four numbers), `MyEntriesCard` ("Meus lançamentos", whose "Ver extrato
  *   completo ›" opens the statement, where a pending entry is removed) and `MyCategoryHoursCard`
  *   ("Horas por categoria"), the hours of "Meu perfil", each with its own read of `/me/*`.
@@ -22,6 +24,8 @@ registerModuleLocales("hours", { "pt-BR": ptBR, "en-US": enUS });
 export { LogHoursButton } from "./components/LogHoursButton";
 export { LogHoursDialog } from "./components/LogHoursDialog";
 export type { LogHoursDialogProps, LogHoursMember } from "./components/LogHoursDialog";
+export { LogHoursForMemberButton } from "./components/LogHoursForMemberButton";
+export type { LogHoursForMemberButtonProps } from "./components/LogHoursForMemberButton";
 export { MyHoursSummary } from "./components/MyHoursSummary";
 export { MyEntriesCard } from "./components/MyEntriesCard";
 export { MyCategoryHoursCard } from "./components/MyCategoryHoursCard";

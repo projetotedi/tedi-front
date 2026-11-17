@@ -8,6 +8,7 @@ import {
   getGetMyHoursSummaryQueryKey,
   getListPendingHourEntriesQueryKey,
 } from "@api/generated/hours/hours";
+import { Role } from "@shared/lib/role";
 
 import { LogHoursButton } from "../components/LogHoursButton";
 import { LogHoursDialog, type LogHoursDialogProps } from "../components/LogHoursDialog";
@@ -24,6 +25,7 @@ import {
   freezeToday,
   renderWithProviders,
   server,
+  sessionUser,
   setupHoursEntriesTestServer,
 } from "./entries-test-utils";
 
@@ -421,6 +423,21 @@ describe("LogHoursDialog", () => {
   });
 
   describe("on behalf of a member", () => {
+    it("draws nothing on behalf of a member without hours.logForOthers, and asks nothing", async () => {
+      const onMember = vi.fn<(call: LogCall) => void>();
+      server.use(logHoursForMemberHandler({ onCall: onMember }));
+      const onClose = vi.fn();
+      const { container } = await renderWithProviders(
+        <LogHoursDialog member={BEATRIZ} onClose={onClose} />,
+        { user: sessionUser(Role.member) },
+      );
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(screen.queryByText(/Você está lançando em nome de/)).not.toBeInTheDocument();
+      expect(container).toBeEmptyDOMElement();
+      expect(onMember).not.toHaveBeenCalled();
+    });
+
     it("is titled Lançar horas para Beatriz Nunes Carvalho and described by the notice", async () => {
       await renderDialog({ member: BEATRIZ });
 
