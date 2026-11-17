@@ -2,9 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isHttpUrl } from "../lib/url";
-
-const TERM_LINK_CLASS =
-  "-mx-1 inline-flex min-h-11 items-center rounded-sm px-1 font-medium text-sky-800 underline underline-offset-2 outline-hidden focus-visible:ring-3 focus-visible:ring-focus";
+import { LINK_CLASSES } from "./link-classes";
 
 export interface VolunteerTermValueProps {
   /** `volunteerTermUrl` of the registration, which is typed by people. */
@@ -29,7 +27,7 @@ export function VolunteerTermValue({ url }: VolunteerTermValueProps): ReactNode 
   if (!isHttpUrl(url)) return url;
 
   return (
-    <a href={url} target="_blank" rel="noopener noreferrer" className={TERM_LINK_CLASS}>
+    <a href={url} target="_blank" rel="noopener noreferrer" className={LINK_CLASSES}>
       {t("profile.academic.volunteerTermLink")}
       <span className="sr-only"> {t("profile.academic.opensInNewTab")}</span>
     </a>

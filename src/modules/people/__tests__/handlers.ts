@@ -199,7 +199,7 @@ export const MEMBER_NOT_FOUND_ERROR: ApiErrorOptions = {
   message: "Member not found.",
 };
 
-/** The 403 of `GET /members/:id` for a member outside the scope of who asks (another department). */
+/** The 403 of `GET /members/:id` for a member outside the scope of who asks. */
 export const FORBIDDEN_SCOPE_ERROR: ApiErrorOptions = {
   statusCode: 403,
   error: "FORBIDDEN_SCOPE",
