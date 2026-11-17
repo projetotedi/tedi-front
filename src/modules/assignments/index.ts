@@ -8,8 +8,9 @@ registerModuleLocales("assignments", { "pt-BR": ptBR, "en-US": enUS });
 /*
  * The public API of the module. It has no routes and no menu item: the allocation has no screen of
  * its own. It gives pieces that the screens of the other modules put in their places, composed by
- * `app/` (the only one that knows both sides), because the allocation depends on the lessons, the
- * classes and the members (`assignments → lessons`, `assignments → people`) and never the other way:
+ * `app/` (the only one that knows both sides). The allocation depends on the contract of the lessons,
+ * the classes and the members (the generated hooks and keys), not on their modules, and none of them
+ * imports this one:
  *
  * - `NewAssignmentButton` ("+ Nova alocação") and `NewAssignmentDialog` (the form it opens): the
  *   list of members (no context), the sheet of a member (`member`), the screen of a class
