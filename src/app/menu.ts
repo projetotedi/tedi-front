@@ -8,6 +8,7 @@ import { assignmentsMenuItems } from "@modules/assignments";
 import { authMenuItems } from "@modules/auth";
 import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
+import { hoursMenuItems } from "@modules/hours";
 import { lessonsMenuItems } from "@modules/lessons";
 import type { MenuGroup, MenuItem } from "@shared/lib/menu";
 
@@ -31,6 +32,7 @@ export const appMenuGroups: MenuGroup[] = [
  * "Cursos" também (GUS-131): é a listagem do `catalog`, em `catalogMenuItems`.
  * Aulas e Calendário também saíram (GUS-152): são do módulo `lessons`, em `lessonsMenuItems`.
  * Minhas aulas (GUS-161) nasceu no módulo `assignments`, em `assignmentsMenuItems`.
+ * Banco de horas (GUS-165) é do módulo `hours`, em `hoursMenuItems`.
  * Validação de horas (`/hours/review`) é um caminho provisório; o módulo dono confirma quando
  * nascer.
  */
@@ -42,7 +44,6 @@ export const prototypeMenuItems: MenuItem[] = [
     group: "classes",
   },
   { label: "common:nav.students", path: "/students", permission: "students.view", group: "people" },
-  { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", group: "hours" },
   {
     label: "common:nav.hoursReview",
     path: "/hours/review",
@@ -56,12 +57,14 @@ export const prototypeMenuItems: MenuItem[] = [
  * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Cursos e
  * Planos de aula (`catalogMenuItems`) na ordem do Figma, e Membros (`authMenuItems`) depois de Alunos,
  * como no Figma. Aulas e Calendário (`lessonsMenuItems`) já saem na ordem do Figma, e Minhas aulas
- * (`assignmentsMenuItems`) vem logo depois deles, no mesmo grupo.
+ * (`assignmentsMenuItems`) vem logo depois deles, no mesmo grupo. Banco de horas (`hoursMenuItems`)
+ * abre o grupo Horas.
  */
 export const appMenuItems: MenuItem[] = [
   ...classesMenuItems,
   ...lessonsMenuItems,
   ...assignmentsMenuItems,
+  ...hoursMenuItems,
   ...prototypeMenuItems,
   ...catalogMenuItems,
   ...authMenuItems,
