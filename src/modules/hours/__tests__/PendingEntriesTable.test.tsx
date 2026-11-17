@@ -25,6 +25,7 @@ import {
 } from "./bank-handlers";
 import {
   createDeferred,
+  renderBankRoutes,
   renderBankUi,
   setupBankTestServer,
   type BankRenderOptions,
@@ -72,6 +73,23 @@ function morePending(count: number): MemberHourEntryResponseDto[] {
       declaredMinutes: 60,
     }),
   );
+}
+
+/** Adjusts 14/03 to 2h, which leaves the toast with "Ver histórico". */
+async function adjust(user: ReturnType<typeof userEvent.setup>, table: HTMLElement) {
+  await user.click(
+    within(row(table, "14/03")).getByRole("button", {
+      name: "Ajustar lançamento de Beatriz Nunes em 14/03",
+    }),
+  );
+  const dialog = await screen.findByRole("dialog", { name: "Ajustar lançamento" });
+  await user.type(within(dialog).getByRole("textbox", { name: /Novo valor/ }), "2h");
+  await user.type(
+    within(dialog).getByRole("textbox", { name: /Justificativa/ }),
+    "Feito em dupla.",
+  );
+  await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+  await screen.findByText("Lançamento ajustado");
 }
 
 function storeWith(entries: MemberHourEntryResponseDto[]): BankStore {
@@ -374,6 +392,67 @@ describe("PendingEntriesTable", () => {
       screen.getByText("Quando alguém lançar horas, o lançamento aparece aqui para validar."),
     ).toBeInTheDocument();
     expect(screen.getByText("Lançamentos pendentes de validação (0)")).toBeInTheDocument();
+  });
+
+  it("opens the history of a pending entry from its row", async () => {
+    const user = userEvent.setup();
+    await renderQueue();
+    const table = await queueTable();
+
+    await user.click(
+      within(row(table, "14/03")).getByRole("button", {
+        name: "Ver histórico do lançamento de Beatriz Nunes em 14/03",
+      }),
+    );
+
+    const history = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
+    expect(
+      within(history).getByText("Situação atual: Pendente · declarado 4h"),
+    ).toBeInTheDocument();
+    expect(
+      await within(history).findByText("Beatriz Nunes lançou 4h em Planejamento"),
+    ).toBeInTheDocument();
+  });
+
+  it("closes the toast of Ver histórico when the queue leaves the screen", async () => {
+    const user = userEvent.setup();
+    await renderBankRoutes({ route: "/hours?period=2026-03" });
+    const table = await queueTable();
+    await adjust(user, table);
+    const region = screen.getByRole("region", { name: "Notificações" });
+    expect(await within(region).findByRole("button", { name: "Ver histórico" })).toBeVisible();
+
+    // The view of a member mounts its own queue: the one of everyone leaves the screen.
+    await user.click(screen.getByRole("button", { name: "Ver membro Beatriz Nunes" }));
+
+    await waitFor(() => expect(screen.queryByText("Lançamento ajustado")).not.toBeInTheDocument());
+    expect(screen.queryByRole("button", { name: "Ver histórico" })).not.toBeInTheDocument();
+  });
+
+  it("closes the toast of Ver histórico before the toast of the next review", async () => {
+    const user = userEvent.setup();
+    await renderQueue();
+    const table = await queueTable();
+    await adjust(user, table);
+    // The region of the toasts is drawn again when its queue empties: read it each time.
+    const toasts = () => screen.getByRole("region", { name: "Notificações" });
+    await within(toasts()).findByRole("button", { name: "Ver histórico" });
+
+    await user.click(
+      within(row(table, "05/03")).getByRole("button", {
+        name: "Validar lançamento de Beatriz Nunes em 05/03",
+      }),
+    );
+
+    expect(await screen.findByText("1 lançamento validado")).toBeInTheDocument();
+    expect(within(toasts()).queryByText("Lançamento ajustado")).not.toBeInTheDocument();
+
+    await user.click(within(toasts()).getByRole("button", { name: "Fechar notificação" }));
+
+    await waitFor(() =>
+      expect(screen.queryByText("1 lançamento validado")).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText("Lançamento ajustado")).not.toBeInTheDocument();
   });
 
   it("shows the spinner only on the Validar of the row being validated", async () => {

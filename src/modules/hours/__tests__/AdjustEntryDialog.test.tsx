@@ -155,7 +155,7 @@ describe("AdjustEntryDialog", () => {
     expect(screen.getByRole("dialog", { name: "Ajustar lançamento" })).toBeInTheDocument();
   });
 
-  it("saves the adjustment, closes, refreshes the queue and the totals and shows the toast", async () => {
+  it("saves the adjustment, closes, refreshes the queue and the totals and shows the toast with Ver histórico", async () => {
     const user = userEvent.setup();
     const spies = createBankSpies();
     const { dialog, queue } = await renderAndOpen(user, { spies });
@@ -165,6 +165,11 @@ describe("AdjustEntryDialog", () => {
 
     expect(await screen.findByText("Lançamento ajustado")).toBeInTheDocument();
     expect(screen.getByText("Beatriz Nunes: 4h declaradas, 2h validadas.")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Notificações" })).getByRole("button", {
+        name: "Ver histórico",
+      }),
+    ).toBeInTheDocument();
     expect(adjustBodies(spies)).toEqual([{ validatedMinutes: 120, justification: JUSTIFICATION }]);
     expect(screen.queryByRole("dialog", { name: "Ajustar lançamento" })).not.toBeInTheDocument();
     expect(within(queue).queryByText("14/03")).not.toBeInTheDocument();
@@ -207,6 +212,26 @@ describe("AdjustEntryDialog", () => {
     expect(await screen.findByText("Lançamento ajustado")).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Ajustar lançamento" })).not.toBeInTheDocument();
     expect(adjustBodies(spies)).toHaveLength(1);
+  });
+
+  it("opens the history from Ver histórico of the toast", async () => {
+    const user = userEvent.setup();
+    const { dialog } = await renderAndOpen(user);
+    await fill(user, dialog, "2h", JUSTIFICATION);
+    await user.click(within(dialog).getByRole("button", { name: "Salvar ajuste" }));
+    const region = screen.getByRole("region", { name: "Notificações" });
+
+    await user.click(await within(region).findByRole("button", { name: "Ver histórico" }));
+
+    const history = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
+    expect(
+      within(history).getByText("Situação atual: Ajustado · declarado 4h · validado 2h"),
+    ).toBeInTheDocument();
+    expect(
+      await within(history).findByText("Ana Paula Torres ajustou de 4h para 2h"),
+    ).toBeInTheDocument();
+    expect(within(history).getByText(`Justificativa: “${JUSTIFICATION}”`)).toBeInTheDocument();
+    expect(screen.queryByText("Lançamento ajustado")).not.toBeInTheDocument();
   });
 
   it("closes and refreshes the queue when the entry is no longer pending", async () => {

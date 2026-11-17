@@ -16,6 +16,7 @@ import { formatEntryDay } from "../lib/bank-format";
 import { STALE_QUEUE_ERRORS, toReviewError, type ReviewErrorKind } from "../lib/review-errors";
 import { invalidateAfterReview } from "../lib/review-queries";
 import { AdjustEntryDialog } from "./AdjustEntryDialog";
+import { EntryHistoryDialog } from "./EntryHistoryDialog";
 import { RejectEntryDialog } from "./RejectEntryDialog";
 import { ReviewRowActions } from "./ReviewRowActions";
 import { ReviewSelectionBar } from "./ReviewSelectionBar";
@@ -23,7 +24,7 @@ import { ReviewSelectionBar } from "./ReviewSelectionBar";
 const PENDING_PAGE_SIZE = 20;
 
 /** The dialog open over the queue, and the entry it is about. */
-type OpenDialog = { kind: "adjust" | "reject"; entry: MemberHourEntryResponseDto };
+type OpenDialog = { kind: "adjust" | "reject" | "history"; entry: MemberHourEntryResponseDto };
 
 const VALIDATE_ERROR_KEYS: Record<ReviewErrorKind, string> = {
   notPending: "review.errors.notPending",
@@ -56,7 +57,8 @@ export interface PendingEntriesTableProps {
  *   to the title (the button pressed left with its row).
  * - **Ajustar and Rejeitar** open their dialogs, one entry at a time. When the entry leaves the
  *   queue (adjusted, rejected, or no longer pending) the dialog closes, a toast says what happened
- *   and the focus goes to the title.
+ *   and the focus goes to the title. The toast of an adjustment opens the history of the entry
+ *   ("Ver histórico"), and so does the clock of each row.
  */
 export function PendingEntriesTable({ filter }: PendingEntriesTableProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
@@ -71,6 +73,10 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
   // Set when a dialog closes because its entry left the queue: the focus goes to the title once
   // the dialog is gone (while it is open, it keeps the focus inside).
   const focusTitleRef = useRef(false);
+  // The toast of an adjustment, with "Ver histórico": it stays until used or closed, so the queue
+  // closes it before the toast of the next review and when it leaves the screen (its action would
+  // open a dialog that is no longer there).
+  const actionToastRef = useRef<string | null>(null);
   const { canReview, canReviewEntry } = useReviewPermission();
 
   useEffect(() => {
@@ -78,6 +84,8 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     focusTitleRef.current = false;
     titleRef.current?.focus();
   }, [dialog]);
+
+  useEffect(() => closeActionToast, []);
 
   const query = useListPendingHourEntries(
     { ...filter, page, limit: PENDING_PAGE_SIZE },
@@ -135,10 +143,17 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     setSelected(new Set());
   }
 
+  function closeActionToast() {
+    if (actionToastRef.current === null) return;
+    toast.close(actionToastRef.current);
+    actionToastRef.current = null;
+  }
+
   function validateEntries(entries: MemberHourEntryResponseDto[]) {
     if (validate.isPending || inFlightRef.current || entries.length === 0) return;
     inFlightRef.current = true;
     entriesInFlightRef.current = entries;
+    closeActionToast();
 
     validate.mutate(
       { data: { ids: entries.map((entry) => entry.id) } },
@@ -174,17 +189,26 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
 
   function onAdjusted(updated: MemberHourEntryResponseDto) {
     closeDialogAndFocusTitle();
-    toast.success(t("adjust.success"), {
+    closeActionToast();
+    actionToastRef.current = toast.success(t("adjust.success"), {
       description: t("adjust.successDescription", {
         name: nameOf(updated),
         declared: formatHours(updated.declaredMinutes),
         validated: formatHours(updated.validatedMinutes ?? 0),
       }),
+      action: {
+        label: t("adjust.viewHistory"),
+        onPress: () => {
+          actionToastRef.current = null;
+          setDialog({ kind: "history", entry: updated });
+        },
+      },
     });
   }
 
   function onRejected(entry: MemberHourEntryResponseDto) {
     closeDialogAndFocusTitle();
+    closeActionToast();
     toast.neutral(t("reject.success"), {
       description: t("reject.successDescription", { name: nameOf(entry) }),
     });
@@ -192,6 +216,7 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
 
   function onStale() {
     closeDialogAndFocusTitle();
+    closeActionToast();
     toast.error(t("review.errors.entryGone"));
   }
 
@@ -288,6 +313,7 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
         onValidate={() => validateEntries([row])}
         onAdjust={() => setDialog({ kind: "adjust", entry: row })}
         onReject={() => setDialog({ kind: "reject", entry: row })}
+        onHistory={() => setDialog({ kind: "history", entry: row })}
       />
     ),
   };
@@ -399,6 +425,9 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
           onRejected={onRejected}
           onStale={onStale}
         />
+      ) : null}
+      {dialog?.kind === "history" ? (
+        <EntryHistoryDialog entry={dialog.entry} onClose={() => setDialog(null)} />
       ) : null}
     </section>
   );
