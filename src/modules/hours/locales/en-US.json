@@ -98,6 +98,7 @@
     "errors": {
       "network": "We could not log the hours. Check your connection and try again.",
       "forbidden": "You cannot log hours for this person.",
+      "forbiddenOwn": "You cannot log hours.",
       "memberNotFound": "We could not find this member. Reload the page and try again.",
       "selfOnBehalf": "To log your own hours, use + Log hours in My profile.",
       "unknown": "We could not log the hours. Try again."

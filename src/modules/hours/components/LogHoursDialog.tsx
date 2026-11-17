@@ -131,6 +131,8 @@ export function LogHoursDialog({
   const isPending = logMine.isPending || logForMember.isPending;
   const display = issue === null ? null : logHoursIssueDisplay(issue);
   const isBlocked = display?.blocks === true;
+  // A 403 for one's own hours is not about "this person": it has a message of its own.
+  const issueKey = issue === "forbidden" && member === undefined ? "forbiddenOwn" : issue;
 
   useEffect(() => {
     if (issue !== null) issueRef.current?.focus();
@@ -357,7 +359,7 @@ export function LogHoursDialog({
 
         {issue === null || display === null ? null : (
           <div id={issueId} ref={issueRef} tabIndex={-1} className="outline-none sm:col-span-2">
-            <Alert variant={display.variant}>{t(`logHours.errors.${issue}`)}</Alert>
+            <Alert variant={display.variant}>{t(`logHours.errors.${issueKey}`)}</Alert>
           </div>
         )}
       </form>

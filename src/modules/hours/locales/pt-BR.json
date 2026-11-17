@@ -102,6 +102,7 @@
     "errors": {
       "network": "Não foi possível lançar as horas. Verifique a conexão e tente de novo.",
       "forbidden": "Você não pode lançar horas para esta pessoa.",
+      "forbiddenOwn": "Você não pode lançar horas.",
       "memberNotFound": "Não encontramos este membro. Atualize a página e tente de novo.",
       "selfOnBehalf": "Para lançar as suas próprias horas, use + Lançar horas no Meu perfil.",
       "unknown": "Não foi possível lançar as horas. Tente de novo."

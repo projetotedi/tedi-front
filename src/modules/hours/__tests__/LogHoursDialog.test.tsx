@@ -396,6 +396,21 @@ describe("LogHoursDialog", () => {
       await waitFor(() => expect(dateField()).toHaveFocus());
     });
 
+    it("tells a 403 on one's own hours without speaking of another person, and turns Lançar horas off", async () => {
+      server.use(logMyHoursHandler({ error: { statusCode: 403, error: "FORBIDDEN" } }));
+      const user = userEvent.setup();
+      await renderDialog();
+
+      await fill(user, FIGMA_OWN);
+      await user.click(submitButton());
+
+      const alert = await within(dialog()).findByRole("alert");
+      expect(alert).toHaveTextContent(/^Você não pode lançar horas\.$/);
+      expect(within(dialog()).queryByText(/para esta pessoa/)).not.toBeInTheDocument();
+      await waitFor(() => expect(focusedIssue()).toHaveFocus());
+      expect(submitButton()).toBeDisabled();
+    });
+
     it("shows a network failure as an alert with the focus, and a new attempt clears it", async () => {
       server.use(logMyHoursHandler({ networkError: true }));
       const user = userEvent.setup();
