@@ -37,7 +37,9 @@ export class ApiError extends Error {
 }
 
 const ATTACHMENT = /^\s*attachment\b/i;
-const ATTACHMENT_FILE_NAME = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i;
+// RFC 6266: `filename*=<charset>'<language>'<percent-encoded name>` wins over the plain `filename=`.
+const EXTENDED_FILE_NAME = /filename\*=[^']*'[^']*'([^;]+)/i;
+const FILE_NAME = /filename="?([^";]+)"?/i;
 
 /**
  * The name of the file of a download (`Content-Disposition: attachment`), or `null` when the answer
@@ -47,12 +49,24 @@ const ATTACHMENT_FILE_NAME = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i;
 function attachmentFileName(response: Response): string | null {
   const disposition = response.headers.get("content-disposition") ?? "";
   if (!ATTACHMENT.test(disposition)) return null;
-  return ATTACHMENT_FILE_NAME.exec(disposition)?.[1] ?? "";
+
+  const extended = EXTENDED_FILE_NAME.exec(disposition)?.[1];
+  if (extended !== undefined) return decodeFileName(extended.trim());
+  return FILE_NAME.exec(disposition)?.[1] ?? "";
+}
+
+/** A percent-encoded name. One that does not decode (a stray `%`) is still a name: it is kept as it came. */
+function decodeFileName(encoded: string): string {
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
 }
 
 async function parseBody<T>(response: Response): Promise<T> {
   if (response.status === 204) return undefined as T;
-  // A download (the CSV of GET /hours/export) is a File with the name the API gave it: the generated
+  // A download (an exported CSV, for one) is a File with the name the API gave it: the generated
   // type is Blob, and a File is one. The bytes stay as they came, the BOM of the CSV included
   // (`response.text()` would drop it).
   const fileName = attachmentFileName(response);

@@ -47,9 +47,7 @@ export function Checkbox({
       <HeroCheckbox.Content
         className={isLabelHidden ? "min-h-11 min-w-11 items-center" : "min-h-11 items-start gap-3"}
       >
-        <HeroCheckbox.Control
-          className={[CONTROL_CLASS, isLabelHidden ? "" : "mt-0.5"].filter(Boolean).join(" ")}
-        >
+        <HeroCheckbox.Control className={`${CONTROL_CLASS}${isLabelHidden ? "" : " mt-0.5"}`}>
           <HeroCheckbox.Indicator />
         </HeroCheckbox.Control>
         <Label className={isLabelHidden ? "sr-only" : "text-base"}>{label}</Label>

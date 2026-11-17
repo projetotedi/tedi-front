@@ -12,7 +12,7 @@ export interface ToastOptions {
   description?: ReactNode;
 }
 
-/** A button of the toast that does one thing ("Ver histórico"); pressing it also closes the toast. */
+/** A button of the toast that does one thing (opens a detail, say); pressing it also closes the toast. */
 export interface ToastAction {
   label: string;
   onPress: () => void;
@@ -75,7 +75,7 @@ export const toast = {
       timeout: action === undefined ? TOAST_TIMEOUT_MS : 0,
     });
   },
-  /** Neither success nor failure: a fact the person should know ("Lançamento rejeitado"). */
+  /** Neither success nor failure: a fact the person should know (a request was declined, say). */
   neutral(message: ReactNode, options: ToastOptions = {}): string {
     return heroToast(message, { ...options, variant: "default", timeout: TOAST_TIMEOUT_MS });
   },

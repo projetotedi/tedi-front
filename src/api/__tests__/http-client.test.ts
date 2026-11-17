@@ -93,6 +93,51 @@ describe("httpClient", () => {
     expect(await readBytes(file)).toEqual(bytes);
   });
 
+  it("returns a download without Content-Type as a File with an empty type", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response(new Uint8Array([97, 59, 98]), {
+        status: 200,
+        headers: { "Content-Disposition": 'attachment; filename="a.csv"' },
+      }),
+    );
+
+    const result = await httpClient<Blob>("/export");
+
+    expect(result).toBeInstanceOf(File);
+    expect((result as File).name).toBe("a.csv");
+    expect(result.type).toBe("");
+  });
+
+  it.each([
+    [
+      "decodes the name of filename* and prefers it to filename",
+      `attachment; filename="horas.csv"; filename*=UTF-8''horas%20de%20mar%C3%A7o.csv`,
+      "horas de março.csv",
+    ],
+    [
+      "reads filename* with no plain filename",
+      "attachment; filename*=utf-8'pt-BR'relat%C3%B3rio.csv",
+      "relatório.csv",
+    ],
+    [
+      "keeps a filename* that does not decode as it came",
+      "attachment; filename*=UTF-8''100%.csv",
+      "100%.csv",
+    ],
+    ["gives an empty name to an attachment without one", "attachment", ""],
+  ])("%s", async (_case, disposition, name) => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response("a;b", {
+        status: 200,
+        headers: { "Content-Type": "text/csv", "Content-Disposition": disposition },
+      }),
+    );
+
+    const result = await httpClient<Blob>("/export");
+
+    expect((result as File).name).toBe(name);
+  });
+
   it("keeps a JSON error of a download as an ApiError", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       new Response(
