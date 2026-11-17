@@ -40,12 +40,12 @@ describe("Dialog", () => {
 
   it("the table size limits the dialog to 1128px", () => {
     render(
-      <Dialog isOpen onOpenChange={() => {}} title="Extrato" closeLabel="Fechar" size="table">
-        <p>Tabela</p>
+      <Dialog isOpen onOpenChange={() => {}} title="Tabela larga" closeLabel="Fechar" size="table">
+        <p>Conteúdo largo</p>
       </Dialog>,
     );
 
-    expect(screen.getByRole("dialog", { name: "Extrato" })).toHaveClass("max-w-282");
+    expect(screen.getByRole("dialog", { name: "Tabela larga" })).toHaveClass("max-w-282");
   });
 
   it("is described by an element of its body named by aria-describedby", () => {
@@ -53,35 +53,35 @@ describe("Dialog", () => {
       <Dialog
         isOpen
         onOpenChange={() => {}}
-        title="Lançar horas"
+        title="Diálogo com aviso"
         closeLabel="Fechar"
         aria-describedby="notice"
       >
-        <p id="notice">Você está lançando em nome de outra pessoa.</p>
-        <p>Formulário</p>
+        <p id="notice">Aviso que fica no corpo do diálogo.</p>
+        <p>Conteúdo</p>
       </Dialog>,
     );
 
-    expect(screen.getByRole("dialog", { name: "Lançar horas" })).toHaveAccessibleDescription(
-      "Você está lançando em nome de outra pessoa.",
+    expect(screen.getByRole("dialog", { name: "Diálogo com aviso" })).toHaveAccessibleDescription(
+      "Aviso que fica no corpo do diálogo.",
     );
 
     rerender(
       <Dialog
         isOpen
         onOpenChange={() => {}}
-        title="Lançar horas"
-        description="Preencha os campos."
+        title="Diálogo com aviso"
+        description="Descrição do diálogo."
         closeLabel="Fechar"
         aria-describedby="notice"
       >
-        <p id="notice">Você está lançando em nome de outra pessoa.</p>
-        <p>Formulário</p>
+        <p id="notice">Aviso que fica no corpo do diálogo.</p>
+        <p>Conteúdo</p>
       </Dialog>,
     );
 
-    expect(screen.getByRole("dialog", { name: "Lançar horas" })).toHaveAccessibleDescription(
-      "Preencha os campos. Você está lançando em nome de outra pessoa.",
+    expect(screen.getByRole("dialog", { name: "Diálogo com aviso" })).toHaveAccessibleDescription(
+      "Descrição do diálogo. Aviso que fica no corpo do diálogo.",
     );
   });
 
