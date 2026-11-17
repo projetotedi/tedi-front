@@ -45,6 +45,19 @@ const ROLE_DESCRIPTION_KEYS = {
 /** The refusals that say the lesson will not take this application: the person can only leave. */
 const BLOCKING_ERRORS: ReadonlySet<ApplyErrorKind> = new Set(["alreadyApplied", "lessonClosed"]);
 
+/**
+ * The refusals after which what the lists behind the dialog show is out of date, so they are read
+ * again: somebody else was faster (the role was filled, the member already holds a place, the
+ * lesson closed), or the lesson is gone, and its row has to leave the table of the lessons with a
+ * vacancy.
+ */
+const STALE_LISTS_ERRORS: ReadonlySet<ApplyErrorKind> = new Set([
+  "roleFull",
+  "alreadyApplied",
+  "lessonClosed",
+  "lessonNotFound",
+]);
+
 function toRole(value: string): AssignmentRole | null {
   return APPLY_ROLE_ORDER.find((role) => role === value) ?? null;
 }
@@ -65,8 +78,9 @@ function toRole(value: string): AssignmentRole | null {
  * - **The refusals of the API.** A `VALIDATION_FAILED` that points at a field goes there. 409
  *   `ROLE_FULL` turns that role off, clears the choice and refreshes the lists. 409 `ALREADY_APPLIED`
  *   and `LESSON_IN_PAST`/`LESSON_CANCELLED` show as a warning, turn Enviar candidatura off and refresh
- *   the lists, since what is on the screen behind is out of date. The others show as an alert. Any
- *   of them takes the focus.
+ *   the lists, since what is on the screen behind is out of date. 404 `LESSON_NOT_FOUND` shows as an
+ *   alert and refreshes them too, so the row of a lesson that is gone leaves the table behind. The
+ *   others show as an alert. Any of them takes the focus.
  * - **While it is on its way** the dialog cannot be closed (X, Esc and Voltar are off) and a
  *   second press is ignored.
  *
@@ -124,10 +138,7 @@ export function ApplyToLessonDialog({
       setFullRoles((current) => new Set(current).add(role));
       setValue("role", null);
     }
-    if (result.kind === "roleFull" || BLOCKING_ERRORS.has(result.kind)) {
-      // What the lists behind the dialog show is out of date: somebody else was faster.
-      void invalidateAfterApplied(queryClient, lesson.id);
-    }
+    if (STALE_LISTS_ERRORS.has(result.kind)) void invalidateAfterApplied(queryClient, lesson.id);
     setSubmitError(result.kind);
   }
 

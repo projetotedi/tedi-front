@@ -538,6 +538,30 @@ describe("ApplyToLessonDialog", () => {
       expect(onClose).not.toHaveBeenCalled();
     });
 
+    it("refreshes the lists when the API says the lesson is gone (404 LESSON_NOT_FOUND), so its row leaves the table behind", async () => {
+      server.use(applyToLessonHandler({ error: LESSON_NOT_FOUND_ERROR }));
+      const user = userEvent.setup();
+      const { onClose, queryClient } = await renderApply();
+      const keys = {
+        open: [...getListOpenLessonsQueryKey()],
+        agenda: [...getListMyAssignmentsQueryKey({ from: "2026-03-01", to: "2026-03-31" })],
+        queue: [...getListPendingApplicationsQueryKey(PENDING_APPLICATIONS_PARAMS)],
+        assignments: [...getListLessonAssignmentsQueryKey(LESSON_ID)],
+      };
+      for (const key of Object.values(keys)) queryClient.setQueryData(key, {});
+      await user.click(screen.getByText("Monitor(a)"));
+
+      await submit(user);
+
+      const alert = await screen.findByRole("alert");
+      expect(alert).toHaveTextContent("Aula não encontrada. Ela pode ter sido removida.");
+      await waitFor(() => expect(alert.parentElement).toHaveFocus());
+      for (const key of Object.values(keys)) {
+        expect(queryClient.getQueryState(key)?.isInvalidated, JSON.stringify(key)).toBe(true);
+      }
+      expect(onClose).not.toHaveBeenCalled();
+    });
+
     it("shows a network failure as the generic alert, and the next attempt clears it and sends", async () => {
       server.use(applyToLessonHandler({ networkError: true }));
       const user = userEvent.setup();
