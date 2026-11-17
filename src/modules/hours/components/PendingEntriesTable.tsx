@@ -23,6 +23,9 @@ import { ReviewSelectionBar } from "./ReviewSelectionBar";
 
 const PENDING_PAGE_SIZE = 20;
 
+/** Where the validation on its way was asked from: the bar of the batch, or the Validar of a row. */
+type ValidationOrigin = { kind: "batch" } | { kind: "row"; entryId: string };
+
 /** The dialog open over the queue, and the entry it is about. */
 type OpenDialog = { kind: "adjust" | "reject" | "history"; entry: MemberHourEntryResponseDto };
 
@@ -70,6 +73,7 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
   const [dialog, setDialog] = useState<OpenDialog | null>(null);
+  const [origin, setOrigin] = useState<ValidationOrigin | null>(null);
   // Set when a dialog closes because its entry left the queue: the focus goes to the title once
   // the dialog is gone (while it is open, it keeps the focus inside).
   const focusTitleRef = useRef(false);
@@ -104,8 +108,13 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
   const selectable = canReview ? rows.filter(canReviewEntry) : [];
   const selectedRows = selectable.filter((row) => selected.has(row.id));
   const isBusy = validate.isPending;
-  const validatingIds = validate.isPending ? validate.variables?.data.ids : undefined;
-  const isBatchValidating = validatingIds !== undefined && validatingIds.length > 1;
+  // The spinner goes on the button that was pressed, whatever the number of entries it sent.
+  const validating = validate.isPending ? origin : null;
+  const selectionSummary = t("review.selection", {
+    count: selectedRows.length,
+    total: selectable.length,
+    hours: formatHours(selectedRows.reduce((sum, row) => sum + row.declaredMinutes, 0)),
+  });
   const totalPages =
     query.data === undefined ? 1 : Math.max(1, Math.ceil(query.data.total / query.data.limit));
 
@@ -151,10 +160,11 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     actionToastRef.current = null;
   }
 
-  function validateEntries(entries: MemberHourEntryResponseDto[]) {
+  function validateEntries(entries: MemberHourEntryResponseDto[], from: ValidationOrigin) {
     if (validate.isPending || inFlightRef.current || entries.length === 0) return;
     inFlightRef.current = true;
     entriesInFlightRef.current = entries;
+    setOrigin(from);
     closeActionToast();
 
     validate.mutate(
@@ -242,8 +252,8 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
               entry={row}
               isOwn={!canReviewEntry(row)}
               isBusy={isBusy}
-              isValidating={validatingIds?.length === 1 && validatingIds[0] === row.id}
-              onValidate={() => validateEntries([row])}
+              isValidating={validating?.kind === "row" && validating.entryId === row.id}
+              onValidate={() => validateEntries([row], { kind: "row", entryId: row.id })}
               onAdjust={() => setDialog({ kind: "adjust", entry: row })}
               onReject={() => setDialog({ kind: "reject", entry: row })}
               onHistory={() => setDialog({ kind: "history", entry: row })}
@@ -298,16 +308,24 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
           </span>
         }
         aside={
-          selectedRows.length > 0 ? (
-            <ReviewSelectionBar
-              selectedCount={selectedRows.length}
-              total={selectable.length}
-              minutes={selectedRows.reduce((sum, row) => sum + row.declaredMinutes, 0)}
-              isBusy={isBusy}
-              isValidating={isBatchValidating}
-              onClear={() => setSelected(new Set())}
-              onValidate={() => validateEntries(selectedRows)}
-            />
+          canReview ? (
+            <>
+              {/* Always on the page, so the first count is read too (a live region that is born
+                  with its text is not); the bar only draws it. */}
+              <p role="status" className="sr-only">
+                {selectedRows.length > 0 ? selectionSummary : ""}
+              </p>
+              {selectedRows.length > 0 ? (
+                <ReviewSelectionBar
+                  selectedCount={selectedRows.length}
+                  summary={selectionSummary}
+                  isBusy={isBusy}
+                  isValidating={validating?.kind === "batch"}
+                  onClear={() => setSelected(new Set())}
+                  onValidate={() => validateEntries(selectedRows, { kind: "batch" })}
+                />
+              ) : null}
+            </>
           ) : undefined
         }
       >

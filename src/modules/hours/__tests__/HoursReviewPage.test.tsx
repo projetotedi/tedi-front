@@ -19,7 +19,7 @@ describe("HoursReviewPage", () => {
     expect(request.url.searchParams.has("to")).toBe(false);
     expect(request.url.searchParams.get("limit")).toBe("20");
     expect(
-      screen.getByRole("checkbox", { name: "Selecionar todos os lançamentos" }),
+      screen.getByRole("checkbox", { name: "Selecionar todos desta página" }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "Validar lançamento de Rafael Souza em 12/03" }),

@@ -56,7 +56,13 @@ function entryBox(name: string, date: string): HTMLElement {
 }
 
 function selectAllBox(): HTMLElement {
-  return screen.getByRole("checkbox", { name: "Selecionar todos os lançamentos" });
+  return screen.getByRole("checkbox", { name: "Selecionar todos desta página" });
+}
+
+/** The count of the selection: said by the live region, and drawn by the bar with the same text. */
+function expectSelection(text: string) {
+  expect(screen.getByRole("status")).toHaveTextContent(text);
+  expect(screen.getAllByText(text)).toHaveLength(2);
 }
 
 function validateBodies(spies: ReturnType<typeof createBankSpies>): unknown[] {
@@ -109,7 +115,7 @@ describe("PendingEntriesTable", () => {
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
     ).toEqual([
-      "Selecionar todos os lançamentos",
+      "Selecionar todos desta página",
       "Data",
       "Membro",
       "Atividade",
@@ -151,10 +157,27 @@ describe("PendingEntriesTable", () => {
     await user.click(entryBox("Beatriz Nunes", "05/03"));
     await user.click(entryBox("Rafael Souza", "12/03"));
 
-    expect(screen.getByText("2 de 3 selecionados · 8h")).toBeInTheDocument();
+    expectSelection("2 de 3 selecionados · 8h");
     expect(selectAllBox()).toBePartiallyChecked();
     expect(screen.getByRole("button", { name: "Validar selecionados (2)" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Limpar seleção" })).toBeInTheDocument();
+  });
+
+  it("keeps the live region of the count on the page, empty with no selection, so the first count is read", async () => {
+    const user = userEvent.setup();
+    await renderQueue();
+    await queueTable();
+    const status = screen.getByRole("status");
+    expect(status).toBeEmptyDOMElement();
+
+    await user.click(entryBox("Beatriz Nunes", "05/03"));
+
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toHaveTextContent("1 de 3 selecionado · 4h");
+
+    await user.click(screen.getByRole("button", { name: "Limpar seleção" }));
+
+    expect(status).toBeEmptyDOMElement();
   });
 
   it("selects every entry from the header and clears the selection", async () => {
@@ -164,7 +187,7 @@ describe("PendingEntriesTable", () => {
 
     await user.click(selectAllBox());
 
-    expect(screen.getByText("3 de 3 selecionados · 12h")).toBeInTheDocument();
+    expectSelection("3 de 3 selecionados · 12h");
     expect(selectAllBox()).toBeChecked();
     expect(entryBox("Beatriz Nunes", "14/03")).toBeChecked();
 
@@ -298,7 +321,7 @@ describe("PendingEntriesTable", () => {
     await user.click(screen.getByRole("button", { name: "Validar selecionados (2)" }));
 
     expect(await screen.findByText("Não foi possível validar. Tente de novo.")).toBeInTheDocument();
-    expect(screen.getByText("2 de 3 selecionados · 8h")).toBeInTheDocument();
+    expectSelection("2 de 3 selecionados · 8h");
     expect(entryBox("Rafael Souza", "12/03")).toBeChecked();
   });
 
@@ -318,7 +341,7 @@ describe("PendingEntriesTable", () => {
 
     await user.click(selectAllBox());
 
-    expect(screen.getByText("3 de 3 selecionados · 12h")).toBeInTheDocument();
+    expectSelection("3 de 3 selecionados · 12h");
     expect(selectAllBox()).toBeChecked();
     expect(entryBox("Ana Paula Torres", "16/03")).not.toBeChecked();
   });
@@ -373,7 +396,7 @@ describe("PendingEntriesTable", () => {
     await queueTable();
     expect(screen.getByText("Mostrando 20 de 25 lançamentos")).toBeInTheDocument();
     await user.click(entryBox("Beatriz Nunes", "05/03"));
-    expect(screen.getByText("1 de 20 selecionados · 4h")).toBeInTheDocument();
+    expectSelection("1 de 20 selecionado · 4h");
 
     const pages = screen.getByRole("navigation", { name: "Páginas dos lançamentos pendentes" });
     await user.click(within(pages).getByRole("button", { name: "Página 2" }));
@@ -479,6 +502,23 @@ describe("PendingEntriesTable", () => {
       expect(screen.queryByText("1 lançamento validado")).not.toBeInTheDocument(),
     );
     expect(screen.queryByText("Lançamento ajustado")).not.toBeInTheDocument();
+  });
+
+  it("shows the spinner on Validar selecionados when the batch it sends has one entry", async () => {
+    const user = userEvent.setup();
+    const spies = createBankSpies();
+    await renderQueue({ spies });
+    const table = await queueTable();
+    await user.click(entryBox("Beatriz Nunes", "05/03"));
+    spies.queueGate = createDeferred().promise;
+    const batch = screen.getByRole("button", { name: "Validar selecionados (1)" });
+
+    await user.click(batch);
+
+    await waitFor(() => expect(batch).toHaveAttribute("data-pending", "true"));
+    const row05 = within(row(table, "05/03")).getByRole("button", { name: /^Validar/ });
+    expect(row05).not.toHaveAttribute("data-pending");
+    expect(row05).toBeDisabled();
   });
 
   it("shows the spinner only on the Validar of the row being validated", async () => {
