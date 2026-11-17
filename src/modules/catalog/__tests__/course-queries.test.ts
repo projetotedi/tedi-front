@@ -191,6 +191,17 @@ describe("invalidateAfterCourseDuplicated", () => {
   });
 });
 
+describe("applyReplacedSequence and the list of courses (GUS-131)", () => {
+  it("invalidates every page of listCourses, which shows the lesson plans and the workload", async () => {
+    const listKey = ["/courses", { page: 1, limit: 20 }] as const;
+    queryClient.setQueryData(listKey, { data: [], total: 0, page: 1, limit: 20 });
+
+    await applyReplacedSequence(queryClient, COURSE_ID, buildCourseSequence());
+
+    expect(isInvalidated(listKey)).toBe(true);
+  });
+});
+
 describe("invalidateAfterCourseArchiveChanged", () => {
   it("writes the status, the date and the reason of the archive into the cached detail at once", async () => {
     queryClient.setQueryData(getGetCourseQueryKey(COURSE_ID), buildCourseDetail());

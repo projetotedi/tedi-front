@@ -383,5 +383,42 @@
     "notFound": "Lesson plan not found.",
     "network": "Could not connect. Check your connection and try again.",
     "unknown": "Could not complete the action. Try again."
+  },
+  "courses": {
+    "title_one": "Courses ({{count}})",
+    "title_other": "Courses ({{count}})",
+    "search": "Search course by name",
+    "searchPlaceholder": "Search course by name...",
+    "filters": {
+      "category": "Category",
+      "prerequisite": "Prerequisite",
+      "status": "Status",
+      "all": "All",
+      "allFeminine": "All",
+      "withPrerequisite": "With prerequisite",
+      "withoutPrerequisite": "Without prerequisite"
+    },
+    "columns": {
+      "course": "Course",
+      "category": "Category",
+      "lessonPlans": "Lesson plans",
+      "workload": "Planned workload",
+      "prerequisite": "Prerequisite",
+      "classes": "Classes",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "actions": {
+      "archive": "Archive course: {{name}}",
+      "unarchive": "Reactivate course: {{name}}",
+      "unarchiveShort": "Reactivate"
+    },
+    "summary": "Showing {{shown}} of {{total}} courses",
+    "pagination": "Pages of courses",
+    "loading": "Loading courses…",
+    "error": "Could not load the courses.",
+    "empty": "No course yet",
+    "emptyDescription": "The courses of the catalog show up here.",
+    "noResults": "No course found with these filters."
   }
 }

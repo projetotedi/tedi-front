@@ -38,7 +38,7 @@ async function renderSidebar(role: Role) {
         ],
       },
     ],
-    { initialEntries: ["/courses"] },
+    { initialEntries: ["/students"] },
   );
 
   render(

@@ -35,6 +35,11 @@ function isCoursesKey(queryKey: readonly unknown[]): boolean {
   return typeof key === "string" && (key === base || key.startsWith(`${base}/`));
 }
 
+/** `/courses` itself: the key of every page of `listCourses`, whatever its filters. */
+function isCourseListKey(queryKey: readonly unknown[]): boolean {
+  return queryKey[0] === getCreateCourseUrl();
+}
+
 /** `/courses/<id>`: the query key of the detail of any course, and not of what hangs from it. */
 function isCourseDetailKey(queryKey: readonly unknown[]): boolean {
   const [key] = queryKey;
@@ -58,8 +63,8 @@ function isCourseDetailKey(queryKey: readonly unknown[]): boolean {
  *   the usage the RF-017 confirmation reads): all of those are fetched again when somebody looks
  *   at them.
  *
- * The list of courses (`listCourses`, the number of lesson plans and the workload of each course)
- * is not touched here yet: the screen that reads it comes with GUS-131, and its key goes here then.
+ * - the list of courses (`listCourses`, GUS-131) shows the number of lesson plans and the workload
+ *   of each course, so every page of it is fetched again too.
  */
 export async function applyReplacedSequence(
   queryClient: QueryClient,
@@ -82,6 +87,7 @@ export async function applyReplacedSequence(
     queryClient.invalidateQueries({
       predicate: ({ queryKey }) => isCourseDetailKey(queryKey) && queryKey[0] !== currentDetailKey,
     }),
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCourseListKey(queryKey) }),
     invalidateLessonPlans(queryClient),
   ]);
 }
