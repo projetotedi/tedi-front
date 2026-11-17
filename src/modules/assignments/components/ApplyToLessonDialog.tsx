@@ -25,6 +25,7 @@ import { formatLessonDay, formatLessonDayMonth, META_SEPARATOR } from "../lib/fo
 import {
   APPLY_NOTE_MAX,
   applyToLessonFormSchema,
+  emptyApplyToLessonFormInput,
   toApplyToLessonBody,
   type ApplyToLessonFormInput,
   type ApplyToLessonFormValues,
@@ -111,7 +112,11 @@ export function ApplyToLessonDialog({
     ApplyToLessonFormValues
   >({
     resolver: zodResolver(applyToLessonFormSchema),
-    defaultValues: { role: availableRoles.length === 1 ? availableRoles[0] : null, note: "" },
+    defaultValues: {
+      ...emptyApplyToLessonFormInput(),
+      // A single place to choose from has nothing to compare with: it comes chosen (F6).
+      ...(availableRoles.length === 1 ? { role: availableRoles[0] } : {}),
+    },
   });
 
   const applyToLesson = useApplyToLesson({
