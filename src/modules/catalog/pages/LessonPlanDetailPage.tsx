@@ -156,7 +156,8 @@ function LessonPlanView({ plan, openEditOnMount }: LessonPlanViewProps): ReactEl
   const focusEditOnCloseRef = useRef(isEditing);
 
   // The new plan shows up in what lists lesson plans. Nothing of `/courses` is touched: the copy is
-  // born in no course. The options of the sequence picker are still a mock (GUS-95), with no cache.
+  // born in no course. The options of the sequence picker are a list of lesson plans, so they come
+  // with the rest of `/lesson-plans`.
   // These callbacks are the ones of the hook, so they run even if the person has already left the
   // page. A 404 says the plan on screen is gone, so its query is asked again: if the API confirms
   // it, the page says so instead of keeping the plan that is in the cache.

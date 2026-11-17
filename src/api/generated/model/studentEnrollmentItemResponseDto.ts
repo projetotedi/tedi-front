@@ -10,6 +10,13 @@ import type { EnrollmentClassRefResponseDto } from "./enrollmentClassRefResponse
 import type { EnrollmentStatus } from "./enrollmentStatus.ts";
 
 export interface StudentEnrollmentItemResponseDto {
+  /**
+   * The attendance rate of the enrollment (F6.3): its presences over the roll calls recorded for it in lessons that were not cancelled, from 0 to 1 with two decimals. A justified absence counts as an absence. Null while no roll call of it is recorded, and without the attendance module.
+   * @minimum 0
+   * @maximum 1
+   * @nullable
+   */
+  attendanceRate: number | null;
   class: EnrollmentClassRefResponseDto;
   course: ClassCourseResponseDto;
   enrolledAt: string;

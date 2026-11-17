@@ -99,6 +99,7 @@ export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonR
     id: LESSON_ID,
     title: "Teclado, mouse e janelas",
     belowExpectedMonitors: false,
+    attendance: { pending: false, students: { signed: 0, total: 0 } },
     coverage: {
       teacher: { confirmed: 0, expected: 1 },
       monitors: { confirmed: 0, expected: null },

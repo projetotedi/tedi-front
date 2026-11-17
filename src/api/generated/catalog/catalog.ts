@@ -36,6 +36,9 @@ import type {
   LessonPlanUsageResponseDto,
   ListCourses200,
   ListCoursesParams,
+  ListLessonPlanContentsParams,
+  ListLessonPlans200,
+  ListLessonPlansParams,
   ReplaceCourseLessonPlansDto,
   UpdateCourseDto,
   UpdateLessonPlanDto,
@@ -989,6 +992,131 @@ export const useUnarchiveCourse = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getUnarchiveCourseMutationOptions(options), queryClient);
 };
+export const getListLessonPlansUrl = (params?: ListLessonPlansParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/lesson-plans?${stringifiedParams}` : `/lesson-plans`;
+};
+
+export const listLessonPlans = async (
+  params?: ListLessonPlansParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListLessonPlans200> => {
+  return httpClient<ListLessonPlans200>(getListLessonPlansUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLessonPlansQueryKey = (params?: ListLessonPlansParams) => {
+  return [`/lesson-plans`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLessonPlansQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLessonPlans>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlansParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessonPlans>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLessonPlansQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLessonPlans>>> = ({ signal }) =>
+    listLessonPlans(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLessonPlans>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLessonPlansQueryResult = NonNullable<Awaited<ReturnType<typeof listLessonPlans>>>;
+export type ListLessonPlansQueryError = ApiErrorDto;
+
+export function useListLessonPlans<
+  TData = Awaited<ReturnType<typeof listLessonPlans>>,
+  TError = ApiErrorDto,
+>(
+  params: undefined | ListLessonPlansParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessonPlans>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessonPlans>>,
+          TError,
+          Awaited<ReturnType<typeof listLessonPlans>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessonPlans<
+  TData = Awaited<ReturnType<typeof listLessonPlans>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlansParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessonPlans>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessonPlans>>,
+          TError,
+          Awaited<ReturnType<typeof listLessonPlans>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessonPlans<
+  TData = Awaited<ReturnType<typeof listLessonPlans>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlansParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessonPlans>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListLessonPlans<
+  TData = Awaited<ReturnType<typeof listLessonPlans>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlansParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listLessonPlans>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListLessonPlansQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getCreateLessonPlanUrl = () => {
   return `/lesson-plans`;
 };
@@ -1088,6 +1216,145 @@ export const useCreateLessonPlan = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getCreateLessonPlanMutationOptions(options), queryClient);
 };
+export const getListLessonPlanContentsUrl = (params?: ListLessonPlanContentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/lesson-plans/contents?${stringifiedParams}`
+    : `/lesson-plans/contents`;
+};
+
+export const listLessonPlanContents = async (
+  params?: ListLessonPlanContentsParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<string[]> => {
+  return httpClient<string[]>(getListLessonPlanContentsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListLessonPlanContentsQueryKey = (params?: ListLessonPlanContentsParams) => {
+  return [`/lesson-plans/contents`, ...(params ? [params] : [])] as const;
+};
+
+export const getListLessonPlanContentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listLessonPlanContents>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlanContentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonPlanContents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListLessonPlanContentsQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listLessonPlanContents>>> = ({ signal }) =>
+    listLessonPlanContents(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listLessonPlanContents>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListLessonPlanContentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listLessonPlanContents>>
+>;
+export type ListLessonPlanContentsQueryError = ApiErrorDto;
+
+export function useListLessonPlanContents<
+  TData = Awaited<ReturnType<typeof listLessonPlanContents>>,
+  TError = ApiErrorDto,
+>(
+  params: undefined | ListLessonPlanContentsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonPlanContents>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessonPlanContents>>,
+          TError,
+          Awaited<ReturnType<typeof listLessonPlanContents>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessonPlanContents<
+  TData = Awaited<ReturnType<typeof listLessonPlanContents>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlanContentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonPlanContents>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listLessonPlanContents>>,
+          TError,
+          Awaited<ReturnType<typeof listLessonPlanContents>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListLessonPlanContents<
+  TData = Awaited<ReturnType<typeof listLessonPlanContents>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlanContentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonPlanContents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListLessonPlanContents<
+  TData = Awaited<ReturnType<typeof listLessonPlanContents>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListLessonPlanContentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listLessonPlanContents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListLessonPlanContentsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
 export const getGetLessonPlanUrl = (id: string) => {
   return `/lesson-plans/${id}`;
 };

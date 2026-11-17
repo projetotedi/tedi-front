@@ -1,6 +1,11 @@
+/**
+ * The catalog of lesson plans the tests of this module answer with (`listLessonPlansHandler`): the
+ * plans of the prototype of the list (GUS-171), kept as fixtures when the screen moved to the API.
+ * The ids are not UUIDs, which no screen checks.
+ */
 export type LessonPlanUsage = "in_use" | "unused" | "archived";
 
-/** UI-only view model for the GUS-171 prototype. It is deliberately not an API DTO. */
+/** A plan of the catalog of the tests, in the shape the old prototype (GUS-171) had. */
 export interface LessonPlanMock {
   id: string;
   title: string;

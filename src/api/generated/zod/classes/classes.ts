@@ -619,13 +619,20 @@ export const ListClassEnrollmentsQueryParams = zod.object({
     ),
 });
 
+export const listClassEnrollmentsResponseDataItemAttendanceRateMin = 0;
+export const listClassEnrollmentsResponseDataItemAttendanceRateMax = 1;
+
 export const ListClassEnrollmentsResponse = zod.object({
   data: zod.array(
     zod.object({
       attendanceRate: zod
         .number()
+        .min(listClassEnrollmentsResponseDataItemAttendanceRateMin)
+        .max(listClassEnrollmentsResponseDataItemAttendanceRateMax)
         .nullable()
-        .describe("Always null until the student roll call (GUS-166)."),
+        .describe(
+          "The attendance rate of the enrollment (F6.3): its presences over the roll calls recorded for it in lessons that were not cancelled, from 0 to 1 with two decimals. A justified absence counts as an absence. Null while no roll call of it is recorded, and without the attendance module.",
+        ),
       enrolledAt: zod.iso.datetime({ offset: true }),
       id: zod.uuid().describe("Id of the enrollment."),
       status: zod
@@ -977,10 +984,21 @@ export const ListStudentEnrollmentsParams = zod.object({
   id: zod.uuid().describe("Person id of the student."),
 });
 
+export const listStudentEnrollmentsResponseEnrollmentsItemAttendanceRateMin = 0;
+export const listStudentEnrollmentsResponseEnrollmentsItemAttendanceRateMax = 1;
+
 export const ListStudentEnrollmentsResponse = zod.object({
   enrollments: zod
     .array(
       zod.object({
+        attendanceRate: zod
+          .number()
+          .min(listStudentEnrollmentsResponseEnrollmentsItemAttendanceRateMin)
+          .max(listStudentEnrollmentsResponseEnrollmentsItemAttendanceRateMax)
+          .nullable()
+          .describe(
+            "The attendance rate of the enrollment (F6.3): its presences over the roll calls recorded for it in lessons that were not cancelled, from 0 to 1 with two decimals. A justified absence counts as an absence. Null while no roll call of it is recorded, and without the attendance module.",
+          ),
         class: zod.object({
           code: zod.string(),
           edition: zod.object({

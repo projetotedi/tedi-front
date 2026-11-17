@@ -13,9 +13,19 @@ import { toast, ToastProvider } from "@shared/ui";
 
 import "../index";
 import { createCatalogRoutes } from "../routes";
-import { buildMeUser, meHandler } from "./handlers";
+import {
+  buildMeUser,
+  listLessonPlanContentsHandler,
+  listLessonPlansHandler,
+  meHandler,
+} from "./handlers";
 
-export const server = setupServer();
+/**
+ * The server of the tests of this module. `listLessonPlansHandler` and the suggestions of Conteúdo
+ * answer by default, because the picker of the sequence and the list of plans ask for them; a test
+ * can still override them with `server.use`.
+ */
+export const server = setupServer(listLessonPlansHandler(), listLessonPlanContentsHandler());
 
 /**
  * The routes of the catalog as the tests of this module render them. The card "Turmas deste curso"

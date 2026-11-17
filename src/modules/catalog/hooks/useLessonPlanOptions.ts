@@ -1,19 +1,10 @@
-import { MOCK_LESSON_PLANS } from "../mocks/lesson-plans.mock";
+import { useListLessonPlans } from "@api/generated/catalog/catalog";
+import { LessonPlanListSort } from "@api/generated/model";
+
 import type { SequenceItem } from "../lib/course-sequence";
 
-/** The lesson plans of the mock catalog that can still enter a sequence, as items of a sequence. */
-const MOCK_OPTIONS: SequenceItem[] = MOCK_LESSON_PLANS.filter(
-  (plan) => plan.usage !== "archived",
-).map((plan) => ({
-  lessonPlanId: plan.id,
-  title: plan.title,
-  contents: plan.contents,
-  expectedDurationMinutes: plan.expectedDurationMinutes,
-  materialUrl: plan.materialUrl,
-  // The API counts the course that has the plan, so a plan of a sequence is always in at least one.
-  courseCount: Math.max(plan.courseCount, 1),
-  archivedAt: null,
-}));
+/** The most plans the API gives in one page; the catalog of the project is far below it. */
+const LESSON_PLAN_OPTIONS_LIMIT = 100;
 
 export interface LessonPlanOptions {
   options: SequenceItem[];
@@ -22,14 +13,27 @@ export interface LessonPlanOptions {
 }
 
 /**
- * The lesson plans the picker of the sequence can offer for a course (RN-27: never an archived one).
- *
- * TEMPORARY. The API has no list of lesson plans yet (`GET /lesson-plans?excludeCourseId=`, GUS-95),
- * so this reads the mock catalog that the list screen uses, which is why the ids here are not UUIDs
- * (`lesson-plan-07`): saving a sequence with one of them is a 400 on the real API. When GUS-95 is
- * done, only the body of this hook changes, to `useListLessonPlans({ excludeCourseId: courseId })`
- * mapped to `SequenceItem`; the signature, the dialog and the picker stay.
+ * The lesson plans the picker of the sequence can offer for a course: one page of `listLessonPlans`
+ * by title, without the plans already in the saved sequence of the course (`excludeCourseId`) and,
+ * as the API lists by default, without the archived ones (RN-27). Each one is made an item of a
+ * sequence. A plan taken out of the draft is offered again by the picker from the saved sequence.
  */
-export function useLessonPlanOptions(_courseId: string): LessonPlanOptions {
-  return { options: MOCK_OPTIONS, isPending: false, isError: false };
+export function useLessonPlanOptions(courseId: string): LessonPlanOptions {
+  const query = useListLessonPlans({
+    excludeCourseId: courseId,
+    limit: LESSON_PLAN_OPTIONS_LIMIT,
+    sort: LessonPlanListSort.title,
+  });
+
+  const options: SequenceItem[] = (query.data?.data ?? []).map((plan) => ({
+    lessonPlanId: plan.id,
+    title: plan.title,
+    contents: plan.contents,
+    expectedDurationMinutes: plan.expectedDurationMinutes,
+    materialUrl: plan.materialUrl,
+    courseCount: plan.courseCount,
+    archivedAt: plan.archivedAt,
+  }));
+
+  return { options, isPending: query.isPending, isError: query.isError };
 }
