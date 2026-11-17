@@ -373,7 +373,7 @@ describe("NewAssignmentDialog", () => {
       expect(optionLabels()).toEqual([MEMBER_NAME, "Rafael Souza"]);
     });
 
-    it("draws no Tentar de novo for a list that loaded, empty or not", async () => {
+    it("draws no Tentar de novo for a list that loaded, even an empty one", async () => {
       server.use(listMembersHandler({ response: buildMembersPage([]) }));
       await renderDialog();
       await screen.findByText("Não há membro ativo para alocar.");
