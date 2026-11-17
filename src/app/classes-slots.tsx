@@ -1,3 +1,4 @@
+import { NewAssignmentButton } from "@modules/assignments";
 import type { ClassesRouteSlots } from "@modules/classes";
 import { ClassLessonsCard, GenerateLessonsButton, NewLessonButton } from "@modules/lessons";
 
@@ -9,7 +10,14 @@ import { ClassLessonsCard, GenerateLessonsButton, NewLessonButton } from "@modul
  * - as ações de aulas do cabeçalho da turma, na ordem do Figma: "Gerar aulas" (GUS-157) e
  *   "+ Nova aula" (GUS-152, que leva a turma da tela, com o curso e o período, para o diálogo).
  *   As duas são do `lessons` e só aparecem com `lessons.manage`;
- * - o card "Aulas da turma" (GUS-157), do `lessons`, pela turma da rota.
+ * - "+ Nova alocação" (GUS-159), do `assignments`, depois de "+ Nova aula": abre o diálogo com a
+ *   turma da tela já fixada, e o membro e a aula a escolher. Só aparece com `assignments.create`
+ *   (diretor e coordenação). É a única entrada que o diálogo tem hoje, porque as telas que a
+ *   desenham (listagem de membros, ficha do membro, detalhe da aula) ainda não existem; o slot só é
+ *   pedido para turma não arquivada (RN-27), que também cobre a A11 na tela, já que a API aceita
+ *   alocação em aula de turma arquivada;
+ * - o card "Aulas da turma" (GUS-157), do `lessons`, pela turma da rota. A coluna Professor dele já
+ *   lê o professor confirmado (`teacher`), então mostra a alocação sem recarregar.
  *
  * `onEditClass` do `GenerateLessonsButton` ainda não é passado: o detalhe da turma não tem
  * "Editar turma" (GUS-101, com o formulário da GUS-133, que ainda é o de exemplo). Quando existir,
@@ -32,6 +40,9 @@ export const classesRouteSlots: ClassesRouteSlots = {
           startDate: classDetail.startDate,
           endDate: classDetail.endDate,
         }}
+      />
+      <NewAssignmentButton
+        lessonClass={{ id: classDetail.id, label: classDetail.name || classDetail.code }}
       />
     </>
   ),

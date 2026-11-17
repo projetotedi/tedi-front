@@ -1,0 +1,108 @@
+{
+  "close": "Fechar",
+  "retry": "Tentar de novo",
+  "role": {
+    "teacher": "Professor(a)",
+    "monitor": "Monitor(a)"
+  },
+  "status": {
+    "pending": "Pendente",
+    "applied": "Inscrita",
+    "confirmed": "Confirmada",
+    "declined": "Recusada",
+    "cancelled": "Cancelada"
+  },
+  "newAssignment": {
+    "button": "Nova alocação",
+    "title": "Nova alocação de membro",
+    "member": "Membro",
+    "class": "Turma",
+    "lesson": "Aula",
+    "role": "Papel na aula",
+    "status": "Status da alocação",
+    "placeholders": {
+      "member": "Escolha o membro",
+      "class": "Escolha a turma",
+      "lesson": "Escolha a aula",
+      "role": "Escolha o papel"
+    },
+    "submit": "Salvar alocação",
+    "submitting": "Salvando…",
+    "cancel": "Cancelar",
+    "membersLoading": "Carregando os membros…",
+    "membersEmpty": "Não há membro ativo para alocar.",
+    "membersError": "Não foi possível carregar os membros.",
+    "classesLoading": "Carregando as turmas…",
+    "classesEmpty": "Nenhuma turma tem aulas a partir de hoje.",
+    "classesError": "Não foi possível carregar as turmas.",
+    "lessonsLoading": "Carregando as aulas…",
+    "lessonsEmpty": "Esta turma não tem aulas que recebam alocação.",
+    "lessonsError": "Não foi possível carregar as aulas.",
+    "chooseClassFirst": "Escolha a turma para ver as aulas."
+  },
+  "warnings": {
+    "duplicateRole": "Este membro já tem um lugar nesta aula, como professor(a) ou monitor(a). Cada membro ocupa um lugar por aula.",
+    "teacherTaken": "Esta aula já tem professor(a) confirmado(a). Escolha o papel de monitor(a) ou salve a alocação como pendente.",
+    "lessonCancelled": "Esta aula está cancelada e não recebe alocações. Escolha outra aula.",
+    "memberInactive": "Este membro não está ativo no projeto e não pode ser alocado.",
+    "assignmentNotActive": "Esta alocação já não está ativa, então não há o que cancelar."
+  },
+  "fieldErrors": {
+    "required": "Escolha uma opção.",
+    "memberNotFound": "Este membro não foi encontrado. Escolha outro.",
+    "serverInvalid": "Revise este campo e tente de novo."
+  },
+  "errors": {
+    "lessonNotFound": "Aula não encontrada. Ela pode ter sido removida.",
+    "assignmentNotFound": "Alocação não encontrada. Ela pode ter sido removida.",
+    "forbidden": "Você não tem acesso a esta informação.",
+    "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+    "unknown": "Não foi possível concluir a ação. Tente novamente."
+  },
+  "coverage": {
+    "title": "Cobertura da aula",
+    "students": "Alunos",
+    "teacher": "Professor(a)",
+    "monitors": "Monitores",
+    "monitorsOf": "{{confirmed}} de {{expected}}",
+    "belowExpected": "Abaixo do esperado",
+    "applications": "Candidaturas",
+    "studentsLoading": "Carregando os alunos…",
+    "loading": "Carregando a cobertura da aula…",
+    "error": "Não foi possível carregar a cobertura da aula."
+  },
+  "lessonTeacher": {
+    "loading": "Carregando o(a) professor(a)…",
+    "error": "Não foi possível carregar o(a) professor(a)."
+  },
+  "memberAssignments": {
+    "title": "Alocações em aulas",
+    "caption": "Alocações do membro em aulas",
+    "columns": {
+      "lesson": "Aula",
+      "date": "Data",
+      "role": "Papel",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "empty": "Nenhuma alocação ainda.",
+    "viewAll_one": "Ver a {{count}} alocação",
+    "viewAll_other": "Ver todas as {{count}}",
+    "viewLess": "Ver menos",
+    "loading": "Carregando as alocações do membro…",
+    "error": "Não foi possível carregar as alocações do membro.",
+    "forbidden": "Você só vê as alocações de membros do seu departamento.",
+    "cancelFor": "Cancelar a alocação em {{title}} de {{date}}"
+  },
+  "cancelDialog": {
+    "title": "Cancelar alocação",
+    "description": "Você vai cancelar a alocação de {{role}} em “{{title}}”, de {{date}}. O lugar fica livre e a cobertura da aula é atualizada.",
+    "back": "Voltar",
+    "submit": "Cancelar alocação",
+    "submitting": "Cancelando…"
+  },
+  "toast": {
+    "created": "Alocação salva",
+    "cancelled": "Alocação cancelada"
+  }
+}
