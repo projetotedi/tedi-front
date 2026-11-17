@@ -3,6 +3,7 @@ import type { RouteObject } from "react-router-dom";
 import type { RouteHandle } from "@shared/lib/route-handle";
 import { RequirePermission } from "@modules/auth";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
+import { CoursesPage } from "./pages/CoursesPage";
 import { LessonPlanDetailPage } from "./pages/LessonPlanDetailPage";
 import { LessonPlansPage } from "./pages/LessonPlansPage";
 
@@ -34,17 +35,20 @@ export function createCatalogRoutes(slots: CatalogRouteSlots): RouteObject[] {
         },
       ],
     },
-    // Besides the "Cursos" of the prototype ("Em breve", `/courses`): there is no list of courses
-    // yet, so this one has no menu item. It is reached from "Onde este plano é usado" and from the
-    // prerequisites of another course.
+    // Cursos (GUS-131) is the list; the detail of a course is reached from it, from "Onde este
+    // plano é usado" and from the prerequisites of another course.
     {
-      path: "courses/:courseId",
-      handle: { title: "catalog:course.routeTitle" } satisfies RouteHandle,
-      element: (
-        <RequirePermission permission="catalog.view">
-          <CourseDetailPage renderCourseClasses={slots.renderCourseClasses} />
-        </RequirePermission>
-      ),
+      path: "courses",
+      handle: { title: "common:nav.courses" } satisfies RouteHandle,
+      element: <RequirePermission permission="catalog.view" />,
+      children: [
+        { index: true, element: <CoursesPage /> },
+        {
+          path: ":courseId",
+          handle: { title: "catalog:course.routeTitle" } satisfies RouteHandle,
+          element: <CourseDetailPage renderCourseClasses={slots.renderCourseClasses} />,
+        },
+      ],
     },
   ];
 }

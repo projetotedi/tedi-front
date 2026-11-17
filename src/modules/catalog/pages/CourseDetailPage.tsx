@@ -45,7 +45,7 @@ function LoadingPlaceholder({ label }: { label: string }): ReactElement {
   );
 }
 
-/** There is no list of courses to go back to yet, so the page says it and stops. */
+/** The course does not exist: the page says it and stops (the menu leads back to Cursos). */
 function CourseNotFound(): ReactElement {
   const { t } = useTranslation("catalog");
 

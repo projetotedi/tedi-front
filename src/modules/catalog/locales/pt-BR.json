@@ -383,5 +383,42 @@
     "notFound": "Plano de aula não encontrado.",
     "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
     "unknown": "Não foi possível concluir a ação. Tente novamente."
+  },
+  "courses": {
+    "title_one": "Cursos ({{count}})",
+    "title_other": "Cursos ({{count}})",
+    "search": "Buscar curso por nome",
+    "searchPlaceholder": "Buscar curso por nome...",
+    "filters": {
+      "category": "Categoria",
+      "prerequisite": "Pré-requisito",
+      "status": "Status",
+      "all": "Todos",
+      "allFeminine": "Todas",
+      "withPrerequisite": "Com pré-requisito",
+      "withoutPrerequisite": "Sem pré-requisito"
+    },
+    "columns": {
+      "course": "Curso",
+      "category": "Categoria",
+      "lessonPlans": "Planos de aula",
+      "workload": "Carga prevista",
+      "prerequisite": "Pré-requisito",
+      "classes": "Turmas",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "actions": {
+      "archive": "Arquivar curso: {{name}}",
+      "unarchive": "Reativar curso: {{name}}",
+      "unarchiveShort": "Reativar"
+    },
+    "summary": "Mostrando {{shown}} de {{total}} cursos",
+    "pagination": "Páginas de cursos",
+    "loading": "Carregando cursos…",
+    "error": "Não foi possível carregar os cursos.",
+    "empty": "Nenhum curso ainda",
+    "emptyDescription": "Os cursos do catálogo aparecem aqui.",
+    "noResults": "Nenhum curso encontrado com esses filtros."
   }
 }

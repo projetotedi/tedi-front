@@ -145,7 +145,7 @@ describe("AppLayout", () => {
   });
 
   it("opens the profile from the profile menu", async () => {
-    const { router } = await renderApp(buildMeUser({ name: "Maria Souza" }), "/courses");
+    const { router } = await renderApp(buildMeUser({ name: "Maria Souza" }), "/students");
 
     await userEvent.click(screen.getByRole("button", { name: "Menu do perfil de Maria Souza" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Perfil" }));
