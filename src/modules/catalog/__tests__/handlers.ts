@@ -12,6 +12,7 @@ import {
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CourseResponseDto,
+  type CreateCourseDto,
   type CreateLessonPlanDto,
   type DuplicateCourseDto,
   type LessonPlanDetailDto,
@@ -20,6 +21,7 @@ import {
   type MeResponseDto,
   type PermissionsDto,
   type ReplaceCourseLessonPlansDto,
+  type UpdateCourseDto,
   type UpdateLessonPlanDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
@@ -979,3 +981,51 @@ export function listCoursesHandler({
     });
   });
 }
+
+/** Response of `POST /courses` and `PATCH /courses/:id`: the course of the Figma, as saved. */
+export function buildSavedCourse(overrides: Partial<CourseResponseDto> = {}): CourseResponseDto {
+  return buildReactivatedCourse(overrides);
+}
+
+export function createCourseHandler({
+  response = buildSavedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ body: CreateCourseDto }, CourseResponseDto> = {}) {
+  return http.post("*/courses", async ({ request }) => {
+    onCall?.({ body: (await readBody<CreateCourseDto>(request)) as CreateCourseDto });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+export function updateCourseHandler({
+  response = buildSavedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ id: string; body: UpdateCourseDto }, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id", async ({ request, params }) => {
+    onCall?.({
+      id: String(params.id),
+      body: (await readBody<UpdateCourseDto>(request)) as UpdateCourseDto,
+    });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export const PREREQUISITE_CYCLE_ERROR: ApiErrorOptions = {
+  statusCode: 400,
+  error: "PREREQUISITE_CYCLE",
+  message: "The prerequisites would form a cycle.",
+};

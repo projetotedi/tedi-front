@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useId, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { CourseDetailDto } from "@api/generated/model";
@@ -16,6 +16,8 @@ export interface CourseDetailHeaderProps {
   onArchive: () => void;
   /** Reativar curso was pressed (the course is archived): the screen asks for confirmation. */
   onUnarchive: () => void;
+  /** Editar curso was pressed (the course is active): the screen opens `CourseFormDialog`. */
+  onEdit: () => void;
 }
 
 /**
@@ -32,10 +34,11 @@ export interface CourseDetailHeaderProps {
  *
  * Duplicar curso stays on an archived course: the API accepts it and the copy is born active,
  * which is how the content of an archived course gets back into use (RN-27). Arquivar curso
- * (GUS-139) becomes Reativar curso when the course is archived. Editar curso (GUS-129) and + Nova
- * turma do not exist here yet: when they come, they are turned off with a hint while
- * `isArchived`, as Editar sequência already is. The container of the actions is there only when
- * the person has at least one of them, so a member sees the name and the tags and nothing else.
+ * (GUS-139) becomes Reativar curso when the course is archived. Editar curso (GUS-129, after them)
+ * is turned off on an archived course, with the reason read by the screen reader, as Editar
+ * sequência is; + Nova turma does not exist here yet and follows the same rule when it comes. The
+ * container of the actions is there only when the person has at least one of them, so a member
+ * sees the name and the tags and nothing else.
  */
 export function CourseDetailHeader({
   course,
@@ -43,9 +46,12 @@ export function CourseDetailHeader({
   onDuplicate,
   onArchive,
   onUnarchive,
+  onEdit,
 }: CourseDetailHeaderProps): ReactElement {
   const { t } = useTranslation("catalog");
   const canDuplicate = useCan("courses.duplicateArchive");
+  const canManage = useCan("courses.manage");
+  const editHintId = useId();
 
   return (
     <Card>
@@ -75,20 +81,41 @@ export function CourseDetailHeader({
             </li>
           </ul>
         </div>
-        {canDuplicate ? (
+        {canDuplicate || canManage ? (
           <div className="flex flex-wrap gap-3">
-            <Button variant="tertiary" onPress={onDuplicate}>
-              {t("course.duplicate.action")}
-            </Button>
-            {isArchived ? (
-              <Button variant="secondary" onPress={onUnarchive}>
-                {t("course.unarchive.action")}
-              </Button>
-            ) : (
-              <Button variant="danger-soft" onPress={onArchive}>
-                {t("course.archive.action")}
-              </Button>
-            )}
+            {canDuplicate ? (
+              <>
+                <Button variant="tertiary" onPress={onDuplicate}>
+                  {t("course.duplicate.action")}
+                </Button>
+                {isArchived ? (
+                  <Button variant="secondary" onPress={onUnarchive}>
+                    {t("course.unarchive.action")}
+                  </Button>
+                ) : (
+                  <Button variant="danger-soft" onPress={onArchive}>
+                    {t("course.archive.action")}
+                  </Button>
+                )}
+              </>
+            ) : null}
+            {canManage ? (
+              <>
+                <Button
+                  variant="secondary"
+                  isDisabled={isArchived}
+                  aria-describedby={isArchived ? editHintId : undefined}
+                  onPress={onEdit}
+                >
+                  {t("course.form.editAction")}
+                </Button>
+                {isArchived ? (
+                  <span id={editHintId} className="sr-only">
+                    {t("course.form.archivedHint")}
+                  </span>
+                ) : null}
+              </>
+            ) : null}
           </div>
         ) : null}
       </div>

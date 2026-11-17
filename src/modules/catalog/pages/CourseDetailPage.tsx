@@ -10,6 +10,7 @@ import { Alert, Button, Card, Skeleton } from "@shared/ui";
 import { ArchiveCourseDialog } from "../components/ArchiveCourseDialog";
 import { BuildSequenceDialog } from "../components/BuildSequenceDialog";
 import { CourseDataCard } from "../components/CourseDataCard";
+import { CourseFormDialog } from "../components/CourseFormDialog";
 import { CourseDetailHeader } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { CoursePlanCard } from "../components/CoursePlanCard";
@@ -78,6 +79,7 @@ function CourseDetailView({
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isEditingCourse, setIsEditingCourse] = useState(false);
   const [archiveDialog, setArchiveDialog] = useState<"archive" | "unarchive" | null>(null);
   const [archivedBySave, setArchivedBySave] = useState(false);
   const archivedHintRef = useRef<HTMLParagraphElement>(null);
@@ -109,6 +111,7 @@ function CourseDetailView({
         onDuplicate={() => setIsDuplicating(true)}
         onArchive={() => setArchiveDialog("archive")}
         onUnarchive={() => setArchiveDialog("unarchive")}
+        onEdit={() => setIsEditingCourse(true)}
       />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
@@ -149,6 +152,15 @@ function CourseDetailView({
 
       {isDuplicating ? (
         <DuplicateCourseDialog course={course} onClose={() => setIsDuplicating(false)} />
+      ) : null}
+
+      {isEditingCourse ? (
+        <CourseFormDialog
+          mode="edit"
+          courseId={courseId}
+          onClose={() => setIsEditingCourse(false)}
+          onCourseArchived={handleCourseArchived}
+        />
       ) : null}
 
       {archiveDialog === "archive" ? (

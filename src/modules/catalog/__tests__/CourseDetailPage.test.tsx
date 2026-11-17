@@ -28,6 +28,7 @@ import {
   duplicateCourseHandler,
   getCourseHandler,
   listCourseLessonPlansHandler,
+  listCoursesHandler,
   replaceCourseLessonPlansHandler,
   unarchiveCourseHandler,
 } from "./handlers";
@@ -258,15 +259,15 @@ describe("CourseDetailPage", () => {
       expect(screen.queryByText(/^Turmas do curso /)).not.toBeInTheDocument();
     });
 
-    it("has Duplicar curso and Arquivar curso in the header, and not the actions that do not exist yet: Editar curso and + Nova turma", async () => {
+    it("has Duplicar curso, Arquivar curso and Editar curso in the header, and not + Nova turma, which does not exist yet", async () => {
       await renderPage({ role: Role.coordinator });
 
       expect(
         within(header())
           .getAllByRole("button")
           .map((button) => button.textContent),
-      ).toEqual(["Duplicar curso", "Arquivar curso"]);
-      for (const name of ["Editar curso", "+ Nova turma"]) {
+      ).toEqual(["Duplicar curso", "Arquivar curso", "Editar curso"]);
+      for (const name of ["+ Nova turma"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }
@@ -909,6 +910,25 @@ describe("CourseDetailPage", () => {
       expect(valueOf(card("Catálogo e histórico"), "Motivo")).toHaveTextContent(
         COURSE_ARCHIVE_REASON,
       );
+    });
+  });
+
+  describe("editing the course (GUS-129)", () => {
+    it("opens Editar curso from the header, filled with the course", async () => {
+      server.use(listCoursesHandler({ courses: [] }));
+      const user = userEvent.setup();
+      await renderPage();
+
+      await user.click(within(header()).getByRole("button", { name: "Editar curso" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar curso" });
+      expect(await within(dialog).findByDisplayValue(COURSE_NAME)).toBeInTheDocument();
+    });
+
+    it("the member does not see Editar curso", async () => {
+      await renderPage({ role: Role.member });
+
+      expect(screen.queryByRole("button", { name: "Editar curso" })).not.toBeInTheDocument();
     });
   });
 

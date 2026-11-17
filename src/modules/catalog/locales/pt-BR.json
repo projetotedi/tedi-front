@@ -349,6 +349,47 @@
       "notFound": "Curso não encontrado. Ele pode ter sido removido.",
       "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
       "unknown": "Não foi possível concluir a ação. Tente novamente."
+    },
+    "form": {
+      "newTitle": "Novo curso",
+      "editTitle": "Editar curso",
+      "action": "Novo curso",
+      "editAction": "Editar curso",
+      "name": "Nome do curso",
+      "category": "Categoria",
+      "categoryPlaceholder": "Escolha a categoria",
+      "prerequisites": "Pré-requisitos",
+      "prerequisitesPlaceholder": "Nenhum",
+      "prerequisitesLoading": "Carregando cursos…",
+      "prerequisitesLoadError": "Não foi possível carregar os cursos. Os pré-requisitos atuais continuam.",
+      "archivedPrerequisite": "{{name}} (arquivado)",
+      "description": "Descrição",
+      "objective": "Objetivo",
+      "categoryChangedTitle": "A categoria vai mudar",
+      "categoryChangedDescription": "As turmas deste curso passam a mostrar a nova categoria.",
+      "cancel": "Cancelar",
+      "save": "Salvar curso",
+      "saveChanges": "Salvar alterações",
+      "saving": "Salvando…",
+      "created": "Curso criado.",
+      "updated": "Curso atualizado.",
+      "loading": "Carregando o curso…",
+      "loadError": "Não foi possível carregar o curso. Feche e tente de novo.",
+      "archivedHint": "Curso arquivado: reative o curso para editar.",
+      "errors": {
+        "nameRequired": "Informe o nome do curso.",
+        "nameTooLong": "O nome pode ter no máximo {{nameMax}} caracteres.",
+        "nameTaken": "Já existe um curso com esse nome (arquivados também contam).",
+        "categoryRequired": "Escolha a categoria.",
+        "descriptionRequired": "Informe a descrição.",
+        "descriptionTooLong": "A descrição pode ter no máximo {{descriptionMax}} caracteres.",
+        "objectiveTooLong": "O objetivo pode ter no máximo {{objectiveMax}} caracteres.",
+        "prerequisitesTooMany": "Escolha no máximo {{prerequisitesMax}} pré-requisitos.",
+        "prerequisiteCycle": "Esses pré-requisitos formariam um ciclo: um curso acabaria exigindo a si mesmo.",
+        "prerequisiteNotFound": "Um dos pré-requisitos não existe mais. Revise a lista.",
+        "prerequisiteArchived": "Um dos pré-requisitos foi arquivado e não pode ser adicionado.",
+        "serverInvalid": "Revise este campo."
+      }
     }
   },
   "mock": {
@@ -411,7 +452,8 @@
     "actions": {
       "archive": "Arquivar curso: {{name}}",
       "unarchive": "Reativar curso: {{name}}",
-      "unarchiveShort": "Reativar"
+      "unarchiveShort": "Reativar",
+      "edit": "Editar curso: {{name}}"
     },
     "summary": "Mostrando {{shown}} de {{total}} cursos",
     "pagination": "Páginas de cursos",
@@ -419,6 +461,7 @@
     "error": "Não foi possível carregar os cursos.",
     "empty": "Nenhum curso ainda",
     "emptyDescription": "Os cursos do catálogo aparecem aqui.",
-    "noResults": "Nenhum curso encontrado com esses filtros."
+    "noResults": "Nenhum curso encontrado com esses filtros.",
+    "create": "+ Novo curso"
   }
 }

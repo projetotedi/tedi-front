@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { CourseStatus, type CourseListItemDto } from "@api/generated/model";
 import { useCan } from "@modules/auth";
 import { DataTable, type Column } from "@shared/components/DataTable";
+import pencilIcon from "@shared/assets/icons/pencil.svg";
 import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 import { formatHours } from "@shared/lib/format";
 import { Badge, Button } from "@shared/ui";
@@ -14,6 +15,7 @@ export interface CoursesTableProps {
   /** Classes (not archived) of each course of the page; a course missing from it shows a dash. */
   classCounts: Map<string, number>;
   caption: string;
+  onEdit: (course: CourseListItemDto) => void;
   onArchive: (course: CourseListItemDto) => void;
   onUnarchive: (course: CourseListItemDto) => void;
 }
@@ -23,20 +25,23 @@ export interface CoursesTableProps {
  * the course (the hover of `DataTable`); the name stays a link for the keyboard and the screen
  * reader, and the buttons of the row do not open it (`DataTable` skips clicks on them).
  *
- * The column Ações is there only for who has `courses.duplicateArchive` (director and
- * coordination): the bin opens Arquivar curso; an archived course shows Reativar instead. The pencil
- * of the Figma (Editar curso) comes with the form of GUS-129.
+ * The column Ações is there only for director and coordination: the pencil (`courses.manage`)
+ * opens Editar curso (GUS-129) and is off for an archived course, which is read-only (RN-27); the
+ * bin (`courses.duplicateArchive`) opens Arquivar curso, and an archived course shows Reativar
+ * instead. Each icon button has the name of its action and of the course.
  */
 export function CoursesTable({
   courses,
   classCounts,
   caption,
+  onEdit,
   onArchive,
   onUnarchive,
 }: CoursesTableProps): ReactElement {
   const { t } = useTranslation("catalog");
   const navigate = useNavigate();
   const canArchive = useCan("courses.duplicateArchive");
+  const canManage = useCan("courses.manage");
 
   const columns: Column<CourseListItemDto>[] = [
     {
@@ -87,40 +92,65 @@ export function CoursesTable({
           <Badge tone="success">{t("course.status.active")}</Badge>
         ),
     },
-    ...(canArchive
+    ...(canArchive || canManage
       ? [
           {
             header: t("courses.columns.actions"),
-            render: (course: CourseListItemDto) =>
-              course.status === CourseStatus.archived ? (
-                <Button
-                  variant="ghost"
-                  aria-label={t("courses.actions.unarchive", { name: course.name })}
-                  onPress={() => onUnarchive(course)}
-                >
-                  {t("courses.actions.unarchiveShort")}
-                </Button>
-              ) : (
-                <Button
-                  variant="ghost"
-                  isIconOnly
-                  aria-label={t("courses.actions.archive", { name: course.name })}
-                  onPress={() => onArchive(course)}
-                >
-                  <img
-                    src={trashBinIcon}
-                    alt=""
-                    aria-hidden="true"
-                    width={16}
-                    height={16}
-                    title={t("course.archive.action")}
-                  />
-                </Button>
-              ),
+            render: (course: CourseListItemDto) => (
+              <div className="flex items-center gap-1">
+                {canManage ? (
+                  <Button
+                    variant="ghost"
+                    isIconOnly
+                    aria-label={t("courses.actions.edit", { name: course.name })}
+                    isDisabled={course.status === CourseStatus.archived}
+                    onPress={() => onEdit(course)}
+                  >
+                    <img
+                      src={pencilIcon}
+                      alt=""
+                      aria-hidden="true"
+                      width={16}
+                      height={16}
+                      title={t("course.form.editAction")}
+                    />
+                  </Button>
+                ) : null}
+                {canArchive ? renderArchiveAction(course) : null}
+              </div>
+            ),
           } satisfies Column<CourseListItemDto>,
         ]
       : []),
   ];
+
+  function renderArchiveAction(course: CourseListItemDto): ReactElement {
+    return course.status === CourseStatus.archived ? (
+      <Button
+        variant="ghost"
+        aria-label={t("courses.actions.unarchive", { name: course.name })}
+        onPress={() => onUnarchive(course)}
+      >
+        {t("courses.actions.unarchiveShort")}
+      </Button>
+    ) : (
+      <Button
+        variant="ghost"
+        isIconOnly
+        aria-label={t("courses.actions.archive", { name: course.name })}
+        onPress={() => onArchive(course)}
+      >
+        <img
+          src={trashBinIcon}
+          alt=""
+          aria-hidden="true"
+          width={16}
+          height={16}
+          title={t("course.archive.action")}
+        />
+      </Button>
+    );
+  }
 
   return (
     <DataTable
