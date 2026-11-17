@@ -34,13 +34,9 @@ import {
   ROLE_FULL_ERROR,
   type PendingApplicationsCall,
   type ReviewApplicationCall,
-} from "./handlers";
-import {
-  createDeferred,
-  renderWithProviders,
-  server,
-  setupAssignmentsTestServer,
-} from "./test-utils";
+} from "./application-handlers";
+import { createDeferred, server, setupAssignmentsTestServer } from "./test-utils";
+import { renderAsMember } from "./application-test-utils";
 
 setupAssignmentsTestServer();
 
@@ -73,7 +69,7 @@ const lessonBlocks = () => within(screen.getByRole("dialog")).queryAllByRole("re
 
 async function renderDialog(title = "Candidaturas pendentes (3)") {
   const onClose = vi.fn();
-  const view = await renderWithProviders(<PendingApplicationsDialog onClose={onClose} />, {
+  const view = await renderAsMember(<PendingApplicationsDialog onClose={onClose} />, {
     user: buildMeUser(Role.coordinator),
   });
   await screen.findByRole("dialog", { name: title });
@@ -238,7 +234,7 @@ describe("PendingApplicationsDialog", () => {
     it("shows skeletons announced as a status while the queue is on its way, and the title has no number yet", async () => {
       const deferred = createDeferred();
       server.use(listPendingApplicationsHandler({ delay: deferred.promise }));
-      await renderWithProviders(<PendingApplicationsDialog onClose={() => {}} />, {
+      await renderAsMember(<PendingApplicationsDialog onClose={() => {}} />, {
         user: buildMeUser(Role.coordinator),
       });
 
@@ -266,7 +262,7 @@ describe("PendingApplicationsDialog", () => {
     it("shows the error with Tentar de novo when the queue cannot be read, and the next attempt shows the queue", async () => {
       server.use(listPendingApplicationsHandler({ networkError: true }));
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsDialog onClose={() => {}} />, {
+      await renderAsMember(<PendingApplicationsDialog onClose={() => {}} />, {
         user: buildMeUser(Role.coordinator),
       });
 

@@ -12,8 +12,9 @@ import {
   listMyAssignmentsHandler,
   listOpenLessonsHandler,
   listPendingApplicationsHandler,
-} from "./handlers";
-import { expectNoRequestTo, renderRoutes, server, setupAssignmentsTestServer } from "./test-utils";
+} from "./application-handlers";
+import { expectNoRequestTo, server, setupAssignmentsTestServer } from "./test-utils";
+import { renderRoutesAsMember } from "./application-test-utils";
 
 setupAssignmentsTestServer();
 
@@ -60,7 +61,10 @@ describe("assignmentsRoutes", () => {
     ["coordinator", Role.coordinator],
     ["superadmin", Role.superadmin],
   ])("opens Minhas aulas for the %s", async (_label, role) => {
-    await renderRoutes(assignmentsRoutes, { route: "/my-lessons", user: buildMeUser(role) });
+    await renderRoutesAsMember(assignmentsRoutes, {
+      route: "/my-lessons",
+      user: buildMeUser(role),
+    });
 
     expect(
       await screen.findByRole("heading", { name: "Minhas próximas aulas" }),
@@ -72,7 +76,7 @@ describe("assignmentsRoutes", () => {
   });
 
   it("shows the queue button to who reviews, and not to the member", async () => {
-    const reviewer = await renderRoutes(assignmentsRoutes, {
+    const reviewer = await renderRoutesAsMember(assignmentsRoutes, {
       route: "/my-lessons",
       user: buildMeUser(Role.coordinator),
     });
@@ -81,7 +85,7 @@ describe("assignmentsRoutes", () => {
     ).toBeInTheDocument();
     reviewer.unmount();
 
-    const member = await renderRoutes(assignmentsRoutes, {
+    const member = await renderRoutesAsMember(assignmentsRoutes, {
       route: "/my-lessons",
       user: buildMeUser(Role.member),
     });
@@ -93,7 +97,7 @@ describe("assignmentsRoutes", () => {
   });
 
   it("shows the forbidden page to someone without assignments.manageOwn, and asks nothing of the API", async () => {
-    const { queryClient } = await renderRoutes(assignmentsRoutes, {
+    const { queryClient } = await renderRoutesAsMember(assignmentsRoutes, {
       route: "/my-lessons",
       user: buildMeUserWithoutManageOwn(),
     });
@@ -108,7 +112,10 @@ describe("assignmentsRoutes", () => {
   });
 
   it("sends someone who is not logged in to the login", async () => {
-    const { router } = await renderRoutes(assignmentsRoutes, { route: "/my-lessons", user: null });
+    const { router } = await renderRoutesAsMember(assignmentsRoutes, {
+      route: "/my-lessons",
+      user: null,
+    });
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
     expect(router.state.location.search).toContain("returnTo=%2Fmy-lessons");
@@ -118,7 +125,7 @@ describe("assignmentsRoutes", () => {
   });
 
   it("puts the agenda inside the tables of the page, not in the topbar", async () => {
-    await renderRoutes(assignmentsRoutes, { route: "/my-lessons" });
+    await renderRoutesAsMember(assignmentsRoutes, { route: "/my-lessons" });
 
     const upcoming = await screen.findByRole("table", {
       name: "Suas próximas aulas, com data, horário, turma, aula, papel e situação",

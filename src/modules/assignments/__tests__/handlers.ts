@@ -4,57 +4,96 @@ import {
   AssignmentRole,
   AssignmentSource,
   AssignmentStatus,
+  ClassStatus,
+  CourseCategory,
+  CourseStatus,
   LessonStatus,
+  MemberRegistrationStatus,
+  MemberStatus,
   type ApiFieldErrorDto,
-  type ApplyToLessonDto,
-  type AssignmentLessonResponseDto,
+  type ClassDetailDto,
+  type CreateAssignmentDto,
   type LessonAssignmentResponseDto,
   type LessonCoverageDto,
+  type LessonListItemResponseDto,
+  type LessonResponseDto,
+  type ListLessons200,
+  type ListMembers200,
+  type MemberAssignmentResponseDto,
+  type MemberListItemResponseDto,
   type MeResponseDto,
-  type MyAssignmentResponseDto,
-  type MyAssignmentsResponseDto,
-  type MyAssignmentsTotalsDto,
-  type OpenLessonResponseDto,
-  type PendingApplicationGroupResponseDto,
-  type PendingApplicationsResponseDto,
   type PermissionsDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
+
+/*
+ * Fixtures and MSW handlers of the screens of the allocation, from the Figma: the member "Beatriz
+ * Nunes", the class "Informática Básica — A" and the lesson "10/03 · Senhas e privacidade". The ids
+ * are UUIDs of the shape the generated schema accepts (version 7, variant 8). The module does not
+ * import the `__tests__` of another one, so the session and the builders of the lessons and of the
+ * class are written here, with only what these screens read.
+ */
+export const LESSON_ID = "01952ef7-0000-7000-8000-0000000000f1";
+export const OTHER_LESSON_ID = "01952ef7-0000-7000-8000-0000000000f2";
+export const THIRD_LESSON_ID = "01952ef7-0000-7000-8000-0000000000f3";
+export const CLASS_ID = "01952ef7-0000-7000-8000-0000000000d1";
+export const OTHER_CLASS_ID = "01952ef7-0000-7000-8000-0000000000d2";
+export const COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
+export const EDITION_ID = "01952ef7-0000-7000-8000-0000000000e1";
+export const MEMBER_ID = "01952ef7-0000-7000-8000-0000000000b1";
+export const OTHER_MEMBER_ID = "01952ef7-0000-7000-8000-0000000000b2";
+export const THIRD_MEMBER_ID = "01952ef7-0000-7000-8000-0000000000b3";
+export const ASSIGNMENT_ID = "01952ef7-0000-7000-8000-0000000000a1";
+export const OTHER_ASSIGNMENT_ID = "01952ef7-0000-7000-8000-0000000000a2";
+export const USER_ID = "01952ef7-0000-7000-8000-000000000001";
+
+export const MEMBER_NAME = "Beatriz Nunes";
+export const CLASS_NAME = "Informática Básica — A";
+export const OTHER_CLASS_NAME = "Redes Sociais — C";
+export const LESSON_TITLE = "Senhas e privacidade";
+/** How the Figma writes the lesson in the select of the form: the day and the month, a dot and the title. */
+export const LESSON_OPTION = "10/03 · Senhas e privacidade";
 
 function permissionsWith(granted: Partial<PermissionsDto>): PermissionsDto {
   return granted as PermissionsDto;
 }
 
-// The matrix of the back (docs/PERMISSIONS.md): everybody sees the lessons and manages their own
-// assignments (applies, sees their agenda), and only the director and the coordination review the
-// applications of the others.
+// The matrix of the back (docs/PERMISSIONS.md), only the permissions these screens read: everybody
+// sees the lessons and the classes, and only the director and the coordination assign (and so list
+// the members). The director reads the assignments of the members of her department, the
+// coordination of every one, and the member of none.
 const MEMBER_PERMISSIONS = permissionsWith({
+  "assignments.create": "none",
+  "members.list": "none",
+  "members.view": "none",
   "lessons.view": "all",
-  "assignments.manageOwn": "own",
-  "assignments.review": "none",
+  "classes.view": "all",
 });
 
-const REVIEWER_PERMISSIONS = permissionsWith({
+const DIRECTOR_PERMISSIONS = permissionsWith({
+  "assignments.create": "all",
+  "members.list": "all",
+  "members.view": "department",
   "lessons.view": "all",
-  "assignments.manageOwn": "own",
-  "assignments.review": "all",
+  "classes.view": "all",
+});
+
+const COORDINATOR_PERMISSIONS = permissionsWith({
+  ...DIRECTOR_PERMISSIONS,
+  "members.view": "all",
 });
 
 const PERMISSIONS_BY_ROLE: Record<Role, PermissionsDto> = {
   [Role.member]: MEMBER_PERMISSIONS,
-  [Role.director]: REVIEWER_PERMISSIONS,
-  [Role.coordinator]: REVIEWER_PERMISSIONS,
-  [Role.superadmin]: REVIEWER_PERMISSIONS,
+  [Role.director]: DIRECTOR_PERMISSIONS,
+  [Role.coordinator]: COORDINATOR_PERMISSIONS,
+  [Role.superadmin]: COORDINATOR_PERMISSIONS,
 };
 
-/** The person of the session: the applicant of `POST /lessons/:id/applications`. */
-export const SESSION_PERSON_ID = "01952ef7-0000-7000-8000-000000000001";
-export const SESSION_PERSON_NAME = "Beatriz Nunes";
-
-export function buildMeUser(role: Role = Role.member): MeResponseDto {
+export function buildMeUser(role: Role = Role.coordinator): MeResponseDto {
   return {
-    id: SESSION_PERSON_ID,
-    name: SESSION_PERSON_NAME,
+    id: USER_ID,
+    name: "Ana Coordenadora",
     ra: null,
     email: null,
     role,
@@ -62,10 +101,13 @@ export function buildMeUser(role: Role = Role.member): MeResponseDto {
   };
 }
 
-/** The same user without `assignments.manageOwn`, the permission of the route and of the menu item. */
-export function buildMeUserWithoutManageOwn(role: Role = Role.member): MeResponseDto {
+/** The same user with some permissions replaced: the way to ask for one the matrix does not give her. */
+export function buildMeUserWith(
+  permissions: Partial<PermissionsDto>,
+  role: Role = Role.coordinator,
+): MeResponseDto {
   const user = buildMeUser(role);
-  return { ...user, permissions: { ...user.permissions, "assignments.manageOwn": "none" } };
+  return { ...user, permissions: { ...user.permissions, ...permissions } };
 }
 
 interface MeHandlerOptions {
@@ -81,283 +123,228 @@ export function meHandler({ user = buildMeUser() }: MeHandlerOptions = {}) {
   });
 }
 
-const CLASS_INFO_A = { id: "01952ef7-0000-7000-8000-0000000000d1", code: "INFO-A" };
-const CLASS_REDES_C = { id: "01952ef7-0000-7000-8000-0000000000d2", code: "REDES-C" };
-const CLASS_SMART_B = { id: "01952ef7-0000-7000-8000-0000000000d3", code: "SMART-B" };
-
-interface LessonFixture {
-  title: string;
-  sequenceOrder: number | null;
-  date: string;
-  startTime: string;
-  endTime: string;
-  location: string | null;
-  class: { id: string; code: string; name: string };
-}
-
-/** The lessons of the Figma, by position: 0 to 2 are the member's own, 3 to 5 have a vacancy. */
-const LESSON_FIXTURES: LessonFixture[] = [
-  {
-    title: "Arquivos e pastas",
-    sequenceOrder: 3,
-    date: "2026-03-17",
-    startTime: "09:00",
-    endTime: "11:00",
-    location: "Laboratório 2",
-    class: { ...CLASS_INFO_A, name: "Informática Básica — A" },
-  },
-  {
-    title: "Privacidade no Facebook",
-    sequenceOrder: 4,
-    date: "2026-03-19",
-    startTime: "14:00",
-    endTime: "16:00",
-    location: "Sala 3",
-    class: { ...CLASS_REDES_C, name: "Redes Sociais — C" },
-  },
-  {
-    title: "Chamadas de vídeo",
-    sequenceOrder: 5,
-    date: "2026-03-26",
-    startTime: "14:00",
-    endTime: "16:00",
-    location: null,
-    class: { ...CLASS_SMART_B, name: "Smartphones no dia a dia — B" },
-  },
-  {
-    title: "E-mail do zero",
-    sequenceOrder: 5,
-    date: "2026-03-31",
-    startTime: "09:00",
-    endTime: "11:00",
-    location: "Laboratório 2",
-    class: { ...CLASS_INFO_A, name: "Informática Básica — A" },
-  },
-  {
-    title: "Golpes e segurança",
-    sequenceOrder: 6,
-    date: "2026-04-02",
-    startTime: "14:00",
-    endTime: "16:00",
-    location: null,
-    class: { ...CLASS_REDES_C, name: "Redes Sociais — C" },
-  },
-  {
-    title: "Compras on-line",
-    sequenceOrder: 6,
-    date: "2026-04-07",
-    startTime: "09:00",
-    endTime: "11:00",
-    location: "Laboratório 2",
-    class: { ...CLASS_INFO_A, name: "Informática Básica — A" },
-  },
-];
-
-export const LESSON_IDS = LESSON_FIXTURES.map(
-  (_lesson, index) => `01952ef7-0000-7000-8000-0000000000f${index + 1}`,
-);
-
-/** A lesson of an assignment (the reference `lesson` of `MyAssignment`, `OpenLesson` and the queue). */
-export function buildAssignmentLesson(
-  index = 0,
-  overrides: Partial<AssignmentLessonResponseDto> = {},
-): AssignmentLessonResponseDto {
-  const { class: lessonClass, ...fixture } = LESSON_FIXTURES[index];
+/** An item of `GET /lessons`: "Senhas e privacidade", planned for 2026-03-10, with no teacher. */
+export function buildLessonListItem(
+  overrides: Partial<LessonListItemResponseDto> = {},
+): LessonListItemResponseDto {
   return {
-    id: LESSON_IDS[index],
-    ...fixture,
-    class: lessonClass,
+    id: LESSON_ID,
+    title: LESSON_TITLE,
+    date: "2026-03-10",
+    startTime: "09:00",
+    endTime: "11:00",
     status: LessonStatus.planned,
+    teacher: null,
+    belowExpectedMonitors: false,
+    class: { id: CLASS_ID, code: "INFO-A", name: CLASS_NAME, colorIndex: 0 },
     ...overrides,
   };
 }
 
-interface CoverageOverrides {
-  teacher?: Partial<LessonCoverageDto["teacher"]>;
-  monitors?: Partial<LessonCoverageDto["monitors"]>;
-}
-
-/** By default "Professor(a) 0 de 1 · Monitores 2 de 3", the vacancies of the Figma. */
-export function buildCoverage({ teacher, monitors }: CoverageOverrides = {}): LessonCoverageDto {
-  return {
-    teacher: { confirmed: 0, expected: 1, ...teacher },
-    monitors: { confirmed: 2, expected: 3, ...monitors },
-  };
-}
-
-export function buildMyAssignment(
-  index = 0,
-  overrides: Partial<MyAssignmentResponseDto> = {},
-): MyAssignmentResponseDto {
-  return {
-    id: `01952ef7-0000-7000-8000-0000000000b${index + 1}`,
-    lesson: buildAssignmentLesson(index),
-    role: AssignmentRole.monitor,
-    source: AssignmentSource.application,
-    status: AssignmentStatus.confirmed,
-    ...overrides,
-  };
-}
-
-/** The agenda of the Figma: two confirmed lessons and one waiting for confirmation. */
-export function buildDefaultMyAssignments(): MyAssignmentResponseDto[] {
-  return [
-    buildMyAssignment(0, { role: AssignmentRole.teacher }),
-    buildMyAssignment(1),
-    buildMyAssignment(2, { status: AssignmentStatus.pending }),
-  ];
+/** The answer of `GET /lessons`: `total` can be more than the items of the page. */
+export function buildLessonsPage(
+  items: LessonListItemResponseDto[] = [],
+  total: number = items.length,
+  limit = 100,
+): ListLessons200 {
+  return { data: items, total, page: 1, limit };
 }
 
 /**
- * Response of `GET /me/assignments`. The totals follow the rules of the API: `confirmed` and
- * `pending` count the items of that status (a declined or a cancelled one is in no total),
- * `upcoming` is both of them, and `openLessons` is the number of the lessons with a vacancy, which
- * the items do not say (3 in the Figma, unless the test gives it).
+ * An item of `GET /members`: "Beatriz Nunes", an active member with access and an approved
+ * registration, who can be assigned. Overrides win over any default.
  */
-export function buildMyAssignments(
-  items: MyAssignmentResponseDto[] = buildDefaultMyAssignments(),
-  totals: Partial<MyAssignmentsTotalsDto> = {},
-): MyAssignmentsResponseDto {
-  const confirmed = items.filter((item) => item.status === AssignmentStatus.confirmed).length;
-  const pending = items.filter((item) => item.status === AssignmentStatus.pending).length;
-
+export function buildMemberListItem(
+  overrides: Partial<MemberListItemResponseDto> = {},
+): MemberListItemResponseDto {
   return {
-    from: "2026-03-16",
-    to: "2026-04-12",
-    items,
-    totals: { confirmed, pending, upcoming: confirmed + pending, openLessons: 3, ...totals },
-  };
-}
-
-export function buildOpenLesson(
-  index = 3,
-  overrides: Partial<OpenLessonResponseDto> = {},
-): OpenLessonResponseDto {
-  return {
-    lesson: buildAssignmentLesson(index),
-    coverage: buildCoverage(),
-    openRoles: [AssignmentRole.teacher, AssignmentRole.monitor],
+    id: MEMBER_ID,
+    name: MEMBER_NAME,
+    ra: "202400003",
+    role: Role.member,
+    department: null,
+    mainFunction: null,
+    joinedAt: null,
+    exitDate: null,
+    exitReason: null,
+    status: MemberStatus.active,
+    accessEnabled: true,
+    registrationStatus: MemberRegistrationStatus.approved,
     ...overrides,
   };
 }
 
-/** The lessons with a vacancy of the Figma: 31/03 (both roles), 02/04 (monitors only) and 07/04. */
-export function buildDefaultOpenLessons(): OpenLessonResponseDto[] {
-  return [
-    buildOpenLesson(3),
-    buildOpenLesson(4, {
-      coverage: buildCoverage({
-        teacher: { confirmed: 1 },
-        monitors: { confirmed: 0, expected: 2 },
-      }),
-      openRoles: [AssignmentRole.monitor],
-    }),
-    buildOpenLesson(5, {
-      coverage: buildCoverage({ teacher: { confirmed: 1 }, monitors: { confirmed: 1 } }),
-      openRoles: [AssignmentRole.monitor],
-    }),
-  ];
+/** The answer of `GET /members`. */
+export function buildMembersPage(
+  items: MemberListItemResponseDto[] = [buildMemberListItem()],
+  total: number = items.length,
+  limit = 100,
+): ListMembers200 {
+  return { data: items, total, page: 1, limit };
 }
 
-export const APPLICATION_IDS = {
-  beatriz: "01952ef7-0000-7000-8000-0000000000a1",
-  diego: "01952ef7-0000-7000-8000-0000000000a2",
-  carla: "01952ef7-0000-7000-8000-0000000000a3",
-} as const;
-
-export const PEOPLE = {
-  beatriz: { id: "01952ef7-0000-7000-8000-0000000000e1", name: "Beatriz Nunes" },
-  diego: { id: "01952ef7-0000-7000-8000-0000000000e2", name: "Diego Almeida" },
-  carla: { id: "01952ef7-0000-7000-8000-0000000000e3", name: "Carla Menezes" },
-} as const;
-
-/** A pending application: Beatriz, monitor, in "E-mail do zero", sent on 20/03 with a note. */
-export function buildApplication(
+/**
+ * An item of `GET /lessons/:id/assignments`: "Beatriz Nunes" confirmed as the teacher of the lesson,
+ * made by a coordinator. Overrides win over any default.
+ */
+export function buildLessonAssignment(
   overrides: Partial<LessonAssignmentResponseDto> = {},
 ): LessonAssignmentResponseDto {
   return {
-    id: APPLICATION_IDS.beatriz,
-    lessonId: LESSON_IDS[3],
-    person: PEOPLE.beatriz,
-    role: AssignmentRole.monitor,
-    source: AssignmentSource.application,
-    status: AssignmentStatus.pending,
-    note: "Posso chegar 15 min antes para ligar os computadores.",
-    createdAt: "2026-03-20T15:00:00.000Z",
-    createdById: PEOPLE.beatriz.id,
-    updatedAt: "2026-03-20T15:00:00.000Z",
-    reviewedAt: null,
-    reviewedById: null,
+    id: ASSIGNMENT_ID,
+    lessonId: LESSON_ID,
+    person: { id: MEMBER_ID, name: MEMBER_NAME },
+    role: AssignmentRole.teacher,
+    status: AssignmentStatus.confirmed,
+    source: AssignmentSource.direct,
+    note: null,
+    createdById: USER_ID,
+    createdAt: "2026-03-01T12:00:00.000Z",
+    updatedAt: "2026-03-01T12:00:00.000Z",
+    reviewedById: USER_ID,
+    reviewedAt: "2026-03-01T12:00:00.000Z",
+    cancelledById: null,
+    cancelledAt: null,
+    ...overrides,
+  };
+}
+
+/**
+ * An item of `GET /members/:id/assignments`: the teacher of "Senhas e privacidade" on 2026-03-10,
+ * confirmed. The lesson is a part of it, so an override of `lesson` replaces the whole reference.
+ */
+export function buildMemberAssignment(
+  overrides: Partial<MemberAssignmentResponseDto> = {},
+): MemberAssignmentResponseDto {
+  return {
+    id: ASSIGNMENT_ID,
+    lesson: {
+      id: LESSON_ID,
+      title: LESSON_TITLE,
+      date: "2026-03-10",
+      startTime: "09:00",
+      endTime: "11:00",
+      status: LessonStatus.planned,
+    },
+    role: AssignmentRole.teacher,
+    status: AssignmentStatus.confirmed,
+    source: AssignmentSource.direct,
+    createdAt: "2026-03-01T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+interface CoverageOptions {
+  /** Teachers confirmed: 0 or 1. */
+  teacher?: number;
+  /** Monitors confirmed. */
+  monitors?: number;
+  /** What the lesson expects, `null` when it does not say. Two by default, as the Figma does. */
+  expectedMonitors?: number | null;
+}
+
+/** The coverage the API counts over the confirmed assignments: one teacher expected, and the monitors. */
+export function buildCoverage({
+  teacher = 0,
+  monitors = 0,
+  expectedMonitors = 2,
+}: CoverageOptions = {}): LessonCoverageDto {
+  return {
+    teacher: { confirmed: teacher, expected: 1 },
+    monitors: { confirmed: monitors, expected: expectedMonitors },
+  };
+}
+
+/**
+ * Response of `GET /lessons/:id`: "Senhas e privacidade", planned for 2026-03-10 in the class
+ * "Informática Básica — A", with no one confirmed yet and two monitors expected, so below the
+ * expected. `belowExpectedMonitors` follows the coverage, as the API derives it, unless an override
+ * says otherwise.
+ */
+export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonResponseDto {
+  const coverage = overrides.coverage ?? buildCoverage();
+  const { expected, confirmed } = coverage.monitors;
+
+  return {
+    id: LESSON_ID,
+    title: LESSON_TITLE,
+    belowExpectedMonitors: expected !== null && confirmed < expected,
+    coverage,
+    objective: "Criar senhas fortes e proteger os dados.",
+    date: "2026-03-10",
+    startTime: "09:00",
+    endTime: "11:00",
+    durationMinutes: 120,
+    location: "Laboratório 2 — Bloco B",
+    status: LessonStatus.planned,
+    expectedStudents: 12,
+    expectedMonitors: expected,
+    subject: null,
+    postNotes: null,
+    originalDate: null,
+    rescheduleReason: null,
+    rescheduleNote: null,
+    cancelReason: null,
     cancelledAt: null,
     cancelledById: null,
+    sequenceOrder: 2,
+    lessonPlan: null,
+    class: {
+      id: CLASS_ID,
+      code: "INFO-A",
+      name: CLASS_NAME,
+      archivedAt: null,
+      startDate: "2026-03-02",
+      endDate: "2026-06-30",
+    },
+    course: { id: COURSE_ID, name: "Informática Básica" },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    createdById: USER_ID,
+    createdAt: "2026-02-12T12:00:00.000Z",
+    updatedAt: "2026-02-12T12:00:00.000Z",
     ...overrides,
   };
 }
 
-/** Diego, teacher, in "E-mail do zero", sent on 19/03 without a note. */
-export function buildDiegoApplication(
-  overrides: Partial<LessonAssignmentResponseDto> = {},
-): LessonAssignmentResponseDto {
-  return buildApplication({
-    id: APPLICATION_IDS.diego,
-    person: PEOPLE.diego,
-    role: AssignmentRole.teacher,
-    note: null,
-    createdAt: "2026-03-19T15:00:00.000Z",
-    createdById: PEOPLE.diego.id,
-    ...overrides,
-  });
-}
-
-/** Carla, monitor, in "Golpes e segurança", sent on 21/03 without a note. */
-export function buildCarlaApplication(
-  overrides: Partial<LessonAssignmentResponseDto> = {},
-): LessonAssignmentResponseDto {
-  return buildApplication({
-    id: APPLICATION_IDS.carla,
-    lessonId: LESSON_IDS[4],
-    person: PEOPLE.carla,
-    note: null,
-    createdAt: "2026-03-21T15:00:00.000Z",
-    createdById: PEOPLE.carla.id,
-    ...overrides,
-  });
-}
-
-export function buildPendingGroup(
-  lessonIndex: number,
-  applications: LessonAssignmentResponseDto[],
-  overrides: Partial<Omit<PendingApplicationGroupResponseDto, "applications">> = {},
-): PendingApplicationGroupResponseDto {
+/**
+ * Response of `GET /classes/:id`: "Informática Básica — A" with 8 of 15 seats taken ("8 alunos
+ * matriculados" of the Figma). It is the only thing the card of the coverage reads (`summary`), so
+ * the rest is the minimum the type asks for.
+ */
+export function buildClassDetail(overrides: Partial<ClassDetailDto> = {}): ClassDetailDto {
   return {
-    lesson: buildAssignmentLesson(lessonIndex),
-    coverage: buildCoverage(),
-    applications,
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-02",
+    endDate: "2026-06-30",
+    location: "Laboratório 2 — Bloco B",
+    capacity: 15,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    createdAt: "2026-02-12T12:00:00.000Z",
+    createdBy: null,
+    course: {
+      id: COURSE_ID,
+      name: "Informática Básica",
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+      lessonPlanCount: 6,
+      plannedWorkloadMinutes: 540,
+    },
+    summary: {
+      enrolledCount: 8,
+      capacity: 15,
+      occupancyRate: 0.53,
+      lessonsDone: null,
+      lessonsTotal: null,
+      averageAttendance: null,
+    },
+    enrollmentsPreview: [],
+    enrollmentsTotal: 8,
     ...overrides,
   };
-}
-
-/** Response of `GET /applications?status=pending`: the `total` is the number of applications. */
-export function buildPendingApplications(
-  groups: PendingApplicationGroupResponseDto[] = buildDefaultPendingGroups(),
-): PendingApplicationsResponseDto {
-  return {
-    lessons: groups,
-    total: groups.reduce((total, group) => total + group.applications.length, 0),
-  };
-}
-
-/** The queue of the Figma: two applications in "E-mail do zero" and one in "Golpes e segurança". */
-export function buildDefaultPendingGroups(): PendingApplicationGroupResponseDto[] {
-  return [
-    buildPendingGroup(3, [buildApplication(), buildDiegoApplication()]),
-    buildPendingGroup(4, [buildCarlaApplication()], {
-      coverage: buildCoverage({
-        teacher: { confirmed: 1 },
-        monitors: { confirmed: 0, expected: 2 },
-      }),
-    }),
-  ];
 }
 
 export interface ApiErrorOptions {
@@ -374,28 +361,28 @@ export const VALIDATION_ERROR = (details: ApiFieldErrorDto[]): ApiErrorOptions =
   details,
 });
 
-export const ROLE_FULL_ERROR: ApiErrorOptions = {
-  statusCode: 409,
-  error: "ROLE_FULL",
-  message: "There is no open place for this role.",
+export const MEMBER_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 400,
+  error: "MEMBER_NOT_FOUND",
+  message: "The member does not exist.",
 };
 
-export const ALREADY_APPLIED_ERROR: ApiErrorOptions = {
+export const DUPLICATE_ROLE_ERROR: ApiErrorOptions = {
   statusCode: 409,
-  error: "ALREADY_APPLIED",
-  message: "The member already holds a place in the lesson.",
+  error: "DUPLICATE_ROLE_IN_LESSON",
+  message: "The member already has a place in the lesson.",
 };
 
-export const LESSON_IN_PAST_ERROR: ApiErrorOptions = {
+export const TEACHER_TAKEN_ERROR: ApiErrorOptions = {
   statusCode: 409,
-  error: "LESSON_IN_PAST",
-  message: "The lesson no longer takes applications.",
+  error: "LESSON_TEACHER_TAKEN",
+  message: "The lesson already has a confirmed teacher.",
 };
 
 export const LESSON_CANCELLED_ERROR: ApiErrorOptions = {
   statusCode: 409,
   error: "LESSON_CANCELLED",
-  message: "A cancelled lesson cannot receive assignments.",
+  message: "A cancelled lesson takes no assignments.",
 };
 
 export const MEMBER_INACTIVE_ERROR: ApiErrorOptions = {
@@ -410,16 +397,27 @@ export const LESSON_NOT_FOUND_ERROR: ApiErrorOptions = {
   message: "Lesson not found.",
 };
 
-export const APPLICATION_NOT_PENDING_ERROR: ApiErrorOptions = {
-  statusCode: 409,
-  error: "APPLICATION_NOT_PENDING",
-  message: "The application is not pending.",
+export const ASSIGNMENT_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 404,
+  error: "ASSIGNMENT_NOT_FOUND",
+  message: "Assignment not found.",
 };
 
-export const APPLICATION_NOT_FOUND_ERROR: ApiErrorOptions = {
-  statusCode: 404,
-  error: "APPLICATION_NOT_FOUND",
-  message: "Application not found.",
+export const ASSIGNMENT_NOT_ACTIVE_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "ASSIGNMENT_NOT_ACTIVE",
+  message: "The assignment is not active.",
+};
+
+export const FORBIDDEN_SCOPE_ERROR: ApiErrorOptions = {
+  statusCode: 403,
+  error: "FORBIDDEN_SCOPE",
+  message: "Outside the department of the director.",
+};
+
+export const SERVER_ERROR: ApiErrorOptions = {
+  statusCode: 500,
+  error: "INTERNAL_SERVER_ERROR",
 };
 
 function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptions) {
@@ -429,285 +427,238 @@ function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptio
   );
 }
 
+/** A refusal, or a function of the call that gives it (`undefined` answers normally) for a test that fails one request only. */
+type ErrorOption<TCall> = ApiErrorOptions | ((call: TCall) => ApiErrorOptions | undefined);
+
 interface HandlerOptions<TCall, TResponse> {
-  response?: TResponse;
-  error?: ApiErrorOptions;
+  /** The answer, or a function of the call, for a test whose answer follows what it was asked. */
+  response?: TResponse | ((call: TCall) => TResponse);
+  error?: ErrorOption<TCall>;
   networkError?: boolean;
   /** Holds the answer until the test resolves it, to look at the loading state. */
   delay?: Promise<void>;
   onCall?: (call: TCall) => void;
 }
 
-/** What a list request carried: the period the screen never sends, and the filter of the queue. */
-export interface PeriodCall {
-  from: string | null;
-  to: string | null;
+function resolveResponse<TCall, TResponse>(
+  response: TResponse | ((call: TCall) => TResponse),
+  call: TCall,
+): TResponse {
+  return typeof response === "function" ? (response as (call: TCall) => TResponse)(call) : response;
 }
 
-export interface PendingApplicationsCall {
+function resolveError<TCall>(
+  error: ErrorOption<TCall> | undefined,
+  call: TCall,
+): ApiErrorOptions | undefined {
+  return typeof error === "function" ? error(call) : error;
+}
+
+function numberOrNull(value: string | null): number | null {
+  return value === null ? null : Number(value);
+}
+
+export interface IdCall {
+  id: string;
+}
+
+export interface CreateAssignmentCall {
+  /** The id of the lesson, from the URL. */
+  id: string;
+  body: CreateAssignmentDto;
+}
+
+/** `POST /lessons/:id/assignments`: 201 with the assignment created. */
+export function createAssignmentHandler({
+  response = buildLessonAssignment(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<CreateAssignmentCall, LessonAssignmentResponseDto> = {}) {
+  return http.post("*/lessons/:id/assignments", async ({ request, params }) => {
+    const call: CreateAssignmentCall = {
+      id: String(params.id),
+      body: (await request.json()) as CreateAssignmentDto,
+    };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call), { status: 201 });
+  });
+}
+
+/** `GET /lessons/:id/assignments`: nobody is assigned by default. */
+export function listLessonAssignmentsHandler({
+  response = [],
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, LessonAssignmentResponseDto[]> = {}) {
+  return http.get("*/lessons/:id/assignments", async ({ params }) => {
+    const call: IdCall = { id: String(params.id) };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
+  });
+}
+
+/** `GET /members/:id/assignments`: the teacher of "Senhas e privacidade" by default. */
+export function listMemberAssignmentsHandler({
+  response = [buildMemberAssignment()],
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, MemberAssignmentResponseDto[]> = {}) {
+  return http.get("*/members/:id/assignments", async ({ params }) => {
+    const call: IdCall = { id: String(params.id) };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
+  });
+}
+
+/** `PATCH /assignments/:id/cancel`: the assignment, cancelled. */
+export function cancelAssignmentHandler({
+  response = buildLessonAssignment({
+    status: AssignmentStatus.cancelled,
+    cancelledAt: "2026-03-05T12:00:00.000Z",
+    cancelledById: USER_ID,
+  }),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, LessonAssignmentResponseDto> = {}) {
+  return http.patch("*/assignments/:id/cancel", async ({ params }) => {
+    const call: IdCall = { id: String(params.id) };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
+  });
+}
+
+/** `GET /lessons/:id`. */
+export function getLessonHandler({
+  response = buildLesson(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, LessonResponseDto> = {}) {
+  return http.get("*/lessons/:id", async ({ params }) => {
+    const call: IdCall = { id: String(params.id) };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
+  });
+}
+
+/** `GET /classes/:id`. */
+export function getClassHandler({
+  response = buildClassDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, ClassDetailDto> = {}) {
+  return http.get("*/classes/:id", async ({ params }) => {
+    const call: IdCall = { id: String(params.id) };
+    onCall?.(call);
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
+  });
+}
+
+export interface ListMembersCall {
+  /** `null` when the request does not send the parameter. */
   status: string | null;
+  enabled: string | null;
+  limit: number | null;
 }
 
-export interface ApplyToLessonCall {
-  id: string;
-  body: ApplyToLessonDto;
-}
-
-export interface ReviewApplicationCall {
-  id: string;
-}
-
-async function readBody<TBody>(request: Request): Promise<TBody> {
-  return (await request.json()) as TBody;
-}
-
-function periodOf(request: Request): PeriodCall {
-  const { searchParams } = new URL(request.url);
-  return { from: searchParams.get("from"), to: searchParams.get("to") };
-}
-
-export function listMyAssignmentsHandler({
-  response = buildMyAssignments(),
+/** `GET /members`: "Beatriz Nunes" by default. */
+export function listMembersHandler({
+  response = buildMembersPage(),
   error,
   networkError = false,
   delay,
   onCall,
-}: HandlerOptions<PeriodCall, MyAssignmentsResponseDto> = {}) {
-  return http.get("*/me/assignments", async ({ request }) => {
-    onCall?.(periodOf(request));
+}: HandlerOptions<ListMembersCall, ListMembers200> = {}) {
+  return http.get("*/members", async ({ request }) => {
+    const query = new URL(request.url).searchParams;
+    const call: ListMembersCall = {
+      status: query.get("status"),
+      enabled: query.get("enabled"),
+      limit: numberOrNull(query.get("limit")),
+    };
+    onCall?.(call);
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response);
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
   });
 }
 
-export function listOpenLessonsHandler({
-  response = buildDefaultOpenLessons(),
-  error,
-  networkError = false,
-  delay,
-  onCall,
-}: HandlerOptions<PeriodCall, OpenLessonResponseDto[]> = {}) {
-  return http.get("*/me/open-lessons", async ({ request }) => {
-    onCall?.(periodOf(request));
-    if (delay) await delay;
-
-    if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response);
-  });
-}
-
-export function applyToLessonHandler({
-  response = buildApplication({ id: "01952ef7-0000-7000-8000-0000000000a9" }),
-  error,
-  networkError = false,
-  delay,
-  onCall,
-}: HandlerOptions<ApplyToLessonCall, LessonAssignmentResponseDto> = {}) {
-  return http.post("*/lessons/:id/applications", async ({ request, params }) => {
-    onCall?.({ id: String(params.id), body: await readBody<ApplyToLessonDto>(request) });
-    if (delay) await delay;
-
-    if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response, { status: 201 });
-  });
-}
-
-export function listPendingApplicationsHandler({
-  response = buildPendingApplications(),
-  error,
-  networkError = false,
-  delay,
-  onCall,
-}: HandlerOptions<PendingApplicationsCall, PendingApplicationsResponseDto> = {}) {
-  return http.get("*/applications", async ({ request }) => {
-    onCall?.({ status: new URL(request.url).searchParams.get("status") });
-    if (delay) await delay;
-
-    if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response);
-  });
-}
-
-export function approveApplicationHandler({
-  response = buildApplication({
-    status: AssignmentStatus.confirmed,
-    reviewedAt: "2026-03-22T15:00:00.000Z",
-    reviewedById: SESSION_PERSON_ID,
-  }),
-  error,
-  networkError = false,
-  delay,
-  onCall,
-}: HandlerOptions<ReviewApplicationCall, LessonAssignmentResponseDto> = {}) {
-  return http.patch("*/applications/:id/approve", async ({ params }) => {
-    onCall?.({ id: String(params.id) });
-    if (delay) await delay;
-
-    if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response);
-  });
-}
-
-export function rejectApplicationHandler({
-  response = buildApplication({
-    status: AssignmentStatus.declined,
-    reviewedAt: "2026-03-22T15:00:00.000Z",
-    reviewedById: SESSION_PERSON_ID,
-  }),
-  error,
-  networkError = false,
-  delay,
-  onCall,
-}: HandlerOptions<ReviewApplicationCall, LessonAssignmentResponseDto> = {}) {
-  return http.patch("*/applications/:id/reject", async ({ params }) => {
-    onCall?.({ id: String(params.id) });
-    if (delay) await delay;
-
-    if (networkError) return HttpResponse.error();
-    if (error) return apiErrorResponse(error);
-    return HttpResponse.json(response);
-  });
-}
-
-interface BackendSeed {
-  mine?: MyAssignmentResponseDto[];
-  open?: OpenLessonResponseDto[];
-  groups?: PendingApplicationGroupResponseDto[];
-}
-
-function byDay(a: MyAssignmentResponseDto, b: MyAssignmentResponseDto): number {
-  return (
-    a.lesson.date.localeCompare(b.lesson.date) ||
-    a.lesson.startTime.localeCompare(b.lesson.startTime) ||
-    a.lesson.id.localeCompare(b.lesson.id)
-  );
+export interface ListLessonsCall {
+  /** `null` when the request does not send the parameter. */
+  classId: string | null;
+  from: string | null;
+  limit: number | null;
 }
 
 /**
- * A backend of a few lines that remembers what happened, so a test can follow a whole flow instead
- * of the answer of one request:
- *
- * - `POST /lessons/:id/applications` moves the lesson from "with a vacancy" to the agenda of the
- *   member as `pending` (the totals follow), and queues the application for whoever reviews;
- * - `PATCH /applications/:id/approve` takes the application out of its group (the group goes when it
- *   is empty), counts one more confirmed in the role of the coverage of the lesson, and the `total`
- *   of the queue goes down;
- * - `PATCH /applications/:id/reject` takes the application out of the queue and nothing else changes.
- *
- * The seed is the Figma, unless the test says otherwise. Every read answers with the state of that
- * moment, as the API does.
+ * `GET /lessons`. The form asks it twice, for the classes (`from` today, with no `classId`) and for
+ * the lessons of a class (`classId`), so a test that needs different answers gives `response` as a
+ * function of the call.
  */
-export function createApplicationsBackend(seed: BackendSeed = {}) {
-  const state = {
-    mine: [...(seed.mine ?? buildDefaultMyAssignments())],
-    open: [...(seed.open ?? buildDefaultOpenLessons())],
-    groups: structuredClone(seed.groups ?? buildDefaultPendingGroups()),
-  };
-  const calls = {
-    applied: [] as ApplyToLessonCall[],
-    approved: [] as string[],
-    rejected: [] as string[],
-  };
+export function listLessonsHandler({
+  response = buildLessonsPage([buildLessonListItem()]),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListLessonsCall, ListLessons200> = {}) {
+  return http.get("*/lessons", async ({ request }) => {
+    const query = new URL(request.url).searchParams;
+    const call: ListLessonsCall = {
+      classId: query.get("classId"),
+      from: query.get("from"),
+      limit: numberOrNull(query.get("limit")),
+    };
+    onCall?.(call);
+    if (delay) await delay;
 
-  function takeFromQueue(applicationId: string) {
-    for (const group of state.groups) {
-      const application = group.applications.find((candidate) => candidate.id === applicationId);
-      if (application) {
-        group.applications = group.applications.filter((candidate) => candidate !== application);
-        state.groups = state.groups.filter((candidate) => candidate.applications.length > 0);
-        return { application, group };
-      }
-    }
-    return null;
-  }
-
-  const handlers = [
-    http.get("*/me/assignments", () =>
-      HttpResponse.json(buildMyAssignments(state.mine, { openLessons: state.open.length })),
-    ),
-    http.get("*/me/open-lessons", () => HttpResponse.json(state.open)),
-    http.post("*/lessons/:id/applications", async ({ request, params }) => {
-      const id = String(params.id);
-      const body = await readBody<ApplyToLessonDto>(request);
-      calls.applied.push({ id, body });
-
-      const openLesson = state.open.find((candidate) => candidate.lesson.id === id);
-      if (!openLesson) return apiErrorResponse(LESSON_NOT_FOUND_ERROR);
-
-      const application = buildApplication({
-        id: `01952ef7-0000-7000-8000-${String(100 + calls.applied.length).padStart(12, "0")}`,
-        lessonId: id,
-        person: { id: SESSION_PERSON_ID, name: SESSION_PERSON_NAME },
-        createdById: SESSION_PERSON_ID,
-        role: body.role,
-        note: body.note ?? null,
-      });
-      state.open = state.open.filter((candidate) => candidate !== openLesson);
-      state.mine = [
-        ...state.mine,
-        {
-          id: application.id,
-          lesson: openLesson.lesson,
-          role: body.role,
-          source: AssignmentSource.application,
-          status: AssignmentStatus.pending,
-        },
-      ].sort(byDay);
-      const group = state.groups.find((candidate) => candidate.lesson.id === id);
-      if (group) group.applications.push(application);
-      else {
-        state.groups.push({
-          lesson: openLesson.lesson,
-          coverage: openLesson.coverage,
-          applications: [application],
-        });
-      }
-      return HttpResponse.json(application, { status: 201 });
-    }),
-    http.get("*/applications", () => HttpResponse.json(buildPendingApplications(state.groups))),
-    http.patch("*/applications/:id/approve", ({ params }) => {
-      const id = String(params.id);
-      calls.approved.push(id);
-
-      const taken = takeFromQueue(id);
-      if (!taken) return apiErrorResponse(APPLICATION_NOT_FOUND_ERROR);
-
-      const { application, group } = taken;
-      const part = application.role === AssignmentRole.teacher ? "teacher" : "monitors";
-      group.coverage = {
-        ...group.coverage,
-        [part]: { ...group.coverage[part], confirmed: group.coverage[part].confirmed + 1 },
-      };
-      // The group of a lesson that is empty now left the queue, and the coverage went with it.
-      return HttpResponse.json({
-        ...application,
-        status: AssignmentStatus.confirmed,
-        reviewedAt: "2026-03-22T15:00:00.000Z",
-        reviewedById: SESSION_PERSON_ID,
-      });
-    }),
-    http.patch("*/applications/:id/reject", ({ params }) => {
-      const id = String(params.id);
-      calls.rejected.push(id);
-
-      const taken = takeFromQueue(id);
-      if (!taken) return apiErrorResponse(APPLICATION_NOT_FOUND_ERROR);
-
-      return HttpResponse.json({
-        ...taken.application,
-        status: AssignmentStatus.declined,
-        reviewedAt: "2026-03-22T15:00:00.000Z",
-        reviewedById: SESSION_PERSON_ID,
-      });
-    }),
-  ];
-
-  return { handlers, state, calls };
+    if (networkError) return HttpResponse.error();
+    const failure = resolveError(error, call);
+    if (failure) return apiErrorResponse(failure);
+    return HttpResponse.json(resolveResponse(response, call));
+  });
 }

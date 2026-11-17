@@ -1,27 +1,121 @@
 {
   "close": "Close",
   "retry": "Try again",
-  "timeRange": "{{start}}–{{end}}",
-  "lessonLabel": "Lesson {{order}} · {{title}}",
-  "roles": {
+  "role": {
     "teacher": "Teacher",
     "monitor": "Monitor"
   },
-  "rolesInline": {
-    "teacher": "teacher",
-    "monitor": "monitor"
-  },
-  "assignmentStatus": {
-    "pending": "Awaiting confirmation",
+  "status": {
+    "pending": "Pending",
+    "applied": "Applied",
     "confirmed": "Confirmed",
     "declined": "Declined",
     "cancelled": "Cancelled"
   },
+  "newAssignment": {
+    "button": "New assignment",
+    "title": "New member assignment",
+    "member": "Member",
+    "class": "Class",
+    "lesson": "Lesson",
+    "role": "Role in the lesson",
+    "status": "Assignment status",
+    "placeholders": {
+      "member": "Choose the member",
+      "class": "Choose the class",
+      "lesson": "Choose the lesson",
+      "role": "Choose the role"
+    },
+    "submit": "Save assignment",
+    "submitting": "Saving…",
+    "cancel": "Cancel",
+    "membersLoading": "Loading the members…",
+    "membersEmpty": "There is no active member to assign.",
+    "membersError": "The members could not be loaded.",
+    "classesLoading": "Loading the classes…",
+    "classesEmpty": "No class has lessons from today on.",
+    "classesError": "The classes could not be loaded.",
+    "lessonsLoading": "Loading the lessons…",
+    "lessonsEmpty": "This class has no lesson that takes assignments.",
+    "lessonsError": "The lessons could not be loaded.",
+    "chooseClassFirst": "Choose the class to see its lessons."
+  },
+  "warnings": {
+    "duplicateRole": "This member already has a place in this lesson, as a teacher or as a monitor. Each member takes one place per lesson.",
+    "teacherTaken": "This lesson already has a confirmed teacher. Choose the monitor role or save the assignment as pending.",
+    "lessonCancelled": "This lesson is cancelled and takes no assignments. Choose another lesson.",
+    "memberInactive": "This member is not active in the project and cannot be assigned.",
+    "assignmentNotActive": "This assignment is no longer active, so there is nothing to cancel."
+  },
+  "fieldErrors": {
+    "required": "Choose an option.",
+    "memberNotFound": "This member was not found. Choose another one.",
+    "serverInvalid": "Review this field and try again."
+  },
+  "errors": {
+    "lessonNotFound": "Lesson not found. It may have been removed.",
+    "assignmentNotFound": "Assignment not found. It may have been removed.",
+    "forbidden": "You do not have access to this information.",
+    "network": "Could not connect. Check your connection and try again.",
+    "unknown": "The action could not be completed. Try again."
+  },
   "coverage": {
+    "title": "Lesson coverage",
+    "students": "Students",
+    "teacher": "Teacher",
+    "monitors": "Monitors",
+    "monitorsOf": "{{confirmed}} of {{expected}}",
+    "belowExpected": "Below expected",
+    "applications": "Applications",
+    "studentsLoading": "Loading the students…",
+    "loading": "Loading the coverage of the lesson…",
+    "error": "The coverage of the lesson could not be loaded."
+  },
+  "lessonTeacher": {
+    "loading": "Loading the teacher…",
+    "error": "The teacher could not be loaded."
+  },
+  "memberAssignments": {
+    "title": "Lesson assignments",
+    "caption": "Lesson assignments of the member",
+    "columns": {
+      "lesson": "Lesson",
+      "date": "Date",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "empty": "No assignment yet.",
+    "viewAll_one": "View the {{count}} assignment",
+    "viewAll_other": "View all {{count}}",
+    "viewLess": "View less",
+    "loading": "Loading the assignments of the member…",
+    "error": "The assignments of the member could not be loaded.",
+    "forbidden": "You only see the assignments of members of your department.",
+    "cancelFor": "Cancel the assignment in {{title}} on {{date}}"
+  },
+  "cancelDialog": {
+    "title": "Cancel assignment",
+    "description": "You are about to cancel the {{role}} assignment in “{{title}}”, on {{date}}. The place becomes free and the coverage of the lesson is updated.",
+    "back": "Back",
+    "submit": "Cancel assignment",
+    "submitting": "Cancelling…"
+  },
+  "toast": {
+    "created": "Assignment saved",
+    "cancelled": "Assignment cancelled"
+  },
+  "timeRange": "{{start}}–{{end}}",
+  "lessonLabel": "Lesson {{order}} · {{title}}",
+  "rolesInline": {
+    "teacher": "teacher",
+    "monitor": "monitor"
+  },
+  "vacancies": {
     "teacher": "Teacher {{confirmed}} of {{expected}}",
     "monitors": "Monitors {{confirmed}} of {{expected}}",
     "complete": "Team complete",
-    "vacancies": "Vacancies: {{coverage}}"
+    "summary": "Vacancies: {{coverage}}"
   },
   "myLessons": {
     "summary": {
@@ -66,6 +160,12 @@
       "empty": "No lesson with a vacancy for you in the next 4 weeks.",
       "loading": "Loading the lessons with a vacancy…",
       "error": "The lessons with a vacancy could not be loaded."
+    },
+    "status": {
+      "pending": "Awaiting confirmation",
+      "confirmed": "Confirmed",
+      "declined": "Declined",
+      "cancelled": "Cancelled"
     }
   },
   "apply": {

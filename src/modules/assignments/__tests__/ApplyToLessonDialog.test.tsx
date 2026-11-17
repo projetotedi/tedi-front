@@ -29,13 +29,9 @@ import {
   ROLE_FULL_ERROR,
   VALIDATION_ERROR,
   type ApplyToLessonCall,
-} from "./handlers";
-import {
-  createDeferred,
-  renderWithProviders,
-  server,
-  setupAssignmentsTestServer,
-} from "./test-utils";
+} from "./application-handlers";
+import { createDeferred, server, setupAssignmentsTestServer } from "./test-utils";
+import { renderAsMember } from "./application-test-utils";
 
 setupAssignmentsTestServer();
 
@@ -54,7 +50,7 @@ const submit = (user: ReturnType<typeof userEvent.setup>) =>
 async function renderApply(openLesson: OpenLessonResponseDto = OPEN_LESSON) {
   const onClose = vi.fn();
   const onApplied = vi.fn();
-  const view = await renderWithProviders(
+  const view = await renderAsMember(
     <ApplyToLessonDialog openLesson={openLesson} onClose={onClose} onApplied={onApplied} />,
     { user: buildMeUser(Role.member) },
   );

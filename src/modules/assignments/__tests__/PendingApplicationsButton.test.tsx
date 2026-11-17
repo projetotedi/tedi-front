@@ -12,14 +12,14 @@ import {
   createApplicationsBackend,
   listPendingApplicationsHandler,
   type PendingApplicationsCall,
-} from "./handlers";
+} from "./application-handlers";
 import {
   createDeferred,
   expectNoRequestTo,
-  renderWithProviders,
   server,
   setupAssignmentsTestServer,
 } from "./test-utils";
+import { renderAsMember } from "./application-test-utils";
 
 setupAssignmentsTestServer();
 
@@ -39,7 +39,7 @@ describe("PendingApplicationsButton", () => {
       const onCall = vi.fn<(call: PendingApplicationsCall) => void>();
       server.use(listPendingApplicationsHandler({ onCall }));
 
-      const { queryClient } = await renderWithProviders(<PendingApplicationsButton />, {
+      const { queryClient } = await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.member),
       });
 
@@ -53,7 +53,7 @@ describe("PendingApplicationsButton", () => {
       const onCall = vi.fn<(call: PendingApplicationsCall) => void>();
       server.use(listPendingApplicationsHandler({ onCall }));
 
-      const { queryClient } = await renderWithProviders(<PendingApplicationsButton />, {
+      const { queryClient } = await renderAsMember(<PendingApplicationsButton />, {
         user: null,
       });
 
@@ -69,7 +69,7 @@ describe("PendingApplicationsButton", () => {
     ])("the %s sees it, with the total of the queue", async (_label, role) => {
       server.use(listPendingApplicationsHandler());
 
-      await renderWithProviders(<PendingApplicationsButton />, { user: buildMeUser(role) });
+      await renderAsMember(<PendingApplicationsButton />, { user: buildMeUser(role) });
 
       const button = await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });
       expect(button).toHaveClass("button--secondary", "min-h-11");
@@ -79,7 +79,7 @@ describe("PendingApplicationsButton", () => {
       const onCall = vi.fn<(call: PendingApplicationsCall) => void>();
       server.use(listPendingApplicationsHandler({ onCall }));
 
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUserWithoutManageOwn(Role.member),
       });
 
@@ -93,7 +93,7 @@ describe("PendingApplicationsButton", () => {
       const onCall = vi.fn<(call: PendingApplicationsCall) => void>();
       server.use(listPendingApplicationsHandler({ onCall }));
 
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
 
@@ -106,7 +106,7 @@ describe("PendingApplicationsButton", () => {
     it("counts applications, not lessons", async () => {
       server.use(listPendingApplicationsHandler({ response: buildPendingApplications() }));
 
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
 
@@ -117,7 +117,7 @@ describe("PendingApplicationsButton", () => {
       const deferred = createDeferred();
       server.use(listPendingApplicationsHandler({ delay: deferred.promise }));
 
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
 
@@ -132,7 +132,7 @@ describe("PendingApplicationsButton", () => {
     it("is left out when the queue cannot be read, and the dialog opens on the error", async () => {
       server.use(listPendingApplicationsHandler({ networkError: true }));
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
 
@@ -148,7 +148,7 @@ describe("PendingApplicationsButton", () => {
     it("stays on the screen with 0, enabled: a disabled button takes no focus", async () => {
       server.use(listPendingApplicationsHandler({ response: buildPendingApplications([]) }));
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
 
@@ -166,7 +166,7 @@ describe("PendingApplicationsButton", () => {
     it("opens the dialog Candidaturas pendentes (3), with the queue", async () => {
       server.use(listPendingApplicationsHandler());
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
       await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });
@@ -182,7 +182,7 @@ describe("PendingApplicationsButton", () => {
     it("gives the focus back to the button when Fechar closes the dialog", async () => {
       server.use(listPendingApplicationsHandler());
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
       await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });
@@ -198,7 +198,7 @@ describe("PendingApplicationsButton", () => {
     it("gives the focus back to the button when Esc closes the dialog", async () => {
       server.use(listPendingApplicationsHandler());
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
       await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });
@@ -214,7 +214,7 @@ describe("PendingApplicationsButton", () => {
     it("opens a fresh dialog each time", async () => {
       server.use(...createApplicationsBackend().handlers);
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
       await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });
@@ -236,7 +236,7 @@ describe("PendingApplicationsButton", () => {
       const backend = createApplicationsBackend();
       server.use(...backend.handlers);
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
       await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });
@@ -274,7 +274,7 @@ describe("PendingApplicationsButton", () => {
     it("updates the counter of the button behind the dialog as soon as the queue is read again", async () => {
       server.use(...createApplicationsBackend().handlers);
       const user = userEvent.setup();
-      await renderWithProviders(<PendingApplicationsButton />, {
+      await renderAsMember(<PendingApplicationsButton />, {
         user: buildMeUser(Role.coordinator),
       });
       await screen.findByRole("button", { name: "Candidaturas pendentes (3)" });

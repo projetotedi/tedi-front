@@ -8,10 +8,10 @@ import { DataTable, type Column } from "@shared/components/DataTable";
 import { Alert, Badge, Button, Card, Skeleton } from "@shared/ui";
 
 import {
-  ASSIGNMENT_STATUS_LABEL_KEYS,
+  MY_LESSON_STATUS_LABEL_KEYS,
   assignmentStatusTone,
   lessonLabel,
-  ROLE_LABEL_KEYS,
+  ASSIGNMENT_ROLE_LABEL_KEYS,
 } from "../lib/assignment-labels";
 import { formatLessonDay } from "../lib/format";
 import { LINK_CLASSES } from "./link-classes";
@@ -60,13 +60,13 @@ export function MyUpcomingLessonsCard(): ReactElement {
     {
       header: t("myLessons.upcoming.columns.role"),
       headerClassName: "uppercase",
-      render: ({ role }) => t(ROLE_LABEL_KEYS[role]),
+      render: ({ role }) => t(ASSIGNMENT_ROLE_LABEL_KEYS[role]),
     },
     {
       header: t("myLessons.upcoming.columns.status"),
       headerClassName: "uppercase",
       render: ({ status }) => (
-        <Badge tone={assignmentStatusTone(status)}>{t(ASSIGNMENT_STATUS_LABEL_KEYS[status])}</Badge>
+        <Badge tone={assignmentStatusTone(status)}>{t(MY_LESSON_STATUS_LABEL_KEYS[status])}</Badge>
       ),
     },
   ];

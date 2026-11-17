@@ -16,7 +16,7 @@ import {
 import { Alert, Badge, Button, Dialog, Skeleton, toast } from "@shared/ui";
 
 import { toReviewError, type ReviewErrorKind } from "../lib/application-errors";
-import { lessonLabel, ROLE_LABEL_KEYS } from "../lib/assignment-labels";
+import { lessonLabel, ASSIGNMENT_ROLE_LABEL_KEYS } from "../lib/assignment-labels";
 import { invalidateAfterReviewed, PENDING_APPLICATIONS_PARAMS } from "../lib/assignment-queries";
 import { formatCoverage } from "../lib/coverage";
 import { formatLessonDay, formatSentDate, META_SEPARATOR } from "../lib/format";
@@ -126,7 +126,7 @@ function ApplicationGroup({ group, idPrefix, acting, onAct }: ApplicationGroupPr
                 <p className="text-base font-medium">
                   {t("pendingApplications.requestedBy", {
                     name,
-                    role: t(ROLE_LABEL_KEYS[application.role]),
+                    role: t(ASSIGNMENT_ROLE_LABEL_KEYS[application.role]),
                   })}
                 </p>
                 <p className="text-sm break-words text-tedi-neutral-foreground">
@@ -255,7 +255,7 @@ export function PendingApplicationsDialog({
             {
               description: t("pendingApplications.toastDescription", {
                 name: application.person?.name ?? t("pendingApplications.removedPerson"),
-                role: t(ROLE_LABEL_KEYS[application.role]),
+                role: t(ASSIGNMENT_ROLE_LABEL_KEYS[application.role]),
                 day: formatLessonDay(lesson.date, i18n.language),
               }),
             },

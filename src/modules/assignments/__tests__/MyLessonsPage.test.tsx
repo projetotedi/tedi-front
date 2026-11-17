@@ -22,14 +22,14 @@ import {
   listPendingApplicationsHandler,
   type PeriodCall,
   type PendingApplicationsCall,
-} from "./handlers";
+} from "./application-handlers";
 import {
   createDeferred,
   expectNoRequestTo,
-  renderWithProviders,
   server,
   setupAssignmentsTestServer,
 } from "./test-utils";
+import { renderAsMember } from "./application-test-utils";
 
 setupAssignmentsTestServer();
 
@@ -69,7 +69,7 @@ const applyButton = (lesson: string, day: string) =>
   screen.getByRole("button", { name: `Candidatar-se à ${lesson}, ${day}` });
 
 async function renderPage(role: Role = Role.member) {
-  const view = await renderWithProviders(<MyLessonsPage />, { user: buildMeUser(role) });
+  const view = await renderAsMember(<MyLessonsPage />, { user: buildMeUser(role) });
   await screen.findByRole("table", { name: UPCOMING_TABLE });
   await screen.findByRole("table", { name: OPEN_TABLE });
   return view;
@@ -134,7 +134,7 @@ describe("MyLessonsPage", () => {
         }),
         listOpenLessonsHandler({ response: [] }),
       );
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
       await screen.findByText("Nenhuma aula com vaga para você nas próximas 4 semanas.");
 
       expect(tiles()).toEqual([
@@ -150,7 +150,7 @@ describe("MyLessonsPage", () => {
       const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
       const deferred = createDeferred();
       server.use(listMyAssignmentsHandler({ delay: deferred.promise }));
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(await screen.findByText("Carregando o resumo das suas aulas…")).toHaveClass("sr-only");
       expect(within(summary()).getAllByRole("listitem")).toHaveLength(4);
@@ -164,7 +164,7 @@ describe("MyLessonsPage", () => {
 
     it("shows a dash read as Não informado when the agenda cannot be read", async () => {
       server.use(listMyAssignmentsHandler({ networkError: true }));
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
       await screen.findByText("Não foi possível carregar as suas próximas aulas.");
 
       for (const tile of within(summary()).getAllByRole("listitem")) {
@@ -293,7 +293,7 @@ describe("MyLessonsPage", () => {
       server.use(
         listMyAssignmentsHandler({ response: buildMyAssignments([], { openLessons: 3 }) }),
       );
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(
         await screen.findByText(
@@ -307,7 +307,7 @@ describe("MyLessonsPage", () => {
     it("shows a loading state while the agenda is on its way", async () => {
       const deferred = createDeferred();
       server.use(listMyAssignmentsHandler({ delay: deferred.promise }));
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(await screen.findByText("Carregando as suas próximas aulas…")).toHaveClass("sr-only");
       expect(screen.queryByRole("table", { name: UPCOMING_TABLE })).not.toBeInTheDocument();
@@ -320,7 +320,7 @@ describe("MyLessonsPage", () => {
     it("shows the error with Tentar de novo, and the next attempt shows the agenda and the numbers", async () => {
       server.use(listMyAssignmentsHandler({ networkError: true }));
       const user = userEvent.setup();
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(
         await screen.findByText("Não foi possível carregar as suas próximas aulas."),
@@ -410,7 +410,7 @@ describe("MyLessonsPage", () => {
 
     it("says there is no lesson with a vacancy", async () => {
       server.use(listOpenLessonsHandler({ response: [] }));
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(
         await screen.findByText("Nenhuma aula com vaga para você nas próximas 4 semanas."),
@@ -424,7 +424,7 @@ describe("MyLessonsPage", () => {
     it("shows a loading state, with the title without a number, while the lessons are on their way", async () => {
       const deferred = createDeferred();
       server.use(listOpenLessonsHandler({ delay: deferred.promise }));
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(await screen.findByText("Carregando as aulas com vaga…")).toHaveClass("sr-only");
       expect(
@@ -439,7 +439,7 @@ describe("MyLessonsPage", () => {
     it("shows the error with Tentar de novo, and the next attempt shows the lessons", async () => {
       server.use(listOpenLessonsHandler({ networkError: true }));
       const user = userEvent.setup();
-      await renderWithProviders(<MyLessonsPage />);
+      await renderAsMember(<MyLessonsPage />);
 
       expect(
         await screen.findByText("Não foi possível carregar as aulas com vaga."),

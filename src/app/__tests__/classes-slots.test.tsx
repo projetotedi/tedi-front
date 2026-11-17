@@ -1,8 +1,18 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { MeResponseDto } from "@api/generated/model";
+import {
+  buildMemberListItem,
+  buildMembersPage,
+  buildMeUserWith as buildAllocatorUserWith,
+  createAssignmentHandler,
+  listMembersHandler,
+  MEMBER_ID,
+  MEMBER_NAME,
+  type CreateAssignmentCall,
+} from "@modules/assignments/__tests__/handlers";
 import { createClassesRoutes } from "@modules/classes";
 import {
   buildArchivedClassDetail,
@@ -333,5 +343,142 @@ describe("Gerar aulas and Aulas da turma, filled by the app", () => {
     expect(screen.getByRole("heading", { name: "Dados da turma" })).toBeInTheDocument();
     // The error of the card is the card's: the one of the class screen did not appear.
     expect(screen.getAllByRole("alert")).toHaveLength(1);
+  });
+});
+
+/** The user of the allocation tests: the coordination, who has `assignments.create`, or a member, who has not. */
+const buildAllocatorUser = (role: Role = Role.coordinator) => buildAllocatorUserWith({}, role);
+
+const newAssignmentButton = () =>
+  within(card(CLASS_NAME)).getByRole("button", { name: "Nova alocação" });
+
+/** Opens the select whose name matches `trigger` and chooses the option, in the dialog that is open. */
+async function pick(user: UserEvent, trigger: RegExp, option: string) {
+  await user.click(screen.getByRole("button", { name: trigger }));
+  await user.click(await screen.findByRole("option", { name: option }));
+}
+
+/** The text of the column Professor of "Aulas da turma", one per lesson. */
+const teachersOf = (table: HTMLElement) =>
+  within(table)
+    .getAllByRole("row")
+    .slice(1)
+    .map((row) => within(row).getAllByRole("cell")[3].textContent);
+
+describe("+ Nova alocação, filled by the app", () => {
+  it("coordinator opens Nova alocação from the class with the class fixed", async () => {
+    const onLessons = vi.fn<(call: ListLessonsCall) => void>();
+    server.use(
+      getClassHandler(),
+      listLessonsHandler({
+        response: buildLessonsPage([buildLessonListItem(0)]),
+        onCall: onLessons,
+      }),
+      listMembersHandler(),
+    );
+    const user = userEvent.setup();
+    await renderRoutes(routes, { route: CLASS_ROUTE, user: buildAllocatorUser(Role.coordinator) });
+    await screen.findByRole("heading", { name: CLASS_NAME });
+
+    await user.click(newAssignmentButton());
+
+    const dialog = await screen.findByRole("dialog", { name: "Nova alocação de membro" });
+    expect(within(dialog).getByLabelText(/^Turma/)).toHaveValue(CLASS_NAME);
+    expect(within(dialog).getByLabelText(/^Turma/)).toHaveAttribute("readonly");
+    // The lessons offered are the ones of the class of the screen, and the member is to be chosen.
+    await waitFor(() =>
+      expect(onLessons).toHaveBeenCalledWith({ classId: CLASS_ID, page: null, limit: 100 }),
+    );
+    expect(within(dialog).getByRole("button", { name: /\bMembro\b/ })).toBeEnabled();
+  });
+
+  it("puts + Nova alocação in the header of the class, after + Nova aula", async () => {
+    server.use(getClassHandler());
+    await renderRoutes(routes, {
+      route: CLASS_ROUTE,
+      user: buildAllocatorUserWith({ "lessons.manage": "all" }, Role.director),
+    });
+    await screen.findByRole("heading", { name: CLASS_NAME });
+
+    const header = within(card(CLASS_NAME));
+
+    expect(header.getAllByRole("button").map((button) => button.textContent)).toEqual([
+      "Gerar aulas",
+      "+ Nova aula",
+      "+ Nova alocação",
+    ]);
+    expect(newAssignmentButton()).toHaveClass("button--primary");
+  });
+
+  it("member does not see Nova alocação on the class screen", async () => {
+    server.use(getClassHandler());
+    await renderRoutes(routes, { route: CLASS_ROUTE, user: buildAllocatorUser(Role.member) });
+    await screen.findByRole("heading", { name: CLASS_NAME });
+
+    expect(screen.queryByRole("button", { name: /Nova alocação/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("an archived class has no + Nova alocação, even for the coordinator", async () => {
+    server.use(getClassHandler({ response: buildArchivedClassDetail() }));
+    await renderRoutes(routes, { route: CLASS_ROUTE, user: buildAllocatorUser(Role.coordinator) });
+    await screen.findByRole("heading", { name: CLASS_NAME });
+
+    expect(screen.queryByRole("button", { name: /Nova alocação/ })).not.toBeInTheDocument();
+  });
+
+  it("Aulas da turma shows the confirmed teacher after allocating, with no reload", async () => {
+    let isAllocated = false;
+    const onCreate = vi.fn<(call: CreateAssignmentCall) => void>();
+    const lessons = [0, 1, 2].map((index) => buildLessonListItem(index));
+    const lessonsWithTeacher = lessons.map((lesson, index) =>
+      index === 0 ? { ...lesson, teacher: { id: MEMBER_ID, name: MEMBER_NAME } } : lesson,
+    );
+    server.use(
+      getClassHandler(),
+      listLessonsHandler({
+        response: () => buildLessonsPage(isAllocated ? lessonsWithTeacher : lessons),
+      }),
+      listMembersHandler({ response: buildMembersPage([buildMemberListItem()]) }),
+      createAssignmentHandler({
+        onCall: (call) => {
+          // From the moment the API creates the assignment, the lessons come with the teacher.
+          isAllocated = true;
+          onCreate(call);
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    const { router } = await renderRoutes(routes, {
+      route: CLASS_ROUTE,
+      user: buildAllocatorUser(Role.coordinator),
+    });
+    const table = await within(card("Aulas da turma")).findByRole("table");
+    // Before: no lesson has a teacher yet, so the column shows the dash that is read as Não informado.
+    expect(teachersOf(table)).toEqual(["—Não informado", "—Não informado", "—Não informado"]);
+
+    await user.click(newAssignmentButton());
+    await screen.findByRole("dialog", { name: "Nova alocação de membro" });
+    await waitFor(() => {
+      expect(screen.queryByText("Carregando os membros…")).not.toBeInTheDocument();
+      expect(screen.queryByText("Carregando as aulas…")).not.toBeInTheDocument();
+    });
+    await pick(user, /\bMembro\b/, MEMBER_NAME);
+    await pick(user, /\bAula\b/, "07/04 · Conhecendo o computador");
+    await pick(user, /Papel na aula/, "Professor(a)");
+    await user.click(screen.getByRole("button", { name: "Salvar alocação" }));
+
+    // After: the toast, the dialog gone and the column with the teacher, on the same page.
+    expect(await screen.findByText("Alocação salva")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(teachersOf(table)).toEqual(["Beatriz Nunes", "—Não informado", "—Não informado"]),
+    );
+    expect(within(card("Aulas da turma")).getByRole("table")).toBe(table);
+    expect(router.state.location.pathname).toBe(CLASS_ROUTE);
+    expect(onCreate).toHaveBeenCalledExactlyOnceWith({
+      id: lessons[0].id,
+      body: { personId: MEMBER_ID, role: "teacher", status: "confirmed" },
+    });
   });
 });

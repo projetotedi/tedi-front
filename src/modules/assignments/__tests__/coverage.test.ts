@@ -4,7 +4,7 @@ import i18n from "@shared/i18n";
 
 import { coverageParts, formatCoverage } from "../lib/coverage";
 import "../index";
-import { buildCoverage } from "./handlers";
+import { buildCoverage } from "./application-handlers";
 
 describe("coverageParts", () => {
   it("has the teacher while the lesson has none, then the monitors", () => {

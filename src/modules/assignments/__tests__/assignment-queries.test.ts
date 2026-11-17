@@ -1,5 +1,5 @@
-import { QueryClient, QueryObserver } from "@tanstack/react-query";
-import { describe, expect, it, vi } from "vitest";
+import { QueryClient } from "@tanstack/react-query";
+import { describe, expect, it } from "vitest";
 
 import {
   getListLessonAssignmentsQueryKey,
@@ -8,250 +8,189 @@ import {
   getListOpenLessonsQueryKey,
   getListPendingApplicationsQueryKey,
 } from "@api/generated/assignments/assignments";
+import { getGetClassQueryKey } from "@api/generated/classes/classes";
 import {
   getGetLessonQueryKey,
   getListLessonsCalendarQueryKey,
   getListLessonsQueryKey,
 } from "@api/generated/lessons/lessons";
-import { ListPendingApplicationsStatus } from "@api/generated/model";
+import { getListMembersQueryKey } from "@api/generated/people/people";
 
 import {
-  invalidateAfterApplied,
-  invalidateAfterReviewed,
-  PENDING_APPLICATIONS_PARAMS,
+  invalidateAfterAssignmentChange,
+  invalidateAfterLessonRefused,
 } from "../lib/assignment-queries";
-import { buildApplication, LESSON_IDS, PEOPLE } from "./handlers";
-
-const LESSON_ID = LESSON_IDS[3];
-const OTHER_LESSON_ID = LESSON_IDS[4];
+import {
+  buildLessonAssignment,
+  buildMemberAssignment,
+  CLASS_ID,
+  LESSON_ID,
+  MEMBER_ID,
+  OTHER_LESSON_ID,
+  OTHER_MEMBER_ID,
+} from "./handlers";
 
 const isInvalidated = (queryClient: QueryClient, key: readonly unknown[]) =>
   queryClient.getQueryState(key)?.isInvalidated;
 
 /**
- * A cache with what the module reads (the agenda with and without a period, the lessons with a
- * vacancy, the queue, the assignments of two lessons and of the member), what `lessons` reads (a
- * list, the calendar, two lessons) and something that is none of them.
+ * A cache with everything an allocation can touch (the assignments and the detail of two lessons, the
+ * assignments of two members, two lists of lessons and the calendar, and what the member who applies
+ * sees) and with what it must not (the class and the list of members).
  */
 function seededQueryClient() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const keys = {
-    myAssignments: [...getListMyAssignmentsQueryKey()] as const,
-    myAssignmentsWithPeriod: [
-      ...getListMyAssignmentsQueryKey({ from: "2026-03-01", to: "2026-03-31" }),
-    ] as const,
-    openLessons: [...getListOpenLessonsQueryKey()] as const,
-    pending: [...getListPendingApplicationsQueryKey(PENDING_APPLICATIONS_PARAMS)] as const,
     lessonAssignments: getListLessonAssignmentsQueryKey(LESSON_ID),
-    otherLessonAssignments: getListLessonAssignmentsQueryKey(OTHER_LESSON_ID),
-    memberAssignments: getListMemberAssignmentsQueryKey(PEOPLE.beatriz.id),
-    otherMemberAssignments: getListMemberAssignmentsQueryKey(PEOPLE.diego.id),
+    lesson: getGetLessonQueryKey(LESSON_ID),
+    memberAssignments: getListMemberAssignmentsQueryKey(MEMBER_ID),
     lessonList: [...getListLessonsQueryKey({ page: 1 })] as const,
+    classLessonList: [...getListLessonsQueryKey({ classId: CLASS_ID, limit: 5 })] as const,
     calendar: [
       ...getListLessonsCalendarQueryKey({ from: "2026-03-01", to: "2026-03-31" }),
     ] as const,
-    lesson: getGetLessonQueryKey(LESSON_ID),
+    myAssignments: [...getListMyAssignmentsQueryKey({ from: "2026-03-01" })] as const,
+    openLessons: [...getListOpenLessonsQueryKey({ from: "2026-03-01" })] as const,
+    pendingApplications: [...getListPendingApplicationsQueryKey({ status: "pending" })] as const,
+    otherLessonAssignments: getListLessonAssignmentsQueryKey(OTHER_LESSON_ID),
     otherLesson: getGetLessonQueryKey(OTHER_LESSON_ID),
-    course: ["/courses/x"] as const,
+    otherMemberAssignments: getListMemberAssignmentsQueryKey(OTHER_MEMBER_ID),
+    class: getGetClassQueryKey(CLASS_ID),
+    members: [...getListMembersQueryKey({ limit: 100 })] as const,
   };
 
-  for (const key of Object.values(keys)) queryClient.setQueryData(key, { seeded: true });
+  queryClient.setQueryData(keys.lessonAssignments, [buildLessonAssignment()]);
+  queryClient.setQueryData(keys.lesson, { id: LESSON_ID });
+  queryClient.setQueryData(keys.memberAssignments, [buildMemberAssignment()]);
+  queryClient.setQueryData(keys.lessonList, { data: [], total: 0 });
+  queryClient.setQueryData(keys.classLessonList, { data: [], total: 0 });
+  queryClient.setQueryData(keys.calendar, []);
+  queryClient.setQueryData(keys.myAssignments, { items: [] });
+  queryClient.setQueryData(keys.openLessons, []);
+  queryClient.setQueryData(keys.pendingApplications, { lessons: [] });
+  queryClient.setQueryData(keys.otherLessonAssignments, []);
+  queryClient.setQueryData(keys.otherLesson, { id: OTHER_LESSON_ID });
+  queryClient.setQueryData(keys.otherMemberAssignments, []);
+  queryClient.setQueryData(keys.class, { id: CLASS_ID });
+  queryClient.setQueryData(keys.members, { data: [] });
 
   return { queryClient, keys };
 }
 
-/** A promise that stays pending until the test opens it. */
-function createGate() {
-  let open!: () => void;
-  const promise = new Promise<void>((resolve) => {
-    open = resolve;
-  });
-  return { promise, open };
-}
-
-/**
- * Puts a query on the screen, as a mounted component does: it is read once, at once, and every
- * read after that waits for `gate`. It returns what stops it.
- */
-function mount(queryClient: QueryClient, queryKey: readonly unknown[], gate: Promise<void>) {
-  let reads = 0;
-  const observer = new QueryObserver(queryClient, {
-    queryKey,
-    retry: false,
-    queryFn: async () => {
-      reads += 1;
-      if (reads > 1) await gate;
-      return { reads };
-    },
-  });
-
-  return observer.subscribe(() => undefined);
-}
-
-describe("PENDING_APPLICATIONS_PARAMS", () => {
-  it("is the queue of pending applications, the only one the API has", () => {
-    expect(PENDING_APPLICATIONS_PARAMS).toEqual({ status: "pending" });
-    expect(PENDING_APPLICATIONS_PARAMS.status).toBe(ListPendingApplicationsStatus.pending);
-  });
-
-  it("makes the key of the button and of the dialog the same", () => {
-    expect(getListPendingApplicationsQueryKey(PENDING_APPLICATIONS_PARAMS)).toEqual([
-      "/applications",
-      { status: "pending" },
-    ]);
-  });
-});
-
-describe("invalidateAfterApplied", () => {
-  it("invalidates the agenda, the lessons with a vacancy and the queue", async () => {
+describe("invalidateAfterAssignmentChange", () => {
+  it("invalidates the assignments of the lesson and the lesson itself, with its coverage", async () => {
     const { queryClient, keys } = seededQueryClient();
 
-    await invalidateAfterApplied(queryClient, LESSON_ID);
+    await invalidateAfterAssignmentChange(queryClient, {
+      lessonId: LESSON_ID,
+      personId: MEMBER_ID,
+    });
+
+    expect(isInvalidated(queryClient, keys.lessonAssignments)).toBe(true);
+    expect(isInvalidated(queryClient, keys.lesson)).toBe(true);
+  });
+
+  it("invalidates the assignments of the member", async () => {
+    const { queryClient, keys } = seededQueryClient();
+
+    await invalidateAfterAssignmentChange(queryClient, {
+      lessonId: LESSON_ID,
+      personId: MEMBER_ID,
+    });
+
+    expect(isInvalidated(queryClient, keys.memberAssignments)).toBe(true);
+  });
+
+  it("invalidates every list of lessons and the calendar, whatever their filters", async () => {
+    const { queryClient, keys } = seededQueryClient();
+
+    await invalidateAfterAssignmentChange(queryClient, {
+      lessonId: LESSON_ID,
+      personId: MEMBER_ID,
+    });
+
+    expect(isInvalidated(queryClient, keys.lessonList)).toBe(true);
+    expect(isInvalidated(queryClient, keys.classLessonList)).toBe(true);
+    expect(isInvalidated(queryClient, keys.calendar)).toBe(true);
+  });
+
+  it("invalidates what the member who applies sees: her lessons, the lessons with a place and the queue", async () => {
+    const { queryClient, keys } = seededQueryClient();
+
+    await invalidateAfterAssignmentChange(queryClient, {
+      lessonId: LESSON_ID,
+      personId: MEMBER_ID,
+    });
 
     expect(isInvalidated(queryClient, keys.myAssignments)).toBe(true);
     expect(isInvalidated(queryClient, keys.openLessons)).toBe(true);
-    expect(isInvalidated(queryClient, keys.pending)).toBe(true);
+    expect(isInvalidated(queryClient, keys.pendingApplications)).toBe(true);
   });
 
-  it("invalidates the agenda read with a period too, whatever it was", async () => {
+  it("does not touch another lesson, another member, the class or the list of members", async () => {
     const { queryClient, keys } = seededQueryClient();
 
-    await invalidateAfterApplied(queryClient, LESSON_ID);
+    await invalidateAfterAssignmentChange(queryClient, {
+      lessonId: LESSON_ID,
+      personId: MEMBER_ID,
+    });
 
-    expect(isInvalidated(queryClient, keys.myAssignmentsWithPeriod)).toBe(true);
-  });
-
-  it("invalidates the assignments of that lesson, and not the ones of another", async () => {
-    const { queryClient, keys } = seededQueryClient();
-
-    await invalidateAfterApplied(queryClient, LESSON_ID);
-
-    expect(isInvalidated(queryClient, keys.lessonAssignments)).toBe(true);
     expect(isInvalidated(queryClient, keys.otherLessonAssignments)).toBe(false);
+    expect(isInvalidated(queryClient, keys.otherLesson)).toBe(false);
+    expect(isInvalidated(queryClient, keys.otherMemberAssignments)).toBe(false);
+    expect(isInvalidated(queryClient, keys.class)).toBe(false);
+    expect(isInvalidated(queryClient, keys.members)).toBe(false);
   });
 
-  it("leaves the coverage alone: a pending application takes no place, so lessons are not touched", async () => {
+  it("invalidates the lesson that was asked for, and not the other one", async () => {
     const { queryClient, keys } = seededQueryClient();
 
-    await invalidateAfterApplied(queryClient, LESSON_ID);
+    await invalidateAfterAssignmentChange(queryClient, {
+      lessonId: OTHER_LESSON_ID,
+      personId: OTHER_MEMBER_ID,
+    });
 
-    for (const key of [keys.lessonList, keys.calendar, keys.lesson, keys.otherLesson]) {
-      expect(isInvalidated(queryClient, key), JSON.stringify(key)).toBe(false);
-    }
+    expect(isInvalidated(queryClient, keys.otherLessonAssignments)).toBe(true);
+    expect(isInvalidated(queryClient, keys.otherLesson)).toBe(true);
+    expect(isInvalidated(queryClient, keys.otherMemberAssignments)).toBe(true);
+    expect(isInvalidated(queryClient, keys.lessonAssignments)).toBe(false);
+    expect(isInvalidated(queryClient, keys.lesson)).toBe(false);
     expect(isInvalidated(queryClient, keys.memberAssignments)).toBe(false);
-    expect(isInvalidated(queryClient, keys.course)).toBe(false);
+  });
+
+  it("leaves the assignments of every member alone when the member is not known", async () => {
+    const { queryClient, keys } = seededQueryClient();
+
+    await invalidateAfterAssignmentChange(queryClient, { lessonId: LESSON_ID, personId: null });
+
+    expect(isInvalidated(queryClient, keys.memberAssignments)).toBe(false);
+    expect(isInvalidated(queryClient, keys.otherMemberAssignments)).toBe(false);
+    expect(isInvalidated(queryClient, keys.lessonAssignments)).toBe(true);
+    expect(isInvalidated(queryClient, keys.lessonList)).toBe(true);
   });
 });
 
-describe("invalidateAfterReviewed", () => {
-  it("invalidates everything that applying does", async () => {
+describe("invalidateAfterLessonRefused", () => {
+  it("invalidates the lists of lessons, the calendar and the lesson itself", async () => {
     const { queryClient, keys } = seededQueryClient();
 
-    await invalidateAfterReviewed(queryClient, buildApplication({ lessonId: LESSON_ID }));
-
-    for (const key of [
-      keys.myAssignments,
-      keys.myAssignmentsWithPeriod,
-      keys.openLessons,
-      keys.pending,
-      keys.lessonAssignments,
-    ]) {
-      expect(isInvalidated(queryClient, key), JSON.stringify(key)).toBe(true);
-    }
-    expect(isInvalidated(queryClient, keys.otherLessonAssignments)).toBe(false);
-  });
-
-  it("invalidates the lists of lessons, the calendar and the detail of that lesson: they carry the coverage", async () => {
-    const { queryClient, keys } = seededQueryClient();
-
-    await invalidateAfterReviewed(queryClient, buildApplication({ lessonId: LESSON_ID }));
+    await invalidateAfterLessonRefused(queryClient, LESSON_ID);
 
     expect(isInvalidated(queryClient, keys.lessonList)).toBe(true);
+    expect(isInvalidated(queryClient, keys.classLessonList)).toBe(true);
     expect(isInvalidated(queryClient, keys.calendar)).toBe(true);
     expect(isInvalidated(queryClient, keys.lesson)).toBe(true);
   });
 
-  it("leaves the detail of the other lessons and what is not a lesson alone", async () => {
+  it("does not touch the assignments, another lesson or the members: nothing was allocated", async () => {
     const { queryClient, keys } = seededQueryClient();
 
-    await invalidateAfterReviewed(queryClient, buildApplication({ lessonId: LESSON_ID }));
+    await invalidateAfterLessonRefused(queryClient, LESSON_ID);
 
-    expect(isInvalidated(queryClient, keys.otherLesson)).toBe(false);
-    expect(isInvalidated(queryClient, keys.course)).toBe(false);
-  });
-
-  it("invalidates the assignments of the member of the application, and not of another member", async () => {
-    const { queryClient, keys } = seededQueryClient();
-
-    await invalidateAfterReviewed(
-      queryClient,
-      buildApplication({ lessonId: LESSON_ID, person: PEOPLE.beatriz }),
-    );
-
-    expect(isInvalidated(queryClient, keys.memberAssignments)).toBe(true);
-    expect(isInvalidated(queryClient, keys.otherMemberAssignments)).toBe(false);
-  });
-
-  it("works for an application whose person was removed: no member to invalidate", async () => {
-    const { queryClient, keys } = seededQueryClient();
-
-    await invalidateAfterReviewed(
-      queryClient,
-      buildApplication({ lessonId: LESSON_ID, person: null }),
-    );
-
+    expect(isInvalidated(queryClient, keys.lessonAssignments)).toBe(false);
     expect(isInvalidated(queryClient, keys.memberAssignments)).toBe(false);
-    expect(isInvalidated(queryClient, keys.otherMemberAssignments)).toBe(false);
-    expect(isInvalidated(queryClient, keys.lesson)).toBe(true);
-    expect(isInvalidated(queryClient, keys.pending)).toBe(true);
-  });
-
-  it("settles when the queue has been read again, and not when the reads behind the dialog end: a slow one does not hold the buttons", async () => {
-    const queryClient = new QueryClient();
-    const queue = createGate();
-    const behind = createGate();
-    const keys = {
-      queue: [...getListPendingApplicationsQueryKey(PENDING_APPLICATIONS_PARAMS)],
-      agenda: [...getListMyAssignmentsQueryKey()],
-      open: [...getListOpenLessonsQueryKey()],
-      lesson: [...getGetLessonQueryKey(LESSON_ID)],
-    };
-    const stops = [
-      mount(queryClient, keys.queue, queue.promise),
-      mount(queryClient, keys.agenda, behind.promise),
-      mount(queryClient, keys.open, behind.promise),
-      mount(queryClient, keys.lesson, behind.promise),
-    ];
-    await vi.waitFor(() => {
-      for (const key of Object.values(keys)) {
-        expect(queryClient.getQueryState(key)?.status, JSON.stringify(key)).toBe("success");
-      }
-    });
-
-    let settled = false;
-    const done = invalidateAfterReviewed(
-      queryClient,
-      buildApplication({ lessonId: LESSON_ID }),
-    ).then(() => {
-      settled = true;
-    });
-
-    // It waits for the queue...
-    await vi.waitFor(() =>
-      expect(queryClient.getQueryState(keys.queue)?.fetchStatus).toBe("fetching"),
-    );
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(settled).toBe(false);
-
-    // ...and for nothing else: the queue is read, and it settles with the others still on their way.
-    queue.open();
-    await done;
-    expect(settled).toBe(true);
-    for (const key of [keys.agenda, keys.open, keys.lesson]) {
-      expect(queryClient.getQueryState(key)?.fetchStatus, JSON.stringify(key)).toBe("fetching");
-    }
-
-    behind.open();
-    for (const stop of stops) stop();
+    expect(isInvalidated(queryClient, keys.otherLesson)).toBe(false);
+    expect(isInvalidated(queryClient, keys.members)).toBe(false);
+    expect(isInvalidated(queryClient, keys.myAssignments)).toBe(false);
   });
 });

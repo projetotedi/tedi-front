@@ -20,11 +20,17 @@ export const server = setupServer();
 const TEST_TIME_ZONE = "America/Sao_Paulo";
 
 /**
+ * How long `findBy*` and `waitFor` wait. A form with three selects, each opened and chosen before
+ * the save, is slow on a busy machine, so the default one second would leave almost nothing for the
+ * request and the render.
+ */
+const ASYNC_UTIL_TIMEOUT_MS = 4000;
+
+/**
  * Starts the MSW server of the file. A request nobody answered fails the test instead of passing.
- * It pins the time zone (the dates of the screen are calendar dates and the sending date of an
- * application is an instant, but the suite should not depend on the machine that runs it) and
- * clears the toasts, which live outside the React tree and would otherwise carry from one test to
- * the next.
+ * It pins the time zone (the dates of the screen are calendar dates, but the suite should not
+ * depend on the machine that runs it) and clears the toasts, which live outside the React tree
+ * and would otherwise carry from one test to the next.
  */
 export function setupAssignmentsTestServer(): void {
   let originalTimeZone: string | undefined;
@@ -34,7 +40,7 @@ export function setupAssignmentsTestServer(): void {
     originalTimeZone = process.env.TZ;
     process.env.TZ = TEST_TIME_ZONE;
     originalTimeout = getConfig().asyncUtilTimeout;
-    configure({ asyncUtilTimeout: 4000 });
+    configure({ asyncUtilTimeout: ASYNC_UTIL_TIMEOUT_MS });
     server.listen({ onUnhandledRequest: "error" });
   });
   afterEach(() => {
@@ -84,7 +90,10 @@ async function renderRouter(
   return { ...view, router, queryClient };
 }
 
-/** Renders `ui` on any route, under the session provider, with a query client that does not retry. */
+/**
+ * Renders `ui` on any route, under the session provider, with a query client that does not retry,
+ * and waits until the session is known.
+ */
 export function renderWithProviders(ui: ReactElement, options: RenderOptions = {}) {
   return renderRouter([{ path: "*", element: <AuthProvider>{ui}</AuthProvider> }], options);
 }
@@ -103,13 +112,48 @@ export function createDeferred() {
 }
 
 /**
- * Fails if the screen asked the API for the path, with no waiting. The first element of a query key
- * of the generated hooks is the path (`/applications`, `/me/assignments`).
+ * Fails if the screen asked the API for anything besides the session, with no waiting.
  *
  * A query that is mounted turned on is already `fetching` when the render ends, and later holds a
  * result (data or error). A query that is turned off (`enabled: false`) sits in the cache idle and
  * never runs. So reading the cache is a check that does not depend on how long a request that was
  * never made would have taken to show up, which a pause and a spy on the handler cannot say.
+ */
+export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
+  const [sessionKey] = getMeQueryKey();
+  const queries = queryClient
+    .getQueryCache()
+    .findAll()
+    .filter((query) => query.queryKey[0] !== sessionKey);
+
+  for (const query of queries) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
+}
+
+/**
+ * Fails if a query was ever on its way, with no waiting: the screen kept it turned off. The query
+ * is in the cache even then (an observer builds it), idle and with nothing in it, so what tells
+ * "never asked" is that it is not fetching and has never had an answer, data or error.
+ */
+export function expectQueryNeverRan(queryClient: QueryClient, queryKey: readonly unknown[]): void {
+  for (const query of queryClient.getQueryCache().findAll({ queryKey })) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
+}
+
+/**
+ * Fails if the screen asked the API for the path, with no waiting. The first element of a query key
+ * of the generated hooks is the path (`/applications`, `/me/assignments`); it reads the cache the
+ * same way as `expectNoRequestBesidesSession`.
  */
 export function expectNoRequestTo(queryClient: QueryClient, path: string): void {
   const queries = queryClient

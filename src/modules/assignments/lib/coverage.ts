@@ -39,9 +39,9 @@ export function coverageParts(coverage: LessonCoverageDto): CoveragePart[] {
  */
 export function formatCoverage(coverage: LessonCoverageDto, t: TFunction<"assignments">): string {
   const parts = coverageParts(coverage);
-  if (parts.length === 0) return t("coverage.complete");
+  if (parts.length === 0) return t("vacancies.complete");
 
   return parts
-    .map(({ key, confirmed, expected }) => t(`coverage.${key}`, { confirmed, expected }))
+    .map(({ key, confirmed, expected }) => t(`vacancies.${key}`, { confirmed, expected }))
     .join(META_SEPARATOR);
 }

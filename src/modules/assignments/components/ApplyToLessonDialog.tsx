@@ -18,10 +18,10 @@ import {
   APPLY_ROLE_ORDER,
   lessonLabel,
   ROLE_INLINE_KEYS,
-  ROLE_LABEL_KEYS,
+  ASSIGNMENT_ROLE_LABEL_KEYS,
 } from "../lib/assignment-labels";
 import { formatCoverage } from "../lib/coverage";
-import { formatLessonDay, formatLessonDayMonth, META_SEPARATOR } from "../lib/format";
+import { formatLessonDay, formatDayMonth, META_SEPARATOR } from "../lib/format";
 import {
   APPLY_NOTE_MAX,
   applyToLessonFormSchema,
@@ -160,7 +160,7 @@ export function ApplyToLessonDialog({
           toast.success(t("apply.toastTitle"), {
             description: t("apply.toastDescription", {
               role: t(ROLE_INLINE_KEYS[values.role]),
-              day: formatLessonDayMonth(lesson.date, i18n.language),
+              day: formatDayMonth(lesson.date, i18n.language),
             }),
           });
           onApplied?.(application);
@@ -183,7 +183,7 @@ export function ApplyToLessonDialog({
 
     return {
       value: role,
-      label: t(ROLE_LABEL_KEYS[role]),
+      label: t(ASSIGNMENT_ROLE_LABEL_KEYS[role]),
       description: hasVacancy(role)
         ? description
         : t("apply.descriptionWithoutVacancy", { description, reason: t("apply.noVacancy") }),
@@ -239,7 +239,7 @@ export function ApplyToLessonDialog({
           <p className="text-base font-semibold">{lessonLabel(lesson, t)}</p>
           <p className="text-sm text-pretty">{meta}</p>
           <p className="text-sm">
-            {t("coverage.vacancies", { coverage: formatCoverage(coverage, t) })}
+            {t("vacancies.summary", { coverage: formatCoverage(coverage, t) })}
           </p>
         </div>
 
