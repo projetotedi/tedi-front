@@ -95,14 +95,14 @@ O que **não** existe dentro do módulo: `services/`, `types/`, `api/`. Tudo iss
 **Rotas.** Cada módulo declara as suas; o `app/router.tsx` só concatena. `lazy` dá um chunk por módulo sem configuração extra.
 
 ```tsx
-// modules/people/routes.tsx
-export const peopleRoutes: RouteObject[] = [
+// modules/lessons/routes.tsx (exemplo: a listagem e o calendário de aulas são da GUS-155)
+export const lessonsRoutes: RouteObject[] = [
   {
-    path: "people",
-    element: <RequirePermission permission="members.list" />,
+    path: "lessons",
+    element: <RequirePermission permission="lessons.view" />,
     children: [
-      { index: true, lazy: () => import("./pages/PeopleListPage") },
-      { path: "students/new", lazy: () => import("./pages/StudentFormPage") },
+      { index: true, lazy: () => import("./pages/LessonsListPage") },
+      { path: "calendar", lazy: () => import("./pages/LessonsCalendarPage") },
     ],
   },
 ];
@@ -113,7 +113,7 @@ Um módulo pode exportar mais de um array de rotas quando parte é pública e pa
 (hoje só `/members`) fica sob `AppLayout`, e `app/router.tsx` concatena os dois em lugares
 diferentes. `authProtectedRoutes` não usa `lazy`: a GUS-86 não usa lazy loading em nenhuma rota
 do módulo `auth`, e misturar um padrão diferente só nessa rota seria inconsistente — diverge do
-padrão do exemplo acima, do módulo `people`, decisão tomada na integração GUS-86/87.
+padrão do exemplo acima, decisão tomada na integração GUS-86/87.
 
 **Menu e título da página.** O layout autenticado (`app/layouts/AppLayout.tsx`) não conhece o domínio; cada módulo contribui com o que é dele.
 
@@ -212,12 +212,12 @@ const createPerson = useCreatePerson({
 **API pública do módulo.** Equivalente ao `exports` do `@Module` no Nest.
 
 ```ts
-// modules/people/index.ts
-export { peopleRoutes } from "./routes";
-export { PersonPicker } from "./components/PersonPicker"; // usado por classes e assignments
+// modules/lessons/index.ts
+export { lessonsRoutes } from "./routes";
+export { NewLessonButton } from "./components/NewLessonButton"; // o "+ Nova aula" do detalhe da turma
 ```
 
-`classes` importa `PersonPicker` de `@modules/people`, nunca de `@modules/people/components/...`.
+`app/` importa `NewLessonButton` de `@modules/lessons`, nunca de `@modules/lessons/components/...`.
 
 **Composição entre módulos por slot.** Quando a tela de um módulo precisa mostrar algo que é de outro, o primeiro não importa o segundo. O detalhe do curso, do `catalog`, mostra o card "Turmas deste curso", que é do `classes`: a turma é uma oferta do curso, então a dependência de domínio vai de `classes` para o curso, e `catalog → classes` não pode existir (o `depcruise` e a regra de módulo fechado também a barram). A tela pede o conteúdo por um **slot**, uma função que o módulo declara (`CatalogRouteSlots.renderCourseClasses(courseId)`) e recebe quando as rotas são montadas, com `createCatalogRoutes(slots)` no lugar de um array `catalogRoutes`. Quem preenche o slot é o `app/`, o único lugar que conhece os dois módulos: `app/catalog-slots.tsx` liga `renderCourseClasses` ao `CourseClassesCard` de `@modules/classes`, e `app/router.tsx` monta `...createCatalogRoutes(catalogRouteSlots)`. O card traz a própria consulta, então a falha dele aparece só nele e não derruba a tela que o hospeda. Os testes do módulo que declara o slot usam um slot de mentira (`catalogRoutes`, em `catalog/__tests__/test-utils.tsx`) e conferem só o que é dele, que é dar o id do curso; a junção com o card verdadeiro é testada em `app/__tests__/catalog-slots.test.tsx`. O `depcruise` e um `grep -rn "@modules/classes" src/modules/catalog` vazio garantem que a fronteira se mantém.
 
@@ -419,7 +419,7 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
     **Roteiro para as telas que hospedam** (cada uma declara o slot no módulo dela, como o `classes` e o `catalog`, e o `app/` preenche):
 
     - **GUS-156 (detalhe da aula):** `createLessonsRoutes(slots)` com `renderLessonCoverage(lessonId)` → `LessonCoverageCard`, `renderLessonTeacher(lessonId)` → `LessonTeacherName` (o valor do campo Professora de Dados da aula) e `renderLessonActions(lesson)` → `NewAssignmentButton lesson={{ id, title, date, lessonClass: { id, label } }}`.
-    - **GUS-145 (ficha do membro):** `createPeopleRoutes(slots)` já existe (GUS-163, com os slots do Meu perfil): acrescentar ao `PeopleRouteSlots` o `renderMemberActions(member)` → `NewAssignmentButton member={{ id, name }}` (e, ao lado, o "+ Lançar horas" com `LogHoursDialog member`, do `hours`) e o `renderMemberAssignments(memberId)` → `MemberAssignmentsCard`.
+    - **GUS-145 (ficha do membro):** `createPeopleRoutes(slots)` já existe (GUS-163, com os slots do Meu perfil): acrescentar ao `PeopleRouteSlots` o `renderMemberActions(member)` → `NewAssignmentButton member={{ id, name }}` (e, ao lado, o "+ Lançar horas" do `hours`, `LogHoursForMemberButton member={{ id, name }}`) e o `renderMemberAssignments(memberId)` → `MemberAssignmentsCard`.
     - **GUS-150 (listagem de Membros):** o slot de ações do cabeçalho → `NewAssignmentButton` sem contexto.
     - **GUS-155 (listagem e calendário de aulas):** só `lesson.teacher?.name` (a coluna Responsável) e `lesson.belowExpectedMonitors` (a legenda "Monitores abaixo do esperado"); a API já devolve os dois, e a tela não precisa do módulo `assignments`.
 
@@ -454,14 +454,14 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
 
 11. Módulo `hours`: parcialmente entregue na GUS-163, com os lançamentos de horas da própria pessoa no Meu perfil (lançar, ver o extrato e remover) e o diálogo de lançar em nome de um membro. A visão geral do banco de horas, a fila de validação, ajustar, rejeitar e o histórico são da GUS-165.
 
-    **GUS-163 (lançar, extrato e remover).** **Módulo e composição.** `src/modules/hours` ainda não tem rota nem item de menu: exporta `LogHoursButton`, `LogHoursDialog` (com `LogHoursDialogProps` e `LogHoursMember`), `MyHoursSummary`, `MyEntriesCard` e `MyCategoryHoursCard`, e importa só `@modules/auth`, o que o Orval gera e `@shared/*`. As peças entram no Meu perfil pelos slots do `people` (ver "Composição entre módulos por slot").
+    **GUS-163 (lançar, extrato e remover).** **Módulo e composição.** `src/modules/hours` ainda não tem rota nem item de menu: exporta `LogHoursButton`, `LogHoursDialog` (com `LogHoursDialogProps` e `LogHoursMember`), `LogHoursForMemberButton` (para a ficha do membro, GUS-145; nenhuma tela o desenha ainda), `MyHoursSummary`, `MyEntriesCard` e `MyCategoryHoursCard`, e importa só `@modules/auth`, o que o Orval gera e `@shared/*`. As peças entram no Meu perfil pelos slots do `people` (ver "Composição entre módulos por slot").
 
     **Meu perfil.** Os quatro números (Total de horas lançadas, Horas validadas, Pendentes de validação e Ajustadas / rejeitadas), cada um com o par de cores do Figma, vêm de `GET /me/hours/summary` sem período (todo o histórico): o total é a soma do declarado de `byStatus`, as validadas são `bankMinutes`, as pendentes são o declarado dos pendentes e Ajustadas / rejeitadas é o que sobra, com piso 0, porque um ajuste pode aumentar as horas (`lib/my-hours-summary.ts`). "Meus lançamentos" lista os 5 mais recentes (`GET /me/hour-entries?limit=5`), com a tag do status, e "Ver extrato completo ›" (só quando há lançamento; azul de link sem fundo no hover, que cairia abaixo de 4,5:1) abre o extrato. "Horas por categoria" é o mês corrente da máquina (`from` e `to` do mês), uma linha por categoria com lançamento no mês, com HORAS = `bankMinutes + pendingMinutes` (o validado mais o que espera), da maior para a menor (empate na ordem do contrato), e sem a coluna Observação, que espera a API (GUS-173). Cada peça faz a própria leitura, só com `account.manageOwn`, tem carregando, erro com "Tentar de novo" (o resumo também, porque a consulta é só dele) e vazio, e usa `gcTime: 0`, como o cadastro, para que a próxima pessoa na mesma aba não veja as horas da anterior.
 
-    **Lançar horas** (`LogHoursDialog`, 800px): Atividade, Categoria (as seis que se lançam à mão, sem Aula, que só nasce da presença, RN-03), Data (hoje; recusa dia futuro e antes de 2000-01-01), Horas no formato do TEDI ("2h30", lido por `lib/hours-input.ts`, de 0h01 a 24h) e Observações, num formulário próprio (`schemas/hour-entry.schema.ts`) com os limites do contrato. Não tem o Vínculo (Turma/Aula), que espera o back (GUS-172). Para si: `POST /me/hour-entries` e `invalidateAfterOwnEntryChange` (os resumos de qualquer período, todas as páginas de `/me/hour-entries`, a fila e a visão geral), o que atualiza o perfil sem recarregar. Com `member`: o título diz o nome, o aviso de que fica registrado quem lançou fica no corpo e descreve o diálogo (`aria-describedby`, prop nova do `Dialog`), `POST /members/:id/hour-entries` e `invalidateAfterLoggedForMember` (as horas daquele membro, a fila e a visão geral). Quem monta o botão da ficha (GUS-145) checa `useCan("hours.logForOthers", { serverGrant })`; o diálogo deixa a autoridade com o back, e os 400 `SELF_ON_BEHALF_NOT_ALLOWED`, 403 `FORBIDDEN`/`FORBIDDEN_SCOPE` e 404 `MEMBER_NOT_FOUND` têm mensagem e desligam o botão (`lib/entry-errors.ts`, código e status juntos).
+    **Lançar horas** (`LogHoursDialog`, 800px): Atividade, Categoria (as seis que se lançam à mão, sem Aula, que só nasce da presença, RN-03), Data (hoje; recusa dia futuro e antes de 2000-01-01), Horas no formato do TEDI ("2h30", lido por `lib/hours-input.ts`, de 0h01 a 24h) e Observações, num formulário próprio (`schemas/hour-entry.schema.ts`) com os limites do contrato. Não tem o Vínculo (Turma/Aula), que espera o back (GUS-172). Para si: `POST /me/hour-entries` e `invalidateAfterOwnEntryChange` (os resumos de qualquer período, todas as páginas de `/me/hour-entries`, as horas da própria pessoa como membro, `/members/:id/hours`, a fila e a visão geral), o que atualiza o perfil sem recarregar. O dia de hoje é lido a cada validação, então um diálogo aberto antes da meia-noite aceita o dia novo. Com `member`: o título diz o nome, o aviso de que fica registrado quem lançou fica no corpo e descreve o diálogo (`aria-describedby`, prop nova do `Dialog`), `POST /members/:id/hour-entries` e `invalidateAfterLoggedForMember` (as horas daquele membro, a fila e a visão geral). Esse modo é só de quem tem `hours.logForOthers`: sem ela o diálogo não desenha nada, e o `LogHoursForMemberButton` nem aparece; se o membro é do departamento do diretor quem diz é o back, e os 400 `SELF_ON_BEHALF_NOT_ALLOWED`, 403 `FORBIDDEN`/`FORBIDDEN_SCOPE` e 404 `MEMBER_NOT_FOUND` têm mensagem e desligam o botão (`lib/entry-errors.ts`, código e status juntos).
 
-    **Extrato e remover.** `MyEntriesDialog` (o `Dialog` ganhou `size="table"`, 1128px, para as sete colunas) pagina de 20 em 20, com a paginação só acima de 20, mostra a justificativa da coordenação sob a atividade de um ajustado ou rejeitado e oferece "Remover" só em lançamento pendente que não veio da presença (`lib/entry-rules.ts`), com o nome acessível do dia e da atividade. `RemoveEntryDialog` abre por cima do extrato, com o foco em Voltar e o resumo e o aviso descrevendo o diálogo; o `DELETE` espera a releitura das listas antes de fechar, então a linha já saiu quando o foco vai para a lista, e o extrato volta uma página quando a última fica vazia. 409 `ENTRY_NOT_PENDING` e `ATTENDANCE_ENTRY_NOT_REMOVABLE` (aviso) e 404 `HOUR_ENTRY_NOT_FOUND` (erro) desligam o botão e releem as listas.
+    **Extrato e remover.** `MyEntriesDialog` (o `Dialog` ganhou `size="table"`, 1128px, para as sete colunas) pagina de 20 em 20, com a paginação só acima de 20, mostra a justificativa da coordenação sob a atividade de um ajustado ou rejeitado e oferece "Remover" só em lançamento pendente que não veio da presença (`lib/entry-rules.ts`), com o nome acessível do dia e da atividade. `RemoveEntryDialog` abre por cima do extrato, com o foco em Voltar e o resumo e o aviso descrevendo o diálogo; o diálogo fecha com o toast assim que o `DELETE` volta 204 (a releitura das listas segue em segundo plano, então um `GET` lento ou com erro não o prende), e o foco vai para a lista quando o extrato termina de ser relido; o extrato volta uma página quando a última fica vazia, e, ao fechar o extrato sem nenhum lançamento, o foco vai para o título "Meus lançamentos". 409 `ENTRY_NOT_PENDING` e `ATTENDANCE_ENTRY_NOT_REMOVABLE` (aviso) e 404 `HOUR_ENTRY_NOT_FOUND` (erro) desligam o botão, tiram "Pendente de validação" do resumo e releem as listas; ao voltar, o foco vai para a lista.
 
     **Rótulos, tag e cores, para as telas de horas reusarem.** `lib/entry-labels.ts` (os rótulos das sete categorias e dos quatro status; `meeting` é "Reunião" e `support`, "Atendimento"), o `EntryStatusTag` (Aprovado verde, Ajustado e Pendente amarelos, Rejeitado vermelho, com os tokens `--color-tedi-status-*` do `src/index.css`, combinados com a GUS-165) e `lib/hours-input.ts` são da GUS-163. As chaves desta entrega no namespace `hours` ficam sob `entries`, `logHours`, `myEntries` e `removeEntry`.
 
-    **Pendências, de propósito.** (1) **GUS-145:** o "+ Lançar horas" da ficha do membro (com `LogHoursDialog member`) e o extrato do membro, pelos slots do `people`. (2) **GUS-172:** o Vínculo (Turma/Aula) do Lançar horas. (3) **GUS-173:** a coluna Observação de "Horas por categoria". (4) **GUS-165:** a visão geral, a fila e a validação; os totais dela e os desta entrega (`summaryTotals`), e os rótulos, se unificam no merge.
+    **Pendências, de propósito.** (1) **GUS-145:** o "+ Lançar horas" da ficha do membro (o `LogHoursForMemberButton`) e o extrato do membro, pelos slots do `people`. (2) **GUS-172:** o Vínculo (Turma/Aula) do Lançar horas. (3) **GUS-173:** a coluna Observação de "Horas por categoria". (4) **GUS-165:** a visão geral, a fila e a validação; os totais dela e os desta entrega (`summaryTotals`), e os rótulos, se unificam no merge.
