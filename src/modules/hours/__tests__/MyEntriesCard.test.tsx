@@ -6,7 +6,13 @@ import { getListMyHourEntriesQueryKey } from "@api/generated/hours/hours";
 
 import { MyEntriesCard } from "../components/MyEntriesCard";
 import { MY_RECENT_ENTRIES_PARAMS } from "../lib/entry-queries";
-import { myHourEntriesHandler, type ListCall } from "./entries-handlers";
+import {
+  myHourEntriesHandler,
+  pageOf,
+  removeMyHourEntryHandler,
+  statementEntry,
+  type ListCall,
+} from "./entries-handlers";
 import {
   createDeferred,
   renderWithProviders,
@@ -202,5 +208,36 @@ describe("MyEntriesCard", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(link).toHaveFocus());
+  });
+
+  it("gives the focus to Meus lançamentos when the statement closes after its last entry was removed", async () => {
+    let entries = [statementEntry(4)];
+    server.use(
+      myHourEntriesHandler({ response: (call) => pageOf(entries, call) }),
+      removeMyHourEntryHandler({
+        onRemoved: (id) => {
+          entries = entries.filter((entry) => entry.id !== id);
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    await renderCard();
+    await screen.findByRole("table", { name: "Meus lançamentos" });
+
+    await user.click(screen.getByRole("button", { name: "Ver extrato completo" }));
+    const statement = await screen.findByRole("dialog", { name: "Meus lançamentos" });
+    await user.click(
+      await within(statement).findByRole("button", { name: /^Remover o lançamento de 08\/03/ }),
+    );
+    const confirm = await screen.findByRole("dialog", { name: "Remover lançamento" });
+    await user.click(within(confirm).getByRole("button", { name: "Remover lançamento" }));
+    await within(statement).findByRole("heading", { name: "Nenhum lançamento ainda" });
+    await user.click(within(statement).getAllByRole("button", { name: "Fechar" })[1]);
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(await screen.findByText("Nenhum lançamento ainda.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Ver extrato completo" })).not.toBeInTheDocument();
+    const title = screen.getByRole("heading", { name: "Meus lançamentos" });
+    await waitFor(() => expect(title.contains(document.activeElement)).toBe(true));
   });
 });

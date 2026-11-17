@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useListMyHourEntries } from "@api/generated/hours/hours";
@@ -25,7 +25,8 @@ const CARD_WIDTHS: EntryColumnWidths = {
  * (`GET /me/hour-entries?limit=5`, the newest day first), with the day, the activity, the category,
  * the declared and the validated hours and the status. "Ver extrato completo ›", next to the title,
  * opens the full statement (`MyEntriesDialog`, where a pending entry can be removed) and is there only
- * when there are entries; the focus goes back to it when the statement closes. It is a link in look
+ * when there are entries; the focus goes back to it when the statement closes, or to the title of the
+ * card when no entry is left (the link is gone with the last one). It is a link in look
  * (#2563eb) with no grey on hover, which would leave it under 4,5:1: the hover underlines it.
  *
  * Only for who manages her own account (`account.manageOwn`): without it nothing is drawn and nothing
@@ -40,20 +41,36 @@ export function MyEntriesCard(): ReactElement | null {
     query: { enabled: canView, gcTime: 0 },
   });
   const [isStatementOpen, setIsStatementOpen] = useState(false);
+  const titleRef = useRef<HTMLSpanElement>(null);
+  // The statement closed and this card may still be reading its entries again.
+  const isReturningFocusRef = useRef(false);
+  const page = query.data;
+  const hasEntries = page !== undefined && page.total > 0;
+
+  // Once the read after closing the statement settles, a card with no entry left has no link to give
+  // the focus back to: the title takes it.
+  useEffect(() => {
+    if (isStatementOpen || !isReturningFocusRef.current || query.isFetching) return;
+    isReturningFocusRef.current = false;
+    if (!hasEntries) titleRef.current?.focus();
+  }, [isStatementOpen, query.isFetching, hasEntries]);
 
   if (!canView) return null;
 
-  const page = query.data;
-  const statementLink =
-    page !== undefined && page.total > 0 ? (
-      <Button
-        variant="ghost"
-        className="-my-2.5 -me-4 font-medium text-tedi-text-link underline-offset-2 [--button-bg-hover:transparent] [--button-bg-pressed:transparent] hover:underline focus-visible:underline"
-        onPress={() => setIsStatementOpen(true)}
-      >
-        {t("entries.recent.viewStatement")} <span aria-hidden="true">›</span>
-      </Button>
-    ) : null;
+  function closeStatement() {
+    isReturningFocusRef.current = true;
+    setIsStatementOpen(false);
+  }
+
+  const statementLink = hasEntries ? (
+    <Button
+      variant="ghost"
+      className="-my-2.5 -me-4 font-medium text-tedi-text-link underline-offset-2 [--button-bg-hover:transparent] [--button-bg-pressed:transparent] hover:underline focus-visible:underline"
+      onPress={() => setIsStatementOpen(true)}
+    >
+      {t("entries.recent.viewStatement")} <span aria-hidden="true">›</span>
+    </Button>
+  ) : null;
 
   function renderContent(): ReactElement {
     if (query.isPending) {
@@ -100,10 +117,17 @@ export function MyEntriesCard(): ReactElement | null {
 
   return (
     <>
-      <Card title={t("entries.recent.title")} aside={statementLink}>
+      <Card
+        title={
+          <span ref={titleRef} tabIndex={-1} className="outline-none">
+            {t("entries.recent.title")}
+          </span>
+        }
+        aside={statementLink}
+      >
         {renderContent()}
       </Card>
-      {isStatementOpen ? <MyEntriesDialog onClose={() => setIsStatementOpen(false)} /> : null}
+      {isStatementOpen ? <MyEntriesDialog onClose={closeStatement} /> : null}
     </>
   );
 }
