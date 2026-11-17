@@ -13,7 +13,7 @@ import { Card, Pagination, toast } from "@shared/ui";
 import { useReviewPermission } from "../hooks/useReviewPermission";
 import { memberNameOf } from "../lib/bank-labels";
 import { STALE_QUEUE_ERRORS, toReviewError, type ReviewErrorKind } from "../lib/review-errors";
-import { invalidateAfterReview } from "../lib/review-queries";
+import { invalidateAfterReview, invalidateIfStale } from "../lib/review-queries";
 import { AdjustEntryDialog } from "./AdjustEntryDialog";
 import { EntryHistoryDialog } from "./EntryHistoryDialog";
 import { pendingEntryColumns } from "./pending-entry-columns";
@@ -95,10 +95,7 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
     mutation: {
       // The answer carries id and personId of each validated entry.
       onSuccess: (validated) => invalidateAfterReview(queryClient, validated),
-      onError: (error) =>
-        STALE_QUEUE_ERRORS.has(toReviewError(error))
-          ? invalidateAfterReview(queryClient, entriesInFlightRef.current)
-          : undefined,
+      onError: (error) => invalidateIfStale(queryClient, error, entriesInFlightRef.current),
     },
   });
 

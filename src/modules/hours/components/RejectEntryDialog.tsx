@@ -11,7 +11,7 @@ import { Alert, Button, Dialog, TextArea } from "@shared/ui";
 
 import { SUMMARY_SEPARATOR } from "../lib/bank-format";
 import { invalidFields, STALE_QUEUE_ERRORS, toReviewError } from "../lib/review-errors";
-import { invalidateAfterReview } from "../lib/review-queries";
+import { invalidateAfterReview, invalidateIfStale } from "../lib/review-queries";
 import {
   rejectEntryFormSchema,
   toRejectBody,
@@ -61,10 +61,7 @@ export function RejectEntryDialog({
   const reject = useRejectHourEntry({
     mutation: {
       onSuccess: () => invalidateAfterReview(queryClient, [entry]),
-      onError: (error) =>
-        STALE_QUEUE_ERRORS.has(toReviewError(error))
-          ? invalidateAfterReview(queryClient, [entry])
-          : undefined,
+      onError: (error) => invalidateIfStale(queryClient, error, [entry]),
     },
   });
   const isPending = reject.isPending;
