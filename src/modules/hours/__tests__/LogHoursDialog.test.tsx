@@ -13,6 +13,7 @@ import { Role } from "@shared/lib/role";
 import { LogHoursButton } from "../components/LogHoursButton";
 import { LogHoursDialog, type LogHoursDialogProps } from "../components/LogHoursDialog";
 import {
+  ANA_ID,
   BEATRIZ_ID,
   BEATRIZ_NAME,
   logHoursForMemberHandler,
@@ -190,6 +191,28 @@ describe("LogHoursDialog", () => {
       expect(onLogged).toHaveBeenCalledWith(
         expect.objectContaining({ status: "pending", declaredMinutes: 150 }),
       );
+    });
+
+    it("reads again my summary and my hours as a member, and not the hours of another member", async () => {
+      server.use(logMyHoursHandler());
+      const user = userEvent.setup();
+      const { queryClient, onClose } = await renderDialog();
+      const mySummary = getGetMyHoursSummaryQueryKey();
+      const myHoursAsMember = getGetMemberHoursQueryKey(ANA_ID, { page: 1 });
+      const beatrizHours = getGetMemberHoursQueryKey(BEATRIZ_ID, { page: 1 });
+      for (const queryKey of [mySummary, myHoursAsMember, beatrizHours]) {
+        queryClient.setQueryData(queryKey, { cached: true });
+      }
+
+      await fill(user, FIGMA_OWN);
+      await user.click(submitButton());
+
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      await waitFor(() =>
+        expect(queryClient.getQueryState(myHoursAsMember)?.isInvalidated).toBe(true),
+      );
+      expect(queryClient.getQueryState(mySummary)?.isInvalidated).toBe(true);
+      expect(queryClient.getQueryState(beatrizHours)?.isInvalidated).toBe(false);
     });
 
     it("sends the notes as null when left blank", async () => {

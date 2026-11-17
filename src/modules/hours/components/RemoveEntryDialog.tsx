@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 
 import { useRemoveMyHourEntry } from "@api/generated/hours/hours";
 import type { HourEntryResponseDto } from "@api/generated/model";
+import { useAuth } from "@modules/auth";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, toast } from "@shared/ui";
 
@@ -46,6 +47,8 @@ export function RemoveEntryDialog({
 }: RemoveEntryDialogProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const personId = user === null ? null : user.id;
   const summaryId = useId();
   const warningId = useId();
   const issueRef = useRef<HTMLDivElement>(null);
@@ -54,7 +57,7 @@ export function RemoveEntryDialog({
 
   // The cache is told even if the dialog is gone by the time the answer arrives, without holding it.
   const removeEntry = useRemoveMyHourEntry({
-    mutation: { onSuccess: () => void invalidateAfterOwnEntryChange(queryClient) },
+    mutation: { onSuccess: () => void invalidateAfterOwnEntryChange(queryClient, personId) },
   });
   const isPending = removeEntry.isPending;
   const isSettled = issue !== null && isStaleEntry(issue);
@@ -68,7 +71,7 @@ export function RemoveEntryDialog({
     const result = toRemoveEntryError(error);
 
     if (isStaleEntry(result)) {
-      void invalidateAfterOwnEntryChange(queryClient);
+      void invalidateAfterOwnEntryChange(queryClient, personId);
       onStale();
     }
     setIssue(result);

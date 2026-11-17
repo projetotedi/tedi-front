@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 
 import { useLogHoursForMember, useLogMyHours } from "@api/generated/hours/hours";
 import type { HourEntryResponseDto } from "@api/generated/model";
-import { useCan } from "@modules/auth";
+import { useAuth, useCan } from "@modules/auth";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, Select, TextField, toast, type SelectOption } from "@shared/ui";
 
@@ -98,6 +98,7 @@ export function LogHoursDialog({
 }: LogHoursDialogProps): ReactElement | null {
   const { t, i18n } = useTranslation("hours");
   const canLogForOthers = useCan("hours.logForOthers");
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const formId = useId();
   const noticeId = useId();
@@ -121,7 +122,10 @@ export function LogHoursDialog({
   // Both hooks are always called; the cache is told even if the dialog is gone by the time the
   // answer arrives, without holding the dialog for it.
   const logMine = useLogMyHours({
-    mutation: { onSuccess: () => void invalidateAfterOwnEntryChange(queryClient) },
+    mutation: {
+      onSuccess: () =>
+        void invalidateAfterOwnEntryChange(queryClient, user === null ? null : user.id),
+    },
   });
   const logForMember = useLogHoursForMember({
     mutation: {

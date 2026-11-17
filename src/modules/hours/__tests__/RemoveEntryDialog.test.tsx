@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  getGetMemberHoursQueryKey,
   getGetMyHoursSummaryQueryKey,
   getListMyHourEntriesQueryKey,
 } from "@api/generated/hours/hours";
@@ -17,6 +18,7 @@ import {
   setupHoursEntriesTestServer,
 } from "./entries-test-utils";
 import {
+  ANA_ID,
   entryId,
   myHourEntriesHandler,
   myHoursSummaryHandler,
@@ -110,6 +112,7 @@ describe("RemoveEntryDialog", () => {
     // The card is behind the dialog, so it is out of the accessibility tree.
     await screen.findByRole("table", { name: "Meus lançamentos", hidden: true });
     queryClient.setQueryData(getGetMyHoursSummaryQueryKey(), { cached: true });
+    queryClient.setQueryData(getGetMemberHoursQueryKey(ANA_ID, { page: 1 }), { cached: true });
     // The second read of the entries (after the removal) waits until the test lets it go.
     server.use(myHourEntriesHandler({ delay: reread.promise }));
 
@@ -120,6 +123,10 @@ describe("RemoveEntryDialog", () => {
       "fetching",
     );
     expect(queryClient.getQueryState(getGetMyHoursSummaryQueryKey())?.isInvalidated).toBe(true);
+    // My hours as a member: the screens of the bank of hours read them too.
+    expect(
+      queryClient.getQueryState(getGetMemberHoursQueryKey(ANA_ID, { page: 1 }))?.isInvalidated,
+    ).toBe(true);
 
     reread.resolve();
     await waitFor(() =>

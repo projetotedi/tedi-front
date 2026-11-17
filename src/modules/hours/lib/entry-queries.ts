@@ -32,13 +32,19 @@ function reviewKeys(): QueryKey[] {
 /**
  * What the app has to know after the person logs hours for herself or removes an entry: her summary
  * (every period: the tiles have none, "Horas por categoria" has the month), her entries (the card of
- * the profile and every page of the statement) and what the coordination looks at. The keys without
- * parameters are the prefix of all of them. The hours of the members are not touched: these are hers.
+ * the profile and every page of the statement), her hours as a member (`/members/:id/hours`, which
+ * the screens of the bank of hours read for her too) and what the coordination looks at. The keys
+ * without parameters are the prefix of all of them. `personId` is the person signed in; with
+ * `null` (no session) there is no member to tell. The other members are not touched.
  */
-export function invalidateAfterOwnEntryChange(queryClient: QueryClient): Promise<void> {
+export function invalidateAfterOwnEntryChange(
+  queryClient: QueryClient,
+  personId: string | null,
+): Promise<void> {
   return invalidate(queryClient, [
     getGetMyHoursSummaryQueryKey(),
     getListMyHourEntriesQueryKey(),
+    ...(personId === null ? [] : [getGetMemberHoursQueryKey(personId)]),
     ...reviewKeys(),
   ]);
 }
