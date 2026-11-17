@@ -38,6 +38,53 @@ describe("Dialog", () => {
     expect(screen.getByRole("dialog", { name: "Gerar convite" })).toHaveClass("max-w-160");
   });
 
+  it("the table size limits the dialog to 1128px", () => {
+    render(
+      <Dialog isOpen onOpenChange={() => {}} title="Extrato" closeLabel="Fechar" size="table">
+        <p>Tabela</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Extrato" })).toHaveClass("max-w-282");
+  });
+
+  it("is described by an element of its body named by aria-describedby", () => {
+    const { rerender } = render(
+      <Dialog
+        isOpen
+        onOpenChange={() => {}}
+        title="Lançar horas"
+        closeLabel="Fechar"
+        aria-describedby="notice"
+      >
+        <p id="notice">Você está lançando em nome de outra pessoa.</p>
+        <p>Formulário</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Lançar horas" })).toHaveAccessibleDescription(
+      "Você está lançando em nome de outra pessoa.",
+    );
+
+    rerender(
+      <Dialog
+        isOpen
+        onOpenChange={() => {}}
+        title="Lançar horas"
+        description="Preencha os campos."
+        closeLabel="Fechar"
+        aria-describedby="notice"
+      >
+        <p id="notice">Você está lançando em nome de outra pessoa.</p>
+        <p>Formulário</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Lançar horas" })).toHaveAccessibleDescription(
+      "Preencha os campos. Você está lançando em nome de outra pessoa.",
+    );
+  });
+
   it("close button calls onOpenChange(false)", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

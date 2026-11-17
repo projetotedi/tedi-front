@@ -1,0 +1,19 @@
+{
+  "entries": {
+    "categories": {
+      "lesson": "Class",
+      "planning": "Planning",
+      "event": "Event",
+      "management": "Management",
+      "meeting": "Meeting",
+      "support": "Support",
+      "other": "Other"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "adjusted": "Adjusted",
+      "rejected": "Rejected"
+    }
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "entries": {
+    "categories": {
+      "lesson": "Aula",
+      "planning": "Planejamento",
+      "event": "Evento",
+      "management": "Gestão",
+      "meeting": "Reunião",
+      "support": "Atendimento",
+      "other": "Outros"
+    },
+    "status": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "adjusted": "Ajustado",
+      "rejected": "Rejeitado"
+    }
+  }
+}
