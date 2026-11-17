@@ -18,6 +18,14 @@
       "adjusted": "Ajustado",
       "rejected": "Rejeitado"
     },
+    "columns": {
+      "date": "Data",
+      "activity": "Atividade",
+      "category": "Categoria",
+      "declared": "Declarado",
+      "validated": "Validado",
+      "status": "Status"
+    },
     "summary": {
       "title": "Resumo de horas",
       "total": "Total de horas lançadas",
@@ -30,15 +38,7 @@
       "title": "Meus lançamentos",
       "viewStatement": "Ver extrato completo",
       "empty": "Nenhum lançamento ainda.",
-      "loading": "Carregando os seus lançamentos…",
-      "columns": {
-        "date": "Data",
-        "activity": "Atividade",
-        "category": "Categoria",
-        "declared": "Declarado",
-        "validated": "Validado",
-        "status": "Status"
-      }
+      "loading": "Carregando os seus lançamentos…"
     },
     "byCategory": {
       "title": "Horas por categoria",

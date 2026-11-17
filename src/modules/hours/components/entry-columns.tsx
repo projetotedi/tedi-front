@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 
-import type { HourEntryResponseDto } from "@api/generated/model";
+import { HourEntryStatus, type HourEntryResponseDto } from "@api/generated/model";
 import type { Column } from "@shared/components/DataTable";
 import { formatHours } from "@shared/lib/format";
 
@@ -24,11 +24,20 @@ export interface EntryColumnsOptions {
   withReviewNote: boolean;
 }
 
-/** The color of the note of the coordination: the yellow of Ajustado and the red of Rejeitado. */
+/**
+ * The statuses whose entry carries the note of the coordination (the justification of an adjustment,
+ * the reason of a rejection), with its color: the yellow of Ajustado and the red of Rejeitado.
+ */
 const REVIEW_NOTE_CLASSES = {
-  adjusted: "text-tedi-status-warning-foreground",
-  rejected: "text-tedi-status-danger-foreground",
+  [HourEntryStatus.adjusted]: "text-tedi-status-warning-foreground",
+  [HourEntryStatus.rejected]: "text-tedi-status-danger-foreground",
 } as const;
+
+type ReviewNoteStatus = keyof typeof REVIEW_NOTE_CLASSES;
+
+function hasReviewNote(status: HourEntryStatus): status is ReviewNoteStatus {
+  return status === HourEntryStatus.adjusted || status === HourEntryStatus.rejected;
+}
 
 /** The headers are in capitals by CSS; the text in the locale stays "Data", "Atividade"… */
 function headerClass(width: string): string {
@@ -49,8 +58,8 @@ export function entryColumns(
 ): Column<HourEntryResponseDto>[] {
   function reviewNote(entry: HourEntryResponseDto) {
     const { status, reviewNote: note } = entry;
-    if (!withReviewNote || note === null) return null;
-    if (status !== "adjusted" && status !== "rejected") return null;
+    // The API sends a note only with these statuses; one that comes with another is not shown.
+    if (!withReviewNote || note === null || !hasReviewNote(status)) return null;
 
     return (
       <span className={`mt-0.5 block text-sm ${REVIEW_NOTE_CLASSES[status]}`}>
@@ -61,13 +70,13 @@ export function entryColumns(
 
   return [
     {
-      header: t("entries.recent.columns.date"),
+      header: t("entries.columns.date"),
       headerClassName: headerClass(widths.date),
       cellClassName: "whitespace-nowrap",
       render: (entry) => formatDayMonth(entry.date, locale),
     },
     {
-      header: t("entries.recent.columns.activity"),
+      header: t("entries.columns.activity"),
       headerClassName: headerClass(widths.activity),
       render: (entry) => (
         <>
@@ -77,18 +86,18 @@ export function entryColumns(
       ),
     },
     {
-      header: t("entries.recent.columns.category"),
+      header: t("entries.columns.category"),
       headerClassName: headerClass(widths.category),
       render: (entry) => t(ENTRY_CATEGORY_LABEL_KEYS[entry.category]),
     },
     {
-      header: t("entries.recent.columns.declared"),
+      header: t("entries.columns.declared"),
       headerClassName: headerClass(widths.declared),
       cellClassName: "whitespace-nowrap",
       render: (entry) => formatHours(entry.declaredMinutes),
     },
     {
-      header: t("entries.recent.columns.validated"),
+      header: t("entries.columns.validated"),
       headerClassName: headerClass(widths.validated),
       cellClassName: "whitespace-nowrap",
       render: (entry) =>
@@ -102,7 +111,7 @@ export function entryColumns(
         ),
     },
     {
-      header: t("entries.recent.columns.status"),
+      header: t("entries.columns.status"),
       headerClassName: headerClass(widths.status),
       cellClassName: "whitespace-nowrap",
       render: (entry) => <EntryStatusTag status={entry.status} />,

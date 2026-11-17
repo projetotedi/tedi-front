@@ -18,6 +18,14 @@
       "adjusted": "Adjusted",
       "rejected": "Rejected"
     },
+    "columns": {
+      "date": "Date",
+      "activity": "Activity",
+      "category": "Category",
+      "declared": "Declared",
+      "validated": "Validated",
+      "status": "Status"
+    },
     "summary": {
       "title": "Hours summary",
       "total": "Total hours logged",
@@ -30,15 +38,7 @@
       "title": "My entries",
       "viewStatement": "See full statement",
       "empty": "No entries yet.",
-      "loading": "Loading your entries…",
-      "columns": {
-        "date": "Date",
-        "activity": "Activity",
-        "category": "Category",
-        "declared": "Declared",
-        "validated": "Validated",
-        "status": "Status"
-      }
+      "loading": "Loading your entries…"
     },
     "byCategory": {
       "title": "Hours by category",
