@@ -8,7 +8,7 @@ import {
 } from "../schemas/hour-entry.schema";
 
 const TODAY = "2026-03-16";
-const schema = logHoursFormSchema(TODAY);
+const schema = logHoursFormSchema(() => TODAY);
 
 const FIGMA: LogHoursFormInput = {
   activity: "  Preparação de material da aula 12  ",

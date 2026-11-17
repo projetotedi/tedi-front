@@ -270,6 +270,26 @@ describe("LogHoursDialog", () => {
       expect(onCall).not.toHaveBeenCalled();
     });
 
+    it("takes the new day when the dialog stays open past midnight", async () => {
+      const onCall = vi.fn<(call: LogCall) => void>();
+      server.use(logMyHoursHandler({ onCall }));
+      vi.setSystemTime(new Date(2026, 2, 16, 23, 58));
+      const user = userEvent.setup();
+      const { onClose } = await renderDialog();
+      expect(dateField()).toHaveValue("2026-03-16");
+
+      vi.setSystemTime(new Date(2026, 2, 17, 0, 2));
+      await fill(user, { ...FIGMA_OWN, date: "2026-03-17" });
+      await user.click(submitButton());
+
+      await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+      expect(onCall).toHaveBeenCalledExactlyOnceWith({
+        memberId: null,
+        body: expect.objectContaining({ date: "2026-03-17" }),
+      });
+      expect(within(document.body).queryByText("A data não pode ser depois de hoje.")).toBeNull();
+    });
+
     it("shows the toast with the hours and the day, closes and gives the focus back", async () => {
       server.use(logMyHoursHandler());
       const user = userEvent.setup();

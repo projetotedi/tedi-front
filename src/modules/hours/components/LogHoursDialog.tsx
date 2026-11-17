@@ -3,7 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useEffect,
   useId,
-  useMemo,
   useRef,
   useState,
   type FormEvent,
@@ -59,6 +58,9 @@ export interface LogHoursDialogProps {
   onLogged?: (entry: HourEntryResponseDto) => void;
 }
 
+/** The form, with today read on the calendar of the machine each time it is checked. */
+const LOG_HOURS_SCHEMA = logHoursFormSchema(() => todayIsoDate());
+
 /** A select has no ref to its field, so the focus goes to the button that opens it. */
 function focusSelect(wrapper: RefObject<HTMLDivElement | null>): void {
   wrapper.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
@@ -104,16 +106,14 @@ export function LogHoursDialog({
   const categoryRef = useRef<HTMLDivElement>(null);
   const inFlightRef = useRef(false);
   const [issue, setIssue] = useState<LogHoursIssue | null>(null);
-  const today = useMemo(() => todayIsoDate(), []);
-  const schema = useMemo(() => logHoursFormSchema(today), [today]);
 
   const { control, handleSubmit, setError, setFocus } = useForm<
     LogHoursFormInput,
     unknown,
     LogHoursFormValues
   >({
-    resolver: zodResolver(schema),
-    defaultValues: emptyLogHoursFormInput(today),
+    resolver: zodResolver(LOG_HOURS_SCHEMA),
+    defaultValues: emptyLogHoursFormInput(todayIsoDate()),
     // The select has no ref, so the focus on the first invalid field is set by hand.
     shouldFocusError: false,
   });
