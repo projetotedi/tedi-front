@@ -39,8 +39,10 @@ export interface MyEntriesDialogProps {
  *
  * "Remover" is on the entries that can still be removed (pending, and not from the attendance), named
  * by the day and the activity; it opens `RemoveEntryDialog` over the statement, which cannot be closed
- * while that one is open. Once an entry is removed its row is gone, so the focus goes to the list; and
- * when it was the only one of the last page, the statement goes back a page.
+ * while that one is open. Once an entry is removed, or the API says it changed meanwhile and the
+ * confirmation is closed, its button is gone with it: the focus goes to the list as soon as the
+ * statement has been read again. When the removed entry was the only one of the last page, the
+ * statement goes back a page.
  *
  * The headers stay on the screen in every state: loading, empty (with how to log hours), and failed
  * (with "Tentar de novo"). The statement is read again every time it opens and leaves the cache when
@@ -52,8 +54,11 @@ export function MyEntriesDialog({ onClose }: MyEntriesDialogProps): ReactElement
   const contentRef = useRef<HTMLDivElement>(null);
   const [page, setPage] = useState(1);
   const [removing, setRemoving] = useState<HourEntryResponseDto | null>(null);
-  // Counts the removals, so each one takes the focus to the list, even two in a row.
-  const [removedCount, setRemovedCount] = useState(0);
+  // The entry being removed changed in the API meanwhile: its button will not come back.
+  const entryChangedRef = useRef(false);
+  // The list takes the focus once the statement is read again; each request counts, even two in a row.
+  const listFocusPendingRef = useRef(false);
+  const [listFocusRequests, setListFocusRequests] = useState(0);
 
   const query = useListMyHourEntries(
     { page, limit: MY_STATEMENT_PAGE_SIZE },
@@ -77,8 +82,23 @@ export function MyEntriesDialog({ onClose }: MyEntriesDialogProps): ReactElement
   });
 
   useEffect(() => {
-    if (removedCount > 0) contentRef.current?.focus();
-  }, [removedCount]);
+    if (!listFocusPendingRef.current || query.isFetching) return;
+    listFocusPendingRef.current = false;
+    contentRef.current?.focus();
+  }, [listFocusRequests, query.isFetching]);
+
+  function focusListWhenRead() {
+    listFocusPendingRef.current = true;
+    setListFocusRequests((count) => count + 1);
+  }
+
+  function closeRemoving() {
+    setRemoving(null);
+    if (entryChangedRef.current) {
+      entryChangedRef.current = false;
+      focusListWhenRead();
+    }
+  }
 
   const columns: Column<HourEntryResponseDto>[] = [
     ...entryColumns(t, i18n.language, { widths: STATEMENT_WIDTHS, withReviewNote: true }),
@@ -188,8 +208,11 @@ export function MyEntriesDialog({ onClose }: MyEntriesDialogProps): ReactElement
       {removing === null ? null : (
         <RemoveEntryDialog
           entry={removing}
-          onClose={() => setRemoving(null)}
-          onRemoved={() => setRemovedCount((count) => count + 1)}
+          onClose={closeRemoving}
+          onRemoved={focusListWhenRead}
+          onStale={() => {
+            entryChangedRef.current = true;
+          }}
         />
       )}
     </Dialog>

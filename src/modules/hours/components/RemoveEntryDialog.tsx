@@ -16,8 +16,10 @@ export interface RemoveEntryDialogProps {
   /** The entry to remove, as the statement lists it: pending, and not from the attendance. */
   entry: HourEntryResponseDto;
   onClose: () => void;
-  /** Called when the API removed it and the lists were read again, before `onClose`. */
+  /** Called when the API removed it, before `onClose`; the lists are still being read again. */
   onRemoved: () => void;
+  /** Called when the API says the entry changed meanwhile (validated, a lesson hour, gone). */
+  onStale: () => void;
 }
 
 /**
@@ -27,11 +29,12 @@ export interface RemoveEntryDialogProps {
  * dialog is described by both, so they are read when it opens. Voltar (`secondary`, with the focus
  * when it opens, since the other cannot be undone) and Remover lançamento (`danger`).
  *
- * `DELETE /me/hour-entries/:id`. On success the summary and the entries of the person are read
- * again before the callbacks run, so the row has left the statement when the focus goes back to it;
- * then the toast says so, `onRemoved` and `onClose` are called. A refusal that says the entry changed
- * meanwhile (validated, a lesson hour, gone) turns Remover lançamento off and reads the lists again;
- * the network and anything else are an alert that a new attempt clears. The warning or the alert
+ * `DELETE /me/hour-entries/:id`. On success the toast says so, `onRemoved` and `onClose` are called
+ * at once, and the summary and the entries of the person are read again in the background: the entry
+ * is already gone in the API, so a slow or failed read must not hold the dialog. A refusal that says
+ * the entry changed meanwhile (validated, a lesson hour, gone) turns Remover lançamento off, no longer
+ * says the entry waits for validation, reads the lists again and calls `onStale`; the network and
+ * anything else are an alert that a new attempt clears. The warning or the alert
  * takes the focus. While the request is on its way the dialog cannot be closed (X, Esc and Voltar are
  * off) and a second press is ignored. Mount it only while it is open.
  */
@@ -39,6 +42,7 @@ export function RemoveEntryDialog({
   entry,
   onClose,
   onRemoved,
+  onStale,
 }: RemoveEntryDialogProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
   const queryClient = useQueryClient();
@@ -48,9 +52,9 @@ export function RemoveEntryDialog({
   const inFlightRef = useRef(false);
   const [issue, setIssue] = useState<RemoveEntryIssue | null>(null);
 
-  // Returning the promise makes the callbacks of `mutate` wait until the lists were read again.
+  // The cache is told even if the dialog is gone by the time the answer arrives, without holding it.
   const removeEntry = useRemoveMyHourEntry({
-    mutation: { onSuccess: () => invalidateAfterOwnEntryChange(queryClient) },
+    mutation: { onSuccess: () => void invalidateAfterOwnEntryChange(queryClient) },
   });
   const isPending = removeEntry.isPending;
   const isSettled = issue !== null && isStaleEntry(issue);
@@ -63,7 +67,10 @@ export function RemoveEntryDialog({
   function handleError(error: unknown) {
     const result = toRemoveEntryError(error);
 
-    if (isStaleEntry(result)) void invalidateAfterOwnEntryChange(queryClient);
+    if (isStaleEntry(result)) {
+      void invalidateAfterOwnEntryChange(queryClient);
+      onStale();
+    }
     setIssue(result);
   }
 

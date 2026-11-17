@@ -338,4 +338,45 @@ describe("MyEntriesDialog", () => {
     expect(onCall).toHaveBeenLastCalledWith({ page: "1", limit: "20" });
     expect(within(statement()).queryByRole("navigation")).not.toBeInTheDocument();
   });
+
+  it("after a refusal that the entry changed, Voltar takes the focus to the list", async () => {
+    // The coordination validated the 08/03 meanwhile: the API refuses, and the list read again shows it approved.
+    let entries = STATEMENT;
+    server.use(
+      myHourEntriesHandler({ response: (call) => pageOf(entries, call) }),
+      removeMyHourEntryHandler({
+        error: { statusCode: 409, error: "ENTRY_NOT_PENDING" },
+        onCall: () => {
+          entries = STATEMENT.map((entry) =>
+            entry.id === entryId(4)
+              ? { ...entry, status: "approved", validatedMinutes: 240 }
+              : entry,
+          );
+        },
+      }),
+    );
+    const user = userEvent.setup();
+    await renderStatement();
+    await within(statement()).findByText("Feira de tecnologia (evento externo)");
+
+    await user.click(within(table()).getByRole("button", { name: REMOVE_E4 }));
+    const confirm = await screen.findByRole("dialog", { name: "Remover lançamento" });
+    await user.click(within(confirm).getByRole("button", { name: "Remover lançamento" }));
+    await within(confirm).findByText(
+      "A coordenação já validou este lançamento. Ele não pode mais ser removido.",
+    );
+    // The list behind was read again: the 08/03 has no Remover any more.
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: REMOVE_E4, hidden: true }),
+      ).not.toBeInTheDocument(),
+    );
+
+    await user.click(within(confirm).getByRole("button", { name: "Voltar" }));
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Remover lançamento" })).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(list()).toHaveFocus());
+  });
 });

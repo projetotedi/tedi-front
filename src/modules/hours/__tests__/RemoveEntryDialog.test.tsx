@@ -8,6 +8,7 @@ import {
 } from "@api/generated/hours/hours";
 
 import { MyEntriesCard } from "../components/MyEntriesCard";
+import { MyHoursSummary } from "../components/MyHoursSummary";
 import { RemoveEntryDialog } from "../components/RemoveEntryDialog";
 import {
   createDeferred,
@@ -18,6 +19,7 @@ import {
 import {
   entryId,
   myHourEntriesHandler,
+  myHoursSummaryHandler,
   removeMyHourEntryHandler,
   statementEntry,
   type RemoveCall,
@@ -44,11 +46,12 @@ function issueBox(text: string): HTMLElement {
 async function renderRemove() {
   const onClose = vi.fn();
   const onRemoved = vi.fn();
+  const onStale = vi.fn();
   const view = await renderWithProviders(
-    <RemoveEntryDialog entry={ENTRY} onClose={onClose} onRemoved={onRemoved} />,
+    <RemoveEntryDialog entry={ENTRY} onClose={onClose} onRemoved={onRemoved} onStale={onStale} />,
   );
   await screen.findByRole("dialog", { name: "Remover lançamento" });
-  return { ...view, onClose, onRemoved };
+  return { ...view, onClose, onRemoved, onStale };
 }
 
 describe("RemoveEntryDialog", () => {
@@ -88,7 +91,7 @@ describe("RemoveEntryDialog", () => {
     expect(onRemoved.mock.invocationCallOrder[0]).toBeLessThan(onClose.mock.invocationCallOrder[0]);
   });
 
-  it("reads my summary and my entries again before closing", async () => {
+  it("closes at once and reads my summary and my entries again in the background", async () => {
     const reread = createDeferred();
     server.use(removeMyHourEntryHandler(), myHourEntriesHandler());
     const user = userEvent.setup();
@@ -96,7 +99,12 @@ describe("RemoveEntryDialog", () => {
     const { queryClient } = await renderWithProviders(
       <>
         <MyEntriesCard />
-        <RemoveEntryDialog entry={ENTRY} onClose={onClose} onRemoved={() => {}} />
+        <RemoveEntryDialog
+          entry={ENTRY}
+          onClose={onClose}
+          onRemoved={() => {}}
+          onStale={() => {}}
+        />
       </>,
     );
     // The card is behind the dialog, so it is out of the accessibility tree.
@@ -107,18 +115,45 @@ describe("RemoveEntryDialog", () => {
 
     await user.click(submitButton());
 
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(queryClient.getQueryState(getListMyHourEntriesQueryKey({ limit: 5 }))?.fetchStatus).toBe(
+      "fetching",
+    );
+    expect(queryClient.getQueryState(getGetMyHoursSummaryQueryKey())?.isInvalidated).toBe(true);
+
+    reread.resolve();
     await waitFor(() =>
       expect(
         queryClient.getQueryState(getListMyHourEntriesQueryKey({ limit: 5 }))?.fetchStatus,
-      ).toBe("fetching"),
+      ).toBe("idle"),
     );
-    expect(queryClient.getQueryState(getGetMyHoursSummaryQueryKey())?.isInvalidated).toBe(true);
-    expect(onClose).not.toHaveBeenCalled();
-    expect(submitButton()).toHaveTextContent("Removendo…");
+  });
 
-    reread.resolve();
+  it("closes and says the entry was removed even when reading the summary again fails", async () => {
+    server.use(removeMyHourEntryHandler(), myHoursSummaryHandler());
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onRemoved = vi.fn();
+    await renderWithProviders(
+      <>
+        <MyHoursSummary />
+        <RemoveEntryDialog
+          entry={ENTRY}
+          onClose={onClose}
+          onRemoved={onRemoved}
+          onStale={() => {}}
+        />
+      </>,
+    );
+    await screen.findByText("58h");
+    // From now on the summary never answers: the removal is done in the API all the same.
+    server.use(myHoursSummaryHandler({ delay: new Promise<void>(() => {}) }));
 
-    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    await user.click(submitButton());
+
+    expect(await screen.findByText("Lançamento removido")).toBeInTheDocument();
+    expect(onRemoved).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("while removing, says Removendo…, ignores a second press and keeps Voltar, X and Esc off", async () => {
@@ -176,7 +211,7 @@ describe("RemoveEntryDialog", () => {
     async ({ code, text }) => {
       server.use(removeMyHourEntryHandler({ error: { statusCode: 409, error: code } }));
       const user = userEvent.setup();
-      const { onClose, queryClient } = await renderRemove();
+      const { onClose, onStale, queryClient } = await renderRemove();
       queryClient.setQueryData(getListMyHourEntriesQueryKey({ limit: 5 }), { cached: true });
       queryClient.setQueryData(getGetMyHoursSummaryQueryKey(), { cached: true });
 
@@ -191,6 +226,7 @@ describe("RemoveEntryDialog", () => {
         queryClient.getQueryState(getListMyHourEntriesQueryKey({ limit: 5 }))?.isInvalidated,
       ).toBe(true);
       expect(queryClient.getQueryState(getGetMyHoursSummaryQueryKey())?.isInvalidated).toBe(true);
+      expect(onStale).toHaveBeenCalledTimes(1);
       expect(onClose).not.toHaveBeenCalled();
     },
   );
@@ -200,7 +236,7 @@ describe("RemoveEntryDialog", () => {
       removeMyHourEntryHandler({ error: { statusCode: 404, error: "HOUR_ENTRY_NOT_FOUND" } }),
     );
     const user = userEvent.setup();
-    const { queryClient } = await renderRemove();
+    const { onStale, queryClient } = await renderRemove();
     queryClient.setQueryData(getListMyHourEntriesQueryKey({ limit: 5 }), { cached: true });
 
     await user.click(submitButton());
@@ -208,6 +244,7 @@ describe("RemoveEntryDialog", () => {
     expect(await within(dialog()).findByRole("alert")).toHaveTextContent(
       "Este lançamento não existe mais.",
     );
+    expect(onStale).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(issueBox("Este lançamento não existe mais.")).toHaveFocus());
     expect(submitButton()).toBeDisabled();
     expect(
@@ -218,7 +255,7 @@ describe("RemoveEntryDialog", () => {
   it("shows a network failure as an alert, and a new attempt is allowed", async () => {
     server.use(removeMyHourEntryHandler({ networkError: true }));
     const user = userEvent.setup();
-    const { onClose, queryClient } = await renderRemove();
+    const { onClose, onStale, queryClient } = await renderRemove();
     queryClient.setQueryData(getListMyHourEntriesQueryKey({ limit: 5 }), { cached: true });
 
     await user.click(submitButton());
@@ -231,6 +268,7 @@ describe("RemoveEntryDialog", () => {
     expect(
       queryClient.getQueryState(getListMyHourEntriesQueryKey({ limit: 5 }))?.isInvalidated,
     ).toBe(false);
+    expect(onStale).not.toHaveBeenCalled();
 
     server.use(removeMyHourEntryHandler());
     await user.click(submitButton());
