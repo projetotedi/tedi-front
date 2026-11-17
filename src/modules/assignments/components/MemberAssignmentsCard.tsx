@@ -45,7 +45,9 @@ export interface MemberAssignmentsCardProps {
  * shown as a failure; the other errors are an alert with "Tentar de novo".
  *
  * The button of the row goes away when the assignment is cancelled, and with it the focus the dialog
- * would give back, so after cancelling the card takes the focus to the region of the table.
+ * would give back, so after cancelling the card takes the focus to the region of the table. The region
+ * is named by the title of the card (`aria-labelledby`, on a `span` inside the `<h2>`: the `Card` takes
+ * a node as its title but has no id for the heading), so its name cannot drift from the title.
  */
 export function MemberAssignmentsCard({
   memberId,
@@ -55,6 +57,7 @@ export function MemberAssignmentsCard({
   const canCancel = useCan("assignments.create");
   const query = useListMemberAssignments(memberId, { query: { enabled: canView } });
   const regionId = useId();
+  const titleId = useId();
   const regionRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [cancelling, setCancelling] = useState<MemberAssignmentResponseDto | null>(null);
@@ -194,7 +197,7 @@ export function MemberAssignmentsCard({
         id={regionId}
         ref={regionRef}
         role="region"
-        aria-label={t("memberAssignments.title")}
+        aria-labelledby={titleId}
         tabIndex={-1}
         className="outline-none"
       >
@@ -210,7 +213,7 @@ export function MemberAssignmentsCard({
 
   return (
     <>
-      <Card title={t("memberAssignments.title")} aside={viewAll}>
+      <Card title={<span id={titleId}>{t("memberAssignments.title")}</span>} aside={viewAll}>
         {renderContent()}
       </Card>
       {cancelling === null ? null : (

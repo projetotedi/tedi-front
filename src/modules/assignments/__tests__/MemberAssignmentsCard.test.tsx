@@ -139,6 +139,20 @@ describe("MemberAssignmentsCard", () => {
       expect(screen.queryByRole("columnheader", { name: "Turma" })).not.toBeInTheDocument();
     });
 
+    it("names the region of the table by the title of the card, and not by a copy of its text", async () => {
+      server.use(listMemberAssignmentsHandler({ response: FIGMA_ROWS }));
+      await renderCard();
+      await findTable();
+
+      const labelId = region().getAttribute("aria-labelledby");
+
+      expect(labelId).not.toBeNull();
+      // The element that names the region is inside the heading of the card, so the name is its text.
+      const heading = screen.getByRole("heading", { level: 2, name: TITLE });
+      expect(heading.querySelector(`[id="${labelId}"]`)).not.toBeNull();
+      expect(region()).not.toHaveAttribute("aria-label");
+    });
+
     it("asks the assignments of the member, once", async () => {
       const onCall = vi.fn<(call: IdCall) => void>();
       server.use(listMemberAssignmentsHandler({ response: FIGMA_ROWS, onCall }));
