@@ -1,3 +1,4 @@
+import type { MemberStatus } from "@api/generated/model";
 import type { BadgeProps } from "@shared/ui";
 
 import type { EntryStatus } from "./hours";
@@ -30,6 +31,16 @@ export function studentStatusOf(archivedAt: string | null): StudentStatus {
 export const STUDENT_STATUS_COLOR: Record<StudentStatus, BadgeTone> = {
   active: "success",
   archived: "neutral",
+};
+
+/**
+ * `inactive` is a member that left the project (`PATCH /members/:id/deactivate`), which is
+ * independent from the access to the system. Like an archived student, it is neutral: a state the
+ * registration is in, not a problem.
+ */
+export const MEMBER_STATUS_COLOR: Record<MemberStatus, BadgeTone> = {
+  active: "success",
+  inactive: "neutral",
 };
 
 export const ENTRY_STATUS_COLOR: Record<EntryStatus, BadgeTone> = {

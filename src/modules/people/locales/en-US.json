@@ -185,5 +185,68 @@
       "registeredBy": "Registered by",
       "updatedAt": "Last updated"
     }
+  },
+  "member": {
+    "routeTitle": "Member",
+    "loading": "Loading the member…",
+    "loadError": "We could not load the member. Please try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Member not found",
+    "notFoundDescription": "This member does not exist or was removed.",
+    "backToList": "Back to Members",
+    "breadcrumb": "Breadcrumb",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "chips": {
+      "ra": "RA {{ra}}"
+    },
+    "data": {
+      "title": "Member details",
+      "fullName": "Full name",
+      "birthDate": "Date of birth",
+      "phone": "Phone",
+      "personalEmail": "Personal email",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "ra": "RA",
+      "department": "Department",
+      "mainFunction": "Main function",
+      "course": "Degree",
+      "className": "Class",
+      "semester": "Semester",
+      "semesterValue": "{{count}}",
+      "institutionalEmail": "Institutional email",
+      "cpf": "CPF",
+      "volunteerTerm": "Volunteer agreement",
+      "role": "Access profile",
+      "status": "Status",
+      "joinedAt": "Joined the project",
+      "exitDate": "Left on"
+    },
+    "record": {
+      "title": "Record and permissions",
+      "approvedBy": "Registration approved by",
+      "approvedByValue": "{{name}} on {{date}}",
+      "approvedOn": "On {{date}}"
+    },
+    "assignments": {
+      "title": "Class assignments",
+      "unavailable": "The class assignments of the member will show up here soon."
+    },
+    "entries": {
+      "title": "Hour entries",
+      "unavailable": "The hour entries of the member will show up here soon."
+    },
+    "hoursBank": {
+      "title": "Hours bank",
+      "unavailable": "The hours bank of the member will show up here soon."
+    },
+    "attendance": {
+      "title": "Attendance",
+      "unavailable": "The attendance of the member in classes will show up here soon."
+    }
   }
 }

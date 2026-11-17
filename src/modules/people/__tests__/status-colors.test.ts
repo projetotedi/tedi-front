@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   ACCOUNT_STATUS_COLOR,
+  MEMBER_STATUS_COLOR,
   STUDENT_STATUS_COLOR,
   accountStatusOf,
   studentStatusOf,
@@ -34,5 +35,12 @@ describe("studentStatusOf", () => {
   it("colors an active student green and an archived one neutral", () => {
     expect(STUDENT_STATUS_COLOR.active).toBe("success");
     expect(STUDENT_STATUS_COLOR.archived).toBe("neutral");
+  });
+});
+
+describe("MEMBER_STATUS_COLOR", () => {
+  it("colors an active member green and an inactive one neutral", () => {
+    expect(MEMBER_STATUS_COLOR.active).toBe("success");
+    expect(MEMBER_STATUS_COLOR.inactive).toBe("neutral");
   });
 });

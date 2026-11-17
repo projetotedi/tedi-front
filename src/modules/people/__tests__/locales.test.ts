@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { AccessibilityNeed } from "@api/generated/model";
+import { AccessibilityNeed, MemberStatus } from "@api/generated/model";
 
 import enUS from "../locales/en-US.json";
 import ptBR from "../locales/pt-BR.json";
@@ -39,5 +39,25 @@ describe("people locales (student)", () => {
     expect(Object.keys(student.accessibilityNeed).sort()).toEqual(
       Object.values(AccessibilityNeed).sort(),
     );
+  });
+});
+
+// The `member` subtree has no plural forms, so it can be compared key by key.
+describe("people locales (member)", () => {
+  it("pt-BR and en-US have the same keys", () => {
+    expect(flattenKeys(enUS.member).sort()).toEqual(flattenKeys(ptBR.member).sort());
+  });
+
+  it("has no empty text", () => {
+    for (const text of [...flattenValues(ptBR.member), ...flattenValues(enUS.member)]) {
+      expect(text.trim()).not.toBe("");
+    }
+  });
+
+  it.each([
+    ["pt-BR", ptBR.member],
+    ["en-US", enUS.member],
+  ])("%s has a label for every status of a member the API knows", (_locale, member) => {
+    expect(Object.keys(member.status).sort()).toEqual(Object.values(MemberStatus).sort());
   });
 });
