@@ -465,7 +465,8 @@ describe("+ Nova alocação, filled by the app", () => {
       route: CLASS_ROUTE,
       user: buildAllocatorUser(Role.coordinator),
     });
-    const table = await within(card("Aulas da turma")).findByRole("table");
+    // `card()` is looked up on every try: the card only exists once the class is loaded.
+    const table = await waitFor(() => within(card("Aulas da turma")).getByRole("table"));
     // Before: no lesson has a teacher yet, so the column shows the dash that is read as Não informado.
     expect(teachersOf(table)).toEqual(["—Não informado", "—Não informado", "—Não informado"]);
 

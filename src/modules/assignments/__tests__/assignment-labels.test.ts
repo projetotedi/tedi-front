@@ -1,15 +1,21 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import { AssignmentRole, AssignmentSource, AssignmentStatus } from "@api/generated/model";
+import i18n from "@shared/i18n";
 
 import {
+  APPLY_ROLE_ORDER,
   ASSIGNABLE_STATUSES,
   ASSIGNMENT_ROLE_LABEL_KEYS,
   assignmentRoleTone,
   assignmentStatusLabelKey,
   assignmentStatusTone,
+  lessonLabel,
+  MY_LESSON_STATUS_LABEL_KEYS,
+  ROLE_INLINE_KEYS,
 } from "../lib/assignment-labels";
 import ptBR from "../locales/pt-BR.json";
+import "../index";
 
 /** Reads a key such as `status.applied` from the pt-BR texts: what the screen would show for it. */
 function text(key: string): unknown {
@@ -90,5 +96,65 @@ describe("ASSIGNABLE_STATUSES", () => {
       AssignmentStatus.confirmed,
       AssignmentStatus.pending,
     ]);
+  });
+});
+
+describe("ROLE_INLINE_KEYS", () => {
+  it("has the role inside a sentence, in lower case, for every role of the contract", () => {
+    expect(Object.keys(ROLE_INLINE_KEYS).sort()).toEqual(Object.values(AssignmentRole).sort());
+    expect(text(ROLE_INLINE_KEYS.teacher)).toBe("professor(a)");
+    expect(text(ROLE_INLINE_KEYS.monitor)).toBe("monitor(a)");
+  });
+});
+
+describe("APPLY_ROLE_ORDER", () => {
+  it("offers Monitor(a) before Professor(a), as the Figma does, and each role once", () => {
+    expect(APPLY_ROLE_ORDER).toEqual(["monitor", "teacher"]);
+    expect([...APPLY_ROLE_ORDER].sort()).toEqual(Object.values(AssignmentRole).sort());
+  });
+});
+
+describe("MY_LESSON_STATUS_LABEL_KEYS", () => {
+  it("has a label for every status of the contract, under myLessons.status", () => {
+    expect(Object.keys(MY_LESSON_STATUS_LABEL_KEYS).sort()).toEqual(
+      Object.values(AssignmentStatus).sort(),
+    );
+  });
+
+  it("says Aguardando confirmação for what waits, as Minhas aulas does in the Figma", () => {
+    expect(text(MY_LESSON_STATUS_LABEL_KEYS.pending)).toBe("Aguardando confirmação");
+    expect(text(MY_LESSON_STATUS_LABEL_KEYS.confirmed)).toBe("Confirmada");
+    expect(text(MY_LESSON_STATUS_LABEL_KEYS.declined)).toBe("Recusada");
+    expect(text(MY_LESSON_STATUS_LABEL_KEYS.cancelled)).toBe("Cancelada");
+  });
+});
+
+describe("lessonLabel", () => {
+  beforeAll(async () => {
+    await i18n.changeLanguage("pt-BR");
+  });
+
+  it("joins the place in the sequence and the title", () => {
+    const t = i18n.getFixedT("pt-BR", "assignments");
+
+    expect(lessonLabel({ sequenceOrder: 3, title: "Arquivos e pastas" }, t)).toBe(
+      "Aula 3 · Arquivos e pastas",
+    );
+  });
+
+  it("shows only the title for a lesson on its own, with no place in a sequence", () => {
+    const t = i18n.getFixedT("pt-BR", "assignments");
+
+    expect(lessonLabel({ sequenceOrder: null, title: "Aula avulsa de revisão" }, t)).toBe(
+      "Aula avulsa de revisão",
+    );
+  });
+
+  it("speaks the language it is given", () => {
+    const t = i18n.getFixedT("en-US", "assignments");
+
+    expect(lessonLabel({ sequenceOrder: 5, title: "Email from scratch" }, t)).toBe(
+      "Lesson 5 · Email from scratch",
+    );
   });
 });

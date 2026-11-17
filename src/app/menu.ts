@@ -4,6 +4,7 @@ import clockIcon from "../assets/icons/clock.svg";
 import graduationCapIcon from "../assets/icons/graduation-cap.svg";
 import personIcon from "../assets/icons/person.svg";
 
+import { assignmentsMenuItems } from "@modules/assignments";
 import { authMenuItems } from "@modules/auth";
 import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
@@ -29,6 +30,7 @@ export const appMenuGroups: MenuGroup[] = [
  * "Membros" já saiu daqui: é a tela de gestão de acessos do `auth` (GUS-87), em `authMenuItems`.
  * "Cursos" também (GUS-131): é a listagem do `catalog`, em `catalogMenuItems`.
  * Aulas e Calendário também saíram (GUS-152): são do módulo `lessons`, em `lessonsMenuItems`.
+ * Minhas aulas (GUS-161) nasceu no módulo `assignments`, em `assignmentsMenuItems`.
  * Validação de horas (`/hours/review`) é um caminho provisório; o módulo dono confirma quando
  * nascer.
  */
@@ -53,11 +55,13 @@ export const prototypeMenuItems: MenuItem[] = [
  * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale
  * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Cursos e
  * Planos de aula (`catalogMenuItems`) na ordem do Figma, e Membros (`authMenuItems`) depois de Alunos,
- * como no Figma. Aulas e Calendário (`lessonsMenuItems`) já saem na ordem do Figma.
+ * como no Figma. Aulas e Calendário (`lessonsMenuItems`) já saem na ordem do Figma, e Minhas aulas
+ * (`assignmentsMenuItems`) vem logo depois deles, no mesmo grupo.
  */
 export const appMenuItems: MenuItem[] = [
   ...classesMenuItems,
   ...lessonsMenuItems,
+  ...assignmentsMenuItems,
   ...prototypeMenuItems,
   ...catalogMenuItems,
   ...authMenuItems,

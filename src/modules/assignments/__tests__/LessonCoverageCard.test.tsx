@@ -80,8 +80,9 @@ async function renderCard(user = buildMeUser(Role.coordinator)) {
  * so a test that looks at the whole card waits for that too.
  */
 async function waitForCoverage() {
-  await screen.findByRole("heading", { name: TITLE });
-  await within(card()).findByText("Alunos", { selector: "dt" });
+  // `card()` is looked up on every try: the skeleton and the loaded card are different elements, so a
+  // root taken before the data arrives is left out of the document when the card is drawn.
+  await waitFor(() => expect(within(card()).getByText("Alunos", { selector: "dt" })).toBeVisible());
   await waitFor(() =>
     expect(within(valueOf("Alunos")).queryByRole("status")).not.toBeInTheDocument(),
   );

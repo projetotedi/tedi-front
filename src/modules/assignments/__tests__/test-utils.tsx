@@ -2,7 +2,7 @@ import type { ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { configure, getConfig, render, waitFor } from "@testing-library/react";
 import { setupServer } from "msw/node";
-import { createMemoryRouter, RouterProvider } from "react-router-dom";
+import { createMemoryRouter, RouterProvider, type RouteObject } from "react-router-dom";
 import { afterAll, afterEach, beforeAll, expect } from "vitest";
 
 import { getMeQueryKey } from "@api/generated/auth/auth";
@@ -60,14 +60,9 @@ interface RenderOptions {
   user?: MeResponseDto | null;
 }
 
-/**
- * Renders `ui` on any route, under the session provider, with a query client that does not retry,
- * and waits until the session is known: it is what `useCan` reads, so a test never looks at the
- * moment before the permissions arrive.
- */
-export async function renderWithProviders(
-  ui: ReactElement,
-  { route = "/", user = buildMeUser() }: RenderOptions = {},
+async function renderRouter(
+  routes: RouteObject[],
+  { route = "/", user = buildMeUser() }: RenderOptions,
 ) {
   await i18n.changeLanguage("pt-BR");
   server.use(meHandler({ user }));
@@ -75,9 +70,7 @@ export async function renderWithProviders(
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
-  const router = createMemoryRouter([{ path: "*", element: <AuthProvider>{ui}</AuthProvider> }], {
-    initialEntries: [route],
-  });
+  const router = createMemoryRouter(routes, { initialEntries: [route] });
 
   const view = render(
     <QueryClientProvider client={queryClient}>
@@ -86,6 +79,8 @@ export async function renderWithProviders(
     </QueryClientProvider>,
   );
 
+  // The session is what `useCan` reads: wait until it is known, so a test never looks at the
+  // moment before the permissions arrive.
   await waitFor(() => {
     const session = queryClient.getQueryState(getMeQueryKey());
     expect(session?.status).toBeDefined();
@@ -93,6 +88,19 @@ export async function renderWithProviders(
   });
 
   return { ...view, router, queryClient };
+}
+
+/**
+ * Renders `ui` on any route, under the session provider, with a query client that does not retry,
+ * and waits until the session is known.
+ */
+export function renderWithProviders(ui: ReactElement, options: RenderOptions = {}) {
+  return renderRouter([{ path: "*", element: <AuthProvider>{ui}</AuthProvider> }], options);
+}
+
+/** Renders the routes of a module under the session provider, as the app does. */
+export function renderRoutes(routes: RouteObject[], options: RenderOptions = {}) {
+  return renderRouter([{ element: <AuthProvider />, children: routes }], options);
 }
 
 export function createDeferred() {
@@ -134,6 +142,26 @@ export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
  */
 export function expectQueryNeverRan(queryClient: QueryClient, queryKey: readonly unknown[]): void {
   for (const query of queryClient.getQueryCache().findAll({ queryKey })) {
+    const name = JSON.stringify(query.queryKey);
+    expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
+    expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
+      0,
+    );
+  }
+}
+
+/**
+ * Fails if the screen asked the API for the path, with no waiting. The first element of a query key
+ * of the generated hooks is the path (`/applications`, `/me/assignments`); it reads the cache the
+ * same way as `expectNoRequestBesidesSession`.
+ */
+export function expectNoRequestTo(queryClient: QueryClient, path: string): void {
+  const queries = queryClient
+    .getQueryCache()
+    .findAll()
+    .filter((query) => query.queryKey[0] === path);
+
+  for (const query of queries) {
     const name = JSON.stringify(query.queryKey);
     expect(query.state.fetchStatus, `${name} is running`).toBe("idle");
     expect(query.state.dataUpdateCount + query.state.errorUpdateCount, `${name} already ran`).toBe(
