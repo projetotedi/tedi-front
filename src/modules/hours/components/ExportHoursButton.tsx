@@ -13,7 +13,10 @@ import { periodRange } from "../lib/bank-period";
 export interface ExportHoursButtonProps {
   /** The month on the screen, `YYYY-MM`. */
   period: string;
-  /** What the report covers: what the view shows, or everyone (the view of one member: the API does not filter by member). */
+  /**
+   * What the report covers: what the view shows, or everyone when the screen is narrowed to less
+   * (the view of one member, or a search): the API filters neither by member nor by name.
+   */
   scope: "view" | "allMembers";
 }
 

@@ -96,7 +96,7 @@ export function HoursPage(): ReactElement {
     closeMember();
   }
 
-  function renderMemberView(): ReactElement {
+  function renderMemberView(personId: string): ReactElement {
     if (member.isError && member.data === undefined) {
       return (
         <Card className="rounded-3xl">
@@ -118,10 +118,7 @@ export function HoursPage(): ReactElement {
           isLoading={member.isPending}
           titleRef={titleRef}
         />
-        <PendingEntriesTable
-          key={`${from}|${to}|${memberId}`}
-          filter={{ from, to, personId: memberId ?? undefined }}
-        />
+        <PendingEntriesTable key={`${from}|${to}|${personId}`} filter={{ from, to, personId }} />
       </>
     );
   }
@@ -141,7 +138,11 @@ export function HoursPage(): ReactElement {
           onShowAll={showEveryone}
           onClearMember={showEveryone}
         />
-        <ExportHoursButton period={period} scope={memberId === null ? "view" : "allMembers"} />
+        {/* The export takes no member nor search: when the screen is narrowed, the label says it is everyone. */}
+        <ExportHoursButton
+          period={period}
+          scope={memberId === null && appliedSearch === "" ? "view" : "allMembers"}
+        />
       </div>
 
       {memberId === null ? (
@@ -161,7 +162,7 @@ export function HoursPage(): ReactElement {
           <PendingEntriesTable key={`${from}|${to}`} filter={{ from, to }} />
         </>
       ) : (
-        renderMemberView()
+        renderMemberView(memberId)
       )}
     </div>
   );

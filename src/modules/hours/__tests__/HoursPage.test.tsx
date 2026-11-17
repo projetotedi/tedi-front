@@ -536,6 +536,23 @@ describe("HoursPage", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("labels Exportar as the report of everyone while a search narrows the members", async () => {
+    const user = userEvent.setup();
+    await renderHoursPage();
+    await within(await membersTable()).findByText("Beatriz Nunes");
+    const search = screen.getByRole("textbox", { name: "Buscar membro" });
+
+    await user.type(search, "Beatriz");
+
+    expect(
+      await screen.findByRole("button", { name: "Exportar relatório de todos" }),
+    ).toBeInTheDocument();
+
+    await user.clear(search);
+
+    expect(await screen.findByRole("button", { name: "Exportar relatório" })).toBeInTheDocument();
+  });
+
   it("labels Exportar in the member view as the report of everyone", async () => {
     await renderHoursPage({ route: BEATRIZ_VIEW });
 
