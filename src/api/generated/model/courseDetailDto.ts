@@ -12,6 +12,16 @@ import type { PersonRefDto } from "./personRefDto.ts";
 import type { RelatedCourseResponseDto } from "./relatedCourseResponseDto.ts";
 
 export interface CourseDetailDto {
+  /**
+   * Reason given when the course was archived, shown in its history. Null while it is active or when none was given.
+   * @nullable
+   */
+  archiveReason: string | null;
+  /**
+   * When the course was archived (RN-27, GUS-116). Null while it is active.
+   * @nullable
+   */
+  archivedAt: string | null;
   /** Level of the content. */
   category: CourseCategory;
   createdAt: string;

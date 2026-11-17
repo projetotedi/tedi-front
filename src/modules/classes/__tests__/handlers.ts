@@ -298,6 +298,8 @@ export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): Cou
     id: COURSE_ID,
     name: "Informática Básica",
     category: CourseCategory.basic,
+    archivedAt: null,
+    archiveReason: null,
     status: CourseStatus.active,
     createdAt: "2024-02-12T12:00:00.000Z",
     updatedAt: "2026-10-01T12:00:00.000Z",

@@ -98,6 +98,11 @@ export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonR
   return {
     id: LESSON_ID,
     title: "Teclado, mouse e janelas",
+    belowExpectedMonitors: false,
+    coverage: {
+      teacher: { confirmed: 0, expected: 1 },
+      monitors: { confirmed: 0, expected: null },
+    },
     objective: "Usar teclado e mouse e organizar janelas.",
     date: "2026-03-10",
     startTime: "09:00",

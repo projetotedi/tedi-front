@@ -6,6 +6,7 @@ import { CourseCategory, CourseStatus, type CourseDetailDto } from "@api/generat
 import { Role } from "@shared/lib/role";
 
 import {
+  archiveCourseHandler,
   buildArchivedCourseDetail,
   buildCourseCopyDetail,
   buildCourseDetail,
@@ -13,6 +14,8 @@ import {
   buildMeUser,
   buildMockSequenceItem,
   buildSequenceItem,
+  classesSummaryHandler,
+  COURSE_ARCHIVE_REASON,
   COURSE_ARCHIVED_ERROR,
   COURSE_COPY_ID,
   COURSE_COPY_NAME,
@@ -26,6 +29,7 @@ import {
   getCourseHandler,
   listCourseLessonPlansHandler,
   replaceCourseLessonPlansHandler,
+  unarchiveCourseHandler,
 } from "./handlers";
 import {
   catalogRoutes,
@@ -254,11 +258,15 @@ describe("CourseDetailPage", () => {
       expect(screen.queryByText(/^Turmas do curso /)).not.toBeInTheDocument();
     });
 
-    it("has Duplicar curso in the header, and not the actions that do not exist yet: Arquivar curso, Editar curso and + Nova turma", async () => {
+    it("has Duplicar curso and Arquivar curso in the header, and not the actions that do not exist yet: Editar curso and + Nova turma", async () => {
       await renderPage({ role: Role.coordinator });
 
-      expect(within(header()).getByRole("button", { name: "Duplicar curso" })).toBeInTheDocument();
-      for (const name of ["Arquivar curso", "Editar curso", "+ Nova turma"]) {
+      expect(
+        within(header())
+          .getAllByRole("button")
+          .map((button) => button.textContent),
+      ).toEqual(["Duplicar curso", "Arquivar curso"]);
+      for (const name of ["Editar curso", "+ Nova turma"]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
         expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }
@@ -779,6 +787,128 @@ describe("CourseDetailPage", () => {
 
       expect(screen.queryByRole("button", { name: "Duplicar curso" })).not.toBeInTheDocument();
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("archiving and reactivating the course (GUS-139)", () => {
+    /**
+     * The API answers the detail as it is now: `current` changes when the archive or the
+     * reactivation is answered, so the refetch after it brings the new state, as the real API does.
+     */
+    function serveCourse(initial: CourseDetailDto) {
+      let current = initial;
+      server.use(
+        getCourseHandler({ response: () => current }),
+        classesSummaryHandler(),
+        archiveCourseHandler({
+          onCall: () => {
+            current = buildArchivedCourseDetail();
+          },
+        }),
+        unarchiveCourseHandler({
+          onCall: () => {
+            current = buildCourseDetail();
+          },
+        }),
+      );
+    }
+
+    it("archives with a reason from the header: tag Arquivado, Reativar curso, Editar sequência off and the history", async () => {
+      const user = userEvent.setup();
+      await renderPage();
+      serveCourse(buildCourseDetail());
+
+      await user.click(within(header()).getByRole("button", { name: "Arquivar curso" }));
+      const archiveDialog = await screen.findByRole("dialog", { name: "Arquivar curso" });
+      await within(archiveDialog).findByText(/^As 2 turmas já criadas/);
+      await user.type(
+        within(archiveDialog).getByRole("textbox", { name: "Motivo (opcional)" }),
+        COURSE_ARCHIVE_REASON,
+      );
+      await user.click(within(archiveDialog).getByRole("button", { name: "Arquivar curso" }));
+
+      expect(await screen.findByText("Curso arquivado.")).toBeInTheDocument();
+      await waitFor(() => expect(tags(header())).toContain("Arquivado"));
+      expect(within(header()).getByRole("button", { name: "Reativar curso" })).toBeInTheDocument();
+      expect(
+        within(header()).queryByRole("button", { name: "Arquivar curso" }),
+      ).not.toBeInTheDocument();
+      expect(editButton()).toBeDisabled();
+      expect(screen.getByText(ARCHIVED_HINT)).toBeVisible();
+      const history = card("Catálogo e histórico");
+      expect(valueOf(history, "Arquivado em")).toHaveTextContent("14/10/2026");
+      expect(valueOf(history, "Motivo")).toHaveTextContent(COURSE_ARCHIVE_REASON);
+    });
+
+    it("keeps the course active when Arquivar curso is closed with Voltar", async () => {
+      const onArchive = vi.fn();
+      const user = userEvent.setup();
+      await renderPage();
+      server.use(classesSummaryHandler(), archiveCourseHandler({ onCall: onArchive }));
+
+      await user.click(within(header()).getByRole("button", { name: "Arquivar curso" }));
+      const archiveDialog = await screen.findByRole("dialog", { name: "Arquivar curso" });
+      await user.click(within(archiveDialog).getByRole("button", { name: "Voltar" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onArchive).not.toHaveBeenCalled();
+      expect(tags(header())).toContain("Ativo");
+    });
+
+    it("reactivates an archived course after the confirmation: tag Ativo, Arquivar curso again and Editar sequência on", async () => {
+      const user = userEvent.setup();
+      await renderPage({ course: buildArchivedCourseDetail() });
+      serveCourse(buildArchivedCourseDetail());
+
+      await user.click(within(header()).getByRole("button", { name: "Reativar curso" }));
+      const confirm = await screen.findByRole("dialog", { name: "Reativar curso" });
+      expect(within(confirm).getByText(/O curso volta a aceitar novas turmas/)).toBeInTheDocument();
+      await user.click(within(confirm).getByRole("button", { name: "Reativar curso" }));
+
+      expect(await screen.findByText("Curso reativado.")).toBeInTheDocument();
+      await waitFor(() => expect(tags(header())).toContain("Ativo"));
+      expect(within(header()).getByRole("button", { name: "Arquivar curso" })).toBeInTheDocument();
+      expect(editButton()).toBeEnabled();
+      expect(screen.queryByText(ARCHIVED_HINT)).not.toBeInTheDocument();
+      expect(
+        within(card("Catálogo e histórico")).queryByText("Arquivado em"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("does not reactivate when the confirmation is closed with Voltar", async () => {
+      const onUnarchive = vi.fn();
+      const user = userEvent.setup();
+      await renderPage({ course: buildArchivedCourseDetail() });
+      server.use(unarchiveCourseHandler({ onCall: onUnarchive }));
+
+      await user.click(within(header()).getByRole("button", { name: "Reativar curso" }));
+      const confirm = await screen.findByRole("dialog", { name: "Reativar curso" });
+      await user.click(within(confirm).getByRole("button", { name: "Voltar" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onUnarchive).not.toHaveBeenCalled();
+      expect(tags(header())).toContain("Arquivado");
+    });
+
+    it.each([
+      ["an active", buildCourseDetail()],
+      ["an archived", buildArchivedCourseDetail()],
+    ])(
+      "the member sees neither Arquivar nor Reativar curso on %s course",
+      async (_label, course) => {
+        await renderPage({ course, role: Role.member });
+
+        expect(screen.queryByRole("button", { name: "Arquivar curso" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reativar curso" })).not.toBeInTheDocument();
+      },
+    );
+
+    it("the member sees when and why an archived course was archived", async () => {
+      await renderPage({ course: buildArchivedCourseDetail(), role: Role.member });
+
+      expect(valueOf(card("Catálogo e histórico"), "Motivo")).toHaveTextContent(
+        COURSE_ARCHIVE_REASON,
+      );
     });
   });
 

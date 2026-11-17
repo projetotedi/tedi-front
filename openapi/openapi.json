@@ -63,6 +63,26 @@
         "enum": ["none", "visual", "hearing", "motor", "cognitive", "other"],
         "type": "string"
       },
+      "AdjustHourEntryDto": {
+        "properties": {
+          "justification": {
+            "description": "Why the minutes changed. Trimmed; blank is refused. The member sees it in her statement.",
+            "example": "A reunião durou duas horas, conforme a ata.",
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "validatedMinutes": {
+            "description": "Minutes accepted, a whole number from 1 to 1440, different from the declared minutes (else 400 ADJUSTED_MINUTES_UNCHANGED). More than declared is allowed; 0 is a rejection.",
+            "example": 120,
+            "maximum": 1440,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": ["validatedMinutes", "justification"],
+        "type": "object"
+      },
       "ApiErrorDto": {
         "properties": {
           "details": {
@@ -100,6 +120,29 @@
           }
         },
         "required": ["field", "message"],
+        "type": "object"
+      },
+      "ApplyToLessonDto": {
+        "description": "The role the member of the session applies for in the lesson of the URL, and an optional note for whoever reviews it. The application is born pending, source application, and the applicant is always the person of the session: personId, status and source are ignored. The role needs an open place: only confirmed assignments take one, so a teacher place is open while the lesson has no confirmed teacher, and a monitor place while the confirmed monitors are below expectedMonitors (null or 0 expect nobody); otherwise 409 ROLE_FULL. A member who already holds a place in the lesson, pending or confirmed, as either role, gets 409 ALREADY_APPLIED.",
+        "properties": {
+          "note": {
+            "description": "Note for whoever reviews the application. Optional; null or blank means none. Free text: do not record health information or diagnosis (RNF-13).",
+            "example": "Posso chegar 15 min antes para ligar os computadores.",
+            "maxLength": 500,
+            "nullable": true,
+            "type": "string"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentRole"
+              }
+            ],
+            "description": "What the member does in the lesson: the teacher gives it and a monitor helps.",
+            "example": "monitor"
+          }
+        },
+        "required": ["role"],
         "type": "object"
       },
       "ApproveMemberRegistrationDto": {
@@ -152,6 +195,173 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "AssignmentClassRefDto": {
+        "properties": {
+          "code": {
+            "example": "INFO-A",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000c1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "description": "The name of the class or, when it has none, its code: never null.",
+            "example": "Informática Básica, turma A",
+            "type": "string"
+          }
+        },
+        "required": ["id", "code", "name"],
+        "type": "object"
+      },
+      "AssignmentLessonRefDto": {
+        "properties": {
+          "date": {
+            "example": "2026-03-10",
+            "format": "date",
+            "type": "string"
+          },
+          "endTime": {
+            "example": "15:30",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "startTime": {
+            "example": "14:00",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonStatus"
+              }
+            ],
+            "description": "Status of the lesson (F4.5): the same type as the lesson itself.",
+            "example": "planned"
+          },
+          "title": {
+            "example": "Teclado, mouse e janelas",
+            "type": "string"
+          }
+        },
+        "required": ["id", "title", "date", "startTime", "endTime", "status"],
+        "type": "object"
+      },
+      "AssignmentLessonResponseDto": {
+        "properties": {
+          "class": {
+            "$ref": "#/components/schemas/AssignmentClassRefDto"
+          },
+          "date": {
+            "example": "2026-03-10",
+            "format": "date",
+            "type": "string"
+          },
+          "endTime": {
+            "example": "15:30",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "location": {
+            "example": "Laboratório 2",
+            "nullable": true,
+            "type": "string"
+          },
+          "sequenceOrder": {
+            "description": "The position of the plan of the lesson in the sequence of the course (the 3 of \"Aula 3\"). Null for a lesson on its own.",
+            "example": 3,
+            "nullable": true,
+            "type": "integer"
+          },
+          "startTime": {
+            "example": "14:00",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonStatus"
+              }
+            ],
+            "description": "Status of the lesson (F4.5): the same type as the lesson itself.",
+            "example": "planned"
+          },
+          "title": {
+            "example": "Teclado, mouse e janelas",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "date",
+          "startTime",
+          "endTime",
+          "status",
+          "sequenceOrder",
+          "location",
+          "class"
+        ],
+        "type": "object"
+      },
+      "AssignmentRole": {
+        "description": "What the member does in the lesson: the teacher gives it and a monitor helps.",
+        "enum": ["teacher", "monitor"],
+        "type": "string"
+      },
+      "AssignmentSource": {
+        "description": "direct is made by a coordinator or a director; application is a member who applied.",
+        "enum": ["direct", "application"],
+        "type": "string"
+      },
+      "AssignmentStatus": {
+        "description": "Where the assignment stands: pending waits for a decision, confirmed puts the member in the lesson (and records who confirmed it and when), declined (a refused application) and cancelled are final.",
+        "enum": ["pending", "confirmed", "declined", "cancelled"],
+        "type": "string"
+      },
+      "AttendanceLessonRefResponseDto": {
+        "properties": {
+          "date": {
+            "example": "2026-03-10",
+            "format": "date",
+            "type": "string"
+          },
+          "endTime": {
+            "example": "15:30",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "startTime": {
+            "example": "14:00",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "type": "string"
+          },
+          "title": {
+            "example": "Teclado, mouse e janelas",
+            "type": "string"
+          }
+        },
+        "required": ["id", "title", "date", "startTime", "endTime"],
         "type": "object"
       },
       "BrazilianState": {
@@ -763,6 +973,22 @@
         "required": ["courseId", "total", "active"],
         "type": "object"
       },
+      "ConfirmMemberAttendanceDto": {
+        "description": "The attendance of confirmed assignments of the lesson of the URL, from 1 to 100 entries, all or none. The first signature of a member signs it; the same status again changes nothing; the other status is a correction (attendance.correct). Present records the lesson hours of the member; correcting to absent reverses them. Nobody signs her own attendance.",
+        "properties": {
+          "entries": {
+            "description": "From 1 to 100 entries. The same assignment twice, in any letter case, is 400 DUPLICATE_ASSIGNMENT.",
+            "items": {
+              "$ref": "#/components/schemas/MemberAttendanceEntryDto"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["entries"],
+        "type": "object"
+      },
       "CourseCategory": {
         "description": "Level of the content. A class has no category of its own: it shows the one of its course (RN-14).",
         "enum": ["basic", "intermediate", "advanced"],
@@ -835,6 +1061,19 @@
       },
       "CourseDetailDto": {
         "properties": {
+          "archiveReason": {
+            "description": "Reason given when the course was archived, shown in its history. Null while it is active or when none was given.",
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "archivedAt": {
+            "description": "When the course was archived (RN-27, GUS-116). Null while it is active.",
+            "example": null,
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
           "category": {
             "allOf": [
               {
@@ -933,6 +1172,8 @@
           "objective",
           "category",
           "status",
+          "archivedAt",
+          "archiveReason",
           "createdAt",
           "createdBy",
           "updatedAt",
@@ -1029,6 +1270,72 @@
         },
         "required": ["courseId", "plannedWorkloadMinutes", "items"],
         "type": "object"
+      },
+      "CourseListItemDto": {
+        "properties": {
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CourseCategory"
+              }
+            ],
+            "example": "intermediate"
+          },
+          "createdAt": {
+            "example": "2026-09-01T12:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-000000000002",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lessonPlanCount": {
+            "description": "Lesson plans in the sequence of the course, archived ones included.",
+            "example": 12,
+            "type": "number"
+          },
+          "name": {
+            "example": "Informática Intermediária",
+            "type": "string"
+          },
+          "plannedWorkloadMinutes": {
+            "description": "Sum of the expected duration of the lesson plans of the sequence, in minutes.",
+            "example": 1440,
+            "type": "number"
+          },
+          "prerequisites": {
+            "description": "Courses required before this one, archived ones included, ordered by name. Empty when there are none.",
+            "items": {
+              "$ref": "#/components/schemas/CourseReferenceResponseDto"
+            },
+            "type": "array"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CourseStatus"
+              }
+            ],
+            "example": "active"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "category",
+          "status",
+          "lessonPlanCount",
+          "plannedWorkloadMinutes",
+          "prerequisites",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "CourseListSort": {
+        "enum": ["name", "createdAt"],
+        "type": "string"
       },
       "CourseReferenceResponseDto": {
         "properties": {
@@ -1147,6 +1454,44 @@
         "description": "Derived from archivedAt: archived when it is set, active otherwise (RN-27).",
         "enum": ["active", "archived"],
         "type": "string"
+      },
+      "CreateAssignmentDto": {
+        "description": "Who is assigned to the lesson of the URL, as what, and whether it is already confirmed. status takes only pending or confirmed: declined and cancelled come out of a decision about an assignment that exists, so they are rejected with 400 VALIDATION_FAILED. A lesson has at most one confirmed teacher: a teacher asked confirmed in a lesson that already has one is 409 LESSON_TEACHER_TAKEN. There is no source: an assignment made here is always direct (the candidature of a member is another route).",
+        "properties": {
+          "note": {
+            "description": "Note about the assignment. Optional; null or blank means none. Free text: do not record health information or diagnosis (RNF-13).",
+            "example": "Cobre a segunda hora da aula.",
+            "maxLength": 500,
+            "nullable": true,
+            "type": "string"
+          },
+          "personId": {
+            "description": "Id of the member to assign. It must be an active member: an id that is not a member is 400 MEMBER_NOT_FOUND, and a member without access (inactive or with the registration still pending) is 409 MEMBER_INACTIVE. A member holds one place per lesson: if she already has an active assignment in it, as the same role or as the other one, it is 409 DUPLICATE_ROLE_IN_LESSON.",
+            "example": "01999a3e-0000-7000-8000-0000000000b1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentRole"
+              }
+            ],
+            "description": "What the member does in the lesson: the teacher gives it and a monitor helps.",
+            "example": "monitor"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentStatus"
+              }
+            ],
+            "description": "Where the assignment stands: pending waits for a decision, confirmed puts the member in the lesson (and records who confirmed it and when), declined (a refused application) and cancelled are final.",
+            "example": "confirmed"
+          }
+        },
+        "required": ["personId", "role", "status"],
+        "type": "object"
       },
       "CreateClassDto": {
         "properties": {
@@ -1270,6 +1615,48 @@
           }
         },
         "required": ["name"],
+        "type": "object"
+      },
+      "CreateHourEntryDto": {
+        "properties": {
+          "activity": {
+            "description": "What was done. Trimmed; blank is refused.",
+            "example": "Planejamento da aula de teclado e mouse",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryCategory"
+              }
+            ],
+            "description": "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
+            "example": "planning"
+          },
+          "date": {
+            "description": "Day of the work, YYYY-MM-DD, from 2000-01-01 (else 400 VALIDATION_FAILED). Today or before, in America/Sao_Paulo (else 400 HOUR_ENTRY_DATE_IN_FUTURE).",
+            "example": "2026-03-10",
+            "format": "date",
+            "type": "string"
+          },
+          "declaredMinutes": {
+            "description": "Minutes worked, a whole number: 2h30 is 150. From 1 to 1440 (one day).",
+            "example": 150,
+            "maximum": 1440,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "notes": {
+            "description": "Free notes of the person. Omitted, null or blank means none.",
+            "example": "Revisei os exercícios do plano 3.",
+            "maxLength": 2000,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["activity", "category", "date", "declaredMinutes"],
         "type": "object"
       },
       "CreateInviteDto": {
@@ -1536,6 +1923,32 @@
         "required": ["name", "birthDate"],
         "type": "object"
       },
+      "DeactivateMemberDto": {
+        "properties": {
+          "exitDate": {
+            "description": "YYYY-MM-DD, between 2000-01-01 and today (America/Sao_Paulo), and not before the join date of the member (400 EXIT_DATE_BEFORE_JOINED_AT).",
+            "example": "2026-06-30",
+            "format": "date",
+            "type": "string"
+          },
+          "note": {
+            "description": "Optional note. Stored, never returned by the API nor kept in the audit event. Do not record health information or diagnosis (RNF-13).",
+            "example": "Vai fazer mestrado em outra cidade.",
+            "maxLength": 2000,
+            "nullable": true,
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why the member left. Required, and not blank. Shown in GET /members and kept in the audit event: do not record health information or diagnosis (RNF-13).",
+            "example": "Formou-se.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": ["exitDate", "reason"],
+        "type": "object"
+      },
       "DepartmentResponseDto": {
         "properties": {
           "id": {
@@ -1678,6 +2091,486 @@
         "required": ["status", "database", "uptimeSeconds", "timestamp"],
         "type": "object"
       },
+      "HourEntriesPageDto": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HourEntryResponseDto"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 20,
+            "type": "integer"
+          },
+          "page": {
+            "example": 1,
+            "type": "integer"
+          },
+          "total": {
+            "example": 42,
+            "type": "integer"
+          }
+        },
+        "required": ["data", "total", "page", "limit"],
+        "type": "object"
+      },
+      "HourEntryCategory": {
+        "description": "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
+        "enum": ["lesson", "planning", "event", "management", "meeting", "support", "other"],
+        "type": "string"
+      },
+      "HourEntryEventResponseDto": {
+        "properties": {
+          "actor": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "Who did it. Null when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "createdAt": {
+            "description": "When it happened.",
+            "example": "2026-03-12T13:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "fromMinutes": {
+            "description": "The minutes before (declared, for a review or a removal); null for a creation.",
+            "example": 240,
+            "nullable": true,
+            "type": "integer"
+          },
+          "fromStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryStatus"
+              }
+            ],
+            "description": "The status before; null for a creation.",
+            "example": "pending",
+            "nullable": true
+          },
+          "hourEntryId": {
+            "example": "01999a3e-7c1b-7000-8000-000000000a01",
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-000000000e01",
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "description": "The justification of an adjustment or the reason of a rejection. Null otherwise.",
+            "example": "A reunião durou duas horas, conforme a ata.",
+            "nullable": true,
+            "type": "string"
+          },
+          "toMinutes": {
+            "description": "The minutes after (declared for a creation, validated for a review); null for a removal.",
+            "example": 120,
+            "nullable": true,
+            "type": "integer"
+          },
+          "toStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryStatus"
+              }
+            ],
+            "description": "The status after; null for a removal.",
+            "example": "adjusted",
+            "nullable": true
+          },
+          "type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryEventType"
+              }
+            ],
+            "description": "created, approved, adjusted, rejected, removed or reversed. reversed: the hours of a presence were reversed, by a correction of the attendance or the cancellation of the lesson. The history cannot be edited or deleted.",
+            "example": "adjusted"
+          }
+        },
+        "required": [
+          "id",
+          "hourEntryId",
+          "type",
+          "actor",
+          "fromStatus",
+          "toStatus",
+          "fromMinutes",
+          "toMinutes",
+          "note",
+          "createdAt"
+        ],
+        "type": "object"
+      },
+      "HourEntryEventType": {
+        "description": "created, approved, adjusted, rejected, removed or reversed. reversed: the hours of a presence were reversed, by a correction of the attendance or the cancellation of the lesson. The history cannot be edited or deleted.",
+        "enum": ["created", "approved", "adjusted", "rejected", "removed", "reversed"],
+        "type": "string"
+      },
+      "HourEntryOrigin": {
+        "description": "manual: logged by the person; on_behalf: logged by someone else for her; attendance: created by the confirmed attendance of a lesson.",
+        "enum": ["manual", "on_behalf", "attendance"],
+        "type": "string"
+      },
+      "HourEntryResponseDto": {
+        "properties": {
+          "activity": {
+            "example": "Planejamento da aula de teclado e mouse",
+            "type": "string"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryCategory"
+              }
+            ],
+            "example": "planning"
+          },
+          "classId": {
+            "description": "The class of the lesson, for an entry created by the attendance.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "example": "2026-03-10T21:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdById": {
+            "description": "Who logged it: the person herself, or whoever logged it on her behalf.",
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          },
+          "date": {
+            "description": "Day of the work, YYYY-MM-DD.",
+            "example": "2026-03-10",
+            "format": "date",
+            "type": "string"
+          },
+          "declaredMinutes": {
+            "description": "Minutes the person declares (150 = 2h30).",
+            "example": 150,
+            "type": "integer"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-000000000a01",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lessonId": {
+            "description": "The lesson, for an entry created by the attendance.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "notes": {
+            "description": "Free notes of the person. Null when there are none.",
+            "example": "Revisei os exercícios do plano 3.",
+            "nullable": true,
+            "type": "string"
+          },
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryOrigin"
+              }
+            ],
+            "description": "manual: logged by the person; on_behalf: logged by someone else for her; attendance: created by the confirmed attendance of a lesson.",
+            "example": "manual"
+          },
+          "personId": {
+            "description": "Whose hours these are.",
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          },
+          "reviewNote": {
+            "description": "Justification of an adjustment or reason of a rejection. Null otherwise.",
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "reviewedAt": {
+            "description": "When the entry was reviewed. Null while it is pending.",
+            "example": null,
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "reviewedById": {
+            "description": "Id of the person who reviewed the entry. Null while it is pending.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryStatus"
+              }
+            ],
+            "description": "pending until coordination reviews it; approved, adjusted (approved with other minutes) or rejected afterwards. Only a pending entry can be removed.",
+            "example": "pending"
+          },
+          "updatedAt": {
+            "example": "2026-03-10T21:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "validatedMinutes": {
+            "description": "Minutes accepted by coordination. Null until coordination reviews the entry.",
+            "example": null,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "personId",
+          "activity",
+          "category",
+          "date",
+          "declaredMinutes",
+          "validatedMinutes",
+          "notes",
+          "status",
+          "origin",
+          "createdById",
+          "classId",
+          "lessonId",
+          "reviewNote",
+          "reviewedById",
+          "reviewedAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "HourEntryStatus": {
+        "description": "pending until coordination reviews it; approved, adjusted (approved with other minutes) or rejected afterwards. Only a pending entry can be removed.",
+        "enum": ["pending", "approved", "adjusted", "rejected"],
+        "type": "string"
+      },
+      "HoursCategoryTotalDto": {
+        "properties": {
+          "bankMinutes": {
+            "description": "Validated minutes of the approved and adjusted entries: what is in the bank.",
+            "example": 120,
+            "type": "integer"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryCategory"
+              }
+            ],
+            "example": "planning"
+          },
+          "declaredMinutes": {
+            "description": "Sum of their declared minutes, of any status.",
+            "example": 390,
+            "type": "integer"
+          },
+          "entries": {
+            "description": "How many entries, of any status.",
+            "example": 3,
+            "type": "integer"
+          },
+          "pendingMinutes": {
+            "description": "Declared minutes of the pending entries: what waits for review.",
+            "example": 150,
+            "type": "integer"
+          }
+        },
+        "required": ["category", "entries", "declaredMinutes", "bankMinutes", "pendingMinutes"],
+        "type": "object"
+      },
+      "HoursExportFormat": {
+        "enum": ["csv"],
+        "type": "string"
+      },
+      "HoursMemberTotalDto": {
+        "properties": {
+          "bankMinutes": {
+            "description": "Validated minutes of the approved and adjusted entries: what is in the bank.",
+            "example": 180,
+            "type": "integer"
+          },
+          "declaredMinutes": {
+            "description": "Declared minutes of every entry: what was logged.",
+            "example": 600,
+            "type": "integer"
+          },
+          "entries": {
+            "description": "How many entries, of any status.",
+            "example": 4,
+            "type": "integer"
+          },
+          "member": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberRefDto"
+              }
+            ],
+            "description": "Name and department of the member (approved registration). Null when the person is no longer found.",
+            "nullable": true,
+            "type": "object"
+          },
+          "pendingEntries": {
+            "description": "How many entries are pending.",
+            "example": 1,
+            "type": "integer"
+          },
+          "pendingMinutes": {
+            "description": "Declared minutes of the pending entries: what waits for review.",
+            "example": 90,
+            "type": "integer"
+          },
+          "personId": {
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "personId",
+          "member",
+          "entries",
+          "declaredMinutes",
+          "bankMinutes",
+          "pendingEntries",
+          "pendingMinutes"
+        ],
+        "type": "object"
+      },
+      "HoursMembersPageDto": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/HoursMemberTotalDto"
+            },
+            "type": "array"
+          },
+          "limit": {
+            "example": 20,
+            "type": "integer"
+          },
+          "page": {
+            "example": 1,
+            "type": "integer"
+          },
+          "total": {
+            "description": "How many members have entries in the period.",
+            "example": 42,
+            "type": "integer"
+          }
+        },
+        "required": ["data", "total", "page", "limit"],
+        "type": "object"
+      },
+      "HoursOverviewResponseDto": {
+        "properties": {
+          "members": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HoursMembersPageDto"
+              }
+            ],
+            "description": "The members with entries in the period: the most pending minutes first, then the most declared minutes, then the person id."
+          },
+          "summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HoursSummaryResponseDto"
+              }
+            ],
+            "description": "The totals of the period, by status and by category, and the bank of hours."
+          }
+        },
+        "required": ["summary", "members"],
+        "type": "object"
+      },
+      "HoursStatusTotalDto": {
+        "properties": {
+          "declaredMinutes": {
+            "description": "Sum of their declared minutes.",
+            "example": 270,
+            "type": "integer"
+          },
+          "entries": {
+            "description": "How many entries.",
+            "example": 2,
+            "type": "integer"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryStatus"
+              }
+            ],
+            "example": "pending"
+          },
+          "validatedMinutes": {
+            "description": "Sum of their validated minutes; 0 where none is validated yet.",
+            "example": 0,
+            "type": "integer"
+          }
+        },
+        "required": ["status", "entries", "declaredMinutes", "validatedMinutes"],
+        "type": "object"
+      },
+      "HoursSummaryResponseDto": {
+        "properties": {
+          "bankMinutes": {
+            "description": "The bank of hours, in minutes: the validated minutes of the approved and adjusted entries.",
+            "example": 120,
+            "type": "integer"
+          },
+          "byCategory": {
+            "description": "One item per category, always the seven, lesson included.",
+            "items": {
+              "$ref": "#/components/schemas/HoursCategoryTotalDto"
+            },
+            "type": "array"
+          },
+          "byStatus": {
+            "description": "One item per status (pending, approved, adjusted, rejected), always the four.",
+            "items": {
+              "$ref": "#/components/schemas/HoursStatusTotalDto"
+            },
+            "type": "array"
+          },
+          "from": {
+            "description": "The first day asked, or null when the period has no lower bound.",
+            "example": "2026-03-01",
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "to": {
+            "description": "The last day asked, or null when the period has no upper bound.",
+            "example": "2026-03-31",
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["from", "to", "bankMinutes", "byStatus", "byCategory"],
+        "type": "object"
+      },
       "InviteListItemDto": {
         "properties": {
           "createdAt": {
@@ -1785,6 +2678,124 @@
         "enum": ["access", "password_reset"],
         "type": "string"
       },
+      "LessonAssignmentResponseDto": {
+        "properties": {
+          "cancelledAt": {
+            "description": "When it was cancelled. Set exactly when the status is cancelled.",
+            "example": null,
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "cancelledById": {
+            "description": "Id of the person who cancelled the assignment.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "example": "2026-03-09T12:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdById": {
+            "description": "Id of the person who made the assignment.",
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000a1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lessonId": {
+            "description": "Id of the lesson the member is assigned to.",
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "description": "Free text (RNF-13). Null when there is none, and null for profiles without assignments.create: only who can manage assignments reads the note.",
+            "example": "Cobre a segunda hora da aula.",
+            "nullable": true,
+            "type": "string"
+          },
+          "person": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "The member: id and name. Null if the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "reviewedAt": {
+            "description": "When it was confirmed. Always set for a confirmed assignment.",
+            "example": "2026-03-09T12:00:00.000Z",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "reviewedById": {
+            "description": "Id of the person who confirmed the assignment, or who made it already confirmed. Set exactly when reviewedAt is, and kept if the assignment is cancelled later.",
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentRole"
+              }
+            ],
+            "example": "monitor"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentSource"
+              }
+            ],
+            "description": "direct is made by a coordinator or a director; application is a member who applied.",
+            "example": "direct"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentStatus"
+              }
+            ],
+            "description": "pending waits for a decision; confirmed counts in the coverage of the lesson; declined (a refused application) and cancelled are final.",
+            "example": "confirmed"
+          },
+          "updatedAt": {
+            "example": "2026-03-09T12:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "lessonId",
+          "person",
+          "role",
+          "status",
+          "source",
+          "note",
+          "createdById",
+          "reviewedById",
+          "reviewedAt",
+          "cancelledById",
+          "cancelledAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
       "LessonClassRefDto": {
         "properties": {
           "archivedAt": {
@@ -1841,6 +2852,18 @@
         "required": ["id", "name"],
         "type": "object"
       },
+      "LessonCoverageDto": {
+        "properties": {
+          "monitors": {
+            "$ref": "#/components/schemas/LessonMonitorCoverageDto"
+          },
+          "teacher": {
+            "$ref": "#/components/schemas/LessonTeacherCoverageDto"
+          }
+        },
+        "required": ["teacher", "monitors"],
+        "type": "object"
+      },
       "LessonEditionRefDto": {
         "properties": {
           "id": {
@@ -1888,7 +2911,7 @@
       "LessonListItemResponseDto": {
         "properties": {
           "belowExpectedMonitors": {
-            "description": "True when the lesson has fewer monitors allocated than it expects (F4.4, RF-050). Always false until the allocation exists (GUS-158).",
+            "description": "True when the lesson has fewer CONFIRMED monitors than it expects (F4.4, F5.4, RF-050): a pending monitor does not count. False for a cancelled lesson and when the lesson does not say how many monitors it expects (expectedMonitors null, so nothing is missing). The teacher is not part of it: a lesson without a teacher shows a dash in teacher. It is the same rule as belowExpectedMonitors of the lesson in full.",
             "example": false,
             "type": "boolean"
           },
@@ -1931,8 +2954,11 @@
                 "$ref": "#/components/schemas/LessonPersonRefDto"
               }
             ],
-            "description": "The teacher of the lesson. Always null until the allocation exists (E5, GUS-158): the front shows a dash.",
-            "example": null,
+            "description": "The CONFIRMED teacher of the lesson (F5.2, RN-02): her id and her name. Null when the lesson has none, and the front shows a dash: a pending assignment is a candidate, not the teacher. A cancelled lesson keeps the teacher that was confirmed in it, because cancelling a lesson does not cancel its assignments.",
+            "example": {
+              "id": "01999a3e-0000-7000-8000-0000000000aa",
+              "name": "Maria Silva Santos"
+            },
             "nullable": true,
             "type": "object"
           },
@@ -1953,6 +2979,23 @@
           "teacher",
           "belowExpectedMonitors"
         ],
+        "type": "object"
+      },
+      "LessonMonitorCoverageDto": {
+        "properties": {
+          "confirmed": {
+            "description": "Monitors confirmed for the lesson. A pending assignment is not counted.",
+            "example": 2,
+            "type": "integer"
+          },
+          "expected": {
+            "description": "The expectedMonitors of the lesson. Null when it was not informed: nothing is expected then.",
+            "example": 2,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": ["confirmed", "expected"],
         "type": "object"
       },
       "LessonPersonRefDto": {
@@ -2331,6 +3374,11 @@
       },
       "LessonResponseDto": {
         "properties": {
+          "belowExpectedMonitors": {
+            "description": "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
+            "example": false,
+            "type": "boolean"
+          },
           "cancelReason": {
             "description": "Why the lesson was cancelled. Set exactly when the status is cancelled.",
             "example": null,
@@ -2361,6 +3409,14 @@
               }
             ],
             "description": "The course the class offers."
+          },
+          "coverage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonCoverageDto"
+              }
+            ],
+            "description": "Who is confirmed in the lesson against who is expected (F5.4): the teacher against the one a lesson has, and the monitors against expectedMonitors. Only confirmed assignments count: a pending one is not staff yet."
           },
           "createdAt": {
             "example": "2026-10-01T13:00:00.000Z",
@@ -2514,6 +3570,8 @@
           "location",
           "expectedStudents",
           "expectedMonitors",
+          "coverage",
+          "belowExpectedMonitors",
           "subject",
           "postNotes",
           "status",
@@ -2533,6 +3591,22 @@
         "description": "Status of the lesson (F4.5). A lesson that was rescheduled keeps its status. cancelled is final: the lesson stays, with its reason, and cannot be edited or rescheduled.",
         "enum": ["planned", "confirmed", "done", "cancelled"],
         "type": "string"
+      },
+      "LessonTeacherCoverageDto": {
+        "properties": {
+          "confirmed": {
+            "description": "Teachers confirmed for the lesson: 0 or 1, since a lesson has at most one confirmed teacher. A pending assignment is not counted.",
+            "example": 1,
+            "type": "integer"
+          },
+          "expected": {
+            "description": "Always 1: a lesson has one teacher.",
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "required": ["confirmed", "expected"],
+        "type": "object"
       },
       "LoginDto": {
         "properties": {
@@ -2587,6 +3661,203 @@
           }
         },
         "required": ["id", "name", "ra", "email", "role", "permissions"],
+        "type": "object"
+      },
+      "MemberAssignmentResponseDto": {
+        "properties": {
+          "createdAt": {
+            "example": "2026-03-09T12:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000a1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/AssignmentLessonRefDto"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentRole"
+              }
+            ],
+            "example": "monitor"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentSource"
+              }
+            ],
+            "example": "direct"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentStatus"
+              }
+            ],
+            "description": "Every status is listed, the cancelled and the declined ones too.",
+            "example": "confirmed"
+          }
+        },
+        "required": ["id", "lesson", "role", "status", "source", "createdAt"],
+        "type": "object"
+      },
+      "MemberAttendanceEntryDto": {
+        "properties": {
+          "assignmentId": {
+            "description": "A CONFIRMED assignment of the lesson of the URL; any other (pending, declined, cancelled, of another lesson or unknown) is 400 ASSIGNMENT_NOT_CONFIRMED.",
+            "example": "01952ef7-0000-7000-8000-000000000006",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A presence generates the lesson hours of the member (an hour entry of origin attendance); an absence generates nothing.",
+            "example": "present"
+          }
+        },
+        "required": ["assignmentId", "status"],
+        "type": "object"
+      },
+      "MemberAttendanceHistoryItemResponseDto": {
+        "properties": {
+          "confirmedAt": {
+            "description": "When it was signed the last time (the first signature or a correction).",
+            "example": "2026-03-10T18:30:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/AttendanceLessonRefResponseDto"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A presence generates the lesson hours of the member (an hour entry of origin attendance); an absence generates nothing.",
+            "example": "absent"
+          }
+        },
+        "required": ["lesson", "status", "confirmedAt"],
+        "type": "object"
+      },
+      "MemberAttendanceHistoryResponseDto": {
+        "properties": {
+          "items": {
+            "description": "Presences and absences, the latest lesson first (day, then start time, both descending). Cancelled lessons are left out: they did not happen (RN-07). Not paginated.",
+            "items": {
+              "$ref": "#/components/schemas/MemberAttendanceHistoryItemResponseDto"
+            },
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/MemberAttendanceTotalsResponseDto"
+          }
+        },
+        "required": ["totals", "items"],
+        "type": "object"
+      },
+      "MemberAttendanceResponseDto": {
+        "description": "A confirmed assignment of the lesson, the teacher first, with the attendance of its member. status, confirmedBy, confirmedAt and hourEntryId are null while the attendance is not signed.",
+        "properties": {
+          "assignmentId": {
+            "description": "The confirmed assignment of the line: the id the PUT takes in assignmentId.",
+            "example": "01952ef7-0000-7000-8000-000000000006",
+            "format": "uuid",
+            "type": "string"
+          },
+          "confirmedAt": {
+            "description": "When it was signed the last time. Null while it is not signed.",
+            "example": "2026-03-10T18:30:00.000Z",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "confirmedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "Who signed the attendance the last time (the first signature or a correction). Null while it is not signed, or when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "hourEntryId": {
+            "description": "The hour entry the presence generated; its history is GET /hour-entries/:id/history (a reversed one stays there). Null for an absence and while it is not signed.",
+            "example": "01999a3e-7c1b-7000-8000-000000000a01",
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "person": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "The member. Null when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentRole"
+              }
+            ],
+            "example": "monitor"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A presence generates the lesson hours of the member (an hour entry of origin attendance); an absence generates nothing.",
+            "example": "present",
+            "nullable": true
+          }
+        },
+        "required": [
+          "assignmentId",
+          "person",
+          "role",
+          "status",
+          "confirmedBy",
+          "confirmedAt",
+          "hourEntryId"
+        ],
+        "type": "object"
+      },
+      "MemberAttendanceStatus": {
+        "description": "present or absent. A presence generates the lesson hours of the member (an hour entry of origin attendance); an absence generates nothing.",
+        "enum": ["present", "absent"],
+        "type": "string"
+      },
+      "MemberAttendanceTotalsResponseDto": {
+        "properties": {
+          "absent": {
+            "example": 1,
+            "type": "integer"
+          },
+          "present": {
+            "example": 12,
+            "type": "integer"
+          }
+        },
+        "required": ["present", "absent"],
         "type": "object"
       },
       "MemberDetailResponseDto": {
@@ -2644,6 +3915,19 @@
           "email": {
             "description": "Personal e-mail.",
             "example": "ana.torres@example.com",
+            "nullable": true,
+            "type": "string"
+          },
+          "exitDate": {
+            "description": "Day the member left (YYYY-MM-DD). Null while active.",
+            "example": "2026-06-30",
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "exitReason": {
+            "description": "Why the member left. Null while active.",
+            "example": "Formou-se.",
             "nullable": true,
             "type": "string"
           },
@@ -2736,6 +4020,15 @@
             "nullable": true,
             "type": "string"
           },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberStatus"
+              }
+            ],
+            "description": "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+            "example": "active"
+          },
           "volunteerTermUrl": {
             "description": "Null for a person without a member profile (e.g. the seeded admin).",
             "example": "https://drive.google.com/file/d/exemplo/view",
@@ -2765,9 +4058,182 @@
           "joinedAt",
           "volunteerTermUrl",
           "registrationStatus",
+          "status",
+          "exitDate",
+          "exitReason",
           "reviewedAt",
           "reviewedBy"
         ],
+        "type": "object"
+      },
+      "MemberHourEntryResponseDto": {
+        "properties": {
+          "activity": {
+            "example": "Planejamento da aula de teclado e mouse",
+            "type": "string"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryCategory"
+              }
+            ],
+            "example": "planning"
+          },
+          "classId": {
+            "description": "The class of the lesson, for an entry created by the attendance.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "createdAt": {
+            "example": "2026-03-10T21:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "createdById": {
+            "description": "Who logged it: the person herself, or whoever logged it on her behalf.",
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          },
+          "date": {
+            "description": "Day of the work, YYYY-MM-DD.",
+            "example": "2026-03-10",
+            "format": "date",
+            "type": "string"
+          },
+          "declaredMinutes": {
+            "description": "Minutes the person declares (150 = 2h30).",
+            "example": 150,
+            "type": "integer"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-000000000a01",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lessonId": {
+            "description": "The lesson, for an entry created by the attendance.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "member": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberRefDto"
+              }
+            ],
+            "description": "The person of the entry, with the department of her approved member registration. Null when she is no longer found.",
+            "nullable": true,
+            "type": "object"
+          },
+          "notes": {
+            "description": "Free notes of the person. Null when there are none.",
+            "example": "Revisei os exercícios do plano 3.",
+            "nullable": true,
+            "type": "string"
+          },
+          "origin": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryOrigin"
+              }
+            ],
+            "description": "manual: logged by the person; on_behalf: logged by someone else for her; attendance: created by the confirmed attendance of a lesson.",
+            "example": "manual"
+          },
+          "personId": {
+            "description": "Whose hours these are.",
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          },
+          "reviewNote": {
+            "description": "Justification of an adjustment or reason of a rejection. Null otherwise.",
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          },
+          "reviewedAt": {
+            "description": "When the entry was reviewed. Null while it is pending.",
+            "example": null,
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "reviewedById": {
+            "description": "Id of the person who reviewed the entry. Null while it is pending.",
+            "example": null,
+            "format": "uuid",
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HourEntryStatus"
+              }
+            ],
+            "description": "pending until coordination reviews it; approved, adjusted (approved with other minutes) or rejected afterwards. Only a pending entry can be removed.",
+            "example": "pending"
+          },
+          "updatedAt": {
+            "example": "2026-03-10T21:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "validatedMinutes": {
+            "description": "Minutes accepted by coordination. Null until coordination reviews the entry.",
+            "example": null,
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "personId",
+          "activity",
+          "category",
+          "date",
+          "declaredMinutes",
+          "validatedMinutes",
+          "notes",
+          "status",
+          "origin",
+          "createdById",
+          "classId",
+          "lessonId",
+          "reviewNote",
+          "reviewedById",
+          "reviewedAt",
+          "createdAt",
+          "updatedAt",
+          "member"
+        ],
+        "type": "object"
+      },
+      "MemberHoursResponseDto": {
+        "properties": {
+          "entries": {
+            "$ref": "#/components/schemas/HourEntriesPageDto"
+          },
+          "member": {
+            "$ref": "#/components/schemas/MemberRefDto"
+          },
+          "summary": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/HoursSummaryResponseDto"
+              }
+            ],
+            "description": "The totals of the member in the period, by status and by category."
+          }
+        },
+        "required": ["member", "summary", "entries"],
         "type": "object"
       },
       "MemberListItemResponseDto": {
@@ -2783,6 +4249,19 @@
             ],
             "nullable": true,
             "type": "object"
+          },
+          "exitDate": {
+            "description": "Day the member left (YYYY-MM-DD). Null while active.",
+            "example": "2026-06-30",
+            "format": "date",
+            "nullable": true,
+            "type": "string"
+          },
+          "exitReason": {
+            "description": "Why the member left. Null while active.",
+            "example": "Formou-se.",
+            "nullable": true,
+            "type": "string"
           },
           "id": {
             "format": "uuid",
@@ -2823,6 +4302,15 @@
               }
             ],
             "nullable": true
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemberStatus"
+              }
+            ],
+            "description": "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+            "example": "active"
           }
         },
         "required": [
@@ -2834,8 +4322,36 @@
           "department",
           "mainFunction",
           "joinedAt",
-          "registrationStatus"
+          "registrationStatus",
+          "status",
+          "exitDate",
+          "exitReason"
         ],
+        "type": "object"
+      },
+      "MemberRefDto": {
+        "properties": {
+          "department": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DepartmentResponseDto"
+              }
+            ],
+            "description": "The department of the approved member registration; null without one (coordination without a member profile, a registration that is not approved, or no department).",
+            "nullable": true,
+            "type": "object"
+          },
+          "id": {
+            "example": "01999a3e-0000-7000-8000-0000000000aa",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": "Ana Souza",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "department"],
         "type": "object"
       },
       "MemberRegistrationFormDto": {
@@ -3242,6 +4758,105 @@
         "enum": ["pending", "approved", "rejected"],
         "type": "string"
       },
+      "MemberStatus": {
+        "description": "Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation).",
+        "enum": ["active", "inactive"],
+        "type": "string"
+      },
+      "MyAssignmentResponseDto": {
+        "properties": {
+          "id": {
+            "description": "Id of the assignment (or application) of the member.",
+            "example": "01999a3e-7c1b-7000-8000-0000000000a1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/AssignmentLessonResponseDto"
+          },
+          "role": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentRole"
+              }
+            ],
+            "example": "monitor"
+          },
+          "source": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentSource"
+              }
+            ],
+            "example": "application"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentStatus"
+              }
+            ],
+            "description": "The latest status of the member in the lesson: the active one (pending or confirmed) when there is one, else the latest declined or cancelled.",
+            "example": "pending"
+          }
+        },
+        "required": ["id", "lesson", "role", "status", "source"],
+        "type": "object"
+      },
+      "MyAssignmentsResponseDto": {
+        "properties": {
+          "from": {
+            "description": "First day of the period, as resolved (today when it was not asked).",
+            "example": "2026-03-09",
+            "format": "date",
+            "type": "string"
+          },
+          "items": {
+            "description": "One item per lesson of the period where the member has an assignment, soonest first (by date, start time and id). Not paginated: the period holds at most 42 days.",
+            "items": {
+              "$ref": "#/components/schemas/MyAssignmentResponseDto"
+            },
+            "type": "array"
+          },
+          "to": {
+            "description": "Last day of the period, as resolved (27 days after from when it was not asked).",
+            "example": "2026-04-05",
+            "format": "date",
+            "type": "string"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/MyAssignmentsTotalsDto"
+          }
+        },
+        "required": ["from", "to", "totals", "items"],
+        "type": "object"
+      },
+      "MyAssignmentsTotalsDto": {
+        "properties": {
+          "confirmed": {
+            "description": "Items with status confirmed.",
+            "example": 2,
+            "type": "integer"
+          },
+          "openLessons": {
+            "description": "How many lessons of the period have an open place for the member (Aulas com vaga para você): the number of items GET /me/open-lessons answers for the same period.",
+            "example": 3,
+            "type": "integer"
+          },
+          "pending": {
+            "description": "Items with status pending (Aguardando confirmação): an application or a direct assignment still waiting.",
+            "example": 1,
+            "type": "integer"
+          },
+          "upcoming": {
+            "description": "Lessons of the period where the member is pending or confirmed (Próximas aulas): always confirmed plus pending. It counts the whole period, including days before today when `from` is in the past; without `from` the period starts today.",
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": ["upcoming", "confirmed", "pending", "openLessons"],
+        "type": "object"
+      },
       "MyProfileResponseDto": {
         "properties": {
           "accessEnabled": {
@@ -3399,6 +5014,31 @@
         ],
         "type": "object"
       },
+      "OpenLessonResponseDto": {
+        "properties": {
+          "coverage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonCoverageDto"
+              }
+            ],
+            "description": "The coverage of the lesson, the same as in the lesson itself (only confirmed assignments count): what draws Professor(a) 0 de 1 · Monitores 2 de 3."
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/AssignmentLessonResponseDto"
+          },
+          "openRoles": {
+            "description": "The roles with an open place, teacher before monitor; never empty. Applying for one of them is not refused with ROLE_FULL at that moment.",
+            "example": ["teacher", "monitor"],
+            "items": {
+              "$ref": "#/components/schemas/AssignmentRole"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["lesson", "coverage", "openRoles"],
+        "type": "object"
+      },
       "PasswordResetResponseDto": {
         "properties": {
           "expiresAt": {
@@ -3413,6 +5053,48 @@
           }
         },
         "required": ["url", "expiresAt"],
+        "type": "object"
+      },
+      "PendingApplicationGroupResponseDto": {
+        "properties": {
+          "applications": {
+            "description": "The pending applications of the lesson, the oldest first: each with the member, the role, the note and createdAt (when it was sent).",
+            "items": {
+              "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+            },
+            "type": "array"
+          },
+          "coverage": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonCoverageDto"
+              }
+            ],
+            "description": "The coverage of the lesson, the same as in the lesson itself: only confirmed assignments count, so the pending applications do not raise it."
+          },
+          "lesson": {
+            "$ref": "#/components/schemas/AssignmentLessonResponseDto"
+          }
+        },
+        "required": ["lesson", "coverage", "applications"],
+        "type": "object"
+      },
+      "PendingApplicationsResponseDto": {
+        "properties": {
+          "lessons": {
+            "description": "One group per lesson with a pending application, the soonest lesson first (by date, start time and id); a past or cancelled lesson is listed too, so its applications can be declined.",
+            "items": {
+              "$ref": "#/components/schemas/PendingApplicationGroupResponseDto"
+            },
+            "type": "array"
+          },
+          "total": {
+            "description": "How many applications are listed, whatever the lessons they are in: the N of the button Candidaturas pendentes (N).",
+            "example": 3,
+            "type": "integer"
+          }
+        },
+        "required": ["total", "lessons"],
         "type": "object"
       },
       "PermissionsDto": {
@@ -3667,6 +5349,19 @@
           }
         },
         "required": ["id", "name"],
+        "type": "object"
+      },
+      "RejectHourEntryDto": {
+        "properties": {
+          "reason": {
+            "description": "Why the entry was rejected. Trimmed; blank is refused. The member sees it in her statement.",
+            "example": "Atividade fora do projeto.",
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": ["reason"],
         "type": "object"
       },
       "RejectMemberRegistrationDto": {
@@ -4341,6 +6036,114 @@
         },
         "type": "object"
       },
+      "UpdateMemberDto": {
+        "description": "Every field is optional: omit to keep. Null clears address, city, state and volunteerTermUrl; every other field is never null. The access profile (role) and the access are not edited here: see PATCH /access/:id/role and /enabled.",
+        "properties": {
+          "address": {
+            "example": "Rua das Acácias, 120, apto 42",
+            "maxLength": 200,
+            "nullable": true,
+            "type": "string"
+          },
+          "birthDate": {
+            "description": "YYYY-MM-DD, between 1900-01-01 and today (America/Sao_Paulo).",
+            "example": "1999-07-22",
+            "format": "date",
+            "type": "string"
+          },
+          "city": {
+            "example": "São Paulo",
+            "maxLength": 100,
+            "nullable": true,
+            "type": "string"
+          },
+          "className": {
+            "description": "Class (turma) at the university.",
+            "example": "SI-2024-N",
+            "maxLength": 50,
+            "type": "string"
+          },
+          "course": {
+            "example": "Sistemas de Informação",
+            "maxLength": 100,
+            "type": "string"
+          },
+          "cpf": {
+            "description": "Digits only after normalization. Visible only to coordination (RNF-14).",
+            "example": "529.982.247-25",
+            "type": "string"
+          },
+          "departmentId": {
+            "description": "Omit to keep. Never null. A director can only keep the department of the member (403 DEPARTMENT_SCOPE); an unknown id answers 400 DEPARTMENT_NOT_FOUND.",
+            "example": "01999a3e-1111-7000-8000-000000000001",
+            "format": "uuid",
+            "type": "string"
+          },
+          "email": {
+            "description": "Personal e-mail. Omit to keep. Never null. Trimmed and lower-cased; unique among people (409 EMAIL_ALREADY_IN_USE).",
+            "example": "ana.torres@example.com",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "institutionalEmail": {
+            "description": "Trimmed and lower-cased.",
+            "example": "ana.torres@example.edu",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "joinedAt": {
+            "description": "YYYY-MM-DD, between 2000-01-01 and today (America/Sao_Paulo).",
+            "example": "2026-10-01",
+            "format": "date",
+            "type": "string"
+          },
+          "mainFunction": {
+            "example": "Monitora de informática",
+            "maxLength": 100,
+            "type": "string"
+          },
+          "name": {
+            "example": "Ana Torres",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "phone": {
+            "description": "Formatting is stripped; stored as 10 to 13 digits (DDD, optional country code).",
+            "example": "(11) 98181-3030",
+            "type": "string"
+          },
+          "ra": {
+            "description": "Trimmed and lower-cased. It is the login (RN-09).",
+            "example": "a2210001",
+            "maxLength": 20,
+            "type": "string"
+          },
+          "semester": {
+            "example": 7,
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "state": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BrazilianState"
+              }
+            ],
+            "description": "Federative unit (UF). Upper-cased.",
+            "example": "SP",
+            "nullable": true
+          },
+          "volunteerTermUrl": {
+            "description": "Link to the volunteer term in Drive (RF-011). HTTPS only.",
+            "example": "https://drive.google.com/file/d/exemplo/view",
+            "maxLength": 500,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "UpdateStudentDto": {
         "properties": {
           "accessibilityNeed": {
@@ -4424,6 +6227,27 @@
             "type": "string"
           }
         },
+        "type": "object"
+      },
+      "ValidateHourEntriesDto": {
+        "properties": {
+          "ids": {
+            "description": "Ids of pending hour entries, from 1 to 100. All of them are approved with their declared minutes, or none is. A repeated id answers 400 DUPLICATE_HOUR_ENTRY.",
+            "example": [
+              "01999a3e-7c1b-7000-8000-000000000a01",
+              "01999a3e-7c1b-7000-8000-000000000a02"
+            ],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": ["ids"],
         "type": "object"
       },
       "Weekday": {
@@ -4840,6 +6664,447 @@
           }
         },
         "tags": ["auth"]
+      }
+    },
+    "/applications": {
+      "get": {
+        "operationId": "listPendingApplications",
+        "parameters": [
+          {
+            "description": "Which applications are listed. Only pending, the default; any other value is 400 VALIDATION_FAILED.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "pending",
+              "enum": ["pending"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PendingApplicationsResponseDto"
+                }
+              }
+            },
+            "description": "The pending applications grouped by lesson, the soonest lesson first, with the coverage of each lesson and the note of each application; total is how many applications are listed (the N of the button). Not paginated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/applications/{id}/approve": {
+      "patch": {
+        "operationId": "approveApplication",
+        "parameters": [
+          {
+            "description": "Id of the application (an assignment with source application).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                }
+              }
+            },
+            "description": "The application, now a confirmed assignment, with reviewedById and reviewedAt. Approving one that is already confirmed changes nothing and answers the same."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "APPLICATION_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "APPLICATION_NOT_PENDING | LESSON_CANCELLED | MEMBER_INACTIVE | ROLE_FULL"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/applications/{id}/reject": {
+      "patch": {
+        "operationId": "rejectApplication",
+        "parameters": [
+          {
+            "description": "Id of the application (an assignment with source application).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                }
+              }
+            },
+            "description": "The application, now declined, with reviewedById and reviewedAt. The place of the member in the lesson is free again. Declining one that is already declined changes nothing and answers the same."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "APPLICATION_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "APPLICATION_NOT_PENDING"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/assignments/{id}/cancel": {
+      "patch": {
+        "operationId": "cancelAssignment",
+        "parameters": [
+          {
+            "description": "Id of the assignment.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                }
+              }
+            },
+            "description": "The assignment, now cancelled, with cancelledById and cancelledAt. It stays: the member can be assigned to the lesson again. Cancelling one that is already cancelled changes nothing and answers the same, with the first instant."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ASSIGNMENT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ASSIGNMENT_NOT_ACTIVE"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/assignments/{id}/confirm": {
+      "patch": {
+        "operationId": "confirmAssignment",
+        "parameters": [
+          {
+            "description": "Id of the assignment.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                }
+              }
+            },
+            "description": "The assignment, now confirmed, with reviewedById and reviewedAt. Confirming one that is already confirmed changes nothing and answers the same."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ASSIGNMENT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ASSIGNMENT_NOT_PENDING | LESSON_CANCELLED | MEMBER_INACTIVE | LESSON_TEACHER_TAKEN"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
       }
     },
     "/auth/invites/accept": {
@@ -5943,6 +8208,163 @@
       }
     },
     "/courses": {
+      "get": {
+        "operationId": "listCourses",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Search by name, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "informatica",
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CourseCategory"
+            }
+          },
+          {
+            "description": "Omitted lists active and archived courses. The selectors of a new class and of prerequisites send active.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CourseStatus"
+            }
+          },
+          {
+            "description": "true lists only courses with a prerequisite; false, only courses without one.",
+            "in": "query",
+            "name": "hasPrerequisite",
+            "required": false,
+            "schema": {
+              "example": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "name is alphabetical; createdAt puts the newest first.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CourseListSort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/CourseListItemDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["catalog"]
+      },
       "post": {
         "operationId": "createCourse",
         "parameters": [],
@@ -6194,6 +8616,96 @@
               }
             },
             "description": "COURSE_ARCHIVED | COURSE_NAME_TAKEN"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["catalog"]
+      }
+    },
+    "/courses/{id}/archive": {
+      "patch": {
+        "operationId": "archiveCourse",
+        "parameters": [
+          {
+            "description": "Id of the course.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveDto"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "COURSE_NOT_FOUND"
           },
           "500": {
             "content": {
@@ -6618,6 +9130,86 @@
         "tags": ["catalog"]
       }
     },
+    "/courses/{id}/unarchive": {
+      "patch": {
+        "operationId": "unarchiveCourse",
+        "parameters": [
+          {
+            "description": "Id of the course.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CourseResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "COURSE_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["catalog"]
+      }
+    },
     "/departments": {
       "get": {
         "operationId": "listDepartments",
@@ -6919,6 +9511,761 @@
           }
         },
         "tags": ["health"]
+      }
+    },
+    "/hour-entries": {
+      "get": {
+        "operationId": "listPendingHourEntries",
+        "parameters": [
+          {
+            "description": "First day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no lower bound.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-01",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no upper bound.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-03-31",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Only the entries with this status. One value; pending when omitted.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/HourEntryStatus"
+            }
+          },
+          {
+            "description": "Only the entries of this person. Omit for every member of the scope.",
+            "in": "query",
+            "name": "personId",
+            "required": false,
+            "schema": {
+              "example": "01999a3e-0000-7000-8000-0000000000aa",
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/MemberHourEntryResponseDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_PERIOD"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN: a member (hours.viewOthers). A director without department gets an empty page."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/hour-entries/validate": {
+      "patch": {
+        "operationId": "validateHourEntries",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ValidateHourEntriesDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HourEntryResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The entries, approved with their declared minutes, in the order of the body. All of them or none."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | DUPLICATE_HOUR_ENTRY | HOUR_ENTRY_NOT_FOUND (unknown or removed). The last two with details[].field = ids.<i>."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN: a director or a member (hours.review is only for coordination and the superadmin)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "SELF_REVIEW_NOT_ALLOWED | ENTRY_NOT_PENDING, with details[].field = ids.<i>. Nothing is validated."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/hour-entries/{id}/adjust": {
+      "patch": {
+        "operationId": "adjustHourEntry",
+        "parameters": [
+          {
+            "description": "Id of a pending hour entry.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdjustHourEntryDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEntryResponseDto"
+                }
+              }
+            },
+            "description": "The entry, adjusted: the new validated minutes, the declared ones kept and the justification as reviewNote."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | ADJUSTED_MINUTES_UNCHANGED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN: a director or a member (hours.review is only for coordination and the superadmin)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "HOUR_ENTRY_NOT_FOUND: malformed, unknown or removed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "SELF_REVIEW_NOT_ALLOWED | ENTRY_NOT_PENDING"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/hour-entries/{id}/history": {
+      "get": {
+        "operationId": "getHourEntryHistory",
+        "parameters": [
+          {
+            "description": "Id of an hour entry, removed included.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HourEntryEventResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Every row of the history, oldest first (created, approved, adjusted, rejected, removed), with who and when."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN_SCOPE: someone else's entry without hours.viewOthers, or outside its scope."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "HOUR_ENTRY_NOT_FOUND: malformed or unknown. A removed entry keeps its history."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/hour-entries/{id}/reject": {
+      "patch": {
+        "operationId": "rejectHourEntry",
+        "parameters": [
+          {
+            "description": "Id of a pending hour entry.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectHourEntryDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEntryResponseDto"
+                }
+              }
+            },
+            "description": "The entry, rejected: 0 validated minutes, out of the bank of hours, the reason as reviewNote."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN: a director or a member (hours.review is only for coordination and the superadmin)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "HOUR_ENTRY_NOT_FOUND: malformed, unknown or removed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "SELF_REVIEW_NOT_ALLOWED | ENTRY_NOT_PENDING"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/hours/export": {
+      "get": {
+        "operationId": "exportHours",
+        "parameters": [
+          {
+            "description": "First day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no lower bound.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-01",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no upper bound.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-03-31",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only csv for now; xlsx answers 400 VALIDATION_FAILED.",
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/HoursExportFormat"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "CSV in UTF-8 with BOM, separated by ; with CRLF: a header and one line per entry of the period, in the order date, id. The name of the file comes in Content-Disposition."
+          },
+          "400": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED (format=xlsx included) | INVALID_PERIOD, as JSON."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN: a member (hours.export)."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/hours/overview": {
+      "get": {
+        "operationId": "getHoursOverview",
+        "parameters": [
+          {
+            "description": "First day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no lower bound.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-01",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no upper bound.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-03-31",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Name or RA of the member, ignoring case and accents. It narrows the members and the totals alike.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "Ana",
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoursOverviewResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_PERIOD"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN: a member (hours.viewOthers). A director without department gets an empty overview."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
       }
     },
     "/invites": {
@@ -8346,6 +11693,471 @@
         "tags": ["lessons"]
       }
     },
+    "/lessons/{id}/applications": {
+      "post": {
+        "operationId": "applyToLesson",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyToLessonDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                }
+              }
+            },
+            "description": "The application: pending, source application, with the member of the session as person and as createdById, and the note she wrote."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_CANCELLED | LESSON_IN_PAST | MEMBER_INACTIVE | ALREADY_APPLIED | ROLE_FULL"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/lessons/{id}/assignments": {
+      "get": {
+        "operationId": "listLessonAssignments",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Every assignment of the lesson, whatever its status, ordered by role (teacher first), status, when it was made and id. Not paginated. The note of each one is null for profiles without assignments.create (RNF-13)."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      },
+      "post": {
+        "operationId": "createAssignment",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAssignmentDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LessonAssignmentResponseDto"
+                }
+              }
+            },
+            "description": "The assignment, direct and pending or confirmed as the body asked. With confirmed, reviewedById is the actor and reviewedAt is now."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | MEMBER_NOT_FOUND"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_CANCELLED | MEMBER_INACTIVE | DUPLICATE_ROLE_IN_LESSON | LESSON_TEACHER_TAKEN"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/lessons/{id}/attendance/members": {
+      "get": {
+        "operationId": "listMemberAttendance",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberAttendanceResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The confirmed assignments of the lesson, the teacher first, each with the attendance of its member, who signed it and the hour entry it generated. An attendance not signed yet has status, confirmedBy, confirmedAt and hourEntryId null. Not paginated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      },
+      "put": {
+        "operationId": "confirmMemberAttendance",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmMemberAttendanceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberAttendanceResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The attendance of the lesson after the commit, the same list as the GET. All or none: any error writes nothing."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | DUPLICATE_ASSIGNMENT | ASSIGNMENT_NOT_CONFIRMED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | FORBIDDEN_SCOPE | SELF_ATTENDANCE_NOT_ALLOWED"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_CANCELLED | LESSON_IN_FUTURE"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      }
+    },
     "/lessons/{id}/cancel": {
       "patch": {
         "operationId": "cancelLesson",
@@ -8380,7 +12192,7 @@
                 }
               }
             },
-            "description": "The lesson, now cancelled. Cancelling a lesson that is already cancelled changes nothing and answers the same, with the first reason."
+            "description": "The lesson, now cancelled. Cancelling a lesson that is already cancelled changes nothing and answers the same, with the first reason; it only announces the cancellation to the hours again, which reverse the attendance hours of the lesson if that had failed."
           },
           "400": {
             "content": {
@@ -8544,6 +12356,597 @@
           }
         },
         "tags": ["lessons"]
+      }
+    },
+    "/me/assignments": {
+      "get": {
+        "operationId": "listMyAssignments",
+        "parameters": [
+          {
+            "description": "First day of the period, YYYY-MM-DD, included. Without it, today in America/Sao_Paulo.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-09",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day of the period, YYYY-MM-DD, included. Without it, 27 days after from (four weeks, both ends counted). It cannot be before from (else 400 INVALID_DATE_RANGE), and the period holds at most 42 days counting both ends (else 400 DATE_RANGE_TOO_LONG).",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-04-05",
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyAssignmentsResponseDto"
+                }
+              }
+            },
+            "description": "The lessons of the period (four weeks from today by default) where the member is assigned or applied, with the role and the latest status of each, and the totals of the top of the screen. No note."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_DATE_RANGE | DATE_RANGE_TOO_LONG"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/me/hour-entries": {
+      "get": {
+        "operationId": "listMyHourEntries",
+        "parameters": [
+          {
+            "description": "First day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no lower bound.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-01",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no upper bound.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-03-31",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Only the entries with this status. One value. Omit for every status.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/HourEntryStatus"
+            }
+          },
+          {
+            "description": "Only the entries of this category. One value, lesson included. Omit for every category.",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/HourEntryCategory"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/HourEntryResponseDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_PERIOD"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      },
+      "post": {
+        "operationId": "logMyHours",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHourEntryDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEntryResponseDto"
+                }
+              }
+            },
+            "description": "The entry, pending and manual, logged by the person herself."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | HOUR_ENTRY_DATE_IN_FUTURE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/me/hour-entries/{id}": {
+      "delete": {
+        "operationId": "removeMyHourEntry",
+        "parameters": [
+          {
+            "description": "Id of an hour entry of the person.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed: the entry leaves the statement and the summary, the row stays (soft delete) and its history gets a removed event."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "HOUR_ENTRY_NOT_FOUND: malformed, unknown, of another person or already removed."
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ATTENDANCE_ENTRY_NOT_REMOVABLE: lesson hours of an attendance, in any status (they change only with the attendance) | ENTRY_NOT_PENDING"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/me/hours/summary": {
+      "get": {
+        "operationId": "getMyHoursSummary",
+        "parameters": [
+          {
+            "description": "First day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no lower bound.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-01",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no upper bound.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-03-31",
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HoursSummaryResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_PERIOD"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/me/open-lessons": {
+      "get": {
+        "operationId": "listOpenLessons",
+        "parameters": [
+          {
+            "description": "First day of the period, YYYY-MM-DD, included. Without it, today in America/Sao_Paulo.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-09",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day of the period, YYYY-MM-DD, included. Without it, 27 days after from (four weeks, both ends counted). It cannot be before from (else 400 INVALID_DATE_RANGE), and the period holds at most 42 days counting both ends (else 400 DATE_RANGE_TOO_LONG).",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-04-05",
+              "format": "date",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OpenLessonResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The lessons of the period, from today on and not done, that have an open place for some role and where the member holds no place, with the coverage and the open roles of each, soonest first. Not paginated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_DATE_RANGE | DATE_RANGE_TOO_LONG"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
       }
     },
     "/member-registrations": {
@@ -9020,6 +13423,15 @@
             }
           },
           {
+            "description": "Participation in the project. Omitted lists every status; a person without member profile counts as active.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/MemberStatus"
+            }
+          },
+          {
             "in": "query",
             "name": "enabled",
             "required": false,
@@ -9239,6 +13651,660 @@
               }
             },
             "description": "FORBIDDEN | FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["people"]
+      },
+      "patch": {
+        "operationId": "updateMember",
+        "parameters": [
+          {
+            "description": "Person id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemberDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDetailResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | DEPARTMENT_NOT_FOUND"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | FORBIDDEN_SCOPE | DEPARTMENT_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "NO_MEMBER_PROFILE | REGISTRATION_NOT_APPROVED | MEMBER_INACTIVE | RA_ALREADY_IN_USE | EMAIL_ALREADY_IN_USE"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["people"]
+      }
+    },
+    "/members/{id}/assignments": {
+      "get": {
+        "operationId": "listMemberAssignments",
+        "parameters": [
+          {
+            "description": "Person id of the member.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MemberAssignmentResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Every assignment of the member, whatever its status, each with its lesson (id, title, day, times and status), the latest lesson first. Not paginated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["assignments"]
+      }
+    },
+    "/members/{id}/attendance": {
+      "get": {
+        "operationId": "getMemberAttendanceHistory",
+        "parameters": [
+          {
+            "description": "Person id of the member.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberAttendanceHistoryResponseDto"
+                }
+              }
+            },
+            "description": "The presences and absences of the member, the latest lesson first, with the totals; cancelled lessons are left out of both. Not paginated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      }
+    },
+    "/members/{id}/deactivate": {
+      "patch": {
+        "operationId": "deactivateMember",
+        "parameters": [
+          {
+            "description": "Person id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeactivateMemberDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDetailResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | EXIT_DATE_BEFORE_JOINED_AT"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | OWN_ACCOUNT"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "NO_MEMBER_PROFILE | REGISTRATION_NOT_APPROVED | MEMBER_INACTIVE | LAST_COORDINATOR"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["people"]
+      }
+    },
+    "/members/{id}/hour-entries": {
+      "post": {
+        "operationId": "logHoursForMember",
+        "parameters": [
+          {
+            "description": "Id of the member (the person) the hours are for.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateHourEntryDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HourEntryResponseDto"
+                }
+              }
+            },
+            "description": "The entry of the member, pending and on_behalf, with createdById = the actor."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | SELF_ON_BEHALF_NOT_ALLOWED | HOUR_ENTRY_DATE_IN_FUTURE"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND: malformed or unknown id, or a person without an approved member registration."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/members/{id}/hours": {
+      "get": {
+        "operationId": "getMemberHours",
+        "parameters": [
+          {
+            "description": "Id of the member (the person).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "First day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no lower bound.",
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "example": "2026-03-01",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Last day, YYYY-MM-DD, inclusive, from 2000-01-01. Omit for no upper bound.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "example": "2026-03-31",
+              "format": "date",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberHoursResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | INVALID_PERIOD"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "MEMBER_NOT_FOUND: malformed or unknown id, a deleted person, or a person with neither an access role nor a member registration (a student)."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["hours"]
+      }
+    },
+    "/members/{id}/reactivate": {
+      "patch": {
+        "operationId": "reactivateMember",
+        "parameters": [
+          {
+            "description": "Person id.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberDetailResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN | OWN_ACCOUNT"
           },
           "404": {
             "content": {

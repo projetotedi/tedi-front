@@ -211,6 +211,11 @@ export function buildLesson(
     id: `01952ef7-0000-7000-8000-0000000003${number}`,
     title: plan.title,
     objective: `Objetivo da aula ${plan.title}.`,
+    belowExpectedMonitors: false,
+    coverage: {
+      teacher: { confirmed: 0, expected: 1 },
+      monitors: { confirmed: 0, expected: null },
+    },
     subject: null,
     date: addDays(CLASS_START_DATE, index * 7),
     startTime: "09:00",

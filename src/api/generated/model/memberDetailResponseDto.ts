@@ -7,6 +7,7 @@
  */
 import type { DepartmentResponseDto } from "./departmentResponseDto.ts";
 import type { MemberRegistrationStatus } from "./memberRegistrationStatus.ts";
+import type { MemberStatus } from "./memberStatus.ts";
 import type { PersonRefDto } from "./personRefDto.ts";
 import type { Role } from "./role.ts";
 
@@ -49,6 +50,16 @@ export interface MemberDetailResponseDto {
    * @nullable
    */
   email: string | null;
+  /**
+   * Day the member left (YYYY-MM-DD). Null while active.
+   * @nullable
+   */
+  exitDate: string | null;
+  /**
+   * Why the member left. Null while active.
+   * @nullable
+   */
+  exitReason: string | null;
   /** Id of the Person. */
   id: string;
   /**
@@ -98,6 +109,8 @@ export interface MemberDetailResponseDto {
    * @nullable
    */
   state: string | null;
+  /** Participation in the project (RF-011): `inactive` after PATCH /members/:id/deactivate, `active` otherwise, also while the registration is pending or rejected and for a person without member profile. Independent from `accessEnabled` (login) and `registrationStatus` (validation). */
+  status: MemberStatus;
   /**
    * Null for a person without a member profile (e.g. the seeded admin).
    * @nullable

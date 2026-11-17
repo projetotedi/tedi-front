@@ -10,7 +10,7 @@ import type { LessonPersonRefDto } from "./lessonPersonRefDto.ts";
 import type { LessonStatus } from "./lessonStatus.ts";
 
 export interface LessonListItemResponseDto {
-  /** True when the lesson has fewer monitors allocated than it expects (F4.4, RF-050). Always false until the allocation exists (GUS-158). */
+  /** True when the lesson has fewer CONFIRMED monitors than it expects (F4.4, F5.4, RF-050): a pending monitor does not count. False for a cancelled lesson and when the lesson does not say how many monitors it expects (expectedMonitors null, so nothing is missing). The teacher is not part of it: a lesson without a teacher shows a dash in teacher. It is the same rule as belowExpectedMonitors of the lesson in full. */
   belowExpectedMonitors: boolean;
   class: LessonListClassRefDto;
   /** Day of the lesson, YYYY-MM-DD. */
@@ -23,7 +23,7 @@ export interface LessonListItemResponseDto {
   /** Status of the lesson (F4.5). A cancelled lesson is listed like the others: the calendar draws it with a style of its own. */
   status: LessonStatus;
   /**
-   * The teacher of the lesson. Always null until the allocation exists (E5, GUS-158): the front shows a dash.
+   * The CONFIRMED teacher of the lesson (F5.2, RN-02): her id and her name. Null when the lesson has none, and the front shows a dash: a pending assignment is a candidate, not the teacher. A cancelled lesson keeps the teacher that was confirmed in it, because cancelling a lesson does not cancel its assignments.
    * @nullable
    */
   teacher: LessonPersonRefDto | null;

@@ -5,7 +5,11 @@ import {
   getGetCourseQueryKey,
   getListCourseLessonPlansQueryKey,
 } from "@api/generated/catalog/catalog";
-import type { CourseDetailDto, CourseLessonPlansResponseDto } from "@api/generated/model";
+import type {
+  CourseDetailDto,
+  CourseLessonPlansResponseDto,
+  CourseResponseDto,
+} from "@api/generated/model";
 
 import { withReplacedSequence } from "./course-detail";
 import { invalidateLessonPlans } from "./lesson-plan-queries";
@@ -54,8 +58,8 @@ function isCourseDetailKey(queryKey: readonly unknown[]): boolean {
  *   the usage the RF-017 confirmation reads): all of those are fetched again when somebody looks
  *   at them.
  *
- * There is no course list in the contract yet. When `listCourses` exists, its key (the number of
- * lesson plans and the workload of each course) is invalidated here too.
+ * The list of courses (`listCourses`, the number of lesson plans and the workload of each course)
+ * is not touched here yet: the screen that reads it comes with GUS-131, and its key goes here then.
  */
 export async function applyReplacedSequence(
   queryClient: QueryClient,
@@ -85,9 +89,8 @@ export async function applyReplacedSequence(
 /**
  * What the app has to know after a course is duplicated (RF-019):
  *
- * - there is one more course, so whatever lists courses is out of date. The contract has no course
- *   list yet (`listCourses`), so this is every key under `/courses`: when the list exists its key
- *   is one of them and needs no change here;
+ * - there is one more course, so whatever lists courses is out of date: every key under `/courses`,
+ *   the one of `listCourses` included;
  * - the copy gets the lesson plans of the original, in the same order, and a lesson plan is shared
  *   by the courses that use it (RN-17), so each of those plans is now in one more course. That is
  *   `courseCount` in the sequence of the original and of the other courses that use the same plans
@@ -103,4 +106,37 @@ export async function invalidateAfterCourseDuplicated(queryClient: QueryClient):
     queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) }),
     invalidateLessonPlans(queryClient),
   ]);
+}
+
+/**
+ * What the app has to know after a course is archived or reactivated (RN-27, RF-020, GUS-139):
+ *
+ * - the detail on the screen takes the status, the date and the reason from the answer of the
+ *   `PATCH` at once, so the header, the plan card and the history change together without waiting
+ *   for a new `GET` (the answer is a `CourseResponseDto`, not the detail, so only those fields are
+ *   copied);
+ * - every other key under `/courses` is out of date: the lists (an archived course leaves
+ *   `status=active`, which the selectors of a new class and of prerequisites read) and the detail
+ *   of the courses that show this one as a prerequisite or in `requiredBy`, with its status. The
+ *   detail of this course is fetched again too, to bring `updatedAt` and anything else it holds.
+ *
+ * The classes of the course do not change (they stay as they are), so their keys are left alone.
+ */
+export async function invalidateAfterCourseArchiveChanged(
+  queryClient: QueryClient,
+  course: CourseResponseDto,
+): Promise<void> {
+  queryClient.setQueryData<CourseDetailDto>(
+    getGetCourseQueryKey(course.id),
+    (detail) =>
+      detail && {
+        ...detail,
+        status: course.status,
+        archivedAt: course.archivedAt,
+        archiveReason: course.archiveReason,
+        updatedAt: course.updatedAt,
+      },
+  );
+
+  await queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) });
 }

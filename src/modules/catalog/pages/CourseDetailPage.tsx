@@ -7,6 +7,7 @@ import { getGetCourseQueryKey, useGetCourse } from "@api/generated/catalog/catal
 import { CourseStatus, type CourseDetailDto } from "@api/generated/model";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
+import { ArchiveCourseDialog } from "../components/ArchiveCourseDialog";
 import { BuildSequenceDialog } from "../components/BuildSequenceDialog";
 import { CourseDataCard } from "../components/CourseDataCard";
 import { CourseDetailHeader } from "../components/CourseDetailHeader";
@@ -15,6 +16,7 @@ import { CoursePlanCard } from "../components/CoursePlanCard";
 import { CoursePrerequisitesCard } from "../components/CoursePrerequisitesCard";
 import { CourseWorkloadCard } from "../components/CourseWorkloadCard";
 import { DuplicateCourseDialog } from "../components/DuplicateCourseDialog";
+import { UnarchiveCourseDialog } from "../components/UnarchiveCourseDialog";
 import { isCourseId, isCourseNotFound, toCourseSequence } from "../lib/course-detail";
 
 /**
@@ -76,6 +78,7 @@ function CourseDetailView({
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [archiveDialog, setArchiveDialog] = useState<"archive" | "unarchive" | null>(null);
   const [archivedBySave, setArchivedBySave] = useState(false);
   const archivedHintRef = useRef<HTMLParagraphElement>(null);
   const wasEditingRef = useRef(false);
@@ -104,6 +107,8 @@ function CourseDetailView({
         course={course}
         isArchived={isArchived}
         onDuplicate={() => setIsDuplicating(true)}
+        onArchive={() => setArchiveDialog("archive")}
+        onUnarchive={() => setArchiveDialog("unarchive")}
       />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
@@ -125,7 +130,11 @@ function CourseDetailView({
             prerequisites={course.prerequisites}
             requiredBy={course.requiredBy}
           />
-          <CourseHistoryCard createdBy={course.createdBy} />
+          <CourseHistoryCard
+            createdBy={course.createdBy}
+            archivedAt={course.archivedAt}
+            archiveReason={course.archiveReason}
+          />
         </div>
       </div>
 
@@ -140,6 +149,21 @@ function CourseDetailView({
 
       {isDuplicating ? (
         <DuplicateCourseDialog course={course} onClose={() => setIsDuplicating(false)} />
+      ) : null}
+
+      {archiveDialog === "archive" ? (
+        <ArchiveCourseDialog course={course} onClose={() => setArchiveDialog(null)} />
+      ) : null}
+
+      {archiveDialog === "unarchive" ? (
+        <UnarchiveCourseDialog
+          course={course}
+          onClose={() => {
+            // Active again by the answer of the API: the notice of a refused save no longer holds.
+            setArchivedBySave(false);
+            setArchiveDialog(null);
+          }}
+        />
       ) : null}
     </div>
   );
@@ -203,6 +227,11 @@ function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): Rea
  * that the last save was refused as archived belong to the course that was open, not to the next.
  * When the next course is not loaded yet the loading state already throws the old view away; the
  * `key` is for when it is in the cache, and the page shows it with no loading step in between.
+ *
+ * Arquivar curso and Reativar curso (RF-020, GUS-139, in the header, for who has
+ * `courses.duplicateArchive`) open `ArchiveCourseDialog` and `UnarchiveCourseDialog`; the answer of
+ * the API is written into this detail at once (`invalidateAfterCourseArchiveChanged`), so the tag,
+ * Editar sequência and the history change together.
  *
  * Duplicar curso (RF-019, in the header, for who has `courses.duplicateArchive`) opens
  * `DuplicateCourseDialog` over the page. The copy opens on this same route with another id, so the
