@@ -38,13 +38,14 @@ export interface LessonFiltersProps {
     lessonPlans: LessonPlanListItemDto[];
   };
   onFilterChange: (key: LessonSelectKey, value: string) => void;
-  onPeriodChange: (from: string, to: string) => void;
+  /** Only for a screen that asks for the field `period`. */
+  onPeriodChange?: (from: string, to: string) => void;
 }
 
 interface PeriodFilterProps {
   from: string;
   to: string;
-  onChange: (from: string, to: string) => void;
+  onChange?: (from: string, to: string) => void;
 }
 
 /**
@@ -69,7 +70,7 @@ function PeriodFilter({ from, to, onChange }: PeriodFilterProps): ReactElement {
     setRange(next);
     const isInvertedNext = next.from !== "" && next.to !== "" && next.from > next.to;
     if (isInvertedNext || (next.from === from && next.to === to)) return;
-    onChange(next.from, next.to);
+    onChange?.(next.from, next.to);
   }
 
   return (
