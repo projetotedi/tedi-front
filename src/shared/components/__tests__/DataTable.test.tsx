@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { createPortal } from "react-dom";
+import { describe, expect, it, vi } from "vitest";
 
 import { DataTable, type Column } from "../DataTable";
 
@@ -93,5 +95,75 @@ describe("DataTable", () => {
     render(<DataTable columns={COLUMNS} rows={[]} rowKey={(row) => row.id} />);
 
     expect(screen.queryAllByRole("cell")).toHaveLength(0);
+  });
+
+  describe("onRowClick", () => {
+    const ROW: Row = { id: "1", name: "Ana" };
+
+    it("is called with the row when a cell is clicked", async () => {
+      const onRowClick = vi.fn();
+      render(
+        <DataTable
+          columns={COLUMNS}
+          rows={[ROW]}
+          rowKey={(row) => row.id}
+          onRowClick={onRowClick}
+        />,
+      );
+
+      await userEvent.click(screen.getByRole("cell", { name: "Ana" }));
+
+      expect(onRowClick).toHaveBeenCalledExactlyOnceWith(ROW);
+    });
+
+    it("ignores a click on a button or a link inside the row", async () => {
+      const onRowClick = vi.fn();
+      render(
+        <DataTable
+          columns={[
+            {
+              header: "Nome",
+              render: (row: Row) => (
+                <>
+                  <button type="button">Editar {row.name}</button>
+                  <a href="#detail">Abrir {row.name}</a>
+                </>
+              ),
+            },
+          ]}
+          rows={[ROW]}
+          rowKey={(row) => row.id}
+          onRowClick={onRowClick}
+        />,
+      );
+
+      await userEvent.click(screen.getByRole("button", { name: "Editar Ana" }));
+      await userEvent.click(screen.getByRole("link", { name: "Abrir Ana" }));
+
+      expect(onRowClick).not.toHaveBeenCalled();
+    });
+
+    it("ignores a click that comes from a portal rendered inside a cell", async () => {
+      const onRowClick = vi.fn();
+      render(
+        <DataTable
+          columns={[
+            {
+              header: "Nome",
+              // What a dialog opened from a cell does: it renders in `document.body`, outside the
+              // row, but React sends its click up through the cell to the row.
+              render: () => createPortal(<p>dentro do diálogo</p>, document.body),
+            },
+          ]}
+          rows={[ROW]}
+          rowKey={(row) => row.id}
+          onRowClick={onRowClick}
+        />,
+      );
+
+      await userEvent.click(screen.getByText("dentro do diálogo"));
+
+      expect(onRowClick).not.toHaveBeenCalled();
+    });
   });
 });

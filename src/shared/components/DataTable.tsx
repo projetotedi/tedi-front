@@ -76,6 +76,12 @@ export function DataTable<T>({
                   onRowClick
                     ? (event) => {
                         const target = event.target;
+                        // A dialog opened from a cell is mounted in a portal, so it is not inside
+                        // the row in the DOM, but React still sends its events up to the row: a
+                        // click inside that dialog is not a click on the row.
+                        if (!(target instanceof Node) || !event.currentTarget.contains(target)) {
+                          return;
+                        }
                         if (
                           target instanceof Element &&
                           target.closest("a, button, input, select, textarea, [role='button']")
