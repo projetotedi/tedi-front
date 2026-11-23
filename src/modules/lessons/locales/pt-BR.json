@@ -12,7 +12,9 @@
     "editFor": "Editar a aula {{title}}",
     "cancel": "Cancelar aula",
     "cancelFor": "Cancelar a aula {{title}}",
-    "reschedule": "Remarcar aula"
+    "reschedule": "Remarcar aula",
+    "cancelledHint": "Aula cancelada: não pode ser remarcada, cancelada nem editada.",
+    "classArchivedHint": "A turma está arquivada: as aulas dela ficam só para leitura."
   },
   "form": {
     "newTitle": "Nova aula",
@@ -225,5 +227,75 @@
     "viewAll_other": "Ver todas as {{count}}",
     "viewAllLabel_one": "Ver a {{count}} aula desta turma",
     "viewAllLabel_other": "Ver todas as {{count}} aulas desta turma"
+  },
+  "detail": {
+    "routeTitle": "Aula",
+    "loading": "Carregando a aula…",
+    "notFoundTitle": "Aula não encontrada",
+    "notFoundDescription": "Esta aula não existe ou foi removida. Volte para a lista e escolha outra.",
+    "backToList": "Voltar para aulas",
+    "comingSoon": "Em breve",
+    "breadcrumb": {
+      "label": "Trilha de navegação",
+      "lessons": "Aulas",
+      "current": "{{date}} · {{title}}"
+    },
+    "header": {
+      "class": "Turma {{name}}",
+      "schedule": "{{date}} · {{start}}–{{end}}",
+      "duration": "{{duration}} de aula"
+    },
+    "data": {
+      "title": "Dados da aula",
+      "fields": {
+        "date": "Data",
+        "time": "Horário",
+        "duration": "Duração",
+        "location": "Local",
+        "status": "Status",
+        "sequenceOrder": "Ordem no plano do curso",
+        "lessonPlan": "Plano de aula (origem)",
+        "material": "Material",
+        "expectedStudents": "Alunos esperados",
+        "expectedMonitors": "Monitores esperados",
+        "subject": "Assunto",
+        "teacher": "Professor(a)",
+        "postNotes": "Observações pós-aula"
+      },
+      "timeRange": "{{start}}–{{end}}",
+      "sequenceOrder": "{{order}}ª aula da sequência",
+      "standalone": "Aula avulsa (sem plano)",
+      "archivedPlan": "plano arquivado"
+    },
+    "links": {
+      "title": "Vínculos",
+      "fields": {
+        "class": "Turma",
+        "course": "Curso",
+        "edition": "Edição",
+        "lessonPlan": "Plano de aula"
+      },
+      "sequenceItem": "item {{order}}"
+    },
+    "changes": {
+      "titleRescheduled": "Remarcação",
+      "titleCancelled": "Cancelamento",
+      "titleBoth": "Remarcação e cancelamento",
+      "fields": {
+        "originalDate": "Data original",
+        "rescheduleReason": "Motivo da remarcação",
+        "rescheduleNote": "Observação da remarcação",
+        "cancelReason": "Motivo do cancelamento"
+      }
+    },
+    "attendance": {
+      "title": "Chamada"
+    },
+    "coverage": {
+      "title": "Cobertura da aula"
+    },
+    "record": {
+      "title": "Registro"
+    }
   }
 }
