@@ -177,7 +177,7 @@
       "title": "Members ({{total}})",
       "titlePending": "Members",
       "pendingInvites": "Pending invites ({{count}})",
-      "caption": "Members with access to TEDI",
+      "caption": "TEDI members",
       "columns": {
         "member": "Member",
         "role": "Role",
@@ -187,13 +187,17 @@
         "actions": "Actions"
       },
       "rowActions": "Actions for {{name}}",
+      "validate": "Validate",
+      "validateLabel": "Validate the registration of {{name}}",
       "status": {
         "active": "Active",
-        "inactive": "Inactive"
+        "inactive": "Inactive",
+        "pending": "To validate",
+        "rejected": "Rejected"
       },
       "search": {
         "label": "Search by name or RA",
-        "placeholder": "Search member by name…"
+        "placeholder": "Search by name or RA…"
       },
       "filters": {
         "label": "Member list filters",
@@ -215,7 +219,8 @@
       "states": {
         "empty": {
           "title": "No members yet",
-          "description": "Generate a registration link and send it to the person. They show up here as soon as they finish signing up."
+          "description": "Generate a registration link and send it to the person. They show up here as soon as they finish signing up.",
+          "descriptionReadOnly": "Members show up here as soon as they finish signing up."
         },
         "noResults": {
           "title": "Nothing found",

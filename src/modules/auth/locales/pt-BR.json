@@ -177,7 +177,7 @@
       "title": "Membros ({{total}})",
       "titlePending": "Membros",
       "pendingInvites": "Convites pendentes ({{count}})",
-      "caption": "Membros com acesso ao TEDI",
+      "caption": "Membros do TEDI",
       "columns": {
         "member": "Membro",
         "role": "Papel",
@@ -187,13 +187,17 @@
         "actions": "Ações"
       },
       "rowActions": "Ações de {{name}}",
+      "validate": "Validar",
+      "validateLabel": "Validar cadastro de {{name}}",
       "status": {
         "active": "Ativo",
-        "inactive": "Inativo"
+        "inactive": "Inativo",
+        "pending": "A validar",
+        "rejected": "Recusado"
       },
       "search": {
         "label": "Buscar por nome ou RA",
-        "placeholder": "Buscar membro por nome…"
+        "placeholder": "Buscar por nome ou RA…"
       },
       "filters": {
         "label": "Filtros da lista de membros",
@@ -215,7 +219,8 @@
       "states": {
         "empty": {
           "title": "Nenhum membro ainda",
-          "description": "Gere um link de cadastro e envie para a pessoa. Ela aparece aqui assim que concluir o cadastro."
+          "description": "Gere um link de cadastro e envie para a pessoa. Ela aparece aqui assim que concluir o cadastro.",
+          "descriptionReadOnly": "Os membros aparecem aqui assim que concluírem o cadastro."
         },
         "noResults": {
           "title": "Nada encontrado",
