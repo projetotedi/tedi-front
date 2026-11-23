@@ -59,12 +59,35 @@ describe("LessonRowActions", () => {
     expect(pencil()).toBeInTheDocument();
   });
 
-  it("a cancelled lesson has no icon", async () => {
+  it("a cancelled lesson shows both icons disabled", async () => {
     await renderWithProviders(
       <LessonRowActions lesson={{ ...LESSON, status: LessonStatus.cancelled }} />,
     );
 
+    expect(screen.getAllByRole("button")).toHaveLength(2);
+    expect(pencil()).toBeDisabled();
+    expect(trash()).toBeDisabled();
+  });
+
+  it("a member does not see the disabled icons of a cancelled lesson either", async () => {
+    await renderWithProviders(
+      <LessonRowActions lesson={{ ...LESSON, status: LessonStatus.cancelled }} />,
+      { user: buildMeUser(Role.member) },
+    );
+
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("the icons of a lesson that is not cancelled are enabled, 16px wide, 12px apart", async () => {
+    await renderWithProviders(<LessonRowActions lesson={LESSON} />);
+
+    expect(pencil()).toBeEnabled();
+    expect(trash()).toBeEnabled();
+    expect(pencil().querySelector("img")).toHaveAttribute("width", "16");
+    expect(pencil().querySelector("img")).toHaveAttribute("height", "16");
+    expect(pencil().parentElement).toHaveClass("flex", "gap-3");
+    // The pair stays on one line, whatever the width of the column.
+    expect(pencil().parentElement).not.toHaveClass("flex-wrap");
   });
 
   it.each([LessonStatus.confirmed, LessonStatus.done])(

@@ -44,9 +44,9 @@ import {
 import { LessonLoadError, LessonLoadingPlaceholder } from "./LessonDialogStates";
 
 /**
- * The class a new lesson is for. There is no list of classes in the contract to choose from, so
- * the new-lesson dialog only opens with the class already decided (from the screen of the class),
- * and the "Turma" field shows it without letting it change.
+ * The class a new lesson is for. The new-lesson dialog only opens with the class already decided:
+ * the screen of the class knows it, and the list and the calendar of lessons ask for it first
+ * (`ChooseLessonClassDialog`). The "Turma" field shows it without letting it change.
  */
 export interface LessonClassContext {
   id: string;
@@ -606,8 +606,8 @@ function LessonForm({
  * "Nova aula" and "Editar aula" (F3.2, F3.3): the same form, empty for a new lesson and filled for
  * an existing one, in the order of the Figma.
  *
- * **New lesson** opens with the class decided (`lessonClass`, read-only: there is no list of classes
- * to choose from) and offers as origin the sequence of its course, without the archived plans, plus
+ * **New lesson** opens with the class decided (`lessonClass`, read-only: it is chosen before, by
+ * `NewLessonFlow`) and offers as origin the sequence of its course, without the archived plans, plus
  * "Sem plano (aula avulsa)". Choosing a plan fills the title and the objective, which stay editable,
  * and the lesson is created with the position of the plan in the sequence. The date is checked by the
  * API (inside the period of the class, 400 `LESSON_OUTSIDE_CLASS_PERIOD`) and the hint under it says

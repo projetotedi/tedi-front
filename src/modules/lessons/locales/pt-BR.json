@@ -228,6 +228,87 @@
     "viewAllLabel_one": "Ver a {{count}} aula desta turma",
     "viewAllLabel_other": "Ver todas as {{count}} aulas desta turma"
   },
+  "chooseClass": {
+    "title": "Escolha a turma da aula",
+    "class": "Turma",
+    "placeholder": "Escolha a turma",
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "required": "Escolha a turma da aula.",
+    "loading": "Carregando as turmas…",
+    "error": "Não foi possível carregar as turmas.",
+    "empty": "Nenhuma turma ativa. Crie uma turma antes de criar uma aula."
+  },
+  "list": {
+    "title": "Aulas ({{count}})",
+    "titlePending": "Aulas",
+    "caption": "Lista de aulas",
+    "searchLabel": "Buscar aula por conteúdo",
+    "searchPlaceholder": "Buscar por conteúdo...",
+    "columns": {
+      "class": "Turma",
+      "date": "Data",
+      "time": "Horário",
+      "content": "Conteúdo",
+      "teacher": "Responsável",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "empty": "Nenhuma aula ainda",
+    "emptyDescription": "As aulas aparecem aqui quando forem criadas ou geradas a partir de uma turma.",
+    "noResults": "Nada encontrado",
+    "clearFilters": "Limpar filtros",
+    "loading": "Carregando aulas…",
+    "error": "Não foi possível carregar as aulas",
+    "errorDescription": "Tente novamente. Se o problema continuar, procure o suporte.",
+    "summary_one": "Mostrando {{shown}} de {{count}} aula",
+    "summary_other": "Mostrando {{shown}} de {{count}} aulas",
+    "pagination": "Páginas da lista de aulas",
+    "previous": "Página anterior",
+    "next": "Próxima página",
+    "page": "Página {{page}}"
+  },
+  "filters": {
+    "class": "Turma",
+    "course": "Curso",
+    "status": "Status",
+    "lessonPlan": "Plano de aula",
+    "period": "Período",
+    "from": "De",
+    "to": "Até",
+    "all": "Todos",
+    "allFeminine": "Todas",
+    "selectedClass": "Turma selecionada",
+    "selectedLessonPlan": "Plano selecionado",
+    "invalidRange": "A data final precisa ser igual ou depois da data inicial."
+  },
+  "calendar": {
+    "title": "Calendário de aulas",
+    "views": {
+      "label": "Visualização",
+      "list": "Lista",
+      "month": "Mês",
+      "week": "Semana"
+    },
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Próxima semana",
+    "today": "Hoje",
+    "legend": {
+      "belowExpectedMonitors": "Monitores abaixo do esperado"
+    },
+    "eventLabel": "{{time}}, {{title}}, turma {{className}}, {{status}}",
+    "cancelledTag": "Cancelada",
+    "more_one": "+{{count}} mais",
+    "more_other": "+{{count}} mais",
+    "moreLabel_one": "+{{count}} mais: ver a aula de {{date}} na semana",
+    "moreLabel_other": "+{{count}} mais: ver as aulas de {{date}} na semana",
+    "emptyPeriod": "Nenhuma aula neste período",
+    "loading": "Carregando o calendário…",
+    "error": "Não foi possível carregar o calendário",
+    "errorDescription": "Tente novamente. Se o problema continuar, procure o suporte."
+  },
   "detail": {
     "routeTitle": "Aula",
     "loading": "Carregando a aula…",

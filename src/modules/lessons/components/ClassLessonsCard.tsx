@@ -32,10 +32,10 @@ export interface ClassLessonsCardProps {
  * lists the lessons with no reload, and when it fails only this card shows the error, with
  * "Tentar de novo". Without `lessons.view` the card is not drawn and nothing is asked.
  *
- * The title of each lesson is a link to the screen of that lesson (`/lessons/:id`, GUS-156): it is
- * the way into it until the list and the calendar of lessons exist (GUS-155). The teacher is the one
- * confirmed in the lesson (`teacher`, which the API fills from the allocation of members): the name
- * when there is one, and a dash that a screen reader reads as "Não informado" when there is none.
+ * The title of each lesson is a link to the screen of that lesson (`/lessons/:id`, GUS-156). The
+ * teacher is the one confirmed in the lesson (`teacher`, which the API fills from the allocation of
+ * members): the name when there is one, and a dash that a screen reader reads as "Não informado"
+ * when there is none.
  */
 export function ClassLessonsCard({ classId }: ClassLessonsCardProps): ReactElement | null {
   const { t, i18n } = useTranslation("lessons");

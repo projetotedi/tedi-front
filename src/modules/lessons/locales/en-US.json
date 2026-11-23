@@ -228,6 +228,87 @@
     "viewAllLabel_one": "See the {{count}} lesson of this class",
     "viewAllLabel_other": "See all {{count}} lessons of this class"
   },
+  "chooseClass": {
+    "title": "Choose the class of the lesson",
+    "class": "Class",
+    "placeholder": "Choose the class",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "required": "Choose the class of the lesson.",
+    "loading": "Loading the classes…",
+    "error": "The classes could not be loaded.",
+    "empty": "No active class. Create a class before creating a lesson."
+  },
+  "list": {
+    "title": "Lessons ({{count}})",
+    "titlePending": "Lessons",
+    "caption": "List of lessons",
+    "searchLabel": "Search lessons by content",
+    "searchPlaceholder": "Search by content...",
+    "columns": {
+      "class": "Class",
+      "date": "Date",
+      "time": "Time",
+      "content": "Content",
+      "teacher": "Responsible",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "empty": "No lessons yet",
+    "emptyDescription": "Lessons show up here once they are created or generated from a class.",
+    "noResults": "Nothing found",
+    "clearFilters": "Clear filters",
+    "loading": "Loading lessons…",
+    "error": "The lessons could not be loaded",
+    "errorDescription": "Try again. If the problem continues, contact support.",
+    "summary_one": "Showing {{shown}} of {{count}} lesson",
+    "summary_other": "Showing {{shown}} of {{count}} lessons",
+    "pagination": "Pages of the list of lessons",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {{page}}"
+  },
+  "filters": {
+    "class": "Class",
+    "course": "Course",
+    "status": "Status",
+    "lessonPlan": "Lesson plan",
+    "period": "Period",
+    "from": "From",
+    "to": "To",
+    "all": "All",
+    "allFeminine": "All",
+    "selectedClass": "Selected class",
+    "selectedLessonPlan": "Selected plan",
+    "invalidRange": "The end date has to be the same as or after the start date."
+  },
+  "calendar": {
+    "title": "Calendar of lessons",
+    "views": {
+      "label": "View",
+      "list": "List",
+      "month": "Month",
+      "week": "Week"
+    },
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "today": "Today",
+    "legend": {
+      "belowExpectedMonitors": "Monitors below the expected"
+    },
+    "eventLabel": "{{time}}, {{title}}, class {{className}}, {{status}}",
+    "cancelledTag": "Cancelled",
+    "more_one": "+{{count}} more",
+    "more_other": "+{{count}} more",
+    "moreLabel_one": "+{{count}} more: see the lesson of {{date}} in the week",
+    "moreLabel_other": "+{{count}} more: see the lessons of {{date}} in the week",
+    "emptyPeriod": "No lessons in this period",
+    "loading": "Loading the calendar…",
+    "error": "The calendar could not be loaded",
+    "errorDescription": "Try again. If the problem continues, contact support."
+  },
   "detail": {
     "routeTitle": "Lesson",
     "loading": "Loading the lesson…",
