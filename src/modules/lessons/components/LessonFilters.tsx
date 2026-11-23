@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from "react";
+import { useState, type ReactElement, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -29,6 +29,8 @@ export interface LessonFiltersProps {
   /** The text in the search box, before the debounce. */
   search?: string;
   onSearchChange?: (value: string) => void;
+  /** The field of the search, for the screen to give the focus back to it (Limpar filtros). */
+  searchInputRef?: Ref<HTMLInputElement>;
   filters: LessonFilterValues;
   options: {
     classes: ClassListItemDto[];
@@ -107,6 +109,7 @@ export function LessonFilters({
   fields,
   search = "",
   onSearchChange,
+  searchInputRef,
   filters,
   options,
   onFilterChange,
@@ -210,6 +213,7 @@ export function LessonFilters({
             placeholder={t("list.searchPlaceholder")}
             value={search}
             onChange={(value) => onSearchChange?.(value)}
+            inputRef={searchInputRef}
           />
         </div>
       );

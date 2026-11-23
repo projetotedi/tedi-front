@@ -21,6 +21,7 @@ import {
   type ListClasses200,
   type ListCourses200,
   type ListLessonPlans200,
+  type ListLessons200,
   type MeResponseDto,
   type PermissionsDto,
   type RescheduleLessonDto,
@@ -364,6 +365,10 @@ export function getLessonHandler({
   onCall,
 }: HandlerOptions<IdCall> = {}) {
   return http.get("*/lessons/:id", async ({ params }) => {
+    // `/lessons/calendar` also matches `:id`: it is not a lesson, so it goes on to the next handler
+    // (`listLessonsCalendarHandler`), whichever order the two were registered in.
+    if (params.id === "calendar") return undefined;
+
     onCall?.({ id: String(params.id) });
     if (delay) await delay;
 
@@ -629,6 +634,50 @@ export function listLessonPlansHandler({
   onCall,
 }: HandlerOptions<ListCall, ListLessonPlans200> = {}) {
   return http.get("*/lesson-plans", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** A page of `GET /lessons`: `total` can be more than the items of the page. */
+export function buildLessonsPage(
+  items: LessonListItemResponseDto[] = [buildLessonListItem()],
+  { total = items.length, page = 1, limit = 10 } = {},
+): ListLessons200 {
+  return { data: items, total, page, limit };
+}
+
+/** `GET /lessons`: the list of lessons. `onCall` gets the query that was sent, as an object. */
+export function listLessonsHandler({
+  response = buildLessonsPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListLessons200> = {}) {
+  return http.get("*/lessons", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** `GET /lessons/calendar`: the lessons of a period, with no page. */
+export function listLessonsCalendarHandler({
+  response = [buildLessonListItem()],
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, LessonListItemResponseDto[]> = {}) {
+  return http.get("*/lessons/calendar", async ({ request }) => {
     onCall?.(Object.fromEntries(new URL(request.url).searchParams));
     if (delay) await delay;
 

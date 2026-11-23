@@ -239,6 +239,7 @@
   },
   "list": {
     "title": "Aulas ({{count}})",
+    "titlePending": "Aulas",
     "caption": "Lista de aulas",
     "searchLabel": "Buscar aula por conteúdo",
     "searchPlaceholder": "Buscar por conteúdo...",

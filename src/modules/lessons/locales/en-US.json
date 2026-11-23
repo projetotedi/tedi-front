@@ -239,6 +239,7 @@
   },
   "list": {
     "title": "Lessons ({{count}})",
+    "titlePending": "Lessons",
     "caption": "List of lessons",
     "searchLabel": "Search lessons by content",
     "searchPlaceholder": "Search by content...",
