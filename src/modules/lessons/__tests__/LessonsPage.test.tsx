@@ -481,7 +481,16 @@ describe("LessonsPage", () => {
       expect(screen.getByRole("button", { name: /Tentar de novo/ })).toBe(retry);
       expect(screen.queryByText("Carregando aulas…")).not.toBeInTheDocument();
       expect(screen.getByText("Não foi possível carregar as aulas")).toBeInTheDocument();
+
+      // The request ends while the screen is still mounted (it fails again), so no answer arrives
+      // after the test is over.
       pending.resolve();
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Tentar de novo" })).not.toHaveAttribute(
+          "data-pending",
+        ),
+      );
+      expect(screen.getByText("Não foi possível carregar as aulas")).toBeInTheDocument();
     });
   });
 
