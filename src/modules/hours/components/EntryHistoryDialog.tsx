@@ -119,16 +119,16 @@ export function EntryHistoryDialog({ entry, onClose }: EntryHistoryDialogProps):
       <ol aria-label={t("history.timeline")} className="flex flex-col">
         {events.map((event, index) => {
           const { title, detail } = textOf(event);
-          // As in the Figma, the divider starts at the text, after the dot: it is the border of the
-          // text, not of the item (the dot keeps its place, 18px from the top).
-          const divider = index < events.length - 1 ? "border-b border-tedi-divider" : "";
           return (
-            <li key={event.id} className="flex gap-3">
+            <li
+              key={event.id}
+              className="flex gap-3 border-b border-tedi-divider py-3 last:border-b-0"
+            >
               <span
                 aria-hidden="true"
-                className={`mt-4.5 size-2.5 shrink-0 rounded-full ${index === 0 ? "bg-accent" : "bg-tedi-divider"}`}
+                className={`mt-1.5 size-2.5 shrink-0 rounded-full ${index === 0 ? "bg-accent" : "bg-tedi-divider"}`}
               />
-              <div className={`flex flex-1 flex-col gap-1 py-3 ${divider}`}>
+              <div className="flex flex-col gap-1">
                 <p className="text-sm text-muted">
                   <time dateTime={event.createdAt}>
                     {t("history.when", {

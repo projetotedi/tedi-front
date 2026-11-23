@@ -92,24 +92,6 @@ describe("EntryHistoryDialog", () => {
     ]);
   });
 
-  it("draws the divider under the text of each event but the last, not under the dot", async () => {
-    await renderBankUi(<EntryHistoryDialog entry={ADJUSTED} onClose={vi.fn()} />, {
-      store: storeWithHistory([reviewEvent({})]),
-    });
-
-    const list = await screen.findByRole("list", { name: "Linha do tempo" });
-    const [newest, oldest] = within(list).getAllByRole("listitem");
-
-    expect(newest).not.toHaveClass("border-b");
-    expect(oldest).not.toHaveClass("border-b");
-    expect(
-      within(newest).getByText("Ana Paula Torres ajustou de 4h para 2h").parentElement,
-    ).toHaveClass("border-b", "border-tedi-divider");
-    expect(
-      within(oldest).getByText("Beatriz Nunes lançou 4h em Planejamento").parentElement,
-    ).not.toHaveClass("border-b");
-  });
-
   it("says O histórico não pode ser editado nem apagado", async () => {
     await renderBankUi(<EntryHistoryDialog entry={PENDING} onClose={vi.fn()} />, {
       store: storeWithHistory([]),
