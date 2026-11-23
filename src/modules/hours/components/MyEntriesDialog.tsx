@@ -10,6 +10,8 @@ import { ListState } from "@shared/components/ListState";
 import { resolveListState, type ListStateVariant } from "@shared/lib/list-state";
 import { Button, Card, Dialog, Pagination } from "@shared/ui";
 
+import clockIcon from "../../../assets/icons/clock.svg";
+
 import { formatDayMonth } from "../lib/entry-format";
 import { MY_STATEMENT_PAGE_SIZE } from "../lib/entry-queries";
 import { canRemoveEntry } from "../lib/entry-rules";
@@ -134,6 +136,7 @@ export function MyEntriesDialog({ onClose }: MyEntriesDialogProps): ReactElement
             variant="empty"
             title={t("myEntries.emptyTitle")}
             description={t("myEntries.emptyDescription")}
+            icon={clockIcon}
           />
         );
       case "error":
@@ -173,7 +176,8 @@ export function MyEntriesDialog({ onClose }: MyEntriesDialogProps): ReactElement
         </Button>
       }
     >
-      <Card>
+      {/* The body of the dialog is muted: the titles of the states take the color of the text, as on a page. */}
+      <Card className="text-foreground">
         <div
           ref={contentRef}
           role="region"
