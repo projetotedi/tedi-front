@@ -357,7 +357,7 @@ describe("PendingEntriesTable", () => {
     expect(entryBox("Ana Paula Torres", "16/03")).not.toBeChecked();
   });
 
-  it("shows the queue to the director without selection, Validar, Ajustar, Rejeitar nor Histórico", async () => {
+  it("shows the queue to the director without selection nor any button in the rows", async () => {
     await renderQueue({ user: director(), store: createBankStore("department") });
     const table = await queueTable();
 
@@ -367,9 +367,7 @@ describe("PendingEntriesTable", () => {
         .map((cell) => cell.textContent),
     ).toEqual(["Data", "Membro", "Atividade", "Categoria", "Horas"]);
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
-    expect(
-      within(table).queryByRole("button", { name: /Validar|Ajustar|Rejeitar|histórico/ }),
-    ).not.toBeInTheDocument();
+    expect(within(table).queryAllByRole("button")).toEqual([]);
     expect(screen.getByText("Lançamentos pendentes de validação (2)")).toBeInTheDocument();
     expect(within(table).getByText("14/03")).toBeInTheDocument();
   });
