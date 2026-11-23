@@ -30,8 +30,9 @@ import {
 setupHoursEntriesTestServer();
 
 const ENTRY = statementEntry(4);
-const WARNING =
-  "Lançamento enviado não pode ser editado. Para corrigir, remova e lance de novo com os dados certos. Só dá para remover enquanto estiver pendente de validação.";
+const WARNING_TITLE = "Lançamento enviado não pode ser editado.";
+const WARNING_DESCRIPTION =
+  "Para corrigir, remova e lance de novo com os dados certos. Só dá para remover enquanto estiver pendente de validação.";
 
 const dialog = () => screen.getByRole("dialog", { name: "Remover lançamento" });
 const submitButton = () =>
@@ -63,9 +64,10 @@ describe("RemoveEntryDialog", () => {
     expect(within(dialog()).getByText("08/03 · Evento · 4h declaradas")).toBeInTheDocument();
     expect(within(dialog()).getByText("Feira de tecnologia (evento externo)")).toBeInTheDocument();
     expect(within(dialog()).getByText("Pendente de validação")).toBeInTheDocument();
-    expect(within(dialog()).getByText(WARNING)).toBeInTheDocument();
+    expect(within(dialog()).getByText(WARNING_TITLE)).toBeInTheDocument();
+    expect(within(dialog()).getByText(WARNING_DESCRIPTION)).toBeInTheDocument();
     expect(dialog()).toHaveAccessibleDescription(
-      `08/03 · Evento · 4h declaradas Feira de tecnologia (evento externo) Pendente de validação ${WARNING}`,
+      `08/03 · Evento · 4h declaradas Feira de tecnologia (evento externo) Pendente de validação ${WARNING_TITLE} ${WARNING_DESCRIPTION}`,
     );
   });
 

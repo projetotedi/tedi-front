@@ -138,8 +138,9 @@ export function RemoveEntryDialog({
           {isSettled ? null : <p className="text-sm text-muted">{t("removeEntry.pendingLabel")}</p>}
         </div>
 
-        <Alert variant="warning" id={warningId}>
-          {t("removeEntry.warning")}
+        {/* A short title and the rest as the description, which is drawn in the regular weight. */}
+        <Alert variant="warning" id={warningId} description={t("removeEntry.warningDescription")}>
+          {t("removeEntry.warningTitle")}
         </Alert>
 
         {issue === null ? null : (
