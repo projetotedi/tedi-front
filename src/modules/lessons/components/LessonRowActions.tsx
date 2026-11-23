@@ -23,8 +23,10 @@ type OpenDialog = "edit" | "cancel" | null;
  * and for nobody else, not even disabled. For a lesson that is already cancelled they are drawn
  * disabled, in place, so the column does not change from row to row: a cancelled lesson is final
  * and cannot be changed. Each icon is named after its lesson ("Editar a aula …"), because a list has
- * one pair for every row; they are 16px wide with 12px between them, and the 44px of the button is
- * the target of the touch. The list of lessons (GUS-155) puts this in its last column.
+ * one pair for every row; they are 16px wide with 12px between the buttons, and the 44px of the
+ * button is the target of the touch (so the space between the drawings is wider than the 12px of the
+ * Figma). The two never wrap onto two lines: the list of lessons (GUS-155) puts this in its last
+ * column, which is as wide as the pair.
  *
  * A dialog that is open stays on the screen even if the row stops allowing actions meanwhile:
  * cancelling the lesson makes the next read of the list say it is cancelled, and the dialog still
@@ -43,7 +45,7 @@ export function LessonRowActions({ lesson }: LessonRowActionsProps): ReactElemen
   return (
     <>
       {canManage ? (
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             isIconOnly

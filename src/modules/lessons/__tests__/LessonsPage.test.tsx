@@ -321,6 +321,15 @@ describe("LessonsPage", () => {
       expect(location()).toContain("page=2");
     });
 
+    it("lets the numbered pages scroll inside the card, so a phone does not get a page wider than itself", async () => {
+      await renderPage();
+      await table();
+
+      const pages = screen.getByRole("navigation", { name: "Páginas da lista de aulas" });
+
+      expect(pages.parentElement).toHaveClass("relative", "max-w-full", "overflow-x-auto");
+    });
+
     it("keeps the rows on the screen, busy, while the next page comes", async () => {
       const pending = createDeferred();
       const user = userEvent.setup();

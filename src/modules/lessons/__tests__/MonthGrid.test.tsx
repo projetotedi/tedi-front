@@ -142,6 +142,7 @@ describe("MonthGrid", () => {
     expect(screen.getAllByRole("link")).toHaveLength(3);
     const more = screen.getByRole("button", { name: /^\+2 mais/ });
     expect(more).toHaveTextContent("+2 mais");
+    expect(more).toHaveClass("text-accent", "underline");
     expect(more).toHaveAccessibleName("+2 mais: ver as aulas de 10 de março na semana");
     await user.click(more);
 
@@ -166,6 +167,7 @@ describe("MonthGrid", () => {
     await renderGrid();
 
     expect(screen.getByRole("table")).toHaveClass("min-w-176");
-    expect(screen.getByRole("table").parentElement).toHaveClass("overflow-x-auto");
+    // `relative` so the sr-only dates of the days are clipped with it, and do not widen the page.
+    expect(screen.getByRole("table").parentElement).toHaveClass("relative", "overflow-x-auto");
   });
 });

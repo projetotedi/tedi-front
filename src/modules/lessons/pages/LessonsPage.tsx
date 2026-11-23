@@ -161,17 +161,21 @@ export function LessonsPage(): ReactElement {
                 {t("list.summary", { shown: lessons.length, count: total ?? 0 })}
               </p>
               {totalPages > 1 ? (
-                <Pagination
-                  page={Math.min(filters.page, totalPages)}
-                  totalPages={totalPages}
-                  onPageChange={(next) =>
-                    setParams((current) => withLessonFilters(current, { page: String(next) }))
-                  }
-                  label={t("list.pagination")}
-                  previousLabel={t("list.previous")}
-                  nextLabel={t("list.next")}
-                  pageLabel={(number) => t("list.page", { page: number })}
-                />
+                // The numbered pages need about 420px: on a phone they scroll inside the card
+                // instead of widening the page.
+                <div className="relative max-w-full overflow-x-auto">
+                  <Pagination
+                    page={Math.min(filters.page, totalPages)}
+                    totalPages={totalPages}
+                    onPageChange={(next) =>
+                      setParams((current) => withLessonFilters(current, { page: String(next) }))
+                    }
+                    label={t("list.pagination")}
+                    previousLabel={t("list.previous")}
+                    nextLabel={t("list.next")}
+                    pageLabel={(number) => t("list.page", { page: number })}
+                  />
+                </div>
               ) : null}
             </div>
           </div>

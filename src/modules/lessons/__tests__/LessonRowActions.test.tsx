@@ -85,7 +85,9 @@ describe("LessonRowActions", () => {
     expect(trash()).toBeEnabled();
     expect(pencil().querySelector("img")).toHaveAttribute("width", "16");
     expect(pencil().querySelector("img")).toHaveAttribute("height", "16");
-    expect(pencil().parentElement).toHaveClass("gap-3");
+    expect(pencil().parentElement).toHaveClass("flex", "gap-3");
+    // The pair stays on one line, whatever the width of the column.
+    expect(pencil().parentElement).not.toHaveClass("flex-wrap");
   });
 
   it.each([LessonStatus.confirmed, LessonStatus.done])(

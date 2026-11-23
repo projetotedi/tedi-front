@@ -46,7 +46,8 @@ export function MonthGrid({ anchor, today, lessons, onShowDay }: MonthGridProps)
   );
 
   return (
-    <div className="overflow-x-auto">
+    // `relative`: the scroller holds the `sr-only` texts of the days, so they do not widen the page.
+    <div className="relative overflow-x-auto">
       <table className="w-full min-w-176 table-fixed border-collapse">
         <caption className="sr-only">{formatPeriodTitle("month", anchor, locale)}</caption>
         <thead>
@@ -106,7 +107,7 @@ export function MonthGrid({ anchor, today, lessons, onShowDay }: MonthGridProps)
                       {hidden > 0 ? (
                         <Button
                           variant="ghost"
-                          className="justify-start px-2"
+                          className="justify-start px-2 text-accent underline underline-offset-2"
                           aria-label={t("calendar.moreLabel", {
                             count: hidden,
                             date: formatDay(day, locale, { day: "numeric", month: "long" }),
