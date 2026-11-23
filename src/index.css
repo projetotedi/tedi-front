@@ -51,6 +51,31 @@
   /* Cartão da tela 403 (não usa o <Card> de shared/ui: layout central próprio do Figma). */
   --shadow-tedi-card:
     0 2px 4px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.06), 0 0 1px rgb(0 0 0 / 0.06);
+
+  /*
+   * Calendar of lessons (GUS-155): one pair per color slot of a class (`class.colorIndex`, 0 to 7),
+   * the background of the event and the color of its text. The Figma was not reachable when the
+   * values were chosen (decision D8), so they are the 200 tone of the Tailwind palette for the
+   * background and the 900 tone of the same hue for the text; the PO checks them against the
+   * Figma, and a different palette changes only this block. The ratio of each pair, text over
+   * background, is measured (minimum 4.5:1); the status of a lesson never depends on the color.
+   */
+  --color-tedi-calendar-event-0: #bfdbfe; /* blue */
+  --color-tedi-calendar-event-0-foreground: #1e3a8a; /* 7.3:1 */
+  --color-tedi-calendar-event-1: #bbf7d0; /* green */
+  --color-tedi-calendar-event-1-foreground: #14532d; /* 7.5:1 */
+  --color-tedi-calendar-event-2: #e9d5ff; /* purple */
+  --color-tedi-calendar-event-2-foreground: #581c87; /* 8.0:1 */
+  --color-tedi-calendar-event-3: #fde68a; /* amber */
+  --color-tedi-calendar-event-3-foreground: #78350f; /* 7.3:1 */
+  --color-tedi-calendar-event-4: #fbcfe8; /* pink */
+  --color-tedi-calendar-event-4-foreground: #831843; /* 7.0:1 */
+  --color-tedi-calendar-event-5: #a5f3fc; /* cyan */
+  --color-tedi-calendar-event-5-foreground: #164e63; /* 7.3:1 */
+  --color-tedi-calendar-event-6: #fed7aa; /* orange */
+  --color-tedi-calendar-event-6-foreground: #7c2d12; /* 6.9:1 */
+  --color-tedi-calendar-event-7: #d9f99d; /* lime */
+  --color-tedi-calendar-event-7-foreground: #365314; /* 7.5:1 */
 }
 
 :root {
