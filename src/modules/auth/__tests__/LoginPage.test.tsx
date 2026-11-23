@@ -202,6 +202,42 @@ describe("LoginPage form", () => {
     );
   });
 
+  it("shows the pending-registration message without pointing at a field", async () => {
+    const user = userEvent.setup();
+    server.use(
+      meHandler({ user: null }),
+      loginHandler({ error: { statusCode: 401, error: "REGISTRATION_PENDING" } }),
+    );
+    const { router } = await renderLoginPage("/login");
+
+    await fillAndSubmit(user);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Seu cadastro está aguardando a validação da coordenação. Assim que for aprovado, você poderá entrar.",
+    );
+    expect(raField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(router.state.location.pathname).toBe("/login");
+  });
+
+  it("shows the rejected-registration message without pointing at a field", async () => {
+    const user = userEvent.setup();
+    server.use(
+      meHandler({ user: null }),
+      loginHandler({ error: { statusCode: 401, error: "REGISTRATION_REJECTED" } }),
+    );
+    const { router } = await renderLoginPage("/login");
+
+    await fillAndSubmit(user);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Seu cadastro não foi aprovado. Fale com a coordenação.",
+    );
+    expect(raField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
+    expect(router.state.location.pathname).toBe("/login");
+  });
+
   it("shows the rate-limit message", async () => {
     const user = userEvent.setup();
     server.use(
