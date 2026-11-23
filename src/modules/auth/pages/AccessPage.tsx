@@ -65,20 +65,26 @@ export function AccessPage(): ReactElement {
     typedSearch,
     typedSearch === "" ? 0 : MEMBER_SEARCH_DEBOUNCE_MS,
   );
-  const lastUrlSearch = useRef(filters.search);
+  // What the box knows about the URL: the search it saw there on the last render and the one it
+  // last wrote. A change that is neither of them came from outside.
+  const seenUrlSearch = useRef(filters.search);
+  const writtenSearch = useRef(filters.search);
 
   useEffect(() => {
-    if (filters.search !== lastUrlSearch.current) {
+    const hasUrlChanged = filters.search !== seenUrlSearch.current;
+    seenUrlSearch.current = filters.search;
+
+    if (hasUrlChanged && filters.search !== writtenSearch.current) {
       // The URL moved without the box (Back, the Membros link of the menu, Limpar filtros): the
       // box follows it, and nothing is written back.
-      lastUrlSearch.current = filters.search;
+      writtenSearch.current = filters.search;
       setSearchText(filters.search);
       return;
     }
     // Only once the debounce caught up with the box: right after Limpar filtros it still holds the
     // old term for a moment, and would write it back to the URL.
     if (debouncedSearch !== typedSearch || typedSearch === filters.search.trim()) return;
-    lastUrlSearch.current = typedSearch;
+    writtenSearch.current = typedSearch;
     setParams((current) => withMemberFilter(current, "search", typedSearch), { replace: true });
   }, [filters.search, debouncedSearch, typedSearch, setParams]);
 
