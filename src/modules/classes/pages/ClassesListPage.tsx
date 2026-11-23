@@ -1,425 +1,182 @@
-import { useState, type ReactElement } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
+import { useEffect, useState, type ReactElement } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ClassStatus, CourseCategory } from "@api/generated/model";
-import { DataTable, type Column } from "@shared/components/DataTable";
-import { ListState } from "@shared/components/ListState";
-import { Badge, Button, Card, Checkbox, Dialog, Pagination, Select, TextField } from "@shared/ui";
-import chevronDownIcon from "@shared/assets/icons/chevron-down.svg";
-import pencilIcon from "@shared/assets/icons/pencil.svg";
-import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 
+import { useListClasses } from "@api/generated/classes/classes";
+import { useCan } from "@modules/auth";
+import { ListState } from "@shared/components/ListState";
+import { useDebounce } from "@shared/hooks/useDebounce";
+import { resolveListState } from "@shared/lib/list-state";
+import { Button, Card, Pagination } from "@shared/ui";
+
+import { ArchiveClassDialog } from "../components/ArchiveClassDialog";
+import { ClassFilters } from "../components/ClassFilters";
 import { ClassFormDialog } from "../components/ClassFormDialog";
+import { ClassesTable } from "../components/ClassesTable";
+import { UnarchiveClassDialog } from "../components/UnarchiveClassDialog";
 import { useCourseOptions } from "../hooks/useCourseOptions";
-import { CLASS_STATUS_LABEL_KEYS, classStatusTone } from "../lib/class-status";
-import { findCourse } from "../lib/course-options";
-import { formatPeriod } from "../lib/format-period";
-import { initialClasses, type ClassRecord } from "../mocks/classes.mock";
+import {
+  hasActiveClassFilters,
+  readClassFilters,
+  toListClassesParams,
+  withClassFilter,
+  withoutClassFilters,
+  type ClassFilterKey,
+} from "../lib/class-filters";
 
 const PAGE_SIZE = 10;
-const blank = (id: string): ClassRecord => ({
-  id,
-  code: "",
-  name: "",
-  courseId: "computer",
-  editionId: "2026-1",
-  edition: "2026.1",
-  start: "2026-03-03",
-  end: "2026-06-27",
-  location: "Laboratório 2 — Bloco B",
-  enrolled: 0,
-  capacity: 15,
-  status: ClassStatus.planned,
-  archived: false,
-});
+const SEARCH_DEBOUNCE_MS = 300;
 
+type OpenDialog =
+  | { kind: "create" }
+  | { kind: "edit" | "archive" | "unarchive"; classId: string }
+  | null;
+
+/**
+ * Turmas (RF-024, RF-030, GUS-133, GUS-170): the classes of every edition, from `listClasses`, with
+ * the search, the filters and the page in the URL, so a link or a reload brings the same list back
+ * ("Ver todas" in the screen of a course opens it with `?courseId=`). Any filter sends the list back
+ * to page 1, and the page on the screen stays while the next one loads (`keepPreviousData`).
+ *
+ * + Nova turma, the pencil, the bin and Reativar are only for who manages classes
+ * (`classes.manage`); each one opens its dialog over the list, and the list stays where it was.
+ */
 export function ClassesListPage(): ReactElement {
-  const { t, i18n } = useTranslation("classes");
+  const { t } = useTranslation("classes");
+  const canManage = useCan("classes.manage");
   const { courses } = useCourseOptions();
   const [params, setParams] = useSearchParams();
-  const [records, setRecords] = useState(initialClasses);
-  const search = params.get("search") ?? "";
-  const edition = params.get("edition") ?? "";
-  const course = params.get("courseId") ?? "";
-  const level = params.get("level") ?? "";
-  const status = params.get("status") ?? "";
-  const statuses = status && status !== "archived" ? status.split(",") : [];
-  const page = Math.max(1, Number(params.get("page") ?? 1));
-  const [editing, setEditing] = useState<ClassRecord | null>(null);
-  const [archiving, setArchiving] = useState<ClassRecord | null>(null);
-  const mockState = params.get("mockState");
+  const filters = readClassFilters(params);
+  const [searchText, setSearchText] = useState(filters.search);
+  const debouncedSearch = useDebounce(searchText, SEARCH_DEBOUNCE_MS);
+  const [openDialog, setOpenDialog] = useState<OpenDialog>(null);
 
-  function updateParam(key: string, value: string, resetPage = true) {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        if (value) next.set(key, value);
-        else next.delete(key);
-        if (resetPage && key !== "page") next.delete("page");
-        return next;
-      },
-      { replace: true },
-    );
-  }
+  useEffect(() => {
+    if (debouncedSearch.trim() === (params.get("search") ?? "")) return;
+    setParams((current) => withClassFilter(current, "search", debouncedSearch.trim()), {
+      replace: true,
+    });
+  }, [debouncedSearch, params, setParams]);
 
-  function openCreate() {
-    const next = new URLSearchParams(params);
-    next.delete("mockState");
-    setParams(next, { replace: true });
-    setEditing(blank(String(Date.now())));
-  }
-
-  // The name and the level of a class are the ones of its course (RN-14): a class has neither of its own.
-  const courseOf = (item: ClassRecord) => findCourse(courses, item.courseId);
-
-  const filtered = records.filter((item) => {
-    const q = search.trim().toLocaleLowerCase();
-    return (
-      item.archived === (status === "archived") &&
-      (!q ||
-        `${item.code} ${item.name} ${courseOf(item)?.name ?? ""}`
-          .toLocaleLowerCase()
-          .includes(q)) &&
-      (!edition || item.editionId === edition) &&
-      (!course || item.courseId === course) &&
-      (!level || courseOf(item)?.category === level) &&
-      (!statuses.length || statuses.includes(item.status))
-    );
+  const classesQuery = useListClasses(toListClassesParams(filters, PAGE_SIZE), {
+    query: { placeholderData: keepPreviousData },
   });
-  const pages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const statusLabels = Object.fromEntries(
-    Object.values(ClassStatus).map((value) => [value, t(CLASS_STATUS_LABEL_KEYS[value])]),
-  ) as Record<ClassStatus, string>;
-  const columns: Column<ClassRecord>[] = [
-    {
-      header: t("class"),
-      headerClassName: "w-[49%]",
-      cellClassName: "w-[49%]",
-      render: (row) => (
-        <a
-          className="font-medium text-foreground hover:underline focus-visible:underline"
-          href={`/classes/${row.id}`}
-          title={`${row.code} · ${courseOf(row)?.name ?? ""}`}
-        >
-          {row.name}
-        </a>
-      ),
-    },
-    {
-      header: t("period"),
-      headerClassName: "w-[20%]",
-      cellClassName: "w-[20%] whitespace-nowrap",
-      render: (row) => <span>{formatPeriod(row.start, row.end, i18n.language)}</span>,
-    },
-    {
-      header: t("seats"),
-      headerClassName: "w-[9%]",
-      cellClassName: "w-[9%] whitespace-nowrap",
-      render: (row) => (
-        <span>
-          {row.enrolled}/{row.capacity}
-        </span>
-      ),
-    },
-    {
-      header: t("status"),
-      headerClassName: "w-[13%]",
-      cellClassName: "w-[13%]",
-      render: (row) => (
-        <Badge tone={row.archived ? "neutral" : classStatusTone(row.status)}>
-          {row.archived ? t("archived") : statusLabels[row.status]}
-        </Badge>
-      ),
-    },
-    {
-      header: t("actions"),
-      headerClassName: "w-[9%]",
-      cellClassName: "w-[9%]",
-      render: (row) => (
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            isIconOnly
-            aria-label={t("edit")}
-            isDisabled={row.archived}
-            onPress={() => {
-              setEditing(row);
-            }}
-          >
-            <img src={pencilIcon} alt="" aria-hidden="true" width={16} height={16} />
-          </Button>
-          {row.archived ? (
-            <Button
-              variant="ghost"
-              onPress={() =>
-                setRecords((all) =>
-                  all.map((r) => (r.id === row.id ? { ...r, archived: false } : r)),
-                )
-              }
-            >
-              {t("restore")}
-            </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              isIconOnly
-              aria-label={t("archive")}
-              onPress={() => {
-                setArchiving(row);
-              }}
-            >
-              <img src={trashBinIcon} alt="" aria-hidden="true" width={16} height={16} />
-            </Button>
-          )}
-        </div>
-      ),
-    },
-  ];
+  const page = classesQuery.data;
+  const classes = page?.data ?? [];
+  const total = page?.total ?? 0;
 
-  function clear() {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current);
-        ["search", "edition", "courseId", "level", "status", "page"].forEach((key) =>
-          next.delete(key),
-        );
-        return next;
-      },
-      { replace: true },
+  const listState = resolveListState({
+    isPending: classesQuery.isPending,
+    isError: classesQuery.isError,
+    total: page?.total,
+    hasActiveFilters: hasActiveClassFilters(filters),
+  });
+  const totalPages = page ? Math.max(1, Math.ceil(page.total / page.limit)) : 1;
+
+  function setFilter(key: Exclude<ClassFilterKey, "search">, value: string) {
+    setParams((current) => withClassFilter(current, key, value));
+  }
+
+  function setStatus(statuses: string[], archived: boolean) {
+    setParams((current) =>
+      withClassFilter(
+        withClassFilter(current, "status", statuses.join(",")),
+        "archived",
+        archived ? "true" : "",
+      ),
     );
   }
-  function saveClass(savedClass: ClassRecord) {
-    setRecords((all) =>
-      all.some((row) => row.id === savedClass.id)
-        ? all.map((row) => (row.id === savedClass.id ? savedClass : row))
-        : [savedClass, ...all],
-    );
-    setEditing(null);
-  }
-  const choices = (values: Array<{ id: string; label: string }>) => [
-    { id: "", label: t("all") },
-    ...values,
-  ];
-  const formatFilterValue = (label: string) => (selected: { label: string } | null) =>
-    `${label}: ${selected?.label.toLocaleLowerCase() ?? t("all").toLocaleLowerCase()}`;
 
-  // The course of the URL can be one that this list does not know: "Ver todas" in the course screen
-  // brings the id of a real course (a UUID), and the courses and classes here are still the mock
-  // ones. Without an option for it the filter would say "Curso: todos" while it is filtering. So the
-  // id gets an option of its own, with a neutral name, that is the one selected, and the trigger
-  // says just that name: it already says "curso", and it is not a course to be named.
-  const isCourseUnknown = course !== "" && findCourse(courses, course) === undefined;
-  const courseChoices = choices([
-    ...courses.map((item) => ({ id: item.id, label: item.name })),
-    ...(isCourseUnknown ? [{ id: course, label: t("selectedCourse") }] : []),
-  ]);
-  const formatCourseFilterValue = (selected: { id: string; label: string } | null) =>
-    isCourseUnknown && selected?.id === course
-      ? selected.label
-      : formatFilterValue(t("course"))(selected);
+  function clearFilters() {
+    setSearchText("");
+    setParams((current) => withoutClassFilters(current), { replace: true });
+  }
+
+  const openCreate = () => setOpenDialog({ kind: "create" });
 
   return (
-    <section
-      aria-labelledby="classes-title"
-      className="-mx-4 -my-6 min-h-[calc(100vh-8.75rem)] bg-sky-50 px-4 py-6 lg:-mx-10 lg:-my-8 lg:px-10 lg:py-8"
+    <Card
+      title={<span id="classes-title">{t("title", { count: total })}</span>}
+      aside={canManage ? <Button onPress={openCreate}>{t("create")}</Button> : undefined}
     >
-      <Card
-        className="min-h-[calc(100vh-9rem)] rounded-3xl"
-        title={
-          <span id="classes-title">
-            {t("title", { count: mockState === "empty" ? 0 : filtered.length })}
-          </span>
-        }
-        aside={<Button onPress={openCreate}>{t("create")}</Button>}
-      >
-        <div className="flex min-h-[calc(100vh-15rem)] flex-col gap-3">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1.05fr_.95fr_1fr]">
-            <TextField
-              label={t("search")}
-              isLabelHidden
-              placeholder={t("searchPlaceholder")}
-              value={search}
-              onChange={(value) => updateParam("search", value)}
-            />
-            <Select
-              label={t("edition")}
-              isLabelHidden
-              value={edition}
-              onChange={(value) => updateParam("edition", value)}
-              formatValue={formatFilterValue(t("edition"))}
-              options={choices([
-                { id: "2026-1", label: t("editions.2026-1") },
-                { id: "2026-2", label: t("editions.2026-2") },
-                { id: "2025-2", label: t("editions.2025-2") },
-                { id: "2025-1", label: t("editions.2025-1") },
-                { id: "2024", label: t("editions.2024") },
-              ])}
-            />
-            <Select
-              label={t("course")}
-              isLabelHidden
-              value={course}
-              onChange={(value) => updateParam("courseId", value)}
-              formatValue={formatCourseFilterValue}
-              options={courseChoices}
-            />
-            <Select
-              label={t("level")}
-              isLabelHidden
-              value={level}
-              onChange={(value) => updateParam("level", value)}
-              formatValue={formatFilterValue(t("level"))}
-              options={choices(
-                Object.values(CourseCategory).map((category) => ({
-                  id: category,
-                  label: t(`levels.${category}`),
-                })),
-              )}
-            />
-            <details className="relative min-h-11">
-              <summary className="flex min-h-11 list-none cursor-pointer items-center justify-between rounded-xl border border-[var(--field-border)] bg-white px-3 text-base shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 [&::-webkit-details-marker]:hidden">
-                <span>
-                  {t("status")}:{" "}
-                  {status === "archived"
-                    ? t("archived")
-                    : statuses.length
-                      ? statuses.map((value) => statusLabels[value as ClassStatus]).join(", ")
-                      : t("all").toLocaleLowerCase()}
-                </span>
-                <img src={chevronDownIcon} alt="" aria-hidden="true" width={16} height={16} />
-              </summary>
-              <div
-                className="absolute z-10 mt-1 w-full rounded-xl border border-[var(--field-border)] bg-white p-3 shadow-lg"
-                role="group"
-                aria-label={t("status")}
-              >
-                {(Object.keys(statusLabels) as ClassStatus[]).map((value) => (
-                  <Checkbox
-                    key={value}
-                    label={statusLabels[value]}
-                    isSelected={statuses.includes(value)}
-                    onChange={(checked) => {
-                      const selected = new Set(statuses);
-                      if (checked) selected.add(value);
-                      else selected.delete(value);
-                      updateParam("status", [...selected].join(","));
-                    }}
-                  />
-                ))}
-                <Checkbox
-                  label={t("archived")}
-                  isSelected={status === "archived"}
-                  onChange={(checked) => updateParam("status", checked ? "archived" : "")}
-                />
-              </div>
-            </details>
-          </div>
-          <hr className="border-tedi-divider" />
-          <DataTable
-            columns={columns}
-            rows={mockState || filtered.length === 0 ? [] : rows}
-            rowKey={(row) => row.id}
-            caption={t("title", { count: filtered.length })}
+      <section aria-labelledby="classes-title" className="flex flex-col gap-3">
+        <ClassFilters
+          search={searchText}
+          onSearchChange={setSearchText}
+          filters={filters}
+          courses={courses}
+          onFilterChange={setFilter}
+          onStatusChange={setStatus}
+        />
+        <hr className="border-tedi-divider" />
+
+        {listState === "loading" ? (
+          <ListState variant="loading" title={t("loading")} />
+        ) : listState === "error" ? (
+          <ListState
+            variant="error"
+            title={t("error")}
+            action={{
+              label: t("retry"),
+              onPress: () => void classesQuery.refetch(),
+              isLoading: classesQuery.isFetching,
+            }}
           />
-          {mockState === "loading" ? (
-            <ListState variant="loading" title={t("loading")} />
-          ) : mockState === "error" ? (
-            <ListState
-              variant="error"
-              title={t("error")}
-              action={{
-                label: t("retry"),
-                onPress: () => {
-                  const next = new URLSearchParams(params);
-                  next.delete("mockState");
-                  setParams(next);
-                },
-              }}
+        ) : listState === "empty" ? (
+          <ListState
+            variant="empty"
+            title={t("empty")}
+            description={t("emptyDescription")}
+            action={canManage ? { label: t("create"), onPress: openCreate } : undefined}
+          />
+        ) : listState === "noResults" ? (
+          <ListState
+            variant="noResults"
+            title={t("noResults")}
+            action={{ label: t("clear"), onPress: clearFilters }}
+          />
+        ) : (
+          <>
+            <ClassesTable
+              classes={classes}
+              caption={t("title", { count: total })}
+              onEdit={(item) => setOpenDialog({ kind: "edit", classId: item.id })}
+              onArchive={(item) => setOpenDialog({ kind: "archive", classId: item.id })}
+              onUnarchive={(item) => setOpenDialog({ kind: "unarchive", classId: item.id })}
             />
-          ) : mockState === "empty" ||
-            (records.filter((r) => !r.archived).length === 0 &&
-              status !== "archived" &&
-              !search &&
-              !edition &&
-              !course &&
-              !level &&
-              !status) ? (
-            <ListState
-              variant="empty"
-              title={t("empty")}
-              description={t("emptyDescription")}
-              action={{
-                label: t("create"),
-                onPress: openCreate,
-              }}
-            />
-          ) : filtered.length === 0 ? (
-            <ListState
-              variant="noResults"
-              title={t("noResults")}
-              action={{ label: t("clear"), onPress: clear }}
-            />
-          ) : null}
-          {filtered.length > 0 && (
-            <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
               <p className="text-base text-muted">
-                {t("summary", { shown: rows.length, total: filtered.length })}
+                {t("summary", { shown: classes.length, total })}
               </p>
-              {pages > 1 && (
+              {totalPages > 1 ? (
                 <Pagination
-                  page={page}
-                  totalPages={pages}
-                  onPageChange={(nextPage) => updateParam("page", String(nextPage), false)}
-                  label={t("actions")}
+                  page={Math.min(filters.page, totalPages)}
+                  totalPages={totalPages}
+                  onPageChange={(next) => setFilter("page", String(next))}
+                  label={t("pagination")}
                   previousLabel={t("previous")}
                   nextLabel={t("next")}
                   pageLabel={(number) => t("page", { page: number })}
                 />
-              )}
+              ) : null}
             </div>
-          )}
-        </div>
-        {editing && (
-          <ClassFormDialog
-            initialClass={editing}
-            isEditing={records.some((record) => record.id === editing.id)}
-            onOpenChange={(isOpen) => {
-              if (!isOpen) setEditing(null);
-            }}
-            onSave={saveClass}
-          />
+          </>
         )}
-        {archiving && (
-          <Dialog
-            isOpen={true}
-            onOpenChange={(open) => {
-              if (!open) setArchiving(null);
-            }}
-            title={t("archiveConfirm")}
-            closeLabel={t("close")}
-            footer={
-              <>
-                <Button variant="secondary" onPress={() => setArchiving(null)}>
-                  {t("cancel")}
-                </Button>
-                <Button
-                  onPress={() => {
-                    setRecords((all) =>
-                      all.map((r) => (r.id === archiving.id ? { ...r, archived: true } : r)),
-                    );
-                    setArchiving(null);
-                  }}
-                >
-                  {t("confirm")}
-                </Button>
-              </>
-            }
-          >
-            <p>{archiving.name}</p>
-          </Dialog>
-        )}
-      </Card>
-    </section>
+      </section>
+
+      {openDialog?.kind === "create" ? (
+        <ClassFormDialog onClose={() => setOpenDialog(null)} />
+      ) : null}
+      {openDialog?.kind === "edit" ? (
+        <ClassFormDialog classId={openDialog.classId} onClose={() => setOpenDialog(null)} />
+      ) : null}
+      {openDialog?.kind === "archive" ? (
+        <ArchiveClassDialog classId={openDialog.classId} onClose={() => setOpenDialog(null)} />
+      ) : null}
+      {openDialog?.kind === "unarchive" ? (
+        <UnarchiveClassDialog classId={openDialog.classId} onClose={() => setOpenDialog(null)} />
+      ) : null}
+    </Card>
   );
 }

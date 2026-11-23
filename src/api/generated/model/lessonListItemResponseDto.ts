@@ -10,6 +10,8 @@ import type { LessonPersonRefDto } from "./lessonPersonRefDto.ts";
 import type { LessonStatus } from "./lessonStatus.ts";
 
 export interface LessonListItemResponseDto {
+  /** True when the roll call of the students is pending, the "Chamada pendente" of the row (GUS-166): the lesson is not cancelled, it has ended and some student has no attendance. The same rule as attendance.pending of the lesson in full. False without the attendance module. */
+  attendancePending: boolean;
   /** True when the lesson has fewer CONFIRMED monitors than it expects (F4.4, F5.4, RF-050): a pending monitor does not count. False for a cancelled lesson and when the lesson does not say how many monitors it expects (expectedMonitors null, so nothing is missing). The teacher is not part of it: a lesson without a teacher shows a dash in teacher. It is the same rule as belowExpectedMonitors of the lesson in full. */
   belowExpectedMonitors: boolean;
   class: LessonListClassRefDto;

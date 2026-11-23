@@ -84,6 +84,29 @@ describe("ClassLessonsCard", () => {
     ]);
   });
 
+  it("links the title of each lesson to its screen", async () => {
+    const lessons = [buildLessonListItem(0), buildLessonListItem(1)];
+    server.use(listLessonsHandler({ response: buildLessonsPage(lessons) }));
+    const user = userEvent.setup();
+    const { router } = await renderCard();
+
+    const table = await screen.findByRole("table", { name: "Primeiras aulas da turma" });
+    const links = within(table).getAllByRole("link");
+
+    expect(links.map((link) => link.textContent)).toEqual([
+      "Conhecendo o computador",
+      "Teclado, mouse e janelas",
+    ]);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(
+      lessons.map((lesson) => `/lessons/${lesson.id}`),
+    );
+    expect(links[0]).toHaveClass("min-h-11");
+
+    await user.click(within(table).getByRole("link", { name: "Teclado, mouse e janelas" }));
+
+    expect(router.state.location.pathname).toBe(`/lessons/${lessons[1].id}`);
+  });
+
   it("shows the teacher as a dash that a screen reader reads as Não informado", async () => {
     server.use(listLessonsHandler({ response: buildLessonsPage([buildLessonListItem(0)]) }));
     await renderCard();

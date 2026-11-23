@@ -29,10 +29,23 @@ import type {
   ClassesSummaryByCourseResponseDto,
   CreateClassDto,
   EditionResponseDto,
+  EnrollStudentsDto,
+  EnrollStudentsResponseDto,
+  EnrollmentResponseDto,
   GetClassesSummaryByCourseParams,
+  ListAvailableStudents200,
+  ListAvailableStudentsParams,
+  ListClassEnrollments200,
+  ListClassEnrollmentsParams,
+  ListClasses200,
+  ListClassesParams,
   ListCourseClasses200,
   ListCourseClassesParams,
+  ListStudentsByEnrollment200,
+  ListStudentsByEnrollmentParams,
+  StudentEnrollmentsResponseDto,
   UpdateClassDto,
+  UpdateEnrollmentStatusDto,
 } from "../model";
 
 import { httpClient } from "../../http-client.ts";
@@ -53,6 +66,131 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   }
   return result;
 };
+
+export const getListClassesUrl = (params?: ListClassesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/classes?${stringifiedParams}` : `/classes`;
+};
+
+export const listClasses = async (
+  params?: ListClassesParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListClasses200> => {
+  return httpClient<ListClasses200>(getListClassesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClassesQueryKey = (params?: ListClassesParams) => {
+  return [`/classes`, ...(params ? [params] : [])] as const;
+};
+
+export const getListClassesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClasses>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListClassesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listClasses>>> = ({ signal }) =>
+    listClasses(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listClasses>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListClassesQueryResult = NonNullable<Awaited<ReturnType<typeof listClasses>>>;
+export type ListClassesQueryError = ApiErrorDto;
+
+export function useListClasses<
+  TData = Awaited<ReturnType<typeof listClasses>>,
+  TError = ApiErrorDto,
+>(
+  params: undefined | ListClassesParams,
+  options: {
+    query: Partial<UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>> &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listClasses>>,
+          TError,
+          Awaited<ReturnType<typeof listClasses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListClasses<
+  TData = Awaited<ReturnType<typeof listClasses>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>> &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listClasses>>,
+          TError,
+          Awaited<ReturnType<typeof listClasses>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListClasses<
+  TData = Awaited<ReturnType<typeof listClasses>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListClasses<
+  TData = Awaited<ReturnType<typeof listClasses>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListClassesParams,
+  options?: {
+    query?: Partial<UseQueryOptions<Awaited<ReturnType<typeof listClasses>>, TError, TData>>;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListClassesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
 
 export const getCreateClassUrl = () => {
   return `/classes`;
@@ -584,6 +722,406 @@ export const useArchiveClass = <TError = ApiErrorDto, TContext = unknown>(
 > => {
   return useMutation(getArchiveClassMutationOptions(options), queryClient);
 };
+export const getListAvailableStudentsUrl = (id: string, params?: ListAvailableStudentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/classes/${id}/available-students?${stringifiedParams}`
+    : `/classes/${id}/available-students`;
+};
+
+export const listAvailableStudents = async (
+  id: string,
+  params?: ListAvailableStudentsParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListAvailableStudents200> => {
+  return httpClient<ListAvailableStudents200>(getListAvailableStudentsUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListAvailableStudentsQueryKey = (
+  id: string,
+  params?: ListAvailableStudentsParams,
+) => {
+  return [`/classes/${id}/available-students`, ...(params ? [params] : [])] as const;
+};
+
+export const getListAvailableStudentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listAvailableStudents>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListAvailableStudentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAvailableStudents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListAvailableStudentsQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listAvailableStudents>>> = ({ signal }) =>
+    listAvailableStudents(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listAvailableStudents>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListAvailableStudentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listAvailableStudents>>
+>;
+export type ListAvailableStudentsQueryError = ApiErrorDto;
+
+export function useListAvailableStudents<
+  TData = Awaited<ReturnType<typeof listAvailableStudents>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params: undefined | ListAvailableStudentsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAvailableStudents>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAvailableStudents>>,
+          TError,
+          Awaited<ReturnType<typeof listAvailableStudents>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListAvailableStudents<
+  TData = Awaited<ReturnType<typeof listAvailableStudents>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListAvailableStudentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAvailableStudents>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listAvailableStudents>>,
+          TError,
+          Awaited<ReturnType<typeof listAvailableStudents>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListAvailableStudents<
+  TData = Awaited<ReturnType<typeof listAvailableStudents>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListAvailableStudentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAvailableStudents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListAvailableStudents<
+  TData = Awaited<ReturnType<typeof listAvailableStudents>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListAvailableStudentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listAvailableStudents>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListAvailableStudentsQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListClassEnrollmentsUrl = (id: string, params?: ListClassEnrollmentsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/classes/${id}/enrollments?${stringifiedParams}`
+    : `/classes/${id}/enrollments`;
+};
+
+export const listClassEnrollments = async (
+  id: string,
+  params?: ListClassEnrollmentsParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListClassEnrollments200> => {
+  return httpClient<ListClassEnrollments200>(getListClassEnrollmentsUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListClassEnrollmentsQueryKey = (
+  id: string,
+  params?: ListClassEnrollmentsParams,
+) => {
+  return [`/classes/${id}/enrollments`, ...(params ? [params] : [])] as const;
+};
+
+export const getListClassEnrollmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listClassEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListClassEnrollmentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listClassEnrollments>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListClassEnrollmentsQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listClassEnrollments>>> = ({ signal }) =>
+    listClassEnrollments(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listClassEnrollments>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListClassEnrollmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listClassEnrollments>>
+>;
+export type ListClassEnrollmentsQueryError = ApiErrorDto;
+
+export function useListClassEnrollments<
+  TData = Awaited<ReturnType<typeof listClassEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params: undefined | ListClassEnrollmentsParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listClassEnrollments>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listClassEnrollments>>,
+          TError,
+          Awaited<ReturnType<typeof listClassEnrollments>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListClassEnrollments<
+  TData = Awaited<ReturnType<typeof listClassEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListClassEnrollmentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listClassEnrollments>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listClassEnrollments>>,
+          TError,
+          Awaited<ReturnType<typeof listClassEnrollments>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListClassEnrollments<
+  TData = Awaited<ReturnType<typeof listClassEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListClassEnrollmentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listClassEnrollments>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListClassEnrollments<
+  TData = Awaited<ReturnType<typeof listClassEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  params?: ListClassEnrollmentsParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listClassEnrollments>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListClassEnrollmentsQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getEnrollStudentsUrl = (id: string) => {
+  return `/classes/${id}/enrollments`;
+};
+
+export const enrollStudents = async (
+  id: string,
+  enrollStudentsDto: EnrollStudentsDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<EnrollStudentsResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<EnrollStudentsResponseDto>(getEnrollStudentsUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(enrollStudentsDto),
+  });
+};
+
+export const getEnrollStudentsMutationKey = () => ["enrollStudents"] as const;
+
+export const getEnrollStudentsMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof enrollStudents>>,
+    TError,
+    EnrollStudentsMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof enrollStudents>>,
+  TError,
+  EnrollStudentsMutationVariables,
+  TContext
+> => {
+  const mutationKey = getEnrollStudentsMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof enrollStudents>>,
+    EnrollStudentsMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return enrollStudents(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type EnrollStudentsMutationResult = NonNullable<Awaited<ReturnType<typeof enrollStudents>>>;
+export type EnrollStudentsMutationBody = EnrollStudentsDto;
+export type EnrollStudentsMutationError = ApiErrorDto;
+export type EnrollStudentsMutationVariables = { id: string; data: EnrollStudentsDto };
+
+export const useEnrollStudents = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof enrollStudents>>,
+      TError,
+      EnrollStudentsMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof enrollStudents>>,
+  TError,
+  EnrollStudentsMutationVariables,
+  TContext
+> => {
+  return useMutation(getEnrollStudentsMutationOptions(options), queryClient);
+};
 export const getUnarchiveClassUrl = (id: string) => {
   return `/classes/${id}/unarchive`;
 };
@@ -897,6 +1435,457 @@ export function useListEditions<
   queryClient?: QueryClient,
 ): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
   const queryOptions = getListEditionsQueryOptions(options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getListStudentsByEnrollmentUrl = (params?: ListStudentsByEnrollmentParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : String(value));
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/enrollments/students?${stringifiedParams}`
+    : `/enrollments/students`;
+};
+
+export const listStudentsByEnrollment = async (
+  params?: ListStudentsByEnrollmentParams,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<ListStudentsByEnrollment200> => {
+  return httpClient<ListStudentsByEnrollment200>(getListStudentsByEnrollmentUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStudentsByEnrollmentQueryKey = (params?: ListStudentsByEnrollmentParams) => {
+  return [`/enrollments/students`, ...(params ? [params] : [])] as const;
+};
+
+export const getListStudentsByEnrollmentQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListStudentsByEnrollmentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentsByEnrollment>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListStudentsByEnrollmentQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listStudentsByEnrollment>>> = ({
+    signal,
+  }) => listStudentsByEnrollment(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+    TError,
+    TData
+  > & { queryKey: DataTag<QueryKey, TData, TError> };
+};
+
+export type ListStudentsByEnrollmentQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStudentsByEnrollment>>
+>;
+export type ListStudentsByEnrollmentQueryError = ApiErrorDto;
+
+export function useListStudentsByEnrollment<
+  TData = Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+  TError = ApiErrorDto,
+>(
+  params: undefined | ListStudentsByEnrollmentParams,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentsByEnrollment>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+          TError,
+          Awaited<ReturnType<typeof listStudentsByEnrollment>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListStudentsByEnrollment<
+  TData = Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListStudentsByEnrollmentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentsByEnrollment>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+          TError,
+          Awaited<ReturnType<typeof listStudentsByEnrollment>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListStudentsByEnrollment<
+  TData = Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListStudentsByEnrollmentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentsByEnrollment>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListStudentsByEnrollment<
+  TData = Awaited<ReturnType<typeof listStudentsByEnrollment>>,
+  TError = ApiErrorDto,
+>(
+  params?: ListStudentsByEnrollmentParams,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentsByEnrollment>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListStudentsByEnrollmentQueryOptions(params, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getRemoveEnrollmentUrl = (id: string) => {
+  return `/enrollments/${id}`;
+};
+
+export const removeEnrollment = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<void> => {
+  return httpClient<void>(getRemoveEnrollmentUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getRemoveEnrollmentMutationKey = () => ["removeEnrollment"] as const;
+
+export const getRemoveEnrollmentMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeEnrollment>>,
+    TError,
+    RemoveEnrollmentMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeEnrollment>>,
+  TError,
+  RemoveEnrollmentMutationVariables,
+  TContext
+> => {
+  const mutationKey = getRemoveEnrollmentMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeEnrollment>>,
+    RemoveEnrollmentMutationVariables
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return removeEnrollment(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveEnrollmentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeEnrollment>>
+>;
+
+export type RemoveEnrollmentMutationError = ApiErrorDto;
+export type RemoveEnrollmentMutationVariables = { id: string };
+
+export const useRemoveEnrollment = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof removeEnrollment>>,
+      TError,
+      RemoveEnrollmentMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof removeEnrollment>>,
+  TError,
+  RemoveEnrollmentMutationVariables,
+  TContext
+> => {
+  return useMutation(getRemoveEnrollmentMutationOptions(options), queryClient);
+};
+export const getUpdateEnrollmentStatusUrl = (id: string) => {
+  return `/enrollments/${id}`;
+};
+
+export const updateEnrollmentStatus = async (
+  id: string,
+  updateEnrollmentStatusDto: UpdateEnrollmentStatusDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<EnrollmentResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<EnrollmentResponseDto>(getUpdateEnrollmentStatusUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(updateEnrollmentStatusDto),
+  });
+};
+
+export const getUpdateEnrollmentStatusMutationKey = () => ["updateEnrollmentStatus"] as const;
+
+export const getUpdateEnrollmentStatusMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateEnrollmentStatus>>,
+    TError,
+    UpdateEnrollmentStatusMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateEnrollmentStatus>>,
+  TError,
+  UpdateEnrollmentStatusMutationVariables,
+  TContext
+> => {
+  const mutationKey = getUpdateEnrollmentStatusMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateEnrollmentStatus>>,
+    UpdateEnrollmentStatusMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateEnrollmentStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateEnrollmentStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateEnrollmentStatus>>
+>;
+export type UpdateEnrollmentStatusMutationBody = UpdateEnrollmentStatusDto;
+export type UpdateEnrollmentStatusMutationError = ApiErrorDto;
+export type UpdateEnrollmentStatusMutationVariables = {
+  id: string;
+  data: UpdateEnrollmentStatusDto;
+};
+
+export const useUpdateEnrollmentStatus = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof updateEnrollmentStatus>>,
+      TError,
+      UpdateEnrollmentStatusMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof updateEnrollmentStatus>>,
+  TError,
+  UpdateEnrollmentStatusMutationVariables,
+  TContext
+> => {
+  return useMutation(getUpdateEnrollmentStatusMutationOptions(options), queryClient);
+};
+export const getListStudentEnrollmentsUrl = (id: string) => {
+  return `/students/${id}/enrollments`;
+};
+
+export const listStudentEnrollments = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<StudentEnrollmentsResponseDto> => {
+  return httpClient<StudentEnrollmentsResponseDto>(getListStudentEnrollmentsUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStudentEnrollmentsQueryKey = (id: string) => {
+  return [`/students/${id}/enrollments`] as const;
+};
+
+export const getListStudentEnrollmentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStudentEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentEnrollments>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListStudentEnrollmentsQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listStudentEnrollments>>> = ({ signal }) =>
+    listStudentEnrollments(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listStudentEnrollments>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListStudentEnrollmentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStudentEnrollments>>
+>;
+export type ListStudentEnrollmentsQueryError = ApiErrorDto;
+
+export function useListStudentEnrollments<
+  TData = Awaited<ReturnType<typeof listStudentEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentEnrollments>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStudentEnrollments>>,
+          TError,
+          Awaited<ReturnType<typeof listStudentEnrollments>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListStudentEnrollments<
+  TData = Awaited<ReturnType<typeof listStudentEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentEnrollments>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStudentEnrollments>>,
+          TError,
+          Awaited<ReturnType<typeof listStudentEnrollments>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListStudentEnrollments<
+  TData = Awaited<ReturnType<typeof listStudentEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentEnrollments>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListStudentEnrollments<
+  TData = Awaited<ReturnType<typeof listStudentEnrollments>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentEnrollments>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListStudentEnrollmentsQueryOptions(id, options);
 
   const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
     queryKey: DataTag<QueryKey, TData, TError>;

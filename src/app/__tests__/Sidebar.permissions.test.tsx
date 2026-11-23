@@ -106,7 +106,7 @@ describe("Sidebar by permission", () => {
     expect(nav.queryByRole("link", { name: "Validação de horas" })).not.toBeInTheDocument();
   });
 
-  it("director sees Horas with Banco de horas only", async () => {
+  it("director sees Horas with Banco de horas only, and Membros in Pessoas", async () => {
     const nav = await renderSidebar(Role.director);
 
     expect(groupNames(nav)).toEqual(["Catálogo", "Turmas", "Aulas", "Pessoas", "Horas"]);
@@ -116,9 +116,9 @@ describe("Sidebar by permission", () => {
     expect(itemsOf(nav, "Horas")).toEqual(["Banco de horas"]);
     expect(itemsOf(nav, "Turmas")).toEqual(["Turmas", "Matrículas"]);
     expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário", "Minhas aulas"]);
-    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos"]);
+    // The list of members asks for members.list, which the director has (GUS-150).
+    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos", "Membros"]);
     expect(nav.queryByRole("link", { name: "Validação de horas" })).not.toBeInTheDocument();
-    expect(nav.queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
   });
 
   it("coordinator sees the 5 groups with the 11 items (the 10 of the Figma and Minhas aulas)", async () => {

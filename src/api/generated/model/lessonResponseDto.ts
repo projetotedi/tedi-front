@@ -5,6 +5,7 @@
  * Documentação da API do projeto TEDI
  * OpenAPI spec version: 0.1.0
  */
+import type { LessonAttendanceDto } from "./lessonAttendanceDto.ts";
 import type { LessonClassRefDto } from "./lessonClassRefDto.ts";
 import type { LessonCourseRefDto } from "./lessonCourseRefDto.ts";
 import type { LessonCoverageDto } from "./lessonCoverageDto.ts";
@@ -13,6 +14,8 @@ import type { LessonPlanRefDto } from "./lessonPlanRefDto.ts";
 import type { LessonStatus } from "./lessonStatus.ts";
 
 export interface LessonResponseDto {
+  /** The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module. */
+  attendance: LessonAttendanceDto;
   /** True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher. */
   belowExpectedMonitors: boolean;
   /**

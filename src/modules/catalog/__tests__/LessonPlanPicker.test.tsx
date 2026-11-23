@@ -1,20 +1,25 @@
 import { useState } from "react";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { LessonPlanPicker } from "../components/LessonPlanPicker";
 import { toSequenceItems, type SequenceItem } from "../lib/course-sequence";
-import { MOCK_LESSON_PLANS } from "../mocks/lesson-plans.mock";
-import { buildCourseSequence, buildMockSequenceItem, COURSE_ID } from "./handlers";
-import { renderWithProviders, setupCatalogTestServer } from "./test-utils";
+import { MOCK_LESSON_PLANS } from "./lesson-plan-catalog";
+import {
+  buildCourseSequence,
+  buildMockSequenceItem,
+  COURSE_ID,
+  listLessonPlansHandler,
+} from "./handlers";
+import { renderWithProviders, server, setupCatalogTestServer } from "./test-utils";
 
 const optionsOverride = vi.hoisted(() => ({
   current: null as { isPending: boolean; isError: boolean } | null,
 }));
 
-// The real hook reads the mock catalog and never loads or fails. The states of the future API
-// (GUS-95) are forced here, so that the picker is known to handle them before the swap.
+// The loading and the failure of the list of plans are forced here, so each state of the picker is
+// tested without timing the request.
 vi.mock("../hooks/useLessonPlanOptions", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../hooks/useLessonPlanOptions")>();
 
@@ -101,6 +106,20 @@ describe("LessonPlanPicker", () => {
     expect(options).toContain("Fotos no celular · 1h30");
     expect(options).toContain("Conhecendo o computador · 2h");
     expect(options).toEqual([...options].sort((a, b) => a!.localeCompare(b!, "pt-BR")));
+  });
+
+  it("asks the API for the plans out of the sequence of this course, by title", async () => {
+    const onCall = vi.fn();
+    server.use(listLessonPlansHandler({ onCall }));
+    await renderWithProviders(<Harness saved={[]} initialDraft={[]} />);
+
+    await waitFor(() =>
+      expect(onCall).toHaveBeenCalledWith({
+        excludeCourseId: COURSE_ID,
+        limit: "100",
+        sort: "title",
+      }),
+    );
   });
 
   it("does not offer plans already in the sequence", async () => {

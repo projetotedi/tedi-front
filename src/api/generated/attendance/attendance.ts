@@ -24,8 +24,13 @@ import type {
 import type {
   ApiErrorDto,
   ConfirmMemberAttendanceDto,
+  CorrectStudentAttendanceDto,
+  JustifyAbsenceDto,
   MemberAttendanceHistoryResponseDto,
   MemberAttendanceResponseDto,
+  SignStudentAttendanceDto,
+  StudentAttendanceResponseDto,
+  StudentRollCallItemResponseDto,
 } from "../model";
 
 import { httpClient } from "../../http-client.ts";
@@ -280,6 +285,236 @@ export const useConfirmMemberAttendance = <TError = ApiErrorDto, TContext = unkn
 > => {
   return useMutation(getConfirmMemberAttendanceMutationOptions(options), queryClient);
 };
+export const getListStudentAttendanceUrl = (id: string) => {
+  return `/lessons/${id}/attendance/students`;
+};
+
+export const listStudentAttendance = async (
+  id: string,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<StudentRollCallItemResponseDto[]> => {
+  return httpClient<StudentRollCallItemResponseDto[]>(getListStudentAttendanceUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListStudentAttendanceQueryKey = (id: string) => {
+  return [`/lessons/${id}/attendance/students`] as const;
+};
+
+export const getListStudentAttendanceQueryOptions = <
+  TData = Awaited<ReturnType<typeof listStudentAttendance>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentAttendance>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListStudentAttendanceQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listStudentAttendance>>> = ({ signal }) =>
+    listStudentAttendance(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: id !== null && id !== undefined,
+    ...queryOptions,
+  } as UseQueryOptions<Awaited<ReturnType<typeof listStudentAttendance>>, TError, TData> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+};
+
+export type ListStudentAttendanceQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listStudentAttendance>>
+>;
+export type ListStudentAttendanceQueryError = ApiErrorDto;
+
+export function useListStudentAttendance<
+  TData = Awaited<ReturnType<typeof listStudentAttendance>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options: {
+    query: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentAttendance>>, TError, TData>
+    > &
+      Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStudentAttendance>>,
+          TError,
+          Awaited<ReturnType<typeof listStudentAttendance>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListStudentAttendance<
+  TData = Awaited<ReturnType<typeof listStudentAttendance>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentAttendance>>, TError, TData>
+    > &
+      Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listStudentAttendance>>,
+          TError,
+          Awaited<ReturnType<typeof listStudentAttendance>>
+        >,
+        "initialData"
+      >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+export function useListStudentAttendance<
+  TData = Awaited<ReturnType<typeof listStudentAttendance>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentAttendance>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+export function useListStudentAttendance<
+  TData = Awaited<ReturnType<typeof listStudentAttendance>>,
+  TError = ApiErrorDto,
+>(
+  id: string,
+  options?: {
+    query?: Partial<
+      UseQueryOptions<Awaited<ReturnType<typeof listStudentAttendance>>, TError, TData>
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+  const queryOptions = getListStudentAttendanceQueryOptions(id, options);
+
+  const query = useQuery(queryOptions, queryClient) as UseQueryResult<TData, TError> & {
+    queryKey: DataTag<QueryKey, TData, TError>;
+  };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+export const getSignStudentAttendanceUrl = (id: string) => {
+  return `/lessons/${id}/attendance/students`;
+};
+
+export const signStudentAttendance = async (
+  id: string,
+  signStudentAttendanceDto: SignStudentAttendanceDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<StudentRollCallItemResponseDto[]> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<StudentRollCallItemResponseDto[]>(getSignStudentAttendanceUrl(id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(signStudentAttendanceDto),
+  });
+};
+
+export const getSignStudentAttendanceMutationKey = () => ["signStudentAttendance"] as const;
+
+export const getSignStudentAttendanceMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signStudentAttendance>>,
+    TError,
+    SignStudentAttendanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signStudentAttendance>>,
+  TError,
+  SignStudentAttendanceMutationVariables,
+  TContext
+> => {
+  const mutationKey = getSignStudentAttendanceMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signStudentAttendance>>,
+    SignStudentAttendanceMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return signStudentAttendance(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignStudentAttendanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signStudentAttendance>>
+>;
+export type SignStudentAttendanceMutationBody = SignStudentAttendanceDto;
+export type SignStudentAttendanceMutationError = ApiErrorDto;
+export type SignStudentAttendanceMutationVariables = { id: string; data: SignStudentAttendanceDto };
+
+export const useSignStudentAttendance = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof signStudentAttendance>>,
+      TError,
+      SignStudentAttendanceMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof signStudentAttendance>>,
+  TError,
+  SignStudentAttendanceMutationVariables,
+  TContext
+> => {
+  return useMutation(getSignStudentAttendanceMutationOptions(options), queryClient);
+};
 export const getGetMemberAttendanceHistoryUrl = (id: string) => {
   return `/members/${id}/attendance`;
 };
@@ -410,3 +645,205 @@ export function useGetMemberAttendanceHistory<
 
   return withQueryKey(query, queryOptions.queryKey);
 }
+
+export const getCorrectStudentAttendanceUrl = (id: string) => {
+  return `/student-attendance/${id}/correct`;
+};
+
+export const correctStudentAttendance = async (
+  id: string,
+  correctStudentAttendanceDto: CorrectStudentAttendanceDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<StudentAttendanceResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<StudentAttendanceResponseDto>(getCorrectStudentAttendanceUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(correctStudentAttendanceDto),
+  });
+};
+
+export const getCorrectStudentAttendanceMutationKey = () => ["correctStudentAttendance"] as const;
+
+export const getCorrectStudentAttendanceMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof correctStudentAttendance>>,
+    TError,
+    CorrectStudentAttendanceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof correctStudentAttendance>>,
+  TError,
+  CorrectStudentAttendanceMutationVariables,
+  TContext
+> => {
+  const mutationKey = getCorrectStudentAttendanceMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof correctStudentAttendance>>,
+    CorrectStudentAttendanceMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return correctStudentAttendance(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CorrectStudentAttendanceMutationResult = NonNullable<
+  Awaited<ReturnType<typeof correctStudentAttendance>>
+>;
+export type CorrectStudentAttendanceMutationBody = CorrectStudentAttendanceDto;
+export type CorrectStudentAttendanceMutationError = ApiErrorDto;
+export type CorrectStudentAttendanceMutationVariables = {
+  id: string;
+  data: CorrectStudentAttendanceDto;
+};
+
+export const useCorrectStudentAttendance = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof correctStudentAttendance>>,
+      TError,
+      CorrectStudentAttendanceMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof correctStudentAttendance>>,
+  TError,
+  CorrectStudentAttendanceMutationVariables,
+  TContext
+> => {
+  return useMutation(getCorrectStudentAttendanceMutationOptions(options), queryClient);
+};
+export const getJustifyAbsenceUrl = (id: string) => {
+  return `/student-attendance/${id}/justify`;
+};
+
+export const justifyAbsence = async (
+  id: string,
+  justifyAbsenceDto: JustifyAbsenceDto,
+  options?: Parameters<typeof httpClient>[1],
+): Promise<StudentAttendanceResponseDto> => {
+  const getHeaders = (
+    h?: NonNullable<RequestInit["headers"]>,
+  ): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(
+          h as Iterable<Iterable<string>>,
+          (entry) => Array.from(entry) as [string, string],
+        ),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+  return httpClient<StudentAttendanceResponseDto>(getJustifyAbsenceUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...getHeaders(options?.headers) },
+    body: JSON.stringify(justifyAbsenceDto),
+  });
+};
+
+export const getJustifyAbsenceMutationKey = () => ["justifyAbsence"] as const;
+
+export const getJustifyAbsenceMutationOptions = <
+  TError = ApiErrorDto,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof justifyAbsence>>,
+    TError,
+    JustifyAbsenceMutationVariables,
+    TContext
+  >;
+  request?: SecondParameter<typeof httpClient>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof justifyAbsence>>,
+  TError,
+  JustifyAbsenceMutationVariables,
+  TContext
+> => {
+  const mutationKey = getJustifyAbsenceMutationKey();
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation && "mutationKey" in options.mutation && options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof justifyAbsence>>,
+    JustifyAbsenceMutationVariables
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return justifyAbsence(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type JustifyAbsenceMutationResult = NonNullable<Awaited<ReturnType<typeof justifyAbsence>>>;
+export type JustifyAbsenceMutationBody = JustifyAbsenceDto;
+export type JustifyAbsenceMutationError = ApiErrorDto;
+export type JustifyAbsenceMutationVariables = { id: string; data: JustifyAbsenceDto };
+
+export const useJustifyAbsence = <TError = ApiErrorDto, TContext = unknown>(
+  options?: {
+    mutation?: UseMutationOptions<
+      Awaited<ReturnType<typeof justifyAbsence>>,
+      TError,
+      JustifyAbsenceMutationVariables,
+      TContext
+    >;
+    request?: SecondParameter<typeof httpClient>;
+  },
+  queryClient?: QueryClient,
+): UseMutationResult<
+  Awaited<ReturnType<typeof justifyAbsence>>,
+  TError,
+  JustifyAbsenceMutationVariables,
+  TContext
+> => {
+  return useMutation(getJustifyAbsenceMutationOptions(options), queryClient);
+};

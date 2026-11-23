@@ -259,18 +259,22 @@ describe("CourseDetailPage", () => {
       expect(screen.queryByText(/^Turmas do curso /)).not.toBeInTheDocument();
     });
 
-    it("has Duplicar curso, Arquivar curso and Editar curso in the header, and not + Nova turma, which does not exist yet", async () => {
+    it("has Duplicar curso, Arquivar curso, Editar curso and then the + Nova turma of the slot, for this course", async () => {
       await renderPage({ role: Role.coordinator });
 
       expect(
         within(header())
           .getAllByRole("button")
           .map((button) => button.textContent),
-      ).toEqual(["Duplicar curso", "Arquivar curso", "Editar curso"]);
-      for (const name of ["+ Nova turma"]) {
-        expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-        expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
-      }
+      ).toEqual(["Duplicar curso", "Arquivar curso", "Editar curso", `Nova turma ${COURSE_ID}`]);
+    });
+
+    it("tells the slot of + Nova turma that the course is archived", async () => {
+      await renderPage({ role: Role.coordinator, course: buildArchivedCourseDetail() });
+
+      expect(
+        within(header()).getByRole("button", { name: `Nova turma ${COURSE_ID}` }),
+      ).toBeDisabled();
     });
 
     it("draws Duplicar curso as the tertiary button of the header, before the actions that will come", async () => {
@@ -424,7 +428,12 @@ describe("CourseDetailPage", () => {
       expect(card("Carga horária prevista")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Editar sequência" })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Duplicar curso" })).not.toBeInTheDocument();
-      expect(within(header()).queryByRole("button")).not.toBeInTheDocument();
+      // Only the slot of + Nova turma is left, and its permission is the `classes` module's to check.
+      expect(
+        within(header())
+          .getAllByRole("button")
+          .map((button) => button.textContent),
+      ).toEqual([`Nova turma ${COURSE_ID}`]);
     });
 
     it.each([

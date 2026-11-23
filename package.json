@@ -22,6 +22,7 @@
     "@heroui/react": "^3.2.5",
     "@heroui/styles": "^3.2.5",
     "@hookform/resolvers": "^5.9.1",
+    "@internationalized/date": "^3.12.4",
     "@react-aria/i18n": "^3.13.1",
     "@react-aria/ssr": "^3.10.1",
     "@react-aria/utils": "^3.34.1",

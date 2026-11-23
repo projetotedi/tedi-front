@@ -16,7 +16,7 @@ export interface CourseClassItemResponseDto {
   edition: EditionResponseDto;
   endDate: string;
   /**
-   * Active enrollments of the class. Always 0 until the enrollments exist (GUS-108).
+   * Active enrollments of the class.
    * @minimum 0
    */
   enrolledCount: number;

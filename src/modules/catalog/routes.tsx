@@ -18,6 +18,12 @@ export interface CatalogRouteSlots {
    * module, so this module only says where the card goes and which course it is for.
    */
   renderCourseClasses: (courseId: string) => ReactNode;
+  /**
+   * + Nova turma, last of the actions of the header of the course screen (GUS-133): it opens the
+   * form of a new class of the `classes` module with this course chosen. It gets whether the course
+   * is archived, because an archived course takes no new class (RN-27) and the button is then off.
+   */
+  renderNewClassAction: (course: { id: string; isArchived: boolean }) => ReactNode;
 }
 
 export function createCatalogRoutes(slots: CatalogRouteSlots): RouteObject[] {
@@ -46,7 +52,12 @@ export function createCatalogRoutes(slots: CatalogRouteSlots): RouteObject[] {
         {
           path: ":courseId",
           handle: { title: "catalog:course.routeTitle" } satisfies RouteHandle,
-          element: <CourseDetailPage renderCourseClasses={slots.renderCourseClasses} />,
+          element: (
+            <CourseDetailPage
+              renderCourseClasses={slots.renderCourseClasses}
+              renderNewClassAction={slots.renderNewClassAction}
+            />
+          ),
         },
       ],
     },

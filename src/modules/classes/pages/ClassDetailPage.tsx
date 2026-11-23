@@ -1,13 +1,15 @@
-import type { ReactElement, ReactNode } from "react";
+import { useId, useState, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
 import { useGetClass } from "@api/generated/classes/classes";
 import type { ClassDetailDto } from "@api/generated/model";
+import { useCan } from "@modules/auth";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
 import { ClassDataCard } from "../components/ClassDataCard";
 import { ClassDetailHeader } from "../components/ClassDetailHeader";
+import { ClassFormDialog } from "../components/ClassFormDialog";
 import { ClassSummaryCard } from "../components/ClassSummaryCard";
 import { ComingSoonCard } from "../components/ComingSoonCard";
 import { CourseOriginCard } from "../components/CourseOriginCard";
@@ -21,8 +23,19 @@ import { LINK_CLASSES } from "../components/link-classes";
  * declared here so the page does not import the file of the routes that import it.
  */
 export interface ClassDetailSlots {
-  renderLessonActions: (classDetail: ClassDetailDto) => ReactNode;
+  renderLessonActions: (classDetail: ClassDetailDto, classActions: ClassHeaderActions) => ReactNode;
   renderClassLessons: (classId: string) => ReactNode;
+}
+
+/**
+ * What the screen gives the slot of the actions of the header, so the slot puts them in the order of
+ * the Figma among its own: Editar turma (`editClassAction`, which draws nothing for who cannot
+ * manage classes) and the way to open the form from a dialog of the slot (`onEditClass`, only for
+ * who can manage classes).
+ */
+export interface ClassHeaderActions {
+  editClassAction: ReactNode;
+  onEditClass?: () => void;
 }
 
 /**
@@ -77,7 +90,9 @@ interface ClassDetailViewProps extends ClassDetailSlots {
 /**
  * The class that was loaded: the header and the two columns of cards. An archived class is
  * read-only (RN-27), and that rule is the class's, so the actions about its lessons are not even
- * asked of the slot.
+ * asked of the slot, and Editar turma stays on the screen turned off, with the reason for the
+ * screen reader. Editar turma (GUS-133) opens the form of the class over the screen, which stays
+ * where it was after the save.
  */
 function ClassDetailView({
   classDetail,
@@ -85,12 +100,41 @@ function ClassDetailView({
   renderClassLessons,
 }: ClassDetailViewProps): ReactElement {
   const { t } = useTranslation("classes");
+  const canManage = useCan("classes.manage");
+  const editHintId = useId();
+  const [isEditing, setIsEditing] = useState(false);
+  const isArchived = classDetail.archivedAt !== null;
+
+  const editClassAction = canManage ? (
+    <>
+      <Button
+        variant="secondary"
+        isDisabled={isArchived}
+        aria-describedby={isArchived ? editHintId : undefined}
+        onPress={() => setIsEditing(true)}
+      >
+        {t("detail.editAction")}
+      </Button>
+      {isArchived ? (
+        <span id={editHintId} className="sr-only">
+          {t("detail.archivedEditHint")}
+        </span>
+      ) : null}
+    </>
+  ) : null;
 
   return (
     <div className="flex flex-col gap-5">
       <ClassDetailHeader
         classDetail={classDetail}
-        actions={classDetail.archivedAt === null ? renderLessonActions(classDetail) : null}
+        actions={
+          isArchived
+            ? editClassAction
+            : renderLessonActions(classDetail, {
+                editClassAction,
+                onEditClass: canManage ? () => setIsEditing(true) : undefined,
+              })
+        }
       />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
@@ -108,12 +152,12 @@ function ClassDetailView({
             summary={classDetail.summary}
           />
           <ComingSoonCard title={t("detail.members.title")} />
-          <CourseOriginCard
-            isClassArchived={classDetail.archivedAt !== null}
-            course={classDetail.course}
-          />
+          <CourseOriginCard isClassArchived={isArchived} course={classDetail.course} />
         </div>
       </div>
+      {isEditing ? (
+        <ClassFormDialog classId={classDetail.id} onClose={() => setIsEditing(false)} />
+      ) : null}
     </div>
   );
 }

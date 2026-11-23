@@ -6,7 +6,12 @@ import { describe, expect, it } from "vitest";
 
 import type { MeResponseDto } from "@api/generated/model";
 import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
-import { buildMeUser, logoutHandler, meHandler } from "@modules/auth/__tests__/handlers";
+import {
+  buildMeUser,
+  listMembersHandler,
+  logoutHandler,
+  meHandler,
+} from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { hoursRoutes } from "@modules/hours";
 import { bankHandlers, createBankStore } from "@modules/hours/__tests__/bank-handlers";
@@ -83,12 +88,12 @@ describe("AppLayout", () => {
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
   });
 
-  it("hides Membros from the director but keeps Banco de horas", async () => {
+  it("shows Membros to the director, who has members.list, besides Banco de horas", async () => {
     const { nav } = await renderApp(buildMeUser({ role: Role.director }));
     await openAllGroups(nav);
 
+    expect(within(nav).getByRole("link", { name: "Membros" })).toHaveAttribute("href", "/members");
     expect(within(nav).getByRole("link", { name: "Banco de horas" })).toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
   });
 
   it("hides Membros and Banco de horas from the member", async () => {
@@ -271,5 +276,14 @@ describe("AppLayout", () => {
     await renderApp(buildMeUser({ role: Role.member }), "/members");
 
     expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
+  });
+
+  it("lets the director open Membros through the URL", async () => {
+    server.use(listMembersHandler({ data: [], total: 0 }));
+    await renderApp(buildMeUser({ role: Role.director }), "/members");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Membros" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Membros (0)" })).toBeInTheDocument();
+    expect(screen.queryByText("Você não tem acesso a esta tela")).not.toBeInTheDocument();
   });
 });

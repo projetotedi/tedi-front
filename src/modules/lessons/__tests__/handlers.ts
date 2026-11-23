@@ -1,15 +1,27 @@
 import { http, HttpResponse } from "msw";
 
 import {
+  ClassStatus,
+  CourseCategory,
+  CourseStatus,
+  LessonPlanListStatus,
   LessonPlanUsageStatus,
   LessonStatus,
   type ApiFieldErrorDto,
   type CancelLessonDto,
+  type ClassListItemDto,
+  type CourseListItemDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CreateLessonDto,
+  type LessonListItemResponseDto,
   type LessonPlanDetailDto,
+  type LessonPlanListItemDto,
   type LessonResponseDto,
+  type ListClasses200,
+  type ListCourses200,
+  type ListLessonPlans200,
+  type ListLessons200,
   type MeResponseDto,
   type PermissionsDto,
   type RescheduleLessonDto,
@@ -77,6 +89,7 @@ export function meHandler({ user = buildMeUser() }: MeHandlerOptions = {}) {
 export const LESSON_ID = "01952ef7-0000-7000-8000-0000000000f1";
 export const OTHER_LESSON_ID = "01952ef7-0000-7000-8000-0000000000f2";
 export const CLASS_ID = "01952ef7-0000-7000-8000-0000000000d1";
+export const OTHER_CLASS_ID = "01952ef7-0000-7000-8000-0000000000d2";
 export const COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
 export const EDITION_ID = "01952ef7-0000-7000-8000-0000000000e1";
 export const LESSON_PLAN_ID = "01952ef7-0000-7000-8000-0000000000a1";
@@ -84,6 +97,7 @@ export const LESSON_PLAN_ID_2 = "01952ef7-0000-7000-8000-0000000000a2";
 export const ARCHIVED_LESSON_PLAN_ID = "01952ef7-0000-7000-8000-0000000000a3";
 
 export const CLASS_NAME = "Informática Básica — A";
+export const OTHER_CLASS_NAME = "Informática Básica — B";
 export const COURSE_NAME = "Informática Básica";
 
 /** The period of the class of the Figma: the first and the last day a lesson of it can have. */
@@ -99,6 +113,7 @@ export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonR
     id: LESSON_ID,
     title: "Teclado, mouse e janelas",
     belowExpectedMonitors: false,
+    attendance: { pending: false, students: { signed: 0, total: 0 } },
     coverage: {
       teacher: { confirmed: 0, expected: 1 },
       monitors: { confirmed: 0, expected: null },
@@ -134,6 +149,29 @@ export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonR
     createdById: "01952ef7-0000-7000-8000-000000000001",
     createdAt: "2026-02-12T12:00:00.000Z",
     updatedAt: "2026-02-12T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * An item of the list and of the calendar of lessons (`GET /lessons`, `GET /lessons/calendar`):
+ * "Teclado, mouse e janelas", planned for 2026-03-10 from 09:00 to 11:00 in the class "Informática
+ * Básica — A" (color 0), with no teacher yet. Overrides win over any default.
+ */
+export function buildLessonListItem(
+  overrides: Partial<LessonListItemResponseDto> = {},
+): LessonListItemResponseDto {
+  return {
+    id: LESSON_ID,
+    title: "Teclado, mouse e janelas",
+    date: "2026-03-10",
+    startTime: "09:00",
+    endTime: "11:00",
+    status: LessonStatus.planned,
+    class: { id: CLASS_ID, code: "INFO-A", name: CLASS_NAME, colorIndex: 0 },
+    teacher: null,
+    belowExpectedMonitors: false,
+    attendancePending: false,
     ...overrides,
   };
 }
@@ -327,6 +365,10 @@ export function getLessonHandler({
   onCall,
 }: HandlerOptions<IdCall> = {}) {
   return http.get("*/lessons/:id", async ({ params }) => {
+    // `/lessons/calendar` also matches `:id`: it is not a lesson, so it goes on to the next handler
+    // (`listLessonsCalendarHandler`), whichever order the two were registered in.
+    if (params.id === "calendar") return undefined;
+
     onCall?.({ id: String(params.id) });
     if (delay) await delay;
 
@@ -438,5 +480,209 @@ export function getLessonPlanHandler({
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
     return HttpResponse.json(typeof response === "function" ? response(id) : response);
+  });
+}
+
+/** An item of `GET /classes`: "Informática Básica — A", in progress, with the period of the Figma. */
+export function buildClassListItem(overrides: Partial<ClassListItemDto> = {}): ClassListItemDto {
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    course: {
+      id: COURSE_ID,
+      name: COURSE_NAME,
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+    },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    ...CLASS_PERIOD,
+    capacity: 15,
+    enrolledCount: 12,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    ...overrides,
+  };
+}
+
+/** The second class of the tests: the same course, the code B, another period. */
+export function buildOtherClassListItem(
+  overrides: Partial<ClassListItemDto> = {},
+): ClassListItemDto {
+  return buildClassListItem({
+    id: OTHER_CLASS_ID,
+    code: "INFO-B",
+    name: OTHER_CLASS_NAME,
+    startDate: "2026-04-06",
+    endDate: "2026-07-31",
+    ...overrides,
+  });
+}
+
+/** A page of `GET /classes`: `total` can be more than the items of the page. */
+export function buildClassesPage(
+  items: ClassListItemDto[] = [buildClassListItem(), buildOtherClassListItem()],
+  {
+    total = items.length,
+    page = 1,
+    limit = 100,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListClasses200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a request to a list, as an object of the parameters that were sent. */
+export type ListCall = Record<string, string>;
+
+/**
+ * `GET /classes`: the filter "Turma" and the choice of the class of "+ Nova aula" read it. Without
+ * `response` it answers the two classes of the tests.
+ */
+export function listClassesHandler({
+  response = buildClassesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListClasses200> = {}) {
+  return http.get("*/classes", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** An item of `GET /courses`: "Informática Básica", active, with the two plans of the Figma. */
+export function buildCourseListItem(overrides: Partial<CourseListItemDto> = {}): CourseListItemDto {
+  return {
+    id: COURSE_ID,
+    name: COURSE_NAME,
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    lessonPlanCount: 2,
+    plannedWorkloadMinutes: 210,
+    prerequisites: [],
+    createdAt: "2026-01-10T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** A page of `GET /courses`. */
+export function buildCoursesPage(
+  items: CourseListItemDto[] = [buildCourseListItem()],
+  { total = items.length, page = 1, limit = 100 } = {},
+): ListCourses200 {
+  return { data: items, total, page, limit };
+}
+
+/** `GET /courses`: the filter "Curso" of the calendar reads it. */
+export function listCoursesHandler({
+  response = buildCoursesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListCourses200> = {}) {
+  return http.get("*/courses", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** An item of `GET /lesson-plans`: "Teclado, mouse e janelas", in use by one course. */
+export function buildLessonPlanListItem(
+  overrides: Partial<LessonPlanListItemDto> = {},
+): LessonPlanListItemDto {
+  return {
+    id: LESSON_PLAN_ID,
+    title: "Teclado, mouse e janelas",
+    contents: ["Teclado e mouse", "Janelas do sistema"],
+    expectedDurationMinutes: 120,
+    materialUrl: null,
+    courseCount: 1,
+    status: LessonPlanListStatus.in_use,
+    archivedAt: null,
+    updatedAt: "2026-02-01T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** A page of `GET /lesson-plans`: the two plans of the course of the tests. */
+export function buildLessonPlansPage(
+  items: LessonPlanListItemDto[] = [
+    buildLessonPlanListItem(),
+    buildLessonPlanListItem({ id: LESSON_PLAN_ID_2, title: "Senhas e privacidade" }),
+  ],
+  { total = items.length, page = 1, limit = 100 } = {},
+): ListLessonPlans200 {
+  return { data: items, total, page, limit };
+}
+
+/** `GET /lesson-plans`: the filter "Plano de aula" of both screens reads it. */
+export function listLessonPlansHandler({
+  response = buildLessonPlansPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListLessonPlans200> = {}) {
+  return http.get("*/lesson-plans", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** A page of `GET /lessons`: `total` can be more than the items of the page. */
+export function buildLessonsPage(
+  items: LessonListItemResponseDto[] = [buildLessonListItem()],
+  { total = items.length, page = 1, limit = 10 } = {},
+): ListLessons200 {
+  return { data: items, total, page, limit };
+}
+
+/** `GET /lessons`: the list of lessons. `onCall` gets the query that was sent, as an object. */
+export function listLessonsHandler({
+  response = buildLessonsPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListLessons200> = {}) {
+  return http.get("*/lessons", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** `GET /lessons/calendar`: the lessons of a period, with no page. */
+export function listLessonsCalendarHandler({
+  response = [buildLessonListItem()],
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, LessonListItemResponseDto[]> = {}) {
+  return http.get("*/lessons/calendar", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
   });
 }
