@@ -12,6 +12,9 @@ export const MEMBERS_PAGE_SIZE = 12;
 /** How long the search waits after the last keystroke before it goes to the URL. */
 export const MEMBER_SEARCH_DEBOUNCE_MS = 400;
 
+/** The contract limits `search` to 100 characters (`ListMembersParams`); a longer text answers 400. */
+export const MEMBER_SEARCH_MAX_LENGTH = 100;
+
 /** The keys of the URL that the list of members reads (GUS-150). */
 export const MEMBER_FILTER_KEYS = ["search", "role", "status", "page"] as const;
 
@@ -79,9 +82,13 @@ export function hasActiveMemberFilters(filters: MemberFilterValues): boolean {
   return filters.search.trim() !== "" || filters.role !== "" || filters.status !== "";
 }
 
-/** The parameters of `listMembers` for the filters of the screen and the size of a page. */
+/**
+ * The parameters of `listMembers` for the filters of the screen and the size of a page. The search
+ * is trimmed and cut at the limit of the contract (the box keeps what was typed), and trimmed again
+ * because the cut can end on a space.
+ */
 export function toListMembersParams(filters: MemberFilterValues, limit: number): ListMembersParams {
-  const search = filters.search.trim();
+  const search = filters.search.trim().slice(0, MEMBER_SEARCH_MAX_LENGTH).trim();
 
   return {
     page: filters.page,

@@ -4,6 +4,7 @@ import {
   hasActiveMemberFilters,
   MEMBER_FILTER_KEYS,
   MEMBER_SEARCH_DEBOUNCE_MS,
+  MEMBER_SEARCH_MAX_LENGTH,
   MEMBERS_PAGE_SIZE,
   readMemberFilters,
   toListMembersParams,
@@ -87,6 +88,34 @@ describe("toListMembersParams", () => {
   it("trims the search and does not send one made only of spaces", () => {
     expect(toListMembersParams(filters({ search: "  Ana  " }), 12).search).toBe("Ana");
     expect(toListMembersParams(filters({ search: "   " }), 12)).not.toHaveProperty("search");
+  });
+
+  it("sends at most 100 characters of the search, the limit of the contract", () => {
+    expect(toListMembersParams(filters({ search: "a".repeat(150) }), 12).search).toBe(
+      "a".repeat(100),
+    );
+    expect(toListMembersParams(filters({ search: "a".repeat(100) }), 12).search).toBe(
+      "a".repeat(100),
+    );
+    expect(toListMembersParams(filters({ search: "a".repeat(99) }), 12).search).toBe(
+      "a".repeat(99),
+    );
+  });
+
+  it("cuts after the trim: the spaces around the text do not count, and the cut does not end on a space", () => {
+    expect(toListMembersParams(filters({ search: `   ${"a".repeat(100)}   ` }), 12).search).toBe(
+      "a".repeat(100),
+    );
+    expect(toListMembersParams(filters({ search: `  ${"a".repeat(99)} bbb  ` }), 12).search).toBe(
+      "a".repeat(99),
+    );
+  });
+
+  it("keeps the whole search in the filters: only what goes to the API is cut", () => {
+    const search = "a".repeat(150);
+
+    expect(read(`search=${search}`).search).toBe(search);
+    expect(hasActiveMemberFilters(filters({ search }))).toBe(true);
   });
 
   it.each(["member", "director", "coordinator"] as const)("sends role %s", (role) => {
@@ -202,6 +231,10 @@ describe("constants", () => {
 
   it("waits 400 ms after the last keystroke before searching", () => {
     expect(MEMBER_SEARCH_DEBOUNCE_MS).toBe(400);
+  });
+
+  it("sends at most 100 characters of the search", () => {
+    expect(MEMBER_SEARCH_MAX_LENGTH).toBe(100);
   });
 
   it("reads the search, the role, the status and the page from the URL", () => {
