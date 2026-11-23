@@ -8,6 +8,7 @@ import {
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CreateLessonDto,
+  type LessonListItemResponseDto,
   type LessonPlanDetailDto,
   type LessonResponseDto,
   type MeResponseDto,
@@ -135,6 +136,29 @@ export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonR
     createdById: "01952ef7-0000-7000-8000-000000000001",
     createdAt: "2026-02-12T12:00:00.000Z",
     updatedAt: "2026-02-12T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * An item of the list and of the calendar of lessons (`GET /lessons`, `GET /lessons/calendar`):
+ * "Teclado, mouse e janelas", planned for 2026-03-10 from 09:00 to 11:00 in the class "Informática
+ * Básica — A" (color 0), with no teacher yet. Overrides win over any default.
+ */
+export function buildLessonListItem(
+  overrides: Partial<LessonListItemResponseDto> = {},
+): LessonListItemResponseDto {
+  return {
+    id: LESSON_ID,
+    title: "Teclado, mouse e janelas",
+    date: "2026-03-10",
+    startTime: "09:00",
+    endTime: "11:00",
+    status: LessonStatus.planned,
+    class: { id: CLASS_ID, code: "INFO-A", name: CLASS_NAME, colorIndex: 0 },
+    teacher: null,
+    belowExpectedMonitors: false,
+    attendancePending: false,
     ...overrides,
   };
 }
