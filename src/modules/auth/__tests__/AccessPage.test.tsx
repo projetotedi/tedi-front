@@ -956,6 +956,8 @@ describe("AccessPage", () => {
     });
     const TITLE = "Validar cadastro de membro";
     const validateButton = (name: string) => `Validar cadastro de ${name}`;
+    /** The title of the card of the list, which is where the focus goes after a decision. */
+    const listTitle = (total: number) => screen.getByText(`Membros (${total})`);
 
     /**
      * Through the route, which waits for the session: the permissions are known when the page first
@@ -1024,7 +1026,7 @@ describe("AccessPage", () => {
       expect(onRegistrationCall).not.toHaveBeenCalledWith(REGISTRATION_ID);
     });
 
-    it("closing the dialog leaves the list and the URL where they were", async () => {
+    it("closing the dialog without deciding leaves the list and the URL as they were, and gives the focus back to Validar", async () => {
       server.use(
         listMembersHandler({ data: [LUCAS] }),
         getMemberRegistrationHandler(),
@@ -1033,22 +1035,24 @@ describe("AccessPage", () => {
       const user = userEvent.setup();
 
       const { router } = await renderMembersRoute(undefined, "/members?status=pending");
-      await user.click(
-        await screen.findByRole("button", { name: validateButton("Lucas Andrade Souza") }),
-      );
+      const validate = await screen.findByRole("button", {
+        name: validateButton("Lucas Andrade Souza"),
+      });
+      await user.click(validate);
       await screen.findByRole("dialog", { name: TITLE });
 
       await user.click(screen.getByRole("button", { name: "Voltar" }));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-      expect(
-        screen.getByRole("button", { name: validateButton("Lucas Andrade Souza") }),
-      ).toBeInTheDocument();
+      expect(validate).toBeInTheDocument();
+      // Nothing was decided: the default stays, and the focus returns to the button that opened it.
+      await waitFor(() => expect(validate).toHaveFocus());
+      expect(listTitle(1)).not.toHaveFocus();
       expect(router.state.location.pathname).toBe("/members");
       expect(router.state.location.search).toBe("?status=pending");
     });
 
-    it("deciding in the dialog refreshes the list: the row says Recusado and stops offering Validar", async () => {
+    it("deciding in the dialog refreshes the list, and the focus goes to the title of the list: the row says Recusado and stops offering Validar", async () => {
       const onListCall = vi.fn<(params: URLSearchParams) => void>();
       server.use(
         listMembersHandler({ data: [LUCAS], onCall: onListCall }),
@@ -1079,6 +1083,9 @@ describe("AccessPage", () => {
       await user.click(screen.getByRole("button", { name: "Recusar" }));
 
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      // The button that opened the dialog goes away with the decision: the focus does not fall to
+      // the body, it goes to the title of the list.
+      await waitFor(() => expect(listTitle(1)).toHaveFocus());
       await waitFor(() =>
         expect(
           within(screen.getByRole("row", { name: /Lucas Andrade Souza/ })).getByText("Recusado"),
@@ -1088,6 +1095,8 @@ describe("AccessPage", () => {
       expect(
         screen.queryByRole("button", { name: validateButton("Lucas Andrade Souza") }),
       ).not.toBeInTheDocument();
+      // And it stays there once the list was read again and the row changed.
+      expect(listTitle(1)).toHaveFocus();
     });
 
     it("a coordinator without invites.manage sees A validar but no Validar, and nothing is requested", async () => {

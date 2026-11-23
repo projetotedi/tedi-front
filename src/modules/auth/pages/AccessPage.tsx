@@ -45,6 +45,7 @@ import {
 export function AccessPage(): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
+  const titleRef = useRef<HTMLSpanElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Row actions (GUS-88) must use `useCan("access.manage")` and the own-account rule (decision 23).
   const canInvite = useCan("invites.manage");
@@ -53,6 +54,18 @@ export function AccessPage(): ReactElement {
   // The id of the registration being validated (the id of the person); the modal exists only while
   // there is one.
   const [validatingId, setValidatingId] = useState<string | null>(null);
+  // Set by the modal when it reports a decision (approved or rejected).
+  const hasReviewedRef = useRef(false);
+
+  // After the modal is unmounted. The decision takes the row out of "A validar", so the Validar
+  // button that opened the modal goes away, and the focus that the modal gives back on closing only
+  // acts when the focus was lost, not when it was moved on purpose: it goes to the title of the
+  // list, which stays. Closing with Voltar or Esc keeps the default: the focus returns to the button.
+  useEffect(() => {
+    if (validatingId !== null || !hasReviewedRef.current) return;
+    hasReviewedRef.current = false;
+    titleRef.current?.focus();
+  }, [validatingId]);
 
   const [params, setParams] = useSearchParams();
   const filters = readMemberFilters(params);
@@ -200,7 +213,16 @@ export function AccessPage(): ReactElement {
     // the id pointing to the text of the title that the Card draws inside its <h2>.
     <section aria-labelledby={titleId}>
       <Card
-        title={<span id={titleId}>{cardTitle}</span>}
+        title={
+          <span
+            id={titleId}
+            ref={titleRef}
+            tabIndex={-1}
+            className="rounded-sm outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+          >
+            {cardTitle}
+          </span>
+        }
         aside={
           canInvite ? (
             <div className="flex flex-wrap gap-2">
@@ -261,6 +283,9 @@ export function AccessPage(): ReactElement {
       {validatingId !== null ? (
         <ValidateRegistrationDialog
           registrationId={validatingId}
+          onReviewed={() => {
+            hasReviewedRef.current = true;
+          }}
           onClose={() => setValidatingId(null)}
         />
       ) : null}
