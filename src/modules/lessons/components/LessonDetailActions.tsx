@@ -29,11 +29,13 @@ type OpenDialog = "reschedule" | "cancel" | "edit" | null;
  * "Registrar chamada" comes with the attendance module.
  *
  * For who can manage, the three stay on the screen when the lesson cannot be changed, turned off,
- * with the reason where a screen reader finds it (a turned-off button is not a stop of the
- * keyboard, so the reason is tied to it by `aria-describedby`, as "Editar turma" does): a cancelled
- * lesson is final (it cannot be edited, rescheduled or cancelled again), and the lessons of an
- * archived class are read-only (RN-27). A cancelled lesson in an archived class gives the first
- * reason, which is the lesson's own.
+ * with the reason written under them for everybody to read: a cancelled lesson is final (it cannot
+ * be edited, rescheduled or cancelled again), and the lessons of an archived class are read-only
+ * (RN-27). A cancelled lesson in an archived class gives the first reason, which is the lesson's
+ * own. A turned-off button is not a stop of the keyboard and a tooltip would never be read, so the
+ * reason is plain text on the screen and each button is tied to it by `aria-describedby`, which is
+ * what a screen reader says for the button. Without a reason (a lesson that can be changed), or for
+ * who cannot manage, there is no text.
  *
  * A dialog that is open stays on the screen even if the lesson stops allowing actions meanwhile:
  * cancelling it turns the lesson cancelled in the cache, and the dialog still has to show its toast
@@ -64,35 +66,37 @@ export function LessonDetailActions({
   return (
     <>
       {canManage ? (
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="tertiary"
-            isDisabled={isDisabled}
-            aria-describedby={describedBy}
-            onPress={() => setOpenDialog("reschedule")}
-          >
-            {t("actions.reschedule")}
-          </Button>
-          <Button
-            variant="danger-soft"
-            isDisabled={isDisabled}
-            aria-describedby={describedBy}
-            onPress={() => setOpenDialog("cancel")}
-          >
-            {t("actions.cancel")}
-          </Button>
-          <Button
-            variant="secondary"
-            isDisabled={isDisabled}
-            aria-describedby={describedBy}
-            onPress={() => setOpenDialog("edit")}
-          >
-            {t("actions.edit")}
-          </Button>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant="tertiary"
+              isDisabled={isDisabled}
+              aria-describedby={describedBy}
+              onPress={() => setOpenDialog("reschedule")}
+            >
+              {t("actions.reschedule")}
+            </Button>
+            <Button
+              variant="danger-soft"
+              isDisabled={isDisabled}
+              aria-describedby={describedBy}
+              onPress={() => setOpenDialog("cancel")}
+            >
+              {t("actions.cancel")}
+            </Button>
+            <Button
+              variant="secondary"
+              isDisabled={isDisabled}
+              aria-describedby={describedBy}
+              onPress={() => setOpenDialog("edit")}
+            >
+              {t("actions.edit")}
+            </Button>
+          </div>
           {disabledHintKey === null ? null : (
-            <span id={hintId} className="sr-only">
+            <p id={hintId} className="text-base text-muted">
               {t(disabledHintKey)}
-            </span>
+            </p>
           )}
         </div>
       ) : null}

@@ -125,6 +125,27 @@ describe("LessonDetailActions", () => {
       }
     });
 
+    it.each([
+      ["a cancelled lesson", buildCancelledLesson(), CANCELLED_HINT],
+      ["a lesson of an archived class", inArchivedClass(buildLesson()), ARCHIVED_HINT],
+    ])(
+      "writes the reason for %s as text under the buttons, tied to each one",
+      async (_label, lesson, reason) => {
+        await renderWithProviders(<LessonDetailActions lesson={lesson} />);
+
+        const text = screen.getByText(reason);
+        // On the screen for everybody, not only for the screen reader.
+        expect(text).not.toHaveClass("sr-only");
+        expect(text.id).not.toBe("");
+        for (const name of ACTIONS) {
+          expect(button(name)).toHaveAttribute("aria-describedby", text.id);
+          expect(
+            button(name).compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ).toBeTruthy();
+        }
+      },
+    );
+
     it("keeps the order and the variants of the Figma when the actions are turned off", async () => {
       await renderWithProviders(<LessonDetailActions lesson={buildCancelledLesson()} />);
 
