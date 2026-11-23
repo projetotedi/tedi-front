@@ -108,14 +108,35 @@ export function AccessPage(): ReactElement {
   const cardTitle =
     total === undefined ? t("access.people.titlePending") : t("access.people.title", { total });
 
+  // A page past the last one (an old link, or the list shrank under the page that was open, as when
+  // the last person of the last page is validated out of a filter): the API answers it with no
+  // rows, though the total is not zero. Only the data of this page counts: the placeholder is the
+  // page that was on the screen before.
+  const isPastLastPage =
+    !query.isPlaceholderData && total !== undefined && total > 0 && filters.page > totalPages;
+
+  useEffect(() => {
+    if (!isPastLastPage) return;
+    // The URL goes to the last page, replacing the entry. Page 1 is the page with no key in the URL.
+    setParams(
+      (current) => withMemberFilter(current, "page", totalPages > 1 ? String(totalPages) : ""),
+      { replace: true },
+    );
+  }, [isPastLastPage, totalPages, setParams]);
+
   // The refetch of a query in error and with no data goes back to status "pending"; keeping the
   // error panel (the button loading) keeps the button mounted and the focus on it.
   const isRetrying = query.isPending && query.isFetching && query.errorUpdateCount > 0;
 
+  const hasRows = (query.data?.data.length ?? 0) > 0;
+
   const listState = resolveListState({
     // With no rows, the placeholder has nothing to keep on the screen and, read with the new
-    // filters, would show the wrong state (empty right after Limpar filtros): wait on loading.
-    isPending: (query.isPending && !isRetrying) || (query.isPlaceholderData && total === 0),
+    // filters, would show the wrong state (empty right after Limpar filtros, or a page with no rows
+    // right after the list went past its last page): wait on loading. So does the page past the
+    // last one, until the URL gets to the last page.
+    isPending:
+      (query.isPending && !isRetrying) || (query.isPlaceholderData && !hasRows) || isPastLastPage,
     isError: query.isError || isRetrying,
     total,
     hasActiveFilters: hasActiveMemberFilters(filters),

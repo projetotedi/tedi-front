@@ -74,6 +74,21 @@ function membersHandlerWhere(isMiss: (params: URLSearchParams) => boolean, onCal
   });
 }
 
+/**
+ * Pages of `total` people, 12 a page. A page past the last one answers as the API does: no rows,
+ * with the total that is real.
+ */
+function pagedMembersHandler(total: number, onCall?: OnCall) {
+  return http.get("*/members", ({ request }) => {
+    const params = new URL(request.url).searchParams;
+    onCall?.(params);
+    const page = Number(params.get("page"));
+    const limit = 12;
+    const data = buildPeople(total).slice((page - 1) * limit, page * limit);
+    return HttpResponse.json({ data, page, limit, total });
+  });
+}
+
 function createDeferred() {
   let resolve!: () => void;
   const promise = new Promise<void>((done) => {
@@ -804,6 +819,113 @@ describe("AccessPage", () => {
       await waitFor(() => expect(searchBox()).toHaveValue(""));
       await waitFor(() => expect(lastParams(onCall)?.has("search")).toBe(false));
       expect(router.state.location.search).toBe("");
+    });
+  });
+
+  describe("a page past the last one", () => {
+    const requestedPages = (onCall: OnCall) =>
+      onCall.mock.calls.map(([params]) => params.get("page"));
+
+    it("goes to page 1 when the list fits in one page, and shows its rows", async () => {
+      const onCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(pagedMembersHandler(5, onCall));
+
+      const { router } = await renderAccessPage(
+        buildMeUser({ role: Role.coordinator }),
+        "/?page=9",
+      );
+
+      expect(await screen.findByRole("cell", { name: "Pessoa 1" })).toBeInTheDocument();
+      expect(requestedPages(onCall)[0]).toBe("9");
+      expect(requestedPages(onCall).at(-1)).toBe("1");
+      // Page 1 is the page with no key in the URL, and the entry is replaced, not pushed.
+      expect(router.state.location.search).toBe("");
+      expect(router.state.historyAction).toBe("REPLACE");
+      expect(screen.getByText("Mostrando 5 de 5 membros")).toBeInTheDocument();
+    });
+
+    it("goes to the last page when the list has more than one, and marks it as the current one", async () => {
+      const onCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(pagedMembersHandler(30, onCall));
+
+      const { router } = await renderAccessPage(
+        buildMeUser({ role: Role.coordinator }),
+        "/?page=9",
+      );
+
+      expect(await screen.findByRole("cell", { name: "Pessoa 25" })).toBeInTheDocument();
+      expect(requestedPages(onCall)[0]).toBe("9");
+      expect(requestedPages(onCall).at(-1)).toBe("3");
+      expect(router.state.location.search).toBe("?page=3");
+      expect(screen.getByRole("button", { name: "Página 3" })).toHaveAttribute(
+        "aria-current",
+        "page",
+      );
+      expect(screen.getByText("Mostrando 6 de 30 membros")).toBeInTheDocument();
+    });
+
+    it("keeps the filters of the URL when it goes to the last page", async () => {
+      const onCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(pagedMembersHandler(30, onCall));
+
+      const { router } = await renderAccessPage(
+        buildMeUser({ role: Role.coordinator }),
+        "/?status=pending&page=9",
+      );
+
+      expect(await screen.findByRole("cell", { name: "Pessoa 25" })).toBeInTheDocument();
+      expect(router.state.location.search).toBe("?status=pending&page=3");
+      expect(lastParams(onCall)?.get("registrationStatus")).toBe("pending");
+    });
+
+    it("goes to the new last page when the list shrinks under the page that is open", async () => {
+      server.use(pagedMembersHandler(13));
+
+      const { router, queryClient } = await renderAccessPage(
+        buildMeUser({ role: Role.coordinator }),
+        "/?page=2",
+      );
+      expect(await screen.findByRole("cell", { name: "Pessoa 13" })).toBeInTheDocument();
+
+      // The 13th person leaves the list (validated out of a filter, say): page 2 is gone.
+      server.use(pagedMembersHandler(12));
+      await act(() => queryClient.invalidateQueries({ queryKey: getListMembersQueryKey() }));
+
+      expect(await screen.findByRole("cell", { name: "Pessoa 1" })).toBeInTheDocument();
+      expect(screen.queryByRole("cell", { name: "Pessoa 13" })).not.toBeInTheDocument();
+      expect(screen.getByText("Mostrando 12 de 12 membros")).toBeInTheDocument();
+      expect(router.state.location.search).toBe("");
+    });
+
+    it("does not touch a page that exists", async () => {
+      const onCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(pagedMembersHandler(30, onCall));
+
+      const { router } = await renderAccessPage(
+        buildMeUser({ role: Role.coordinator }),
+        "/?page=3",
+      );
+      await screen.findByRole("cell", { name: "Pessoa 25" });
+
+      expect(requestedPages(onCall).every((page) => page === "3")).toBe(true);
+      expect(router.state.location.search).toBe("?page=3");
+      expect(router.state.historyAction).toBe("POP");
+    });
+
+    it("leaves an empty list alone: there is no last page to go to", async () => {
+      const onCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(listMembersHandler({ data: [], total: 0, onCall }));
+
+      const { router } = await renderAccessPage(
+        buildMeUser({ role: Role.coordinator }),
+        "/?page=9",
+      );
+
+      expect(
+        await screen.findByRole("heading", { name: "Nenhum membro ainda" }),
+      ).toBeInTheDocument();
+      expect(requestedPages(onCall).every((page) => page === "9")).toBe(true);
+      expect(router.state.location.search).toBe("?page=9");
     });
   });
 
