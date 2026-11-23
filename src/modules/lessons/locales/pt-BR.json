@@ -225,5 +225,16 @@
     "viewAll_other": "Ver todas as {{count}}",
     "viewAllLabel_one": "Ver a {{count}} aula desta turma",
     "viewAllLabel_other": "Ver todas as {{count}} aulas desta turma"
+  },
+  "chooseClass": {
+    "title": "Escolha a turma da aula",
+    "class": "Turma",
+    "placeholder": "Escolha a turma",
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "required": "Escolha a turma da aula.",
+    "loading": "Carregando as turmas…",
+    "error": "Não foi possível carregar as turmas.",
+    "empty": "Nenhuma turma ativa. Crie uma turma antes de criar uma aula."
   }
 }

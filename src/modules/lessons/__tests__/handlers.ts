@@ -1,16 +1,21 @@
 import { http, HttpResponse } from "msw";
 
 import {
+  ClassStatus,
+  CourseCategory,
+  CourseStatus,
   LessonPlanUsageStatus,
   LessonStatus,
   type ApiFieldErrorDto,
   type CancelLessonDto,
+  type ClassListItemDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CreateLessonDto,
   type LessonListItemResponseDto,
   type LessonPlanDetailDto,
   type LessonResponseDto,
+  type ListClasses200,
   type MeResponseDto,
   type PermissionsDto,
   type RescheduleLessonDto,
@@ -78,6 +83,7 @@ export function meHandler({ user = buildMeUser() }: MeHandlerOptions = {}) {
 export const LESSON_ID = "01952ef7-0000-7000-8000-0000000000f1";
 export const OTHER_LESSON_ID = "01952ef7-0000-7000-8000-0000000000f2";
 export const CLASS_ID = "01952ef7-0000-7000-8000-0000000000d1";
+export const OTHER_CLASS_ID = "01952ef7-0000-7000-8000-0000000000d2";
 export const COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
 export const EDITION_ID = "01952ef7-0000-7000-8000-0000000000e1";
 export const LESSON_PLAN_ID = "01952ef7-0000-7000-8000-0000000000a1";
@@ -85,6 +91,7 @@ export const LESSON_PLAN_ID_2 = "01952ef7-0000-7000-8000-0000000000a2";
 export const ARCHIVED_LESSON_PLAN_ID = "01952ef7-0000-7000-8000-0000000000a3";
 
 export const CLASS_NAME = "Informática Básica — A";
+export const OTHER_CLASS_NAME = "Informática Básica — B";
 export const COURSE_NAME = "Informática Básica";
 
 /** The period of the class of the Figma: the first and the last day a lesson of it can have. */
@@ -463,5 +470,77 @@ export function getLessonPlanHandler({
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
     return HttpResponse.json(typeof response === "function" ? response(id) : response);
+  });
+}
+
+/** An item of `GET /classes`: "Informática Básica — A", in progress, with the period of the Figma. */
+export function buildClassListItem(overrides: Partial<ClassListItemDto> = {}): ClassListItemDto {
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    course: {
+      id: COURSE_ID,
+      name: COURSE_NAME,
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+    },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    ...CLASS_PERIOD,
+    capacity: 15,
+    enrolledCount: 12,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    ...overrides,
+  };
+}
+
+/** The second class of the tests: the same course, the code B, another period. */
+export function buildOtherClassListItem(
+  overrides: Partial<ClassListItemDto> = {},
+): ClassListItemDto {
+  return buildClassListItem({
+    id: OTHER_CLASS_ID,
+    code: "INFO-B",
+    name: OTHER_CLASS_NAME,
+    startDate: "2026-04-06",
+    endDate: "2026-07-31",
+    ...overrides,
+  });
+}
+
+/** A page of `GET /classes`: `total` can be more than the items of the page. */
+export function buildClassesPage(
+  items: ClassListItemDto[] = [buildClassListItem(), buildOtherClassListItem()],
+  {
+    total = items.length,
+    page = 1,
+    limit = 100,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListClasses200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a request to a list, as an object of the parameters that were sent. */
+export type ListCall = Record<string, string>;
+
+/**
+ * `GET /classes`: the filter "Turma" and the choice of the class of "+ Nova aula" read it. Without
+ * `response` it answers the two classes of the tests.
+ */
+export function listClassesHandler({
+  response = buildClassesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListClasses200> = {}) {
+  return http.get("*/classes", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
   });
 }

@@ -225,5 +225,16 @@
     "viewAll_other": "See all {{count}}",
     "viewAllLabel_one": "See the {{count}} lesson of this class",
     "viewAllLabel_other": "See all {{count}} lessons of this class"
+  },
+  "chooseClass": {
+    "title": "Choose the class of the lesson",
+    "class": "Class",
+    "placeholder": "Choose the class",
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "required": "Choose the class of the lesson.",
+    "loading": "Loading the classes…",
+    "error": "The classes could not be loaded.",
+    "empty": "No active class. Create a class before creating a lesson."
   }
 }
