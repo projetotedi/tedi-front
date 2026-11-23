@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { InviteListItemDto } from "@api/generated/model";
+import { MemberRegistrationStatus, type InviteListItemDto } from "@api/generated/model";
 import { getListMembersQueryKey } from "@api/generated/people/people";
 import { Role } from "@shared/lib/role";
 
@@ -87,6 +87,41 @@ describe("route /members", () => {
     expect(authProtectedRoutes[0]?.handle).toEqual({ title: "common:nav.members" });
   });
 
+  it("director sees the list without the invite actions", async () => {
+    const onInvitesCall = vi.fn();
+    server.use(
+      meHandler({ user: buildMeUser({ role: Role.director }) }),
+      listMembersHandler({
+        data: [
+          buildMember({ id: "person-1", name: "Ana Torres" }),
+          buildMember({
+            id: "person-2",
+            name: "Lucas Souza",
+            role: null,
+            accessEnabled: false,
+            mainFunction: null,
+            registrationStatus: MemberRegistrationStatus.pending,
+          }),
+        ],
+      }),
+      listInvitesHandler({ onCall: onInvitesCall }),
+    );
+
+    await renderRoutes(authProtectedRoutes, { route: "/members" });
+
+    expect(await screen.findByRole("cell", { name: "Ana Torres" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Membros (2)" })).toBeInTheDocument();
+    // Within the row: the hidden <select> of the Status filter also has an option "A validar".
+    expect(
+      within(screen.getByRole("row", { name: /Lucas Souza/ })).getByText("A validar"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Gerar link de cadastro" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Convites pendentes/ })).not.toBeInTheDocument();
+    expect(onInvitesCall).not.toHaveBeenCalled();
+  });
+
   it("member gets the forbidden page and neither GET /members nor GET /invites is requested", async () => {
     const onMembersCall = vi.fn();
     const onInvitesCall = vi.fn();
@@ -101,6 +136,24 @@ describe("route /members", () => {
     expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
     expect(onMembersCall).not.toHaveBeenCalled();
     expect(onInvitesCall).not.toHaveBeenCalled();
+  });
+
+  it("a coordinator without members.list gets the forbidden page: the route asks for members.list", async () => {
+    const onMembersCall = vi.fn();
+    server.use(
+      meHandler({
+        user: buildMeUser({
+          role: Role.coordinator,
+          permissions: { ...PERMISSIONS_BY_ROLE.coordinator, "members.list": "none" },
+        }),
+      }),
+      listMembersHandler({ onCall: onMembersCall }),
+    );
+
+    await renderRoutes(authProtectedRoutes, { route: "/members" });
+
+    expect(await screen.findByText(/Você não tem acesso/)).toBeInTheDocument();
+    expect(onMembersCall).not.toHaveBeenCalled();
   });
 });
 
