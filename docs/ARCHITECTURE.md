@@ -155,8 +155,8 @@ O `AppLayout` abre com o `SkipLink` "Pular para o conteúdo" (primeiro item do T
 ```tsx
 // modules/auth/routes.tsx
 {
-  path: "access",
-  handle: { title: "auth:access.title" } satisfies RouteHandle,
+  path: "members",
+  handle: { title: "common:nav.members" } satisfies RouteHandle,
   element: (
     <RequirePermission permission="members.list">
       <AccessPage />
