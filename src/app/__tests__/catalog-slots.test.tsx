@@ -11,6 +11,7 @@ import {
   COURSE_SMARTPHONES,
   COURSE_SOCIAL_NETWORKS,
   getCourseHandler,
+  buildArchivedCourseDetail,
 } from "@modules/catalog/__tests__/handlers";
 import {
   renderRoutes,
@@ -22,6 +23,8 @@ import {
   buildCourseClassItem,
   CLASS_ID,
   listCourseClassesHandler,
+  listCoursesHandler,
+  listEditionsHandler,
   type ListCourseClassesCall,
 } from "@modules/classes/__tests__/handlers";
 
@@ -36,6 +39,12 @@ const COURSE_ROUTE = `/courses/${COURSE_ID}`;
 function userWithClasses(): MeResponseDto {
   const user = buildMeUser();
   return { ...user, permissions: { ...user.permissions, "classes.view": "all" } };
+}
+
+/** The same coordinator, who can also create classes (`classes.manage`). */
+function userWithClassesManage(): MeResponseDto {
+  const user = userWithClasses();
+  return { ...user, permissions: { ...user.permissions, "classes.manage": "all" } };
 }
 
 describe("the slots of the catalog, filled by the app", () => {
@@ -156,5 +165,48 @@ describe("the slots of the catalog, filled by the app", () => {
       expect(query.state.fetchStatus).toBe("idle");
       expect(query.state.dataUpdateCount + query.state.errorUpdateCount).toBe(0);
     }
+  });
+
+  it("puts + Nova turma last in the header, and it opens the form with the course of the screen", async () => {
+    server.use(
+      getCourseHandler(),
+      listCourseClassesHandler(),
+      listCoursesHandler(),
+      listEditionsHandler(),
+    );
+    const user = userEvent.setup();
+    await renderRoutes(routes, { route: COURSE_ROUTE, user: userWithClassesManage() });
+    const header = (
+      await screen.findByRole("heading", { level: 2, name: buildCourseDetail().name })
+    ).closest("[data-slot='card']") as HTMLElement;
+
+    const buttons = within(header).getAllByRole("button");
+    expect(buttons.at(-1)).toHaveTextContent("+ Nova turma");
+    await user.click(within(header).getByRole("button", { name: "+ Nova turma" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Nova turma" });
+    await waitFor(() =>
+      expect(within(dialog).getByRole("button", { name: /Curso/ })).toHaveTextContent(
+        "Informática Básica",
+      ),
+    );
+  });
+
+  it("turns + Nova turma off on an archived course", async () => {
+    server.use(
+      getCourseHandler({ response: buildArchivedCourseDetail() }),
+      listCourseClassesHandler(),
+    );
+    await renderRoutes(routes, { route: COURSE_ROUTE, user: userWithClassesManage() });
+
+    expect(await screen.findByRole("button", { name: "+ Nova turma" })).toBeDisabled();
+  });
+
+  it("has no + Nova turma for who cannot manage classes", async () => {
+    server.use(getCourseHandler(), listCourseClassesHandler());
+    await renderRoutes(routes, { route: COURSE_ROUTE, user: userWithClasses() });
+    await screen.findByRole("table", { name: "Turmas deste curso" });
+
+    expect(screen.queryByRole("button", { name: "+ Nova turma" })).not.toBeInTheDocument();
   });
 });

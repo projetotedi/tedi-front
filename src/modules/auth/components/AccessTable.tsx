@@ -1,14 +1,21 @@
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { AccessResponseDto } from "@api/generated/model";
+import type { MemberListItemResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge, Button } from "@shared/ui";
 
+import { MEMBER_ROW_STATUS_TONE, memberRowStatus } from "../lib/member-status";
 import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
-  rows: AccessResponseDto[];
+  rows: MemberListItemResponseDto[];
+  /**
+   * Opens the validation of the registration of a row. Only the rows waiting for validation get
+   * the Validar button, and only when this is given: the screen leaves it out for who cannot
+   * validate, so the table does not check permissions.
+   */
+  onValidate?: (row: MemberListItemResponseDto) => void;
 }
 
 function KebabIcon(): ReactElement {
@@ -21,10 +28,28 @@ function KebabIcon(): ReactElement {
   );
 }
 
-export function AccessTable({ rows }: AccessTableProps): ReactElement {
+/**
+ * The table of the list of members, with the six columns of the Figma: Membro, Papel, Departamento,
+ * Função principal, Status and Ações. Department and main function come from the API; a missing one
+ * shows a dash to who sees it and "Não informado" to who hears it. The Status column says "A
+ * validar" for a registration waiting for validation (with the Validar button in Ações) and
+ * "Recusado" for a refused one.
+ */
+export function AccessTable({ rows, onValidate }: AccessTableProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
 
-  const columns: Column<AccessResponseDto>[] = [
+  function renderOptionalText(value: string | null | undefined): ReactNode {
+    if (value) return value;
+
+    return (
+      <>
+        <span aria-hidden="true">{t("details.empty", { ns: "common" })}</span>
+        <span className="sr-only">{t("details.notInformed", { ns: "common" })}</span>
+      </>
+    );
+  }
+
+  const columns: Column<MemberListItemResponseDto>[] = [
     {
       header: t("access.people.columns.member"),
       headerClassName: "w-[245px] uppercase",
@@ -41,34 +66,47 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
     {
       header: t("access.people.columns.department"),
       headerClassName: "uppercase",
-      render: () => null,
+      render: (row) => renderOptionalText(row.department?.name),
     },
     {
       header: t("access.people.columns.mainFunction"),
       headerClassName: "uppercase",
-      render: () => null,
+      render: (row) => renderOptionalText(row.mainFunction),
     },
     {
       header: t("access.people.columns.status"),
       headerClassName: "w-[152px] uppercase",
-      render: (row) => (
-        <Badge tone={row.accessEnabled ? "success" : "neutral"}>
-          {t(row.accessEnabled ? "access.people.status.active" : "access.people.status.inactive")}
-        </Badge>
-      ),
+      render: (row) => {
+        const status = memberRowStatus(row);
+
+        return (
+          <Badge tone={MEMBER_ROW_STATUS_TONE[status]}>{t(`access.people.status.${status}`)}</Badge>
+        );
+      },
     },
     {
       header: t("access.people.columns.actions"),
-      headerClassName: "uppercase",
-      // Ainda sem ação: o menu da linha é da GUS-88.
+      headerClassName: "w-[160px] uppercase",
+      // The menu of the row is GUS-88's; until then the kebab has no action.
       render: (row) => (
-        <Button
-          isIconOnly
-          variant="ghost"
-          aria-label={t("access.people.rowActions", { name: row.name })}
-        >
-          <KebabIcon />
-        </Button>
+        <div className="flex items-center gap-1">
+          {onValidate && memberRowStatus(row) === "pending" ? (
+            <Button
+              variant="secondary"
+              aria-label={t("access.people.validateLabel", { name: row.name })}
+              onPress={() => onValidate(row)}
+            >
+              {t("access.people.validate")}
+            </Button>
+          ) : null}
+          <Button
+            isIconOnly
+            variant="ghost"
+            aria-label={t("access.people.rowActions", { name: row.name })}
+          >
+            <KebabIcon />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -79,7 +117,7 @@ export function AccessTable({ rows }: AccessTableProps): ReactElement {
       rows={rows}
       rowKey={(row) => row.id}
       caption={t("access.people.caption")}
-      tableClassName="table-fixed min-w-[840px]"
+      tableClassName="table-fixed min-w-[960px]"
     />
   );
 }

@@ -1,9 +1,9 @@
 import type { MenuItem } from "@shared/lib/menu";
 
 /**
- * The two entries of the "Aulas" group. The screens behind them (list and calendar) are the next
- * tasks of the module: until then both routes show the "Em breve" page, with the same permission
- * as the item (menu and guard go together, decision 18).
+ * The two entries of the "Aulas" group: the list (`LessonsPage`) and the calendar
+ * (`LessonsCalendarPage`), each route with the same permission as its item (menu and guard go
+ * together, decision 18).
  */
 export const lessonsMenuItems: MenuItem[] = [
   {

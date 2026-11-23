@@ -39,7 +39,10 @@ export function DataTable<T>({
   tableClassName,
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto">
+    // `relative` makes the scroller the containing block of the `sr-only` texts of the cells and the
+    // caption (they are positioned absolutely): without it a table that scrolls sideways on a narrow
+    // screen would carry them past the edge and widen the whole page.
+    <div className="relative overflow-x-auto">
       <table className={joinClasses("w-full text-left", tableClassName)}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
@@ -76,6 +79,13 @@ export function DataTable<T>({
                   onRowClick
                     ? (event) => {
                         const target = event.target;
+                        // What a cell renders in a portal (a dialog, a menu) is not inside the row
+                        // in the DOM, but React sends its events up the React tree to the row unless
+                        // the portal stops them: a click that came from outside the row is not a
+                        // click on it.
+                        if (!(target instanceof Node) || !event.currentTarget.contains(target)) {
+                          return;
+                        }
                         if (
                           target instanceof Element &&
                           target.closest("a, button, input, select, textarea, [role='button']")

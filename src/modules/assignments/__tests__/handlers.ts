@@ -136,6 +136,7 @@ export function buildLessonListItem(
     status: LessonStatus.planned,
     teacher: null,
     belowExpectedMonitors: false,
+    attendancePending: false,
     class: { id: CLASS_ID, code: "INFO-A", name: CLASS_NAME, colorIndex: 0 },
     ...overrides,
   };
@@ -270,6 +271,7 @@ export function buildLesson(overrides: Partial<LessonResponseDto> = {}): LessonR
     title: LESSON_TITLE,
     belowExpectedMonitors: expected !== null && confirmed < expected,
     coverage,
+    attendance: { pending: false, students: { signed: 0, total: 0 } },
     objective: "Criar senhas fortes e proteger os dados.",
     date: "2026-03-10",
     startTime: "09:00",

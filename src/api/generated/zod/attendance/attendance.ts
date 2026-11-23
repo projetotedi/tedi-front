@@ -151,6 +151,312 @@ export const ConfirmMemberAttendanceResponseItem = zod
   );
 export const ConfirmMemberAttendanceResponse = zod.array(ConfirmMemberAttendanceResponseItem);
 
+export const ListStudentAttendanceParams = zod.object({
+  id: zod.uuid().describe("Id of the lesson."),
+});
+
+export const ListStudentAttendanceResponseItem = zod
+  .object({
+    attendance: zod
+      .object({
+        corrections: zod
+          .array(
+            zod.object({
+              correctedAt: zod.iso.datetime({ offset: true }).describe("When it was corrected."),
+              correctedBy: zod
+                .object({
+                  id: zod.uuid(),
+                  name: zod.string(),
+                })
+                .nullable()
+                .describe("Who corrected it. Null when the person was removed."),
+              fromStatus: zod
+                .enum(["present", "absent"])
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                )
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                ),
+              id: zod.uuid(),
+              reason: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Why it was corrected. Null when the caller does not take the roll call of the lesson: it may carry health data.",
+                ),
+              toStatus: zod
+                .enum(["present", "absent"])
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                )
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                ),
+            }),
+          )
+          .describe("The corrections of the attendance, the oldest first. Empty when it has none."),
+        enrollmentId: zod.uuid(),
+        id: zod
+          .uuid()
+          .describe("The id the PATCH routes take (justifyAbsence, correctStudentAttendance)."),
+        justification: zod
+          .object({
+            justifiedAt: zod.iso
+              .datetime({ offset: true })
+              .describe("When the absence was justified the last time."),
+            justifiedBy: zod
+              .object({
+                id: zod.uuid(),
+                name: zod.string(),
+              })
+              .nullable()
+              .describe(
+                "Who justified the absence the last time. Null when the person was removed.",
+              ),
+            note: zod
+              .string()
+              .nullable()
+              .describe("Free text of the justification. Null when it has none."),
+            reason: zod
+              .enum(["health", "other"])
+              .describe(
+                "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+              )
+              .describe(
+                "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+              ),
+          })
+          .nullable()
+          .describe(
+            "Null when not justified, or when the caller does not take the roll call of the lesson (it may carry health data): read justified.",
+          ),
+        justified: zod
+          .boolean()
+          .describe(
+            "Whether the absence is justified. Always told, also to whoever does not see the justification itself.",
+          ),
+        lessonId: zod.uuid(),
+        signedAt: zod.iso.datetime({ offset: true }).describe("When it was signed the first time."),
+        signedBy: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .nullable()
+          .describe(
+            "Who signed the attendance the first time; a correction does not change it. Null when the person was removed.",
+          ),
+        status: zod
+          .enum(["present", "absent"])
+          .describe(
+            "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+          )
+          .describe(
+            "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+          ),
+      })
+      .describe(
+        "The attendance of a student at a lesson: the status, who signed it first and when, whether the absence is justified, and the history of its corrections.",
+      )
+      .nullable()
+      .describe("The attendance of the student at the lesson. Null while it is not signed."),
+    enrollment: zod.object({
+      id: zod.uuid().describe("Id of the enrollment: the enrollmentId the PUT takes."),
+      status: zod
+        .enum(["active", "dropped", "completed"])
+        .describe(
+          "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        )
+        .describe(
+          "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        ),
+      statusChangedAt: zod.iso
+        .date()
+        .describe("From when the current status holds, YYYY-MM-DD in America/Sao_Paulo."),
+    }),
+    student: zod
+      .object({
+        id: zod.uuid(),
+        name: zod.string(),
+      })
+      .nullable()
+      .describe("The student: id and name only. Null when the person was removed."),
+  })
+  .describe(
+    "A student of the roll call of the lesson: an enrollment the lesson expects (made before it ended and in force on its day), or one already signed in it, with its status as of today, the student and the attendance.",
+  );
+export const ListStudentAttendanceResponse = zod.array(ListStudentAttendanceResponseItem);
+
+export const SignStudentAttendanceParams = zod.object({
+  id: zod.uuid().describe("Id of the lesson."),
+});
+
+export const signStudentAttendanceBodyEntriesMax = 100;
+
+export const SignStudentAttendanceBody = zod
+  .object({
+    entries: zod
+      .array(
+        zod.object({
+          enrollmentId: zod
+            .uuid()
+            .describe(
+              "An enrollment of the roll call of the lesson of the URL (enrollment.id of the list); any other is 400 ENROLLMENT_NOT_IN_ROLL_CALL.",
+            ),
+          status: zod
+            .enum(["present", "absent"])
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            )
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            ),
+        }),
+      )
+      .min(1)
+      .max(signStudentAttendanceBodyEntriesMax)
+      .describe(
+        "From 1 to 100 entries. The same enrollment twice, in any letter case, is 400 DUPLICATE_ENROLLMENT.",
+      ),
+  })
+  .describe(
+    "The attendance of enrollments of the roll call of the lesson of the URL, from 1 to 100 entries, all or none, signed by the actor at one instant. The same status of an attendance already signed is a no-op; another status is 409 STUDENT_ATTENDANCE_ALREADY_SIGNED: a signed attendance changes through correctStudentAttendance, with a reason.",
+  );
+
+export const SignStudentAttendanceResponseItem = zod
+  .object({
+    attendance: zod
+      .object({
+        corrections: zod
+          .array(
+            zod.object({
+              correctedAt: zod.iso.datetime({ offset: true }).describe("When it was corrected."),
+              correctedBy: zod
+                .object({
+                  id: zod.uuid(),
+                  name: zod.string(),
+                })
+                .nullable()
+                .describe("Who corrected it. Null when the person was removed."),
+              fromStatus: zod
+                .enum(["present", "absent"])
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                )
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                ),
+              id: zod.uuid(),
+              reason: zod
+                .string()
+                .nullable()
+                .describe(
+                  "Why it was corrected. Null when the caller does not take the roll call of the lesson: it may carry health data.",
+                ),
+              toStatus: zod
+                .enum(["present", "absent"])
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                )
+                .describe(
+                  "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+                ),
+            }),
+          )
+          .describe("The corrections of the attendance, the oldest first. Empty when it has none."),
+        enrollmentId: zod.uuid(),
+        id: zod
+          .uuid()
+          .describe("The id the PATCH routes take (justifyAbsence, correctStudentAttendance)."),
+        justification: zod
+          .object({
+            justifiedAt: zod.iso
+              .datetime({ offset: true })
+              .describe("When the absence was justified the last time."),
+            justifiedBy: zod
+              .object({
+                id: zod.uuid(),
+                name: zod.string(),
+              })
+              .nullable()
+              .describe(
+                "Who justified the absence the last time. Null when the person was removed.",
+              ),
+            note: zod
+              .string()
+              .nullable()
+              .describe("Free text of the justification. Null when it has none."),
+            reason: zod
+              .enum(["health", "other"])
+              .describe(
+                "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+              )
+              .describe(
+                "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+              ),
+          })
+          .nullable()
+          .describe(
+            "Null when not justified, or when the caller does not take the roll call of the lesson (it may carry health data): read justified.",
+          ),
+        justified: zod
+          .boolean()
+          .describe(
+            "Whether the absence is justified. Always told, also to whoever does not see the justification itself.",
+          ),
+        lessonId: zod.uuid(),
+        signedAt: zod.iso.datetime({ offset: true }).describe("When it was signed the first time."),
+        signedBy: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .nullable()
+          .describe(
+            "Who signed the attendance the first time; a correction does not change it. Null when the person was removed.",
+          ),
+        status: zod
+          .enum(["present", "absent"])
+          .describe(
+            "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+          )
+          .describe(
+            "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+          ),
+      })
+      .describe(
+        "The attendance of a student at a lesson: the status, who signed it first and when, whether the absence is justified, and the history of its corrections.",
+      )
+      .nullable()
+      .describe("The attendance of the student at the lesson. Null while it is not signed."),
+    enrollment: zod.object({
+      id: zod.uuid().describe("Id of the enrollment: the enrollmentId the PUT takes."),
+      status: zod
+        .enum(["active", "dropped", "completed"])
+        .describe(
+          "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        )
+        .describe(
+          "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        ),
+      statusChangedAt: zod.iso
+        .date()
+        .describe("From when the current status holds, YYYY-MM-DD in America/Sao_Paulo."),
+    }),
+    student: zod
+      .object({
+        id: zod.uuid(),
+        name: zod.string(),
+      })
+      .nullable()
+      .describe("The student: id and name only. Null when the person was removed."),
+  })
+  .describe(
+    "A student of the roll call of the lesson: an enrollment the lesson expects (made before it ended and in force on its day), or one already signed in it, with its status as of today, the student and the attendance.",
+  );
+export const SignStudentAttendanceResponse = zod.array(SignStudentAttendanceResponseItem);
+
 export const GetMemberAttendanceHistoryParams = zod.object({
   id: zod.uuid().describe("Person id of the member."),
 });
@@ -198,3 +504,261 @@ export const GetMemberAttendanceHistoryResponse = zod.object({
     present: zod.int(),
   }),
 });
+
+export const CorrectStudentAttendanceParams = zod.object({
+  id: zod.uuid().describe("Id of the attendance of the student (attendance.id of the roll call)."),
+});
+
+export const correctStudentAttendanceBodyReasonMax = 500;
+
+export const CorrectStudentAttendanceBody = zod
+  .object({
+    reason: zod
+      .string()
+      .min(1)
+      .max(correctStudentAttendanceBodyReasonMax)
+      .describe(
+        "Why the attendance is corrected. Required: missing, empty or blank after the trim is 400 VALIDATION_FAILED. It goes to the history of the attendance, never to an event (it may carry health data).",
+      ),
+    status: zod
+      .enum(["present", "absent"])
+      .describe(
+        "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+      )
+      .describe(
+        "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+      ),
+  })
+  .describe(
+    "The correction of a signed attendance: the new status, which must differ from the current one, and the reason, required. It goes to the history of the attendance.",
+  );
+
+export const CorrectStudentAttendanceResponse = zod
+  .object({
+    corrections: zod
+      .array(
+        zod.object({
+          correctedAt: zod.iso.datetime({ offset: true }).describe("When it was corrected."),
+          correctedBy: zod
+            .object({
+              id: zod.uuid(),
+              name: zod.string(),
+            })
+            .nullable()
+            .describe("Who corrected it. Null when the person was removed."),
+          fromStatus: zod
+            .enum(["present", "absent"])
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            )
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            ),
+          id: zod.uuid(),
+          reason: zod
+            .string()
+            .nullable()
+            .describe(
+              "Why it was corrected. Null when the caller does not take the roll call of the lesson: it may carry health data.",
+            ),
+          toStatus: zod
+            .enum(["present", "absent"])
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            )
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            ),
+        }),
+      )
+      .describe("The corrections of the attendance, the oldest first. Empty when it has none."),
+    enrollmentId: zod.uuid(),
+    id: zod
+      .uuid()
+      .describe("The id the PATCH routes take (justifyAbsence, correctStudentAttendance)."),
+    justification: zod
+      .object({
+        justifiedAt: zod.iso
+          .datetime({ offset: true })
+          .describe("When the absence was justified the last time."),
+        justifiedBy: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .nullable()
+          .describe("Who justified the absence the last time. Null when the person was removed."),
+        note: zod
+          .string()
+          .nullable()
+          .describe("Free text of the justification. Null when it has none."),
+        reason: zod
+          .enum(["health", "other"])
+          .describe(
+            "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+          )
+          .describe(
+            "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+          ),
+      })
+      .nullable()
+      .describe(
+        "Null when not justified, or when the caller does not take the roll call of the lesson (it may carry health data): read justified.",
+      ),
+    justified: zod
+      .boolean()
+      .describe(
+        "Whether the absence is justified. Always told, also to whoever does not see the justification itself.",
+      ),
+    lessonId: zod.uuid(),
+    signedAt: zod.iso.datetime({ offset: true }).describe("When it was signed the first time."),
+    signedBy: zod
+      .object({
+        id: zod.uuid(),
+        name: zod.string(),
+      })
+      .nullable()
+      .describe(
+        "Who signed the attendance the first time; a correction does not change it. Null when the person was removed.",
+      ),
+    status: zod
+      .enum(["present", "absent"])
+      .describe(
+        "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+      )
+      .describe(
+        "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+      ),
+  })
+  .describe(
+    "The attendance of a student at a lesson: the status, who signed it first and when, whether the absence is justified, and the history of its corrections.",
+  );
+
+export const JustifyAbsenceParams = zod.object({
+  id: zod.uuid().describe("Id of the attendance of the student (attendance.id of the roll call)."),
+});
+
+export const justifyAbsenceBodyNoteMax = 500;
+
+export const JustifyAbsenceBody = zod
+  .object({
+    note: zod
+      .string()
+      .max(justifyAbsenceBodyNoteMax)
+      .nullish()
+      .describe(
+        "A note about the absence. Optional; trimmed, and empty becomes null. Omitted or empty, it clears the note of a previous justification: justifying replaces it as a whole. It may carry health data: it never goes to an event, and only whoever takes the roll call of the lesson reads it.",
+      ),
+    reason: zod
+      .enum(["health", "other"])
+      .describe(
+        "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+      )
+      .describe(
+        "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+      ),
+  })
+  .describe(
+    "The justification of an absence: why, and optionally a note. Justifying again replaces it; the same reason and note change nothing. The absence stays an absence.",
+  );
+
+export const JustifyAbsenceResponse = zod
+  .object({
+    corrections: zod
+      .array(
+        zod.object({
+          correctedAt: zod.iso.datetime({ offset: true }).describe("When it was corrected."),
+          correctedBy: zod
+            .object({
+              id: zod.uuid(),
+              name: zod.string(),
+            })
+            .nullable()
+            .describe("Who corrected it. Null when the person was removed."),
+          fromStatus: zod
+            .enum(["present", "absent"])
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            )
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            ),
+          id: zod.uuid(),
+          reason: zod
+            .string()
+            .nullable()
+            .describe(
+              "Why it was corrected. Null when the caller does not take the roll call of the lesson: it may carry health data.",
+            ),
+          toStatus: zod
+            .enum(["present", "absent"])
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            )
+            .describe(
+              "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            ),
+        }),
+      )
+      .describe("The corrections of the attendance, the oldest first. Empty when it has none."),
+    enrollmentId: zod.uuid(),
+    id: zod
+      .uuid()
+      .describe("The id the PATCH routes take (justifyAbsence, correctStudentAttendance)."),
+    justification: zod
+      .object({
+        justifiedAt: zod.iso
+          .datetime({ offset: true })
+          .describe("When the absence was justified the last time."),
+        justifiedBy: zod
+          .object({
+            id: zod.uuid(),
+            name: zod.string(),
+          })
+          .nullable()
+          .describe("Who justified the absence the last time. Null when the person was removed."),
+        note: zod
+          .string()
+          .nullable()
+          .describe("Free text of the justification. Null when it has none."),
+        reason: zod
+          .enum(["health", "other"])
+          .describe(
+            "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+          )
+          .describe(
+            "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+          ),
+      })
+      .nullable()
+      .describe(
+        "Null when not justified, or when the caller does not take the roll call of the lesson (it may carry health data): read justified.",
+      ),
+    justified: zod
+      .boolean()
+      .describe(
+        "Whether the absence is justified. Always told, also to whoever does not see the justification itself.",
+      ),
+    lessonId: zod.uuid(),
+    signedAt: zod.iso.datetime({ offset: true }).describe("When it was signed the first time."),
+    signedBy: zod
+      .object({
+        id: zod.uuid(),
+        name: zod.string(),
+      })
+      .nullable()
+      .describe(
+        "Who signed the attendance the first time; a correction does not change it. Null when the person was removed.",
+      ),
+    status: zod
+      .enum(["present", "absent"])
+      .describe(
+        "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+      )
+      .describe(
+        "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+      ),
+  })
+  .describe(
+    "The attendance of a student at a lesson: the status, who signed it first and when, whether the absence is justified, and the history of its corrections.",
+  );

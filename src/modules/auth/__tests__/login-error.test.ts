@@ -15,6 +15,14 @@ describe("toLoginErrorKey", () => {
     expect(toLoginErrorKey(apiError(401, "ACCESS_DISABLED"))).toBe("accessDisabled");
   });
 
+  it("maps REGISTRATION_PENDING, also a 401, by its code", () => {
+    expect(toLoginErrorKey(apiError(401, "REGISTRATION_PENDING"))).toBe("registrationPending");
+  });
+
+  it("maps REGISTRATION_REJECTED, also a 401, by its code", () => {
+    expect(toLoginErrorKey(apiError(401, "REGISTRATION_REJECTED"))).toBe("registrationRejected");
+  });
+
   it("maps 429", () => {
     expect(toLoginErrorKey(apiError(429, "TOO_MANY_ATTEMPTS"))).toBe("tooManyAttempts");
   });
@@ -49,6 +57,8 @@ describe("toLoginErrorKey", () => {
   it.each([
     ["INVALID_CREDENTIALS", "invalidCredentials"],
     ["ACCESS_DISABLED", "accessDisabled"],
+    ["REGISTRATION_PENDING", "registrationPending"],
+    ["REGISTRATION_REJECTED", "registrationRejected"],
     ["TOO_MANY_ATTEMPTS", "tooManyAttempts"],
   ])("keeps the known code %s even when the status is a gateway error", (code, expected) => {
     for (const statusCode of [502, 503, 504]) {

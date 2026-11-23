@@ -14,9 +14,7 @@
   "period": "Period",
   "seats": "Seats",
   "actions": "Actions",
-  "edit": "Edit",
-  "archive": "Archive",
-  "restore": "Restore",
+  "restore": "Reactivate",
   "loading": "Loading classes…",
   "empty": "No classes yet",
   "emptyDescription": "Start by creating the first class.",
@@ -34,14 +32,10 @@
   "cancelled": "Cancelled",
   "newTitle": "New class",
   "editTitle": "Edit class",
-  "name": "Class name",
   "code": "Class code",
-  "save": "Save",
   "saveClass": "Save class",
   "saveChanges": "Save changes",
   "cancel": "Cancel",
-  "archiveConfirm": "Archive this class?",
-  "confirm": "Archive",
   "close": "Close",
   "start": "Start date",
   "end": "End date",
@@ -60,8 +54,23 @@
       "courseChangeNotAllowed": "This class can no longer change course: it is no longer Planned or already has an enrollment.",
       "courseArchived": "This course was archived and takes no new classes.",
       "courseNotFound": "Course not found. Choose another course.",
-      "unknown": "Could not save the class. Try again."
-    }
+      "unknown": "Could not save the class. Try again.",
+      "codeTooLong": "The code can have at most {{codeMax}} characters.",
+      "codeInvalid": "Invalid code.",
+      "codeTaken": "There is already a class with this code in this edition.",
+      "locationTooLong": "The location can have at most {{locationMax}} characters.",
+      "capacityTooHigh": "Enter at most {{capacityMax}} seats.",
+      "capacityBelowEnrolled": "Seats cannot go below the number of enrolled students."
+    },
+    "codePlaceholder": "E.g. INFO-A",
+    "editionHint": "Pick an edition or type a new one, like 2026.2.",
+    "locationPlaceholder": "E.g. Lab 2 — Building B",
+    "archivedCourseHint": "Archived course: reactivate it to create classes.",
+    "loading": "Loading the class…",
+    "loadError": "Could not load the class. Try again.",
+    "saving": "Saving…",
+    "created": "Class created.",
+    "updated": "Class updated."
   },
   "courseClasses": {
     "title": "Classes of this course",
@@ -139,7 +148,9 @@
     },
     "members": {
       "title": "Allocated members"
-    }
+    },
+    "editAction": "Edit class",
+    "archivedEditHint": "Archived class: reactivate it to edit."
   },
   "courseOrigin": {
     "title": "Source course",
@@ -163,16 +174,48 @@
     "error": "Could not load the data of the course.",
     "unavailable": "The data of this course is not available."
   },
-  "editions": {
-    "2024": "2024",
-    "2026-1": "2026.1",
-    "2026-2": "2026.2",
-    "2025-2": "2025.2",
-    "2025-1": "2025.1"
-  },
   "levels": {
     "basic": "Basic",
     "intermediate": "Intermediate",
     "advanced": "Advanced"
+  },
+  "allFeminine": "All",
+  "pagination": "Pages of the list of classes",
+  "row": {
+    "subtitle": "{{code}} · {{course}}",
+    "seatsLabel": "{{enrolled}} of {{capacity}} seats taken",
+    "edit": "Edit class {{name}}",
+    "archive": "Archive class {{name}}",
+    "unarchive": "Reactivate class {{name}}"
+  },
+  "actionErrors": {
+    "archived": "This class is archived and cannot be changed.",
+    "notFound": "Class not found. It may have been removed.",
+    "hasActiveEnrollments": "This class still has enrolled students. End or remove the enrollments before archiving.",
+    "network": "Could not connect. Check your connection and try again.",
+    "unknown": "Could not complete the action. Try again."
+  },
+  "archiveDialog": {
+    "title": "Archive class",
+    "warningTitle": "Archiving ends the offer of the class",
+    "warningDescription": "The class leaves the active lists, but lessons, attendance and enrollments stay in the history. Nothing is deleted (RN-27).",
+    "reason": "Reason (optional)",
+    "reasonExample": "Class cancelled for lack of students.",
+    "reasonHelp": "It is kept in the history of the class.",
+    "back": "Back",
+    "confirm": "Archive class",
+    "confirming": "Archiving…",
+    "success": "Class archived.",
+    "errors": {
+      "reasonTooLong": "The reason can have at most {{reasonMax}} characters."
+    }
+  },
+  "unarchiveDialog": {
+    "title": "Reactivate class",
+    "description": "The class goes back to the active lists, with its lessons, attendance and enrollments as they were.",
+    "back": "Back",
+    "confirm": "Reactivate class",
+    "confirming": "Reactivating…",
+    "success": "Class reactivated."
   }
 }

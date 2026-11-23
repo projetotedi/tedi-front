@@ -61,6 +61,29 @@ export const GenerateClassLessonsResponse = zod.object({
   lessons: zod
     .array(
       zod.object({
+        attendance: zod
+          .object({
+            pending: zod
+              .boolean()
+              .describe(
+                "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+              ),
+            students: zod.object({
+              signed: zod
+                .int()
+                .describe(
+                  "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+                ),
+              total: zod
+                .int()
+                .describe(
+                  "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+                ),
+            }),
+          })
+          .describe(
+            "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module.",
+          ),
         belowExpectedMonitors: zod
           .boolean()
           .describe(
@@ -413,6 +436,11 @@ export const listLessonsResponseDataItemStartTimeRegExp = new RegExp("^([01]\\d|
 export const ListLessonsResponse = zod.object({
   data: zod.array(
     zod.object({
+      attendancePending: zod
+        .boolean()
+        .describe(
+          'True when the roll call of the students is pending, the "Chamada pendente" of the row (GUS-166): the lesson is not cancelled, it has ended and some student has no attendance. The same rule as attendance.pending of the lesson in full. False without the attendance module.',
+        ),
       belowExpectedMonitors: zod
         .boolean()
         .describe(
@@ -565,6 +593,29 @@ export const createLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[
 export const createLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const CreateLessonResponse = zod.object({
+  attendance: zod
+    .object({
+      pending: zod
+        .boolean()
+        .describe(
+          "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+        ),
+      students: zod.object({
+        signed: zod
+          .int()
+          .describe(
+            "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+          ),
+        total: zod
+          .int()
+          .describe(
+            "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+          ),
+      }),
+    })
+    .describe(
+      "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module.",
+    ),
   belowExpectedMonitors: zod
     .boolean()
     .describe(
@@ -765,6 +816,11 @@ export const listLessonsCalendarResponseEndTimeRegExp = new RegExp("^([01]\\d|2[
 export const listLessonsCalendarResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const ListLessonsCalendarResponseItem = zod.object({
+  attendancePending: zod
+    .boolean()
+    .describe(
+      'True when the roll call of the students is pending, the "Chamada pendente" of the row (GUS-166): the lesson is not cancelled, it has ended and some student has no attendance. The same rule as attendance.pending of the lesson in full. False without the attendance module.',
+    ),
   belowExpectedMonitors: zod
     .boolean()
     .describe(
@@ -819,6 +875,29 @@ export const getLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5
 export const getLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const GetLessonResponse = zod.object({
+  attendance: zod
+    .object({
+      pending: zod
+        .boolean()
+        .describe(
+          "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+        ),
+      students: zod.object({
+        signed: zod
+          .int()
+          .describe(
+            "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+          ),
+        total: zod
+          .int()
+          .describe(
+            "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+          ),
+      }),
+    })
+    .describe(
+      "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module.",
+    ),
   belowExpectedMonitors: zod
     .boolean()
     .describe(
@@ -1056,6 +1135,29 @@ export const updateLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[
 export const updateLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const UpdateLessonResponse = zod.object({
+  attendance: zod
+    .object({
+      pending: zod
+        .boolean()
+        .describe(
+          "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+        ),
+      students: zod.object({
+        signed: zod
+          .int()
+          .describe(
+            "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+          ),
+        total: zod
+          .int()
+          .describe(
+            "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+          ),
+      }),
+    })
+    .describe(
+      "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module.",
+    ),
   belowExpectedMonitors: zod
     .boolean()
     .describe(
@@ -1223,6 +1325,29 @@ export const cancelLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[
 export const cancelLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const CancelLessonResponse = zod.object({
+  attendance: zod
+    .object({
+      pending: zod
+        .boolean()
+        .describe(
+          "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+        ),
+      students: zod.object({
+        signed: zod
+          .int()
+          .describe(
+            "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+          ),
+        total: zod
+          .int()
+          .describe(
+            "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+          ),
+      }),
+    })
+    .describe(
+      "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module.",
+    ),
   belowExpectedMonitors: zod
     .boolean()
     .describe(
@@ -1426,6 +1551,29 @@ export const rescheduleLessonResponseEndTimeRegExp = new RegExp("^([01]\\d|2[0-3
 export const rescheduleLessonResponseStartTimeRegExp = new RegExp("^([01]\\d|2[0-3]):[0-5]\\d$");
 
 export const RescheduleLessonResponse = zod.object({
+  attendance: zod
+    .object({
+      pending: zod
+        .boolean()
+        .describe(
+          "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+        ),
+      students: zod.object({
+        signed: zod
+          .int()
+          .describe(
+            "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+          ),
+        total: zod
+          .int()
+          .describe(
+            "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+          ),
+      }),
+    })
+    .describe(
+      "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module.",
+    ),
   belowExpectedMonitors: zod
     .boolean()
     .describe(
