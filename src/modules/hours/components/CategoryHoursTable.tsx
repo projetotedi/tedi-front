@@ -17,6 +17,10 @@ export interface CategoryHoursTableProps {
   titleRef: Ref<HTMLSpanElement>;
 }
 
+// The rows have no buttons: the 16px above and below give the 56px rows of the Figma (the default of
+// the table, 10px, gives 44px).
+const CELL_CLASS = "py-4";
+
 /**
  * "Horas por categoria do membro": the hours and the pending hours of each category the member has
  * entries in, in the order of the contract. The column Observação of the Figma is out until the API
@@ -36,16 +40,19 @@ export function CategoryHoursTable({
     {
       header: t("bank.categories.category"),
       headerClassName: "w-[22%] uppercase",
+      cellClassName: CELL_CLASS,
       render: (row) => t(CATEGORY_LABEL_KEYS[row.category]),
     },
     {
       header: t("bank.categories.hours"),
       headerClassName: "w-[13%] uppercase",
+      cellClassName: CELL_CLASS,
       render: (row) => formatHours(row.declaredMinutes),
     },
     {
       header: t("bank.categories.pending"),
       headerClassName: "uppercase",
+      cellClassName: CELL_CLASS,
       render: (row) => <PendingHours minutes={row.pendingMinutes} />,
     },
   ];

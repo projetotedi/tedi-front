@@ -397,6 +397,17 @@ describe("HoursPage", () => {
     expect(screen.queryByText(/Observação/i)).not.toBeInTheDocument();
   });
 
+  it("draws the rows of the categories 56px tall, as in the Figma", async () => {
+    await renderHoursPage({ route: BEATRIZ_VIEW });
+
+    const table = await categoriesTable();
+    await within(table).findByText("Aula");
+
+    for (const cell of within(table).getAllByRole("cell")) {
+      expect(cell).toHaveClass("py-4");
+    }
+  });
+
   it("goes back to Todos by the × of the chip and by Todos", async () => {
     const user = userEvent.setup();
     const { router } = await renderHoursPage({ route: BEATRIZ_VIEW });
