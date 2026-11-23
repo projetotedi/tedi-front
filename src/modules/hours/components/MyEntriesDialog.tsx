@@ -18,15 +18,20 @@ import { canRemoveEntry } from "../lib/entry-rules";
 import { entryColumns, type EntryColumnWidths } from "./entry-columns";
 import { RemoveEntryDialog } from "./RemoveEntryDialog";
 
-/** The widths of the Figma over the 1032px of the table: Ações takes the rest. */
+/**
+ * The widths of the Figma over the 1032px of the table, with 3% moved from Ações to Atividade (33% and
+ * 11%), so a long activity in 16px does not break at a hyphen. The seven columns add up to 100%.
+ */
 const STATEMENT_WIDTHS: EntryColumnWidths = {
   date: "w-[8%]",
-  activity: "w-[30%]",
+  activity: "w-[33%]",
   category: "w-[14%]",
   declared: "w-[11%]",
   validated: "w-[10%]",
   status: "w-[13%]",
 };
+
+const ACTIONS_WIDTH = "w-[11%]";
 
 export interface MyEntriesDialogProps {
   onClose: () => void;
@@ -106,7 +111,7 @@ export function MyEntriesDialog({ onClose }: MyEntriesDialogProps): ReactElement
     ...entryColumns(t, i18n.language, { widths: STATEMENT_WIDTHS, withReviewNote: true }),
     {
       header: t("myEntries.columns.actions"),
-      headerClassName: "uppercase",
+      headerClassName: `uppercase ${ACTIONS_WIDTH}`,
       render: (entry) =>
         canManage && canRemoveEntry(entry) ? (
           <Button
