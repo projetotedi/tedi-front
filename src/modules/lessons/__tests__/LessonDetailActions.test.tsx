@@ -258,7 +258,7 @@ describe("LessonDetailActions", () => {
       );
     }
 
-    it("calls onCancelled with the lesson the API answered, once the lesson was cancelled", async () => {
+    it("calls onCancelled with the lesson the API answered", async () => {
       const cancelled = buildCancelledLesson({ cancelReason: "Feriado municipal." });
       server.use(cancelLessonHandler({ response: cancelled }));
       const onCancelled = vi.fn();

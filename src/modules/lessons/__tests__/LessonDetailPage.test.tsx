@@ -329,7 +329,7 @@ describe("LessonDetailPage", () => {
       },
     );
 
-    it("has no Registrar chamada button: it comes with the attendance module", async () => {
+    it("has no Registrar chamada button", async () => {
       await renderPage({ role: Role.coordinator });
 
       expect(screen.queryByRole("button", { name: "Registrar chamada" })).not.toBeInTheDocument();
@@ -338,7 +338,7 @@ describe("LessonDetailPage", () => {
   });
 
   describe("what the lesson does not have yet", () => {
-    it("keeps Chamada, Cobertura da aula and Registro as Em breve, with no request of their own", async () => {
+    it("keeps Chamada, Cobertura da aula and Registro as Em breve", async () => {
       await renderPage();
 
       for (const title of ["Chamada", "Cobertura da aula", "Registro"]) {
@@ -398,7 +398,7 @@ describe("LessonDetailPage", () => {
   });
 
   describe("not found", () => {
-    it("shows the page of not found, with the way back to the lessons, for a lesson that does not exist", async () => {
+    it("shows Aula não encontrada on a 404 LESSON_NOT_FOUND, with the way back", async () => {
       server.use(getLessonHandler({ error: LESSON_NOT_FOUND_ERROR }));
       await renderRoutes(lessonsRoutes, { route: LESSON_ROUTE });
 

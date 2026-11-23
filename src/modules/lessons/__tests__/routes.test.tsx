@@ -125,7 +125,7 @@ describe("lessonsRoutes", () => {
       expect(screen.queryByText(COMING_SOON)).not.toBeInTheDocument();
     });
 
-    it("keeps /lessons/calendar on the coming soon page: the static segment wins over :lessonId", async () => {
+    it("/lessons/calendar still shows the coming soon page, not a lesson", async () => {
       const onGet = vi.fn();
       server.use(getLessonHandler({ onCall: onGet }));
       const { queryClient } = await renderRoutes(lessonsRoutes, { route: "/lessons/calendar" });
@@ -138,7 +138,7 @@ describe("lessonsRoutes", () => {
       expectNoRequestBesidesSession(queryClient);
     });
 
-    it("shows the forbidden page at /lessons/:id to someone without lessons.view, and asks nothing", async () => {
+    it("shows the forbidden page at /lessons/:id to someone without lessons.view", async () => {
       const onGet = vi.fn();
       server.use(getLessonHandler({ onCall: onGet }));
       const { queryClient } = await renderRoutes(lessonsRoutes, {
