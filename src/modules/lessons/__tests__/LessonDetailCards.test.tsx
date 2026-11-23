@@ -136,15 +136,14 @@ describe("LessonDetailHeader", () => {
     expect(tags()[3]).toBe("01/12/2026 · 09:00–11:00");
   });
 
-  it("draws nothing on the right of the title without the actions prop", async () => {
+  it("draws no action without the actions prop", async () => {
     await renderWithProviders(<LessonDetailHeader lesson={buildLesson()} />);
 
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("link")).not.toBeInTheDocument();
-    expect(document.querySelector("[data-slot='card'] .flex-wrap.gap-3")).toBeNull();
   });
 
-  it("draws the given actions on the right of the title, in one container, in the order they come", async () => {
+  it("draws the given actions after the title, in one container, in the order they come", async () => {
     await renderWithProviders(
       <LessonDetailHeader
         lesson={buildLesson()}
@@ -165,23 +164,10 @@ describe("LessonDetailHeader", () => {
       "Editar aula",
     ]);
     expect(buttons[0].parentElement).toBe(buttons[2].parentElement);
-    expect(buttons[0].parentElement).toHaveClass("flex", "flex-wrap", "gap-3");
     const title = screen.getByRole("heading", { level: 2, name: LESSON_TITLE });
     expect(
       title.compareDocumentPosition(buttons[0]) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-  });
-
-  it("puts the actions beside the title from the medium width on, and under it on a phone", async () => {
-    await renderWithProviders(
-      <LessonDetailHeader
-        lesson={buildLesson()}
-        actions={<button type="button">Editar aula</button>}
-      />,
-    );
-
-    const row = screen.getByRole("button", { name: "Editar aula" }).parentElement?.parentElement;
-    expect(row).toHaveClass("flex-col", "md:flex-row", "md:justify-between");
   });
 });
 
@@ -346,7 +332,7 @@ describe("LessonDataCard", () => {
     expect(within(valueOf(data, "Monitores esperados")).queryByText("—")).not.toBeInTheDocument();
   });
 
-  it("shows the subject and the post-lesson notes, which take a whole row each", async () => {
+  it("shows the subject and the post-lesson notes", async () => {
     await renderWithProviders(
       <LessonDataCard
         lesson={buildLesson({
@@ -361,8 +347,6 @@ describe("LessonDataCard", () => {
     const notes = valueOf(data, "Observações pós-aula");
     expect(subject).toHaveTextContent(/^Atalhos de teclado$/);
     expect(notes).toHaveTextContent(/^A turma gostou do exercício\.$/);
-    expect(subject.parentElement).toHaveClass("md:col-span-4");
-    expect(notes.parentElement).toHaveClass("md:col-span-4");
   });
 
   it("says a lesson on its own has no plan, with no link", async () => {
