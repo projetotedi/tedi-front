@@ -14,6 +14,7 @@ import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
 import { PendingInvitesButton } from "../components/PendingInvitesButton";
+import { ValidateRegistrationDialog } from "../components/ValidateRegistrationDialog";
 import { useCan } from "../hooks/useCan";
 import {
   hasActiveMemberFilters,
@@ -32,8 +33,10 @@ import {
  * back. Any filter sends the list back to page 1, and the page on the screen stays while the next
  * one loads (`keepPreviousData`).
  *
- * Whoever has `members.list` sees the list (the route asks for it); the invite buttons are only for
- * who manages invites (`invites.manage`).
+ * Whoever has `members.list` sees the list (the route asks for it); the invite buttons and Validar
+ * are only for who manages invites (`invites.manage`). Validar, on a registration waiting for
+ * validation, opens the modal of GUS-125 over the list, and the list stays where it was: deciding
+ * refreshes it (the modal invalidates `/members`).
  *
  * The title of the page (h1) and the title of the tab come from the AppLayout through the
  * `handle.title` of the route (GUS-86); this page neither calls `useDocumentTitle` nor renders an
@@ -45,7 +48,11 @@ export function AccessPage(): ReactElement {
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Row actions (GUS-88) must use `useCan("access.manage")` and the own-account rule (decision 23).
   const canInvite = useCan("invites.manage");
+  const canValidate = useCan("invites.manage");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  // The id of the registration being validated (the id of the person); the modal exists only while
+  // there is one.
+  const [validatingId, setValidatingId] = useState<string | null>(null);
 
   const [params, setParams] = useSearchParams();
   const filters = readMemberFilters(params);
@@ -192,7 +199,10 @@ export function AccessPage(): ReactElement {
           aria-busy={query.isPlaceholderData || undefined}
           className={query.isPlaceholderData ? "opacity-75" : undefined}
         >
-          <AccessTable rows={query.data?.data ?? []} />
+          <AccessTable
+            rows={query.data?.data ?? []}
+            onValidate={canValidate ? (row) => setValidatingId(row.id) : undefined}
+          />
           {renderListState()}
         </div>
 
@@ -220,6 +230,13 @@ export function AccessPage(): ReactElement {
           </div>
         ) : null}
       </Card>
+
+      {validatingId !== null ? (
+        <ValidateRegistrationDialog
+          registrationId={validatingId}
+          onClose={() => setValidatingId(null)}
+        />
+      ) : null}
     </section>
   );
 }

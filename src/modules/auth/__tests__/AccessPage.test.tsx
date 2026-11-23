@@ -1,11 +1,12 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MemberRegistrationStatus, type InviteListItemDto } from "@api/generated/model";
 import { getListMembersQueryKey } from "@api/generated/people/people";
 import { Role } from "@shared/lib/role";
+import { toast } from "@shared/ui";
 
 import { AuthProvider } from "../AuthProvider";
 import { AccessPage } from "../pages/AccessPage";
@@ -20,12 +21,24 @@ import {
   meHandler,
 } from "./handlers";
 import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
+import {
+  buildMemberRegistration,
+  getMemberRegistrationHandler,
+  listDepartmentsHandler,
+  REGISTRATION_ID,
+  rejectMemberRegistrationHandler,
+  REVIEW_DEPARTMENTS,
+} from "./member-registration-handlers";
 import { renderRoutes, renderWithProviders, server, setupAuthTestServer } from "./test-utils";
 
 setupAuthTestServer();
 
 beforeEach(() => {
   server.use(listInvitesHandler());
+});
+
+afterEach(() => {
+  toast.clear();
 });
 
 type OnCall = ReturnType<typeof vi.fn<(params: URLSearchParams) => void>>;
@@ -119,6 +132,7 @@ describe("route /members", () => {
       screen.queryByRole("button", { name: "Gerar link de cadastro" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Convites pendentes/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Validar/ })).not.toBeInTheDocument();
     expect(onInvitesCall).not.toHaveBeenCalled();
   });
 
@@ -790,6 +804,208 @@ describe("AccessPage", () => {
       await waitFor(() => expect(searchBox()).toHaveValue(""));
       await waitFor(() => expect(lastParams(onCall)?.has("search")).toBe(false));
       expect(router.state.location.search).toBe("");
+    });
+  });
+
+  describe("Validar", () => {
+    const TECHNOLOGY = REVIEW_DEPARTMENTS[1];
+    const OTHER_REGISTRATION_ID = "01952ef7-0000-7000-8000-0000000000c2";
+
+    /** The registration of Lucas as the list shows it right after he accepted the invite. */
+    const LUCAS = buildMember({
+      id: REGISTRATION_ID,
+      name: "Lucas Andrade Souza",
+      ra: "202600117",
+      role: null,
+      accessEnabled: false,
+      department: TECHNOLOGY,
+      mainFunction: null,
+      joinedAt: null,
+      registrationStatus: MemberRegistrationStatus.pending,
+    });
+    const MARTA = buildMember({
+      id: OTHER_REGISTRATION_ID,
+      name: "Marta Reis Campos",
+      role: null,
+      accessEnabled: false,
+      mainFunction: null,
+      joinedAt: null,
+      registrationStatus: MemberRegistrationStatus.pending,
+    });
+    const TITLE = "Validar cadastro de membro";
+    const validateButton = (name: string) => `Validar cadastro de ${name}`;
+
+    /**
+     * Through the route, which waits for the session: the permissions are known when the page first
+     * renders, so a button that must be missing is not missing only because /auth/me is on its way.
+     */
+    function renderMembersRoute(
+      user = buildMeUser({ role: Role.coordinator }),
+      route = "/members",
+    ) {
+      server.use(meHandler({ user }));
+      return renderRoutes(authProtectedRoutes, { route });
+    }
+
+    it("a freshly accepted registration is listed as A validar and Validar opens the validation dialog", async () => {
+      const onRegistrationCall = vi.fn();
+      server.use(
+        listMembersHandler({ data: [buildMember({ id: "person-1", name: "Ana Torres" }), LUCAS] }),
+        getMemberRegistrationHandler({ onCall: onRegistrationCall }),
+        listDepartmentsHandler(),
+      );
+      const user = userEvent.setup();
+
+      await renderMembersRoute();
+
+      const row = await screen.findByRole("row", { name: /Lucas Andrade Souza/ });
+      const cells = within(row).getAllByRole("cell");
+      expect(within(row).getByText("A validar")).toBeInTheDocument();
+      expect(cells[2]).toHaveTextContent("Tecnologia");
+      expect(
+        within(screen.getByRole("row", { name: /Ana Torres/ })).queryByRole("button", {
+          name: /^Validar/,
+        }),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+      await user.click(
+        await within(row).findByRole("button", { name: validateButton("Lucas Andrade Souza") }),
+      );
+
+      expect(await screen.findByRole("dialog", { name: TITLE })).toBeInTheDocument();
+      await waitFor(() => expect(onRegistrationCall).toHaveBeenCalledWith(REGISTRATION_ID));
+    });
+
+    it("opens the registration of the row that was pressed", async () => {
+      const onRegistrationCall = vi.fn();
+      server.use(
+        listMembersHandler({ data: [LUCAS, MARTA] }),
+        getMemberRegistrationHandler({
+          registration: buildMemberRegistration({
+            id: OTHER_REGISTRATION_ID,
+            name: "Marta Reis Campos",
+          }),
+          onCall: onRegistrationCall,
+        }),
+        listDepartmentsHandler(),
+      );
+      const user = userEvent.setup();
+
+      await renderMembersRoute();
+      await user.click(
+        await screen.findByRole("button", { name: validateButton("Marta Reis Campos") }),
+      );
+
+      expect(await screen.findByRole("dialog", { name: TITLE })).toBeInTheDocument();
+      await waitFor(() => expect(onRegistrationCall).toHaveBeenCalledWith(OTHER_REGISTRATION_ID));
+      expect(onRegistrationCall).not.toHaveBeenCalledWith(REGISTRATION_ID);
+    });
+
+    it("closing the dialog leaves the list and the URL where they were", async () => {
+      server.use(
+        listMembersHandler({ data: [LUCAS] }),
+        getMemberRegistrationHandler(),
+        listDepartmentsHandler(),
+      );
+      const user = userEvent.setup();
+
+      const { router } = await renderMembersRoute(undefined, "/members?status=pending");
+      await user.click(
+        await screen.findByRole("button", { name: validateButton("Lucas Andrade Souza") }),
+      );
+      await screen.findByRole("dialog", { name: TITLE });
+
+      await user.click(screen.getByRole("button", { name: "Voltar" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(
+        screen.getByRole("button", { name: validateButton("Lucas Andrade Souza") }),
+      ).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe("/members");
+      expect(router.state.location.search).toBe("?status=pending");
+    });
+
+    it("deciding in the dialog refreshes the list: the row says Recusado and stops offering Validar", async () => {
+      const onListCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(
+        listMembersHandler({ data: [LUCAS], onCall: onListCall }),
+        getMemberRegistrationHandler(),
+        listDepartmentsHandler(),
+      );
+      const user = userEvent.setup();
+
+      await renderMembersRoute();
+      await user.click(
+        await screen.findByRole("button", { name: validateButton("Lucas Andrade Souza") }),
+      );
+      await screen.findByRole("dialog", { name: TITLE });
+      await screen.findByRole("textbox", { name: /Função principal/ });
+      const callsBeforeDeciding = onListCall.mock.calls.length;
+
+      server.use(
+        listMembersHandler({
+          data: [{ ...LUCAS, registrationStatus: MemberRegistrationStatus.rejected }],
+          onCall: onListCall,
+        }),
+        rejectMemberRegistrationHandler(),
+      );
+      await user.type(
+        screen.getByRole("textbox", { name: /Observação da validação/ }),
+        "O RA não confere com o termo.",
+      );
+      await user.click(screen.getByRole("button", { name: "Recusar" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() =>
+        expect(
+          within(screen.getByRole("row", { name: /Lucas Andrade Souza/ })).getByText("Recusado"),
+        ).toBeInTheDocument(),
+      );
+      expect(onListCall.mock.calls.length).toBeGreaterThan(callsBeforeDeciding);
+      expect(
+        screen.queryByRole("button", { name: validateButton("Lucas Andrade Souza") }),
+      ).not.toBeInTheDocument();
+    });
+
+    it("a coordinator without invites.manage sees A validar but no Validar, and nothing is requested", async () => {
+      const onRegistrationCall = vi.fn();
+      server.use(
+        listMembersHandler({ data: [LUCAS] }),
+        getMemberRegistrationHandler({ onCall: onRegistrationCall }),
+        listDepartmentsHandler(),
+      );
+
+      await renderMembersRoute(
+        buildMeUser({
+          permissions: { ...PERMISSIONS_BY_ROLE.coordinator, "invites.manage": "none" },
+        }),
+      );
+
+      const row = await screen.findByRole("row", { name: /Lucas Andrade Souza/ });
+      expect(within(row).getByText("A validar")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /^Validar/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+      expect(onRegistrationCall).not.toHaveBeenCalled();
+    });
+
+    it("A validar in the Status filter lists the pending registrations, each with Validar", async () => {
+      const onCall = vi.fn<(params: URLSearchParams) => void>();
+      server.use(
+        http.get("*/members", ({ request }) => {
+          const params = new URL(request.url).searchParams;
+          onCall(params);
+          const data = params.get("registrationStatus") === "pending" ? [LUCAS, MARTA] : [];
+          return HttpResponse.json({ data, page: 1, limit: 12, total: data.length });
+        }),
+      );
+
+      await renderMembersRoute(undefined, "/members?status=pending");
+
+      expect(await screen.findAllByRole("button", { name: /^Validar cadastro de/ })).toHaveLength(
+        2,
+      );
+      expect(onCall.mock.calls[0]?.[0].get("registrationStatus")).toBe("pending");
     });
   });
 });
