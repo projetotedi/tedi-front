@@ -38,6 +38,8 @@
     "errors": {
       "invalidCredentials": "Incorrect registration number or password",
       "accessDisabled": "Your access is inactive, contact the coordination team",
+      "registrationPending": "Your registration is waiting for validation by the coordination team. Once it is approved, you will be able to sign in.",
+      "registrationRejected": "Your registration was not approved. Contact the coordination team.",
       "tooManyAttempts": "Too many attempts, please wait a few minutes",
       "network": "Could not connect",
       "unknown": "Could not sign in. Please try again."
@@ -256,6 +258,107 @@
         "network": "Could not connect",
         "unknown": "Could not generate the invite. Please try again."
       }
+    }
+  },
+  "registrationReview": {
+    "title": "Validate member registration",
+    "close": "Close",
+    "back": "Back",
+    "badge": "To validate",
+    "required": "required",
+    "loading": "Loading registration…",
+    "summary": {
+      "sent": "{{name}} sent the registration through the link on {{submittedAt}}",
+      "sentNoDate": "{{name}} sent the registration through the link",
+      "invitedAs": " · invited as {{role}}"
+    },
+    "submitted": {
+      "title": "Data sent by the member",
+      "legend": "Check it against the RA and the term. If something is wrong, reject it with a note so the member can fix it.",
+      "notProvided": "Not provided",
+      "birthDate_one": "{{date}} ({{count}} year old)",
+      "birthDate_other": "{{date}} ({{count}} years old)",
+      "semester": "{{semester}}",
+      "openTerm": "Open the volunteer term (opens in a new tab)",
+      "fields": {
+        "name": "Full name",
+        "birthDate": "Date of birth",
+        "cpf": "CPF",
+        "phone": "Phone",
+        "personalEmail": "Personal email",
+        "institutionalEmail": "Institutional email",
+        "address": "Address",
+        "city": "City",
+        "state": "State (UF)",
+        "ra": "RA",
+        "course": "University course",
+        "semester": "Semester",
+        "className": "University class",
+        "department": "Suggested department",
+        "volunteerTerm": "Volunteer term"
+      }
+    },
+    "review": {
+      "title": "Decided by the coordination team",
+      "legend": "Filled in with the invite and what the member suggested; adjust before approving.",
+      "role": "Access profile",
+      "department": "Department",
+      "departmentPlaceholder": "Select a department",
+      "departmentLoading": "Loading departments…",
+      "noDepartment": "No department",
+      "mainFunction": "Main function",
+      "joinedAt": "Joined the project on",
+      "note": "Validation note",
+      "noteHelp": "Required when rejecting. It is kept in the registration; do not write personal data."
+    },
+    "departments": {
+      "emptyTitle": "No department registered",
+      "emptyDescription": "The coordination team must register the departments before approving a member or a director. To approve as Coordinator, the department is optional.",
+      "error": "Could not load the departments.",
+      "retry": "Try again"
+    },
+    "actions": {
+      "approve": "Approve",
+      "approving": "Approving…",
+      "reject": "Reject",
+      "rejecting": "Rejecting…"
+    },
+    "decided": {
+      "approved": "This registration has already been approved.",
+      "rejected": "This registration has already been rejected.",
+      "description": "It is shown here for reference only, with no actions."
+    },
+    "loadError": {
+      "notFound": "Registration not found. It may have been removed.",
+      "failed": "Could not load the registration. Check your connection and try again.",
+      "retry": "Try again"
+    },
+    "toast": {
+      "approvedTitle": "Registration approved",
+      "approvedDescription": "{{name}} now has access as {{role}} and can sign in with the RA {{ra}}.",
+      "approvedDescriptionNoRa": "{{name}} now has access as {{role}} and can sign in.",
+      "rejectedTitle": "Registration rejected",
+      "rejectedDescription": "{{name}} does not get access. The note is kept in their registration."
+    },
+    "validation": {
+      "roleRequired": "Choose the access profile",
+      "roleInvalid": "This profile cannot be granted. Choose another one.",
+      "departmentRequired": "Choose the department",
+      "departmentNotFound": "This department no longer exists. Choose another one.",
+      "mainFunctionRequired": "Enter the main function",
+      "mainFunctionMax": "The main function must have at most {{maxMainFunctionLength}} characters",
+      "mainFunctionInvalid": "The main function was not accepted. Check the text and try again.",
+      "joinedAtInvalid": "Enter a date between 01/01/2000 and today",
+      "noteRequired": "Write a note to reject",
+      "noteMax": "The note must have at most {{maxNoteLength}} characters",
+      "noteInvalid": "The note was not accepted. Check the text and try again."
+    },
+    "errors": {
+      "notPending": "This registration has already been validated by someone else on the coordination team. Close this window and check the updated list.",
+      "notFound": "Registration not found. It may have been removed.",
+      "invalidData": "Some data was not accepted. Check the fields and try again.",
+      "network": "Could not connect. Check your connection and try again.",
+      "unknown": "Could not complete the validation. Please try again."
     }
   }
 }
