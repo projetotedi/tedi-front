@@ -12,7 +12,9 @@
     "editFor": "Edit the lesson {{title}}",
     "cancel": "Cancel lesson",
     "cancelFor": "Cancel the lesson {{title}}",
-    "reschedule": "Reschedule lesson"
+    "reschedule": "Reschedule lesson",
+    "cancelledHint": "Cancelled lesson: it cannot be rescheduled, cancelled or edited.",
+    "classArchivedHint": "The class is archived: its lessons are read-only."
   },
   "form": {
     "newTitle": "New lesson",
@@ -306,5 +308,75 @@
     "loading": "Loading the calendar…",
     "error": "The calendar could not be loaded",
     "errorDescription": "Try again. If the problem continues, contact support."
+  },
+  "detail": {
+    "routeTitle": "Lesson",
+    "loading": "Loading the lesson…",
+    "notFoundTitle": "Lesson not found",
+    "notFoundDescription": "This lesson does not exist or was removed. Go back to the list and pick another.",
+    "backToList": "Back to lessons",
+    "comingSoon": "Coming soon",
+    "breadcrumb": {
+      "label": "Breadcrumb",
+      "lessons": "Lessons",
+      "current": "{{date}} · {{title}}"
+    },
+    "header": {
+      "class": "Class {{name}}",
+      "schedule": "{{date}} · {{start}}–{{end}}",
+      "duration": "{{duration}} lesson"
+    },
+    "data": {
+      "title": "Lesson data",
+      "fields": {
+        "date": "Date",
+        "time": "Time",
+        "duration": "Duration",
+        "location": "Location",
+        "status": "Status",
+        "sequenceOrder": "Position in the course plan",
+        "lessonPlan": "Lesson plan (origin)",
+        "material": "Material",
+        "expectedStudents": "Expected students",
+        "expectedMonitors": "Expected monitors",
+        "subject": "Subject",
+        "teacher": "Teacher",
+        "postNotes": "Post-lesson notes"
+      },
+      "timeRange": "{{start}}–{{end}}",
+      "sequenceOrder": "Lesson {{order}} of the sequence",
+      "standalone": "Standalone lesson (no plan)",
+      "archivedPlan": "archived plan"
+    },
+    "links": {
+      "title": "Links",
+      "fields": {
+        "class": "Class",
+        "course": "Course",
+        "edition": "Edition",
+        "lessonPlan": "Lesson plan"
+      },
+      "sequenceItem": "item {{order}}"
+    },
+    "changes": {
+      "titleRescheduled": "Rescheduling",
+      "titleCancelled": "Cancellation",
+      "titleBoth": "Rescheduling and cancellation",
+      "fields": {
+        "originalDate": "Original date",
+        "rescheduleReason": "Reason for rescheduling",
+        "rescheduleNote": "Rescheduling note",
+        "cancelReason": "Reason for cancelling"
+      }
+    },
+    "attendance": {
+      "title": "Attendance"
+    },
+    "coverage": {
+      "title": "Lesson coverage"
+    },
+    "record": {
+      "title": "Record"
+    }
   }
 }

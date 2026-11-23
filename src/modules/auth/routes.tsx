@@ -18,14 +18,15 @@ export const authRoutes: RouteObject[] = [
 /**
  * Rotas autenticadas do módulo, montadas sob AppLayout em app/router.tsx.
  * `/members` é o item "Membros" do grupo Pessoas do menu: a gestão de acessos (GUS-87) é a
- * tela real por trás dele, não uma rota separada.
+ * tela real por trás dele, não uma rota separada. Pede `members.list` (GUS-150): a tela lê
+ * `GET /members`, que a coordenação e o diretor listam; o membro não.
  */
 export const authProtectedRoutes: RouteObject[] = [
   {
     path: "members",
     handle: { title: "common:nav.members" } satisfies RouteHandle,
     element: (
-      <RequirePermission permission="access.manage">
+      <RequirePermission permission="members.list">
         <AccessPage />
       </RequirePermission>
     ),
