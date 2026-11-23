@@ -346,6 +346,9 @@ describe("LessonsPage", () => {
 
       expect(await rowOf("Teclado, mouse e janelas")).toBeInTheDocument();
       expect(screen.getByRole("table").closest("[aria-busy]")).toHaveAttribute("aria-busy", "true");
+      // The 14 is the total of the page that is on its way out, not of the one that is coming.
+      expect(screen.getByRole("heading", { name: "Aulas" })).toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "Aulas (14)" })).not.toBeInTheDocument();
       pending.resolve();
       await waitFor(() =>
         expect(
@@ -356,6 +359,7 @@ describe("LessonsPage", () => {
         "aria-busy",
         "false",
       );
+      expect(screen.getByRole("heading", { name: "Aulas (14)" })).toBeInTheDocument();
     });
 
     it("the box follows the URL when it changes by another way, and does not write the old text back", async () => {

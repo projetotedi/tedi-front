@@ -19,7 +19,9 @@ export interface CalendarEventProps {
  * with the time and the title. It is named by all it says (time, title, class and status), since
  * the color alone says nothing to a screen reader, and the status is never only a color either: a
  * cancelled lesson is struck through and carries the word "Cancelada". The block is 44px high at
- * least, the target of the touch, and shows a ring when it has the focus.
+ * least, the target of the touch, and shows a ring when it has the focus. Everything in it is 14px
+ * (`text-sm`), the name of the class and the word "Cancelada" included: nothing smaller, and the
+ * 100px of a day of the month, which is the narrowest place it goes, still holds "Cancelada".
  */
 export function CalendarEvent({ lesson, showClass = false }: CalendarEventProps): ReactElement {
   const { t } = useTranslation("lessons");
@@ -41,9 +43,9 @@ export function CalendarEvent({ lesson, showClass = false }: CalendarEventProps)
       <span className={`break-words ${isCancelled ? "line-through" : ""}`.trim()}>
         {lesson.title}
       </span>
-      {showClass ? <span className="text-xs break-words">{lesson.class.name}</span> : null}
+      {showClass ? <span className="text-sm break-words">{lesson.class.name}</span> : null}
       {isCancelled ? (
-        <span className="text-xs font-semibold">{t("calendar.cancelledTag")}</span>
+        <span className="text-sm font-semibold">{t("calendar.cancelledTag")}</span>
       ) : null}
     </Link>
   );

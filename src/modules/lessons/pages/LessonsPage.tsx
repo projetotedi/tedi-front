@@ -67,6 +67,8 @@ export function LessonsPage(): ReactElement {
   });
   const page = lessonsQuery.data;
   const lessons = page?.data ?? [];
+  // While the next page comes the rows of the one before stay on the screen, but its total is not
+  // the total of the new filters: the title says "Aulas" until the real one arrives.
   const total = page?.total;
 
   // Asking again after an error with nothing to show makes the query "pending" again: the error
@@ -97,7 +99,9 @@ export function LessonsPage(): ReactElement {
     <Card
       title={
         <span id="lessons-title">
-          {total === undefined ? t("list.titlePending") : t("list.title", { count: total })}
+          {total === undefined || lessonsQuery.isPlaceholderData
+            ? t("list.titlePending")
+            : t("list.title", { count: total })}
         </span>
       }
       aside={

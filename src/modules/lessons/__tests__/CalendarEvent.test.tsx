@@ -64,6 +64,20 @@ describe("CalendarEvent", () => {
     expect(link()).toHaveAccessibleName(/Confirmada$/);
   });
 
+  it("writes the name of the class and the word Cancelada in 14px, never smaller", async () => {
+    await renderWithProviders(
+      <CalendarEvent lesson={buildLessonListItem({ status: LessonStatus.cancelled })} showClass />,
+    );
+
+    expect(link()).toHaveClass("text-sm");
+    for (const text of [CLASS_NAME, "Cancelada", "09:00–11:00", "Teclado, mouse e janelas"]) {
+      const part = within(link()).getByText(text);
+      expect(part, text).not.toHaveClass("text-xs");
+    }
+    expect(within(link()).getByText(CLASS_NAME)).toHaveClass("text-sm");
+    expect(within(link()).getByText("Cancelada")).toHaveClass("text-sm");
+  });
+
   it("is at least 44px high and shows a ring with the focus", async () => {
     await renderWithProviders(<CalendarEvent lesson={buildLessonListItem()} />);
 
