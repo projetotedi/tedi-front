@@ -4,18 +4,23 @@ import {
   ClassStatus,
   CourseCategory,
   CourseStatus,
+  LessonPlanListStatus,
   LessonPlanUsageStatus,
   LessonStatus,
   type ApiFieldErrorDto,
   type CancelLessonDto,
   type ClassListItemDto,
+  type CourseListItemDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CreateLessonDto,
   type LessonListItemResponseDto,
   type LessonPlanDetailDto,
+  type LessonPlanListItemDto,
   type LessonResponseDto,
   type ListClasses200,
+  type ListCourses200,
+  type ListLessonPlans200,
   type MeResponseDto,
   type PermissionsDto,
   type RescheduleLessonDto,
@@ -536,6 +541,94 @@ export function listClassesHandler({
   onCall,
 }: HandlerOptions<ListCall, ListClasses200> = {}) {
   return http.get("*/classes", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** An item of `GET /courses`: "Informática Básica", active, with the two plans of the Figma. */
+export function buildCourseListItem(overrides: Partial<CourseListItemDto> = {}): CourseListItemDto {
+  return {
+    id: COURSE_ID,
+    name: COURSE_NAME,
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    lessonPlanCount: 2,
+    plannedWorkloadMinutes: 210,
+    prerequisites: [],
+    createdAt: "2026-01-10T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** A page of `GET /courses`. */
+export function buildCoursesPage(
+  items: CourseListItemDto[] = [buildCourseListItem()],
+  { total = items.length, page = 1, limit = 100 } = {},
+): ListCourses200 {
+  return { data: items, total, page, limit };
+}
+
+/** `GET /courses`: the filter "Curso" of the calendar reads it. */
+export function listCoursesHandler({
+  response = buildCoursesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListCourses200> = {}) {
+  return http.get("*/courses", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** An item of `GET /lesson-plans`: "Teclado, mouse e janelas", in use by one course. */
+export function buildLessonPlanListItem(
+  overrides: Partial<LessonPlanListItemDto> = {},
+): LessonPlanListItemDto {
+  return {
+    id: LESSON_PLAN_ID,
+    title: "Teclado, mouse e janelas",
+    contents: ["Teclado e mouse", "Janelas do sistema"],
+    expectedDurationMinutes: 120,
+    materialUrl: null,
+    courseCount: 1,
+    status: LessonPlanListStatus.in_use,
+    archivedAt: null,
+    updatedAt: "2026-02-01T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** A page of `GET /lesson-plans`: the two plans of the course of the tests. */
+export function buildLessonPlansPage(
+  items: LessonPlanListItemDto[] = [
+    buildLessonPlanListItem(),
+    buildLessonPlanListItem({ id: LESSON_PLAN_ID_2, title: "Senhas e privacidade" }),
+  ],
+  { total = items.length, page = 1, limit = 100 } = {},
+): ListLessonPlans200 {
+  return { data: items, total, page, limit };
+}
+
+/** `GET /lesson-plans`: the filter "Plano de aula" of both screens reads it. */
+export function listLessonPlansHandler({
+  response = buildLessonPlansPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCall, ListLessonPlans200> = {}) {
+  return http.get("*/lesson-plans", async ({ request }) => {
     onCall?.(Object.fromEntries(new URL(request.url).searchParams));
     if (delay) await delay;
 
