@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import type { MemberHourEntryResponseDto } from "@api/generated/model";
 import { Button } from "@shared/ui";
 
-import clockIcon from "../../../assets/icons/clock.svg";
 import { formatEntryDay } from "../lib/bank-format";
 import { memberNameOf } from "../lib/bank-labels";
 
@@ -19,14 +18,12 @@ export interface ReviewRowActionsProps {
   onValidate: () => void;
   onAdjust: () => void;
   onReject: () => void;
-  onHistory: () => void;
 }
 
 /**
  * The actions of a pending entry, for who reviews, in the order of the Figma: Validar, Ajustar and
- * Rejeitar, then the clock of the history (a decision of the user; the Figma only opens it from the
- * toast of an adjustment). On the person's own entry the three reviews are turned off, and the row
- * says why to assistive technology; the history stays.
+ * Rejeitar. On the person's own entry the three are turned off, and the row says why to assistive
+ * technology. The history of an entry opens only from the toast of an adjustment ("Ver histórico").
  */
 export function ReviewRowActions({
   entry,
@@ -36,7 +33,6 @@ export function ReviewRowActions({
   onValidate,
   onAdjust,
   onReject,
-  onHistory,
 }: ReviewRowActionsProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
   const labels = {
@@ -73,14 +69,6 @@ export function ReviewRowActions({
         {t("review.reject")}
       </Button>
       {isOwn ? <span className="sr-only">{t("review.selfReviewHint")}</span> : null}
-      <Button
-        variant="ghost"
-        isIconOnly
-        aria-label={t("review.historyLabel", labels)}
-        onPress={onHistory}
-      >
-        <img src={clockIcon} alt="" aria-hidden="true" width={16} height={16} />
-      </Button>
     </div>
   );
 }

@@ -514,7 +514,7 @@ describe("PendingEntriesTable", () => {
     expect(selectAllBox()).not.toBeChecked();
   });
 
-  it("closes Rejeitar by Voltar and Histórico by Fechar, with the row still in the queue", async () => {
+  it("closes Rejeitar by Voltar, with the row still in the queue and nothing sent", async () => {
     const user = userEvent.setup();
     const spies = createBankSpies();
     await renderQueue({ spies });
@@ -527,16 +527,6 @@ describe("PendingEntriesTable", () => {
     );
     const reject = await screen.findByRole("dialog", { name: "Rejeitar lançamento" });
     await user.click(within(reject).getByRole("button", { name: "Voltar" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-
-    await user.click(
-      within(row(table, "12/03")).getByRole("button", {
-        name: "Ver histórico do lançamento de Rafael Souza em 12/03",
-      }),
-    );
-    const history = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
-    const closers = within(history).getAllByRole("button", { name: "Fechar" });
-    await user.click(closers[closers.length - 1]);
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(within(table).getByText("12/03")).toBeInTheDocument();
@@ -558,24 +548,13 @@ describe("PendingEntriesTable", () => {
     expect(validateBodies(spies)).toEqual([{ ids: [ENTRY_0503_ID] }]);
   });
 
-  it("opens the history of a pending entry from its row", async () => {
-    const user = userEvent.setup();
+  it("offers only Validar, Ajustar and Rejeitar in a row, as in the Figma", async () => {
     await renderQueue();
     const table = await queueTable();
 
-    await user.click(
-      within(row(table, "14/03")).getByRole("button", {
-        name: "Ver histórico do lançamento de Beatriz Nunes em 14/03",
-      }),
-    );
+    const buttons = within(row(table, "14/03")).getAllByRole("button");
 
-    const history = await screen.findByRole("dialog", { name: "Histórico do lançamento" });
-    expect(
-      within(history).getByText("Situação atual: Pendente · declarado 4h"),
-    ).toBeInTheDocument();
-    expect(
-      await within(history).findByText("Beatriz Nunes lançou 4h em Planejamento"),
-    ).toBeInTheDocument();
+    expect(buttons.map((button) => button.textContent)).toEqual(["Validar", "Ajustar", "Rejeitar"]);
   });
 
   it("closes the toast of Ver histórico when the queue leaves the screen", async () => {

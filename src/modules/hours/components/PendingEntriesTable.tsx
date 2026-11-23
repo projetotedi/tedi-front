@@ -61,7 +61,7 @@ export interface PendingEntriesTableProps {
  * - **Ajustar and Rejeitar** open their dialogs, one entry at a time. When the entry leaves the
  *   queue (adjusted, rejected, or no longer pending) the dialog closes, a toast says what happened
  *   and the focus goes to the title. The toast of an adjustment opens the history of the entry
- *   ("Ver histórico"), and so does the clock of each row.
+ *   ("Ver histórico"), the only way to it from the queue (as in the Figma).
  */
 export function PendingEntriesTable({ filter }: PendingEntriesTableProps): ReactElement {
   const { t, i18n } = useTranslation("hours");
@@ -256,7 +256,6 @@ export function PendingEntriesTable({ filter }: PendingEntriesTableProps): React
               onValidate={() => validateEntries([row], { kind: "row", entryId: row.id })}
               onAdjust={() => setDialog({ kind: "adjust", entry: row })}
               onReject={() => setDialog({ kind: "reject", entry: row })}
-              onHistory={() => setDialog({ kind: "history", entry: row })}
             />
           ),
         }

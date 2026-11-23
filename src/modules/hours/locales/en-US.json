@@ -96,7 +96,6 @@
     "validateLabel": "Validate the entry of {{name}} on {{date}}",
     "adjustLabel": "Adjust the entry of {{name}} on {{date}}",
     "rejectLabel": "Reject the entry of {{name}} on {{date}}",
-    "historyLabel": "View the history of the entry of {{name}} on {{date}}",
     "validated_one": "{{count}} entry validated",
     "validated_other": "{{count}} entries validated",
     "validatedDescription": "{{hours}} went into the hours bank of {{names}}.",

@@ -96,7 +96,6 @@
     "validateLabel": "Validar lançamento de {{name}} em {{date}}",
     "adjustLabel": "Ajustar lançamento de {{name}} em {{date}}",
     "rejectLabel": "Rejeitar lançamento de {{name}} em {{date}}",
-    "historyLabel": "Ver histórico do lançamento de {{name}} em {{date}}",
     "validated_one": "{{count}} lançamento validado",
     "validated_other": "{{count}} lançamentos validados",
     "validatedDescription": "{{hours}} entraram no banco de horas de {{names}}.",
