@@ -1,5 +1,5 @@
 import { keepPreviousData } from "@tanstack/react-query";
-import type { ReactElement } from "react";
+import { useEffect, useRef, type ReactElement } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
@@ -50,6 +50,10 @@ import {
  *
  * Every lesson, in every view, is a link to its screen. The month sends the days with more events
  * than it fits (+N mais) to the week of that day.
+ *
+ * The focus does not fall to the page when the button that has it leaves: after "+N mais" it goes to
+ * the list of days of the week, once it is on the screen, and after "Limpar filtros" (which goes with
+ * the message of the empty period) it goes to the first filter, as in the list it goes to the search.
  */
 export function LessonsCalendarPage(): ReactElement {
   const { t, i18n } = useTranslation("lessons");
@@ -61,6 +65,16 @@ export function LessonsCalendarPage(): ReactElement {
   const anchor = readAnchorDate(params, today);
   const range = calendarRange(view, anchor, locale);
   const options = useLessonFilterOptions({ courses: true });
+  const filtersRef = useRef<HTMLDivElement>(null);
+  const weekListRef = useRef<HTMLOListElement>(null);
+  // Set by "+N mais": the grid of the month, with the button, is about to go away.
+  const focusWeekRef = useRef(false);
+
+  useEffect(() => {
+    if (view !== "week" || !focusWeekRef.current) return;
+    focusWeekRef.current = false;
+    weekListRef.current?.focus();
+  }, [view]);
 
   const query = useListLessonsCalendar(toListLessonsCalendarParams(filters, range), {
     query: { placeholderData: keepPreviousData },
@@ -93,23 +107,26 @@ export function LessonsCalendarPage(): ReactElement {
     });
   }
 
+  function showWeekOf(day: string) {
+    focusWeekRef.current = true;
+    goTo("week", day);
+  }
+
   function clearFilters() {
     setParams((current) => withoutLessonFilters(current), { replace: true });
+    // The button that was pressed goes with the message of the empty period: the focus goes to the
+    // first filter, which stays where it is.
+    filtersRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
   }
 
   function renderPeriod(): ReactElement {
-    if (view === "week") return <WeekGrid anchor={anchor} today={today} lessons={lessons} />;
+    if (view === "week") {
+      return <WeekGrid anchor={anchor} today={today} lessons={lessons} listRef={weekListRef} />;
+    }
     if (view === "list") {
       return <CalendarAgenda days={monthDays(anchor)} lessons={shownLessons} />;
     }
-    return (
-      <MonthGrid
-        anchor={anchor}
-        today={today}
-        lessons={lessons}
-        onShowDay={(day) => goTo("week", day)}
-      />
-    );
+    return <MonthGrid anchor={anchor} today={today} lessons={lessons} onShowDay={showWeekOf} />;
   }
 
   function renderBody(): ReactElement {
@@ -130,34 +147,22 @@ export function LessonsCalendarPage(): ReactElement {
       );
     }
 
-    return (
-      <div aria-busy={query.isPlaceholderData} className="flex flex-col gap-3">
-        {isEmptyPeriod ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <p className="text-base text-muted">{t("calendar.emptyPeriod")}</p>
-            {hasActiveFilters ? (
-              <Button variant="secondary" onPress={clearFilters}>
-                {t("list.clearFilters")}
-              </Button>
-            ) : null}
-          </div>
-        ) : null}
-        {renderPeriod()}
-      </div>
-    );
+    return <div aria-busy={query.isPlaceholderData}>{renderPeriod()}</div>;
   }
 
   return (
     <Card title={<span id="lessons-calendar-title">{t("calendar.title")}</span>}>
       <section aria-labelledby="lessons-calendar-title" className="flex flex-col gap-3">
-        <LessonFilters
-          fields={["classId", "courseId", "status", "lessonPlanId"]}
-          filters={filters}
-          options={options}
-          onFilterChange={(key, value) =>
-            setParams((current) => withLessonFilters(current, { [key]: value }))
-          }
-        />
+        <div ref={filtersRef}>
+          <LessonFilters
+            fields={["classId", "courseId", "status", "lessonPlanId"]}
+            filters={filters}
+            options={options}
+            onFilterChange={(key, value) =>
+              setParams((current) => withLessonFilters(current, { [key]: value }))
+            }
+          />
+        </div>
         <hr className="border-tedi-divider" />
         <CalendarToolbar
           view={view}
@@ -167,6 +172,18 @@ export function LessonsCalendarPage(): ReactElement {
           onNext={() => goTo(view, shiftAnchor(view, anchor, 1))}
           onToday={() => goTo(view, today)}
         />
+        {/* The message of the empty period is a status region that is on the page before the message
+            comes (and out of the way while it is empty): a region that is born full is not announced. */}
+        <div className={isEmptyPeriod ? "flex flex-wrap items-center gap-3" : "contents"}>
+          <p role="status" className="text-base text-muted empty:sr-only">
+            {isEmptyPeriod ? t("calendar.emptyPeriod") : null}
+          </p>
+          {isEmptyPeriod && hasActiveFilters ? (
+            <Button variant="secondary" onPress={clearFilters}>
+              {t("list.clearFilters")}
+            </Button>
+          ) : null}
+        </div>
         {renderBody()}
       </section>
     </Card>

@@ -1,4 +1,5 @@
-import { screen, within } from "@testing-library/react";
+import { createRef } from "react";
+import { act, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { LessonStatus } from "@api/generated/model";
@@ -41,6 +42,38 @@ describe("WeekGrid", () => {
     expect(today).toHaveTextContent("10");
     expect(today).toHaveClass("bg-accent", "text-accent-foreground");
     expect(today?.closest("h3")).toHaveTextContent("terça-feira, 10 de março");
+  });
+
+  it("reads the full date inside the element that says it is today, not next to it", async () => {
+    await renderWeek();
+
+    // `aria-current="date"` on a bare number that is hidden from the screen reader would say
+    // nothing: the date is the text of the element itself.
+    const today = document.querySelector('[aria-current="date"]') as HTMLElement;
+    expect(within(today).getByText("terça-feira, 10 de março")).toHaveClass("sr-only");
+    expect(within(today).getByText("10")).toHaveAttribute("aria-hidden", "true");
+    // The other days read their date by the same rule, in the same place.
+    const monday = days()[1].querySelector("span:not([aria-hidden])") as HTMLElement;
+    expect(within(monday).getByText("segunda-feira, 9 de março")).toHaveClass("sr-only");
+  });
+
+  it("gives the list the focus by the ref it was given, and Tab does not stop at it", async () => {
+    const listRef = createRef<HTMLOListElement>();
+    await renderWithProviders(
+      <WeekGrid
+        anchor="2026-03-10"
+        today={TODAY}
+        lessons={[buildLessonListItem()]}
+        listRef={listRef}
+      />,
+    );
+    const list = screen.getByRole("list", { name: /8\s.\s14 de março de 2026/ });
+
+    expect(listRef.current).toBe(list);
+    expect(list).toHaveAttribute("tabindex", "-1");
+    act(() => listRef.current?.focus());
+    expect(list).toHaveFocus();
+    expect(list).toHaveClass("focus-visible:ring-3", "focus-visible:ring-focus");
   });
 
   it("a week across two months names the days of both", async () => {

@@ -43,7 +43,8 @@ afterEach(() => {
 
 function LocationProbe() {
   const location = useLocation();
-  return <output data-testid="current-location">{`${location.pathname}${location.search}`}</output>;
+  // Not an `<output>`: it has the role "status", which is the role of the region this page announces in.
+  return <span data-testid="current-location">{`${location.pathname}${location.search}`}</span>;
 }
 
 const location = () => screen.getByTestId("current-location").textContent;
@@ -435,6 +436,70 @@ describe("LessonsCalendarPage", () => {
     });
   });
 
+  describe("the focus", () => {
+    const FOUR_LESSONS = ["a", "b", "c", "d"].map((id, index) =>
+      buildLessonListItem({
+        id,
+        title: `Aula ${id}`,
+        startTime: `0${index + 6}:00`,
+        endTime: `0${index + 7}:00`,
+      }),
+    );
+
+    it("after +N mais, with the keyboard, goes to the week and does not fall to the page", async () => {
+      const user = userEvent.setup();
+      await renderPage({ lessons: FOUR_LESSONS });
+      const more = await screen.findByRole("button", { name: /^\+1 mais/ });
+      act(() => more.focus());
+      expect(more).toHaveFocus();
+
+      await user.keyboard("{Enter}");
+
+      const week = await screen.findByRole("list", { name: /8\s.\s14 de março de 2026/ });
+      await waitFor(() => expect(week).toHaveFocus());
+      expect(document.body).not.toHaveFocus();
+    });
+
+    it("after +N mais, with the mouse, goes to the week too", async () => {
+      const user = userEvent.setup();
+      await renderPage({ lessons: FOUR_LESSONS });
+
+      await user.click(await screen.findByRole("button", { name: /^\+1 mais/ }));
+
+      const week = await screen.findByRole("list", { name: /8\s.\s14 de março de 2026/ });
+      await waitFor(() => expect(week).toHaveFocus());
+    });
+
+    it("does not take the focus to the week when it is the person who changes to the week", async () => {
+      const user = userEvent.setup();
+      await renderPage();
+      await screen.findByRole("table", { name: "março de 2026" });
+
+      await user.click(viewButton("Semana"));
+
+      const week = await screen.findByRole("list", { name: /8\s.\s14 de março de 2026/ });
+      expect(week).not.toHaveFocus();
+      expect(viewButton("Semana")).toHaveFocus();
+    });
+
+    it("after Limpar filtros goes to the first filter, since its button leaves with the message", async () => {
+      const user = userEvent.setup();
+      await renderPage({
+        lessons: [],
+        route: `/lessons/calendar?view=week&date=2026-03-08&status=done&classId=${CLASS_ID}`,
+      });
+      await screen.findByText("Nenhuma aula neste período");
+
+      await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+      await waitFor(() =>
+        expect(screen.queryByRole("button", { name: "Limpar filtros" })).not.toBeInTheDocument(),
+      );
+      expect(button(/^Turma/)).toHaveTextContent("Turma: todas");
+      expect(button(/^Turma/)).toHaveFocus();
+    });
+  });
+
   describe("views", () => {
     it("the agenda lists the days of the month that have a lesson, and leaves out the lessons of the neighbor days", async () => {
       await renderPage({
@@ -502,10 +567,26 @@ describe("LessonsCalendarPage", () => {
       ).toBeInTheDocument();
     });
 
+    it("the message of an empty period comes in a status region that was already on the page", async () => {
+      const user = userEvent.setup();
+      await renderPage();
+      await screen.findByRole("table", { name: "março de 2026" });
+      // A region that is born full is not announced: this one is there, empty, before the message.
+      const region = screen.getByRole("status");
+      expect(region).toBeEmptyDOMElement();
+
+      server.use(listLessonsCalendarHandler({ response: [] }));
+      await user.click(button("Próximo mês"));
+
+      await waitFor(() => expect(region).toHaveTextContent("Nenhuma aula neste período"));
+      expect(screen.getByRole("status")).toBe(region);
+    });
+
     it("an empty period shows the empty grid and says so, with no Limpar filtros when no filter is on", async () => {
       await renderPage({ lessons: [] });
 
       expect(await screen.findByText("Nenhuma aula neste período")).toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent("Nenhuma aula neste período");
       expect(gridTable()).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Limpar filtros" })).not.toBeInTheDocument();
     });

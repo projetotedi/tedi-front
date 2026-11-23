@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import type { ReactElement, Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { LessonListItemResponseDto } from "@api/generated/model";
@@ -12,6 +12,8 @@ export interface WeekGridProps {
   /** Today (`YYYY-MM-DD`), to mark it. */
   today: string;
   lessons: LessonListItemResponseDto[];
+  /** The list of days, for the screen to give it the focus (after "+N mais" of the month). */
+  listRef?: Ref<HTMLOListElement>;
 }
 
 /**
@@ -21,16 +23,22 @@ export interface WeekGridProps {
  * the events are read in order, which is simpler to follow than a position on a scale. It is a list
  * of days, named by the dates of the week, so a screen reader goes day by day. Below 768px the
  * columns become one list, one day under the other, and the days with no lesson are left out of it.
+ *
+ * The list can take the focus by `listRef` (`tabIndex` -1: the Tab key does not stop at it, but the
+ * next Tab goes to the first event). The screen does that when the person comes here from "+N mais"
+ * of the month, whose button has just left the page.
  */
-export function WeekGrid({ anchor, today, lessons }: WeekGridProps): ReactElement {
+export function WeekGrid({ anchor, today, lessons, listRef }: WeekGridProps): ReactElement {
   const { i18n } = useTranslation("lessons");
   const locale = i18n.language;
   const byDay = groupLessonsByDay(lessons);
 
   return (
     <ol
+      ref={listRef}
+      tabIndex={-1}
       aria-label={formatPeriodTitle("week", anchor, locale)}
-      className="grid grid-cols-1 gap-3 md:grid-cols-7 md:gap-0"
+      className="grid grid-cols-1 gap-3 rounded-md outline-hidden focus-visible:ring-3 focus-visible:ring-focus md:grid-cols-7 md:gap-0"
     >
       {weekDays(anchor, locale).map((day) => {
         const events = byDay.get(day) ?? [];
@@ -53,9 +61,9 @@ export function WeekGrid({ anchor, today, lessons }: WeekGridProps): ReactElemen
                 }`}
               >
                 <span aria-hidden="true">{Number(day.slice(8))}</span>
-              </span>
-              <span className="sr-only">
-                {formatDay(day, locale, { weekday: "long", day: "numeric", month: "long" })}
+                <span className="sr-only">
+                  {formatDay(day, locale, { weekday: "long", day: "numeric", month: "long" })}
+                </span>
               </span>
             </h3>
             {events.length > 0 ? (
