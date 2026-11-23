@@ -39,7 +39,10 @@ export function DataTable<T>({
   tableClassName,
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-x-auto">
+    // `relative` makes the scroller the containing block of the `sr-only` texts of the cells and the
+    // caption (they are positioned absolutely): without it a table that scrolls sideways on a narrow
+    // screen would carry them past the edge and widen the whole page.
+    <div className="relative overflow-x-auto">
       <table className={joinClasses("w-full text-left", tableClassName)}>
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>

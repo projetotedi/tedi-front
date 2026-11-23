@@ -91,6 +91,21 @@ describe("DataTable", () => {
     expect(screen.getByRole("cell", { name: "Ana" })).toHaveClass("text-base", "text-foreground");
   });
 
+  it("scrolls sideways inside its own box, which holds the sr-only texts so they cannot widen the page", () => {
+    render(
+      <DataTable
+        columns={COLUMNS}
+        rows={[{ id: "1", name: "Ana" }]}
+        rowKey={(row) => row.id}
+        caption="Lista de pessoas"
+      />,
+    );
+
+    // `sr-only` is positioned absolutely: it is clipped by the scroller only if the scroller is
+    // positioned (its containing block).
+    expect(screen.getByRole("table").parentElement).toHaveClass("relative", "overflow-x-auto");
+  });
+
   it("renders no rows and no message when rows is empty and emptyMessage is not set", () => {
     render(<DataTable columns={COLUMNS} rows={[]} rowKey={(row) => row.id} />);
 
