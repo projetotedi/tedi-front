@@ -279,5 +279,32 @@
     "selectedClass": "Selected class",
     "selectedLessonPlan": "Selected plan",
     "invalidRange": "The end date has to be the same as or after the start date."
+  },
+  "calendar": {
+    "title": "Calendar of lessons",
+    "views": {
+      "label": "View",
+      "list": "List",
+      "month": "Month",
+      "week": "Week"
+    },
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "today": "Today",
+    "legend": {
+      "belowExpectedMonitors": "Monitors below the expected"
+    },
+    "eventLabel": "{{time}}, {{title}}, class {{className}}, {{status}}",
+    "cancelledTag": "Cancelled",
+    "more_one": "+{{count}} more",
+    "more_other": "+{{count}} more",
+    "moreLabel_one": "+{{count}} more: see the lesson of {{date}} in the week",
+    "moreLabel_other": "+{{count}} more: see the lessons of {{date}} in the week",
+    "emptyPeriod": "No lessons in this period",
+    "loading": "Loading the calendar…",
+    "error": "The calendar could not be loaded",
+    "errorDescription": "Try again. If the problem continues, contact support."
   }
 }

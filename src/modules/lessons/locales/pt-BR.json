@@ -279,5 +279,32 @@
     "selectedClass": "Turma selecionada",
     "selectedLessonPlan": "Plano selecionado",
     "invalidRange": "A data final precisa ser igual ou depois da data inicial."
+  },
+  "calendar": {
+    "title": "Calendário de aulas",
+    "views": {
+      "label": "Visualização",
+      "list": "Lista",
+      "month": "Mês",
+      "week": "Semana"
+    },
+    "previousMonth": "Mês anterior",
+    "nextMonth": "Próximo mês",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Próxima semana",
+    "today": "Hoje",
+    "legend": {
+      "belowExpectedMonitors": "Monitores abaixo do esperado"
+    },
+    "eventLabel": "{{time}}, {{title}}, turma {{className}}, {{status}}",
+    "cancelledTag": "Cancelada",
+    "more_one": "+{{count}} mais",
+    "more_other": "+{{count}} mais",
+    "moreLabel_one": "+{{count}} mais: ver a aula de {{date}} na semana",
+    "moreLabel_other": "+{{count}} mais: ver as aulas de {{date}} na semana",
+    "emptyPeriod": "Nenhuma aula neste período",
+    "loading": "Carregando o calendário…",
+    "error": "Não foi possível carregar o calendário",
+    "errorDescription": "Tente novamente. Se o problema continuar, procure o suporte."
   }
 }
