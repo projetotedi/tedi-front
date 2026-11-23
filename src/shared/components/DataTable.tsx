@@ -76,9 +76,10 @@ export function DataTable<T>({
                   onRowClick
                     ? (event) => {
                         const target = event.target;
-                        // A dialog opened from a cell is mounted in a portal, so it is not inside
-                        // the row in the DOM, but React still sends its events up to the row: a
-                        // click inside that dialog is not a click on the row.
+                        // What a cell renders in a portal (a dialog, a menu) is not inside the row
+                        // in the DOM, but React sends its events up the React tree to the row unless
+                        // the portal stops them: a click that came from outside the row is not a
+                        // click on it.
                         if (!(target instanceof Node) || !event.currentTarget.contains(target)) {
                           return;
                         }

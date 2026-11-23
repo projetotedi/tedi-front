@@ -32,8 +32,8 @@ export interface ClassLessonsCardProps {
  * lists the lessons with no reload, and when it fails only this card shows the error, with
  * "Tentar de novo". Without `lessons.view` the card is not drawn and nothing is asked.
  *
- * The teacher is always `null` until the allocation exists (GUS-158), so the column shows a dash
- * that a screen reader reads as "Não informado".
+ * The teacher is the one confirmed for the lesson (`teacher`, from the allocation of the members),
+ * and a dash that a screen reader reads as "Não informado" when the lesson has none.
  */
 export function ClassLessonsCard({ classId }: ClassLessonsCardProps): ReactElement | null {
   const { t, i18n } = useTranslation("lessons");

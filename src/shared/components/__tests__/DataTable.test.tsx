@@ -150,8 +150,8 @@ describe("DataTable", () => {
           columns={[
             {
               header: "Nome",
-              // What a dialog opened from a cell does: it renders in `document.body`, outside the
-              // row, but React sends its click up through the cell to the row.
+              // What a cell does to show a dialog or a menu: it renders in `document.body`,
+              // outside the row, and React sends the click up through the cell to the row.
               render: () => createPortal(<p>dentro do diálogo</p>, document.body),
             },
           ]}
