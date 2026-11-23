@@ -100,7 +100,7 @@ describe("route /members", () => {
     expect(authProtectedRoutes[0]?.handle).toEqual({ title: "common:nav.members" });
   });
 
-  it("director sees the list without the invite actions", async () => {
+  it("director sees the list without invite actions nor Validar", async () => {
     const onInvitesCall = vi.fn();
     server.use(
       meHandler({ user: buildMeUser({ role: Role.director }) }),
