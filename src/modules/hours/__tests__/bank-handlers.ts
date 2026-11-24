@@ -10,6 +10,7 @@ import {
   type HoursSummaryResponseDto,
   type MemberHourEntryResponseDto,
   type RejectHourEntryDto,
+  type SetHourCategoryNoteDto,
   type ValidateHourEntriesDto,
 } from "@api/generated/model";
 
@@ -273,6 +274,24 @@ export function bankHandlers(store: BankStore, spies: BankSpies = createBankSpie
         member: row.member,
         summary,
         entries: { ...paginate(entries, url), total: entries.length },
+      });
+    }),
+
+    http.put("*/members/:id/hours/notes", async ({ request, params }) => {
+      await record(request);
+      const personId = String(params.id);
+      const body = (await request.json()) as SetHourCategoryNoteDto;
+      const total = store.memberSummaries
+        .get(personId)
+        ?.byCategory.find((item) => item.category === body.category);
+      if (total === undefined) return apiError(404, "MEMBER_NOT_FOUND");
+      total.note = body.note;
+      return HttpResponse.json({
+        personId,
+        category: body.category,
+        note: body.note,
+        updatedById: ANA_ID,
+        updatedAt: "2026-03-16T13:00:00.000Z",
       });
     }),
 

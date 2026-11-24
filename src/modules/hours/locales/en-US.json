@@ -53,6 +53,11 @@
       "category": "Category",
       "hours": "Hours",
       "pending": "Pending",
+      "note": "Note",
+      "noNote": "No note",
+      "actions": "Actions",
+      "editNote": "Edit",
+      "editNoteLabel": "Edit the note of {{category}}",
       "loading": "Loading categories…",
       "empty": "No entries of this member in the period",
       "labels": {
@@ -202,5 +207,19 @@
     "loading": "Loading the history…",
     "loadError": "The history could not be loaded.",
     "retry": "Try again"
+  },
+  "note": {
+    "title": "Note of {{category}}",
+    "close": "Close",
+    "label": "Note",
+    "help": "The member sees this text in My profile. Leave it blank to clear it.",
+    "back": "Back",
+    "submit": "Save note",
+    "saved": "Note saved",
+    "cleared": "Note cleared",
+    "errors": {
+      "tooLong": "Use up to {{max}} characters.",
+      "generic": "The note could not be saved. Try again."
+    }
   }
 }

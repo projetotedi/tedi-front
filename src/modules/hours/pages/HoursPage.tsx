@@ -114,6 +114,8 @@ export function HoursPage(): ReactElement {
       <>
         <HoursTotals summary={member.data?.summary} isLoading={member.isPending} />
         <CategoryHoursTable
+          key={personId}
+          personId={personId}
           summary={member.data?.summary}
           isLoading={member.isPending}
           titleRef={titleRef}

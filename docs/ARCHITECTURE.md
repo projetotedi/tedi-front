@@ -512,4 +512,4 @@ Vitest + Testing Library, `__tests__/` dentro do módulo (ou de `shared/<x>/`), 
     - **D17 (origem).** O resumo diz "Registrado pela presença da aula em {data}" para `origin: attendance` (o Figma não desenha).
     - **D18 (releitura).** A fila é relida dentro da mutação (callbacks do hook), e os callbacks do `mutate` só fazem toast, seleção e foco.
 
-    **Pendências da GUS-165, de propósito.** O card Banco de horas da ficha do membro, com "Ver extrato ›" para `/hours?member=<id>` (GUS-145); a coluna Observação (GUS-173 e um card de front pequeno); uma rota de meses com lançamento no back, para o Período (D3).
+    **Pendências da GUS-165, de propósito.** O card Banco de horas da ficha do membro, com "Ver extrato ›" para `/hours?member=<id>` (GUS-145); a coluna Observação do Meu perfil (GUS-173, depois da GUS-163); uma rota de meses com lançamento no back, para o Período (D3).

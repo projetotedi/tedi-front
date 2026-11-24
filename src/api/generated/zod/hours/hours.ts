@@ -506,6 +506,12 @@ export const GetHoursOverviewResponse = zod.object({
               ),
             declaredMinutes: zod.int().describe("Sum of their declared minutes, of any status."),
             entries: zod.int().describe("How many entries, of any status."),
+            note: zod
+              .string()
+              .nullable()
+              .describe(
+                "The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.",
+              ),
             pendingMinutes: zod
               .int()
               .describe("Declared minutes of the pending entries: what waits for review."),
@@ -763,6 +769,12 @@ export const GetMyHoursSummaryResponse = zod.object({
           ),
         declaredMinutes: zod.int().describe("Sum of their declared minutes, of any status."),
         entries: zod.int().describe("How many entries, of any status."),
+        note: zod
+          .string()
+          .nullable()
+          .describe(
+            "The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.",
+          ),
         pendingMinutes: zod
           .int()
           .describe("Declared minutes of the pending entries: what waits for review."),
@@ -1015,6 +1027,12 @@ export const GetMemberHoursResponse = zod.object({
               ),
             declaredMinutes: zod.int().describe("Sum of their declared minutes, of any status."),
             entries: zod.int().describe("How many entries, of any status."),
+            note: zod
+              .string()
+              .nullable()
+              .describe(
+                "The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.",
+              ),
             pendingMinutes: zod
               .int()
               .describe("Declared minutes of the pending entries: what waits for review."),
@@ -1047,4 +1065,38 @@ export const GetMemberHoursResponse = zod.object({
         .describe("The last day asked, or null when the period has no upper bound."),
     })
     .describe("The totals of the member in the period, by status and by category."),
+});
+
+export const SetNoteParams = zod.object({
+  id: zod.uuid().describe("Id of the member (the person)."),
+});
+
+export const setNoteBodyNoteMax = 500;
+
+export const SetNoteBody = zod.object({
+  category: zod
+    .enum(["lesson", "planning", "event", "management", "meeting", "support", "other"])
+    .describe(
+      "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
+    )
+    .describe("The category the observation is about. Every category takes one, lesson included."),
+  note: zod
+    .string()
+    .max(setNoteBodyNoteMax)
+    .nullable()
+    .describe(
+      "Free text of coordination, trimmed, up to 500 characters. Null or blank clears the observation.",
+    ),
+});
+
+export const SetNoteResponse = zod.object({
+  category: zod
+    .enum(["lesson", "planning", "event", "management", "meeting", "support", "other"])
+    .describe(
+      "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
+    ),
+  note: zod.string().nullable().describe("The observation. Null when it was cleared."),
+  personId: zod.uuid().describe("The member (the person)."),
+  updatedAt: zod.iso.datetime({ offset: true }).describe("When it was last written."),
+  updatedById: zod.uuid().describe("Who wrote or cleared it last."),
 });

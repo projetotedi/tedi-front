@@ -377,8 +377,8 @@ describe("HoursPage", () => {
     expect(screen.queryByRole("table", { name: /^Horas por membro/ })).not.toBeInTheDocument();
   });
 
-  it("shows the hours by category of the member, only the categories with entries, without Observação", async () => {
-    await renderHoursPage({ route: BEATRIZ_VIEW });
+  it("shows the hours by category of the member, only the categories with entries, with Observação and no Ações for the director", async () => {
+    await renderHoursPage({ route: BEATRIZ_VIEW, user: director() });
 
     const table = await categoriesTable();
     await within(table).findByText("Aula");
@@ -386,19 +386,18 @@ describe("HoursPage", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Categoria", "Horas", "Pendentes"]);
+    ).toEqual(["Categoria", "Horas", "Pendentes", "Observação"]);
     expect(bodyRows(table)).toEqual([
-      ["Aula", "28h", "—Sem pendência"],
-      ["Planejamento", "8h", "8h"],
-      ["Evento", "4h", "—Sem pendência"],
-      ["Gestão", "4h", "—Sem pendência"],
-      ["Outros", "2h", "—Sem pendência"],
+      ["Aula", "28h", "—Sem pendência", "—Sem observação"],
+      ["Planejamento", "8h", "8h", "Aguardando validação da coordenação."],
+      ["Evento", "4h", "—Sem pendência", "—Sem observação"],
+      ["Gestão", "4h", "—Sem pendência", "—Sem observação"],
+      ["Outros", "2h", "—Sem pendência", "—Sem observação"],
     ]);
-    expect(screen.queryByText(/Observação/i)).not.toBeInTheDocument();
   });
 
   it("draws the rows of the categories 56px tall, as in the Figma", async () => {
-    await renderHoursPage({ route: BEATRIZ_VIEW });
+    await renderHoursPage({ route: BEATRIZ_VIEW, user: director() });
 
     const table = await categoriesTable();
     await within(table).findByText("Aula");
@@ -492,6 +491,7 @@ describe("HoursPage", () => {
         declaredMinutes: 0,
         pendingMinutes: 0,
         bankMinutes: 0,
+        note: null,
       })),
     });
     await renderHoursPage({ route: BEATRIZ_VIEW, store });

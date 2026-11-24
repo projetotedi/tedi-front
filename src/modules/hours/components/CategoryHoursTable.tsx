@@ -1,16 +1,19 @@
-import type { ReactElement, Ref } from "react";
+import { useState, type ReactElement, type Ref } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { HoursCategoryTotalDto, HoursSummaryResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { ListState } from "@shared/components/ListState";
 import { formatHours } from "@shared/lib/format";
-import { Card } from "@shared/ui";
+import { Button, Card } from "@shared/ui";
 
+import { useReviewPermission } from "../hooks/useReviewPermission";
 import { CATEGORY_LABEL_KEYS, CATEGORY_ORDER } from "../lib/bank-labels";
+import { CategoryNoteDialog } from "./CategoryNoteDialog";
 import { PendingHours } from "./PendingHours";
 
 export interface CategoryHoursTableProps {
+  personId: string;
   summary: HoursSummaryResponseDto | undefined;
   isLoading: boolean;
   /** The title of the card, which takes the focus when the view of the member opens. */
@@ -23,17 +26,20 @@ const CELL_CLASS = "py-4";
 
 /**
  * "Horas por categoria do membro": the hours and the pending hours of each category the member has
- * entries in, in the order of the contract. The column Observação of the Figma is out until the API
- * sends its text (GUS-173); the three columns keep the places of the Figma.
+ * entries or an observation in, in the order of the contract. Who reviews hours edits the
+ * observation (GUS-173).
  */
 export function CategoryHoursTable({
+  personId,
   summary,
   isLoading,
   titleRef,
 }: CategoryHoursTableProps): ReactElement {
   const { t } = useTranslation("hours");
+  const { canReview } = useReviewPermission();
+  const [editing, setEditing] = useState<HoursCategoryTotalDto | null>(null);
   const rows = (summary?.byCategory ?? [])
-    .filter((row) => row.entries > 0)
+    .filter((row) => row.entries > 0 || row.note !== null)
     .sort((a, b) => CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category));
 
   const columns: Column<HoursCategoryTotalDto>[] = [
@@ -51,11 +57,42 @@ export function CategoryHoursTable({
     },
     {
       header: t("bank.categories.pending"),
-      headerClassName: "uppercase",
+      headerClassName: "w-[20%] uppercase",
       cellClassName: CELL_CLASS,
       render: (row) => <PendingHours minutes={row.pendingMinutes} />,
     },
+    {
+      header: t("bank.categories.note"),
+      headerClassName: "uppercase",
+      cellClassName: `${CELL_CLASS} break-words whitespace-pre-line`,
+      render: (row) =>
+        row.note ?? (
+          <>
+            <span aria-hidden="true">—</span>
+            <span className="sr-only">{t("bank.categories.noNote")}</span>
+          </>
+        ),
+    },
   ];
+
+  if (canReview) {
+    columns.push({
+      header: t("bank.categories.actions"),
+      headerClassName: "w-[15%] uppercase",
+      cellClassName: "py-1.5",
+      render: (row) => (
+        <Button
+          variant="secondary"
+          aria-label={t("bank.categories.editNoteLabel", {
+            category: t(CATEGORY_LABEL_KEYS[row.category]),
+          })}
+          onPress={() => setEditing(row)}
+        >
+          {t("bank.categories.editNote")}
+        </Button>
+      ),
+    });
+  }
 
   return (
     <Card
@@ -71,11 +108,14 @@ export function CategoryHoursTable({
         rows={rows}
         rowKey={(row) => row.category}
         caption={t("bank.categories.caption")}
-        tableClassName="table-fixed min-w-140"
+        tableClassName="table-fixed min-w-180"
       />
       {isLoading ? <ListState variant="loading" title={t("bank.categories.loading")} /> : null}
       {!isLoading && rows.length === 0 ? (
         <ListState variant="empty" title={t("bank.categories.empty")} />
+      ) : null}
+      {editing !== null ? (
+        <CategoryNoteDialog personId={personId} total={editing} onClose={() => setEditing(null)} />
       ) : null}
     </Card>
   );

@@ -135,8 +135,9 @@ function categoryTotal(
   declaredMinutes: number,
   pendingMinutes: number,
   bankMinutes: number,
+  note: string | null = null,
 ): HoursCategoryTotalDto {
-  return { category, entries, declaredMinutes, pendingMinutes, bankMinutes };
+  return { category, entries, declaredMinutes, pendingMinutes, bankMinutes, note };
 }
 
 /** The totals of everyone in March: 312h, 276h, 12h and 24h. */
@@ -177,7 +178,14 @@ export function buildBeatrizSummary(): HoursSummaryResponseDto {
     ],
     byCategory: [
       categoryTotal(HourEntryCategory.lesson, 7, 1680, 0, 1680),
-      categoryTotal(HourEntryCategory.planning, 2, 480, 480, 0),
+      categoryTotal(
+        HourEntryCategory.planning,
+        2,
+        480,
+        480,
+        0,
+        "Aguardando validação da coordenação.",
+      ),
       categoryTotal(HourEntryCategory.event, 1, 240, 0, 240),
       categoryTotal(HourEntryCategory.management, 1, 240, 0, 240),
       categoryTotal(HourEntryCategory.meeting, 0, 0, 0, 0),

@@ -53,6 +53,11 @@
       "category": "Categoria",
       "hours": "Horas",
       "pending": "Pendentes",
+      "note": "Observação",
+      "noNote": "Sem observação",
+      "actions": "Ações",
+      "editNote": "Editar",
+      "editNoteLabel": "Editar observação de {{category}}",
       "loading": "Carregando categorias…",
       "empty": "Nenhum lançamento deste membro no período",
       "labels": {
@@ -202,5 +207,19 @@
     "loading": "Carregando o histórico…",
     "loadError": "Não foi possível carregar o histórico.",
     "retry": "Tentar de novo"
+  },
+  "note": {
+    "title": "Observação de {{category}}",
+    "close": "Fechar",
+    "label": "Observação",
+    "help": "O membro vê este texto no Meu perfil. Deixe em branco para apagar.",
+    "back": "Voltar",
+    "submit": "Salvar observação",
+    "saved": "Observação salva",
+    "cleared": "Observação apagada",
+    "errors": {
+      "tooLong": "Use até {{max}} caracteres.",
+      "generic": "Não foi possível salvar a observação. Tente de novo."
+    }
   }
 }
