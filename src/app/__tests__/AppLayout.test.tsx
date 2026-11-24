@@ -16,8 +16,8 @@ import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils"
 import { hoursRoutes } from "@modules/hours";
 import { bankHandlers, createBankStore } from "@modules/hours/__tests__/bank-handlers";
 import { lessonsRoutes } from "@modules/lessons";
-import { peopleRoutes } from "@modules/people";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
+import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -176,6 +176,10 @@ describe("AppLayout", () => {
     const drawer = await screen.findByRole("dialog", { name: "Menu principal" });
     expect(drawer).toHaveAttribute("id", "app-menu");
     expect(button).toHaveAttribute("aria-expanded", "true");
+
+    // O Drawer leva o foco para dentro dele logo depois de abrir, não no mesmo instante: o primeiro
+    // Tab só vale depois disso (antes, ele sai do <body> e percorre a página atrás).
+    await waitFor(() => expect(drawer.contains(document.activeElement)).toBe(true));
 
     // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer.
     const people = within(drawer).getByRole("button", { name: "Pessoas" });

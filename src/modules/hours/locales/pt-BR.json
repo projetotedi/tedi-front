@@ -1,4 +1,157 @@
 {
+  "entries": {
+    "close": "Fechar",
+    "retry": "Tentar de novo",
+    "loadError": "Não foi possível carregar as suas horas.",
+    "categories": {
+      "lesson": "Aula",
+      "planning": "Planejamento",
+      "event": "Evento",
+      "management": "Gestão",
+      "meeting": "Reunião",
+      "support": "Atendimento",
+      "other": "Outros"
+    },
+    "status": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "adjusted": "Ajustado",
+      "rejected": "Rejeitado"
+    },
+    "columns": {
+      "date": "Data",
+      "activity": "Atividade",
+      "category": "Categoria",
+      "declared": "Declarado",
+      "validated": "Validado",
+      "status": "Status"
+    },
+    "summary": {
+      "title": "Resumo de horas",
+      "total": "Total de horas lançadas",
+      "validated": "Horas validadas",
+      "pending": "Pendentes de validação",
+      "adjustedOrRejected": "Ajustadas / rejeitadas",
+      "loading": "Carregando as suas horas…"
+    },
+    "recent": {
+      "title": "Meus lançamentos",
+      "viewStatement": "Ver extrato completo",
+      "empty": "Nenhum lançamento ainda.",
+      "loading": "Carregando os seus lançamentos…"
+    },
+    "byCategory": {
+      "title": "Horas por categoria",
+      "empty": "Nenhuma hora lançada em {{month}}.",
+      "loading": "Carregando as horas por categoria…",
+      "columns": {
+        "category": "Categoria",
+        "hours": "Horas",
+        "pending": "Pendentes"
+      },
+      "noPending": "Sem pendência",
+      "pendingLabel": {
+        "hours_one": "{{count}} hora pendente",
+        "hours_many": "{{count}} de horas pendentes",
+        "hours_other": "{{count}} horas pendentes",
+        "minutes_one": "{{count}} minuto pendente",
+        "minutes_many": "{{count}} de minutos pendentes",
+        "minutes_other": "{{count}} minutos pendentes",
+        "hourPart_one": "{{count}} hora",
+        "hourPart_many": "{{count}} de horas",
+        "hourPart_other": "{{count}} horas",
+        "minutePart_one": "{{count}} minuto",
+        "minutePart_many": "{{count}} de minutos",
+        "minutePart_other": "{{count}} minutos",
+        "hoursAndMinutes": "{{hours}} e {{minutes}} pendentes"
+      }
+    }
+  },
+  "logHours": {
+    "open": "Lançar horas",
+    "title": "Lançar horas",
+    "titleOnBehalf": "Lançar horas para {{name}}",
+    "onBehalfNotice": "Você está lançando em nome de {{name}}. Fica registrado quem fez o lançamento, e ele entra como pendente de validação da coordenação.",
+    "activity": "Atividade",
+    "activityPlaceholder": "Ex.: Preparação de material da aula 12",
+    "category": "Categoria",
+    "categoryPlaceholder": "Selecione a categoria",
+    "date": "Data",
+    "hours": "Horas",
+    "hoursPlaceholder": "Ex.: 2h30",
+    "notes": "Observações",
+    "cancel": "Cancelar",
+    "submit": "Lançar horas",
+    "submitting": "Lançando…",
+    "toastTitle": "Horas lançadas",
+    "toastTitleOnBehalf": "Horas lançadas para {{name}}",
+    "toastDescription": "{{hours}} em {{date}}, aguardando a validação da coordenação.",
+    "fieldErrors": {
+      "activityRequired": "Descreva a atividade.",
+      "activityTooLong": "Use no máximo 200 caracteres.",
+      "categoryRequired": "Escolha a categoria.",
+      "dateRequired": "Informe a data.",
+      "dateInFuture": "A data não pode ser depois de hoje.",
+      "dateTooOld": "Informe uma data a partir de 01/01/2000.",
+      "hoursRequired": "Informe as horas.",
+      "hoursFormat": "Use o formato 2h30.",
+      "hoursRange": "Informe de 0h01 a 24h.",
+      "notesTooLong": "Use no máximo 2.000 caracteres.",
+      "serverInvalid": "Confira este campo."
+    },
+    "errors": {
+      "network": "Não foi possível lançar as horas. Verifique a conexão e tente de novo.",
+      "forbidden": "Você não pode lançar horas para esta pessoa.",
+      "forbiddenOwn": "Você não pode lançar horas.",
+      "memberNotFound": "Não encontramos este membro. Atualize a página e tente de novo.",
+      "selfOnBehalf": "Para lançar as suas próprias horas, use + Lançar horas no Meu perfil.",
+      "unknown": "Não foi possível lançar as horas. Tente de novo."
+    }
+  },
+  "myEntries": {
+    "title": "Meus lançamentos",
+    "columns": {
+      "actions": "Ações"
+    },
+    "reviewNote": {
+      "adjusted": "Ajustado pela coordenação: “{{note}}”",
+      "rejected": "Rejeitado pela coordenação: “{{note}}”"
+    },
+    "remove": "Remover",
+    "removeLabel": "Remover o lançamento de {{date}}: {{activity}}",
+    "loading": "Carregando os seus lançamentos…",
+    "emptyTitle": "Nenhum lançamento ainda",
+    "emptyDescription": "Use + Lançar horas no seu perfil para registrar horas de planejamento, eventos e gestão.",
+    "errorTitle": "Não foi possível carregar os seus lançamentos",
+    "errorDescription": "Verifique a conexão e tente de novo.",
+    "pagination": {
+      "nav": "Paginação do extrato",
+      "previous": "Página anterior",
+      "next": "Próxima página",
+      "page": "Página {{page}}"
+    }
+  },
+  "removeEntry": {
+    "title": "Remover lançamento",
+    "summary": "{{date}} · {{category}} · {{hours}} declaradas",
+    "pendingLabel": "Pendente de validação",
+    "warningTitle": "Lançamento enviado não pode ser editado.",
+    "warningDescription": "Para corrigir, remova e lance de novo com os dados certos. Só dá para remover enquanto estiver pendente de validação.",
+    "back": "Voltar",
+    "submit": "Remover lançamento",
+    "submitting": "Removendo…",
+    "toastTitle": "Lançamento removido",
+    "toastDescription": "{{activity}} ({{date}}) saiu do seu extrato.",
+    "warnings": {
+      "notPending": "A coordenação já validou este lançamento. Ele não pode mais ser removido.",
+      "attendance": "Horas de aula vêm da presença e não podem ser removidas aqui."
+    },
+    "errors": {
+      "notFound": "Este lançamento não existe mais.",
+      "network": "Não foi possível remover o lançamento. Tente de novo.",
+      "unknown": "Não foi possível remover o lançamento. Tente de novo."
+    }
+  },
   "bank": {
     "filters": {
       "search": "Buscar membro",

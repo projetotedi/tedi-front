@@ -1,4 +1,153 @@
 {
+  "entries": {
+    "close": "Close",
+    "retry": "Try again",
+    "loadError": "We could not load your hours.",
+    "categories": {
+      "lesson": "Class",
+      "planning": "Planning",
+      "event": "Event",
+      "management": "Management",
+      "meeting": "Meeting",
+      "support": "Support",
+      "other": "Other"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "adjusted": "Adjusted",
+      "rejected": "Rejected"
+    },
+    "columns": {
+      "date": "Date",
+      "activity": "Activity",
+      "category": "Category",
+      "declared": "Declared",
+      "validated": "Validated",
+      "status": "Status"
+    },
+    "summary": {
+      "title": "Hours summary",
+      "total": "Total hours logged",
+      "validated": "Validated hours",
+      "pending": "Awaiting validation",
+      "adjustedOrRejected": "Adjusted / rejected",
+      "loading": "Loading your hours…"
+    },
+    "recent": {
+      "title": "My entries",
+      "viewStatement": "See full statement",
+      "empty": "No entries yet.",
+      "loading": "Loading your entries…"
+    },
+    "byCategory": {
+      "title": "Hours by category",
+      "empty": "No hours logged in {{month}}.",
+      "loading": "Loading hours by category…",
+      "columns": {
+        "category": "Category",
+        "hours": "Hours",
+        "pending": "Pending"
+      },
+      "noPending": "Nothing pending",
+      "pendingLabel": {
+        "hours_one": "{{count}} hour pending",
+        "hours_other": "{{count}} hours pending",
+        "minutes_one": "{{count}} minute pending",
+        "minutes_other": "{{count}} minutes pending",
+        "hourPart_one": "{{count}} hour",
+        "hourPart_other": "{{count}} hours",
+        "minutePart_one": "{{count}} minute",
+        "minutePart_other": "{{count}} minutes",
+        "hoursAndMinutes": "{{hours}} and {{minutes}} pending"
+      }
+    }
+  },
+  "logHours": {
+    "open": "Log hours",
+    "title": "Log hours",
+    "titleOnBehalf": "Log hours for {{name}}",
+    "onBehalfNotice": "You are logging on behalf of {{name}}. Who made the entry is recorded, and it goes in as awaiting validation by the coordination.",
+    "activity": "Activity",
+    "activityPlaceholder": "E.g.: Preparing the material of lesson 12",
+    "category": "Category",
+    "categoryPlaceholder": "Select the category",
+    "date": "Date",
+    "hours": "Hours",
+    "hoursPlaceholder": "E.g.: 2h30",
+    "notes": "Notes",
+    "cancel": "Cancel",
+    "submit": "Log hours",
+    "submitting": "Logging…",
+    "toastTitle": "Hours logged",
+    "toastTitleOnBehalf": "Hours logged for {{name}}",
+    "toastDescription": "{{hours}} on {{date}}, awaiting validation by the coordination.",
+    "fieldErrors": {
+      "activityRequired": "Describe the activity.",
+      "activityTooLong": "Use at most 200 characters.",
+      "categoryRequired": "Choose the category.",
+      "dateRequired": "Enter the date.",
+      "dateInFuture": "The date cannot be after today.",
+      "dateTooOld": "Enter a date from 01/01/2000 on.",
+      "hoursRequired": "Enter the hours.",
+      "hoursFormat": "Use the format 2h30.",
+      "hoursRange": "Enter from 0h01 to 24h.",
+      "notesTooLong": "Use at most 2,000 characters.",
+      "serverInvalid": "Check this field."
+    },
+    "errors": {
+      "network": "We could not log the hours. Check your connection and try again.",
+      "forbidden": "You cannot log hours for this person.",
+      "forbiddenOwn": "You cannot log hours.",
+      "memberNotFound": "We could not find this member. Reload the page and try again.",
+      "selfOnBehalf": "To log your own hours, use + Log hours in My profile.",
+      "unknown": "We could not log the hours. Try again."
+    }
+  },
+  "myEntries": {
+    "title": "My entries",
+    "columns": {
+      "actions": "Actions"
+    },
+    "reviewNote": {
+      "adjusted": "Adjusted by the coordination: “{{note}}”",
+      "rejected": "Rejected by the coordination: “{{note}}”"
+    },
+    "remove": "Remove",
+    "removeLabel": "Remove the entry of {{date}}: {{activity}}",
+    "loading": "Loading your entries…",
+    "emptyTitle": "No entries yet",
+    "emptyDescription": "Use + Log hours in your profile to record planning, event and management hours.",
+    "errorTitle": "We could not load your entries",
+    "errorDescription": "Check your connection and try again.",
+    "pagination": {
+      "nav": "Statement pages",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page {{page}}"
+    }
+  },
+  "removeEntry": {
+    "title": "Remove entry",
+    "summary": "{{date}} · {{category}} · {{hours}} declared",
+    "pendingLabel": "Awaiting validation",
+    "warningTitle": "A sent entry cannot be edited.",
+    "warningDescription": "To correct it, remove it and log it again with the right details. It can only be removed while it awaits validation.",
+    "back": "Back",
+    "submit": "Remove entry",
+    "submitting": "Removing…",
+    "toastTitle": "Entry removed",
+    "toastDescription": "{{activity}} ({{date}}) left your statement.",
+    "warnings": {
+      "notPending": "The coordination has already validated this entry. It can no longer be removed.",
+      "attendance": "Class hours come from attendance and cannot be removed here."
+    },
+    "errors": {
+      "notFound": "This entry no longer exists.",
+      "network": "We could not remove the entry. Try again.",
+      "unknown": "We could not remove the entry. Try again."
+    }
+  },
   "bank": {
     "filters": {
       "search": "Search member",
