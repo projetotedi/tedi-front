@@ -112,6 +112,28 @@ describe("DataTable", () => {
     expect(screen.queryAllByRole("cell")).toHaveLength(0);
   });
 
+  it("draws headerContent in the header cell instead of the header text", () => {
+    render(
+      <DataTable
+        columns={[
+          {
+            header: "Seleção",
+            headerContent: <input type="checkbox" aria-label="Selecionar todos" />,
+            render: () => null,
+          },
+          ...COLUMNS,
+        ]}
+        rows={[{ id: "1", name: "Ana" }]}
+        rowKey={(row) => row.id}
+      />,
+    );
+
+    const [selection, name] = screen.getAllByRole("columnheader");
+    expect(selection).toContainElement(screen.getByRole("checkbox", { name: "Selecionar todos" }));
+    expect(selection).not.toHaveTextContent("Seleção");
+    expect(name).toHaveTextContent("Nome");
+  });
+
   describe("onRowClick", () => {
     const ROW: Row = { id: "1", name: "Ana" };
 

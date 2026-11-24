@@ -1,0 +1,384 @@
+import { keepPreviousData, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useId, useRef, useState, type ReactElement } from "react";
+import { useTranslation } from "react-i18next";
+
+import { useListPendingHourEntries, useValidateHourEntries } from "@api/generated/hours/hours";
+import type { MemberHourEntryResponseDto } from "@api/generated/model";
+import { DataTable } from "@shared/components/DataTable";
+import { ListState } from "@shared/components/ListState";
+import { formatHours } from "@shared/lib/format";
+import { resolveListState } from "@shared/lib/list-state";
+import { Card, Pagination, toast } from "@shared/ui";
+
+import { useReviewPermission } from "../hooks/useReviewPermission";
+import { memberNameOf } from "../lib/bank-labels";
+import { STALE_QUEUE_ERRORS, toReviewError, type ReviewErrorKind } from "../lib/review-errors";
+import { invalidateAfterReview, invalidateIfStale } from "../lib/review-queries";
+import { AdjustEntryDialog } from "./AdjustEntryDialog";
+import { EntryHistoryDialog } from "./EntryHistoryDialog";
+import { pendingEntryColumns } from "./pending-entry-columns";
+import { RejectEntryDialog } from "./RejectEntryDialog";
+import { ReviewRowActions } from "./ReviewRowActions";
+import { ReviewSelectionBar } from "./ReviewSelectionBar";
+
+const PENDING_PAGE_SIZE = 20;
+
+/** Where the validation on its way was asked from: the bar of the batch, or the Validar of a row. */
+type ValidationOrigin = { kind: "batch" } | { kind: "row"; entryId: string };
+
+/** The dialog open over the queue, and the entry it is about. */
+type OpenDialog = { kind: "adjust" | "reject" | "history"; entry: MemberHourEntryResponseDto };
+
+const VALIDATE_ERROR_KEYS: Record<ReviewErrorKind, string> = {
+  notPending: "review.errors.notPending",
+  notFound: "review.errors.notFound",
+  selfReview: "review.errors.selfReview",
+  unchanged: "review.errors.generic",
+  invalid: "review.errors.generic",
+  generic: "review.errors.generic",
+};
+
+export interface PendingEntriesTableProps {
+  /** The period and the member of the queue; empty is the whole queue. The parent changes the `key` when it changes. */
+  filter: { from?: string; to?: string; personId?: string };
+}
+
+/**
+ * "Lançamentos pendentes de validação (N)": the queue of the entries that wait for the coordination,
+ * from the oldest day, twenty by page. Who reviews (`hours.review`) selects entries for the batch
+ * and validates them, in batch or one by one; the director sees the entries without selection nor
+ * actions. The person's own entry cannot be reviewed (SELF_REVIEW_NOT_ALLOWED): its box and buttons
+ * are turned off and "select all" leaves it out.
+ *
+ * - **Selection.** By page, and only of the rows on the screen: what was selected and left the queue
+ *   is dropped at every render, so a batch never sends an id that is not on the screen. It is
+ *   cleared on another page, after a validation and after a refusal that says the queue is out of
+ *   date.
+ * - **Validating.** The queue is read again inside the mutation (the hook awaits it), so the
+ *   buttons stay busy and the rows stay on the screen until the queue answers: no window for a
+ *   second press to send the same ids. Then the toast says how many and whose, and the focus goes
+ *   to the title (the button pressed left with its row).
+ * - **Ajustar and Rejeitar** open their dialogs, one entry at a time. When the entry leaves the
+ *   queue (adjusted, rejected, or no longer pending) the dialog closes, a toast says what happened
+ *   and the focus goes to the title. The toast of an adjustment opens the history of the entry
+ *   ("Ver histórico"), the only way to it from the queue (as in the Figma).
+ */
+export function PendingEntriesTable({ filter }: PendingEntriesTableProps): ReactElement {
+  const { t, i18n } = useTranslation("hours");
+  const queryClient = useQueryClient();
+  const titleId = useId();
+  const titleRef = useRef<HTMLSpanElement>(null);
+  const inFlightRef = useRef(false);
+  const entriesInFlightRef = useRef<MemberHourEntryResponseDto[]>([]);
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<ReadonlySet<string>>(() => new Set());
+  const [dialog, setDialog] = useState<OpenDialog | null>(null);
+  const [origin, setOrigin] = useState<ValidationOrigin | null>(null);
+  // Set when a dialog closes because its entry left the queue: the focus goes to the title once
+  // the dialog is gone (while it is open, it keeps the focus inside).
+  const focusTitleRef = useRef(false);
+  // The toast of an adjustment, with "Ver histórico": it stays until used or closed, so the queue
+  // closes it before the toast of the next review and when it leaves the screen (its action would
+  // open a dialog that is no longer there).
+  const actionToastRef = useRef<string | null>(null);
+  const { canReview, canReviewEntry } = useReviewPermission();
+
+  useEffect(() => {
+    if (dialog !== null || !focusTitleRef.current) return;
+    focusTitleRef.current = false;
+    titleRef.current?.focus();
+  }, [dialog]);
+
+  useEffect(() => closeActionToast, []);
+
+  const query = useListPendingHourEntries(
+    { ...filter, page, limit: PENDING_PAGE_SIZE },
+    { query: { placeholderData: keepPreviousData } },
+  );
+  const validate = useValidateHourEntries({
+    mutation: {
+      // The answer carries id and personId of each validated entry.
+      onSuccess: (validated) => invalidateAfterReview(queryClient, validated),
+      onError: (error) => invalidateIfStale(queryClient, error, entriesInFlightRef.current),
+    },
+  });
+
+  const rows = query.data?.data ?? [];
+  const total = query.data?.total;
+  const selectable = canReview ? rows.filter(canReviewEntry) : [];
+  const selectedRows = selectable.filter((row) => selected.has(row.id));
+  const isBusy = validate.isPending;
+  // The spinner goes on the button that was pressed, whatever the number of entries it sent.
+  const validating = validate.isPending ? origin : null;
+  const selectionSummary = t("review.selection", {
+    count: selectedRows.length,
+    total: selectable.length,
+    hours: formatHours(selectedRows.reduce((sum, row) => sum + row.declaredMinutes, 0)),
+  });
+  const totalPages =
+    query.data === undefined ? 1 : Math.max(1, Math.ceil(query.data.total / query.data.limit));
+
+  // A review that empties the last page leaves `page` past the end, and the queue would keep asking
+  // for an empty page with no pagination to leave it: it goes back to the last page that exists,
+  // during the render (React renders again at once, before the empty page reaches the screen). The
+  // selection was of the page that is gone, so it is cleared.
+  if (query.data !== undefined && !query.isPlaceholderData && page > totalPages) {
+    setPage(totalPages);
+    setSelected(new Set());
+  }
+
+  const isRetrying = query.isPending && query.isFetching && query.errorUpdateCount > 0;
+  const listState = resolveListState({
+    isPending: (query.isPending && !isRetrying) || (query.isPlaceholderData && total === 0),
+    isError: query.isError || isRetrying,
+    total,
+    hasActiveFilters: false,
+  });
+
+  function listNames(entries: MemberHourEntryResponseDto[]): string {
+    const names = [...new Set(entries.map((entry) => memberNameOf(entry, t)))];
+    return new Intl.ListFormat(i18n.language, { style: "long", type: "conjunction" }).format(names);
+  }
+
+  function toggle(id: string, isSelected: boolean) {
+    setSelected((current) => {
+      const next = new Set(current);
+      if (isSelected) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function changePage(next: number) {
+    setPage(next);
+    setSelected(new Set());
+  }
+
+  function closeActionToast() {
+    if (actionToastRef.current === null) return;
+    toast.close(actionToastRef.current);
+    actionToastRef.current = null;
+  }
+
+  function validateEntries(entries: MemberHourEntryResponseDto[], from: ValidationOrigin) {
+    if (validate.isPending || inFlightRef.current || entries.length === 0) return;
+    inFlightRef.current = true;
+    entriesInFlightRef.current = entries;
+    setOrigin(from);
+    closeActionToast();
+
+    validate.mutate(
+      { data: { ids: entries.map((entry) => entry.id) } },
+      {
+        // These run after the queue was read again (the hook awaited it): only toast, selection and focus.
+        onSuccess: () => {
+          const minutes = entries.reduce((sum, entry) => sum + entry.declaredMinutes, 0);
+          toast.success(t("review.validated", { count: entries.length }), {
+            description: t("review.validatedDescription", {
+              hours: formatHours(minutes),
+              names: listNames(entries),
+            }),
+          });
+          setSelected(new Set());
+          titleRef.current?.focus();
+        },
+        onError: (error) => {
+          const kind = toReviewError(error);
+          toast.error(t(VALIDATE_ERROR_KEYS[kind]));
+          if (STALE_QUEUE_ERRORS.has(kind)) setSelected(new Set());
+        },
+        onSettled: () => {
+          inFlightRef.current = false;
+        },
+      },
+    );
+  }
+
+  function closeDialogAndFocusTitle() {
+    focusTitleRef.current = true;
+    setDialog(null);
+  }
+
+  function onAdjusted(updated: MemberHourEntryResponseDto, validatedMinutes: number) {
+    closeDialogAndFocusTitle();
+    closeActionToast();
+    actionToastRef.current = toast.success(t("adjust.success"), {
+      description: t("adjust.successDescription", {
+        name: memberNameOf(updated, t),
+        declared: formatHours(updated.declaredMinutes),
+        validated: formatHours(validatedMinutes),
+      }),
+      action: {
+        label: t("adjust.viewHistory"),
+        onPress: () => {
+          actionToastRef.current = null;
+          // The button of the toast leaves with it: when the history closes, the focus goes to the
+          // title, not to the body.
+          focusTitleRef.current = true;
+          setDialog({ kind: "history", entry: updated });
+        },
+      },
+    });
+  }
+
+  function onRejected(entry: MemberHourEntryResponseDto) {
+    closeDialogAndFocusTitle();
+    closeActionToast();
+    toast.neutral(t("reject.success"), {
+      description: t("reject.successDescription", { name: memberNameOf(entry, t) }),
+    });
+  }
+
+  function onStale() {
+    closeDialogAndFocusTitle();
+    closeActionToast();
+    toast.error(t("review.errors.entryGone"));
+  }
+
+  const columns = pendingEntryColumns(
+    t,
+    i18n.language,
+    canReview
+      ? {
+          selectable,
+          selectedRows,
+          canReviewEntry,
+          isBusy,
+          onSelectAll: (isSelected) =>
+            setSelected(new Set(isSelected ? selectable.map((row) => row.id) : [])),
+          onToggle: (row, isSelected) => toggle(row.id, isSelected),
+          renderActions: (row) => (
+            <ReviewRowActions
+              entry={row}
+              isOwn={!canReviewEntry(row)}
+              isBusy={isBusy}
+              isValidating={validating?.kind === "row" && validating.entryId === row.id}
+              onValidate={() => validateEntries([row], { kind: "row", entryId: row.id })}
+              onAdjust={() => setDialog({ kind: "adjust", entry: row })}
+              onReject={() => setDialog({ kind: "reject", entry: row })}
+            />
+          ),
+        }
+      : null,
+  );
+
+  function renderListState(): ReactElement | null {
+    switch (listState) {
+      case "loading":
+        return <ListState variant="loading" title={t("review.loading")} />;
+      case "empty":
+      case "noResults":
+        return (
+          <ListState
+            variant="empty"
+            title={t("review.empty")}
+            description={t("review.emptyDescription")}
+          />
+        );
+      case "error":
+        return (
+          <ListState
+            variant="error"
+            title={t("review.error")}
+            description={t("bank.states.errorDescription")}
+            action={{
+              label: t("bank.states.retry"),
+              onPress: () => void query.refetch(),
+              isLoading: query.isFetching,
+            }}
+          />
+        );
+      default:
+        return null;
+    }
+  }
+
+  const title =
+    total === undefined ? t("review.titlePending") : t("review.title", { count: total });
+
+  return (
+    // <Card> has no aria-labelledby of its own: the region is here, pointing at the title it draws.
+    <section aria-labelledby={titleId}>
+      <Card
+        className="rounded-3xl"
+        title={
+          <span id={titleId} ref={titleRef} tabIndex={-1} className="outline-none">
+            {title}
+          </span>
+        }
+        aside={
+          canReview ? (
+            <>
+              {/* Always on the page, so the first count is read too (a live region that is born
+                  with its text is not); the bar only draws it. */}
+              <p role="status" className="sr-only">
+                {selectedRows.length > 0 ? selectionSummary : ""}
+              </p>
+              {selectedRows.length > 0 ? (
+                <ReviewSelectionBar
+                  selectedCount={selectedRows.length}
+                  summary={selectionSummary}
+                  isBusy={isBusy}
+                  isValidating={validating?.kind === "batch"}
+                  onClear={() => setSelected(new Set())}
+                  onValidate={() => validateEntries(selectedRows, { kind: "batch" })}
+                />
+              ) : null}
+            </>
+          ) : undefined
+        }
+      >
+        <div
+          aria-busy={query.isPlaceholderData || undefined}
+          className={query.isPlaceholderData ? "opacity-75" : undefined}
+        >
+          <DataTable
+            columns={columns}
+            rows={rows}
+            rowKey={(row) => row.id}
+            caption={t("review.caption")}
+            tableClassName="table-fixed min-w-240"
+          />
+          {renderListState()}
+        </div>
+
+        {listState === null && query.data !== undefined && totalPages > 1 ? (
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+            <p aria-live="polite" className="text-base text-muted">
+              {t("review.summary", { shown: rows.length, total: query.data.total })}
+            </p>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={changePage}
+              label={t("review.pagination.nav")}
+              previousLabel={t("review.pagination.previous")}
+              nextLabel={t("review.pagination.next")}
+              pageLabel={(number) => t("review.pagination.page", { page: number })}
+            />
+          </div>
+        ) : null}
+      </Card>
+
+      {dialog?.kind === "adjust" ? (
+        <AdjustEntryDialog
+          entry={dialog.entry}
+          onClose={() => setDialog(null)}
+          onAdjusted={onAdjusted}
+          onStale={onStale}
+        />
+      ) : null}
+      {dialog?.kind === "reject" ? (
+        <RejectEntryDialog
+          entry={dialog.entry}
+          onClose={() => setDialog(null)}
+          onRejected={onRejected}
+          onStale={onStale}
+        />
+      ) : null}
+      {dialog?.kind === "history" ? (
+        <EntryHistoryDialog entry={dialog.entry} onClose={() => setDialog(null)} />
+      ) : null}
+    </section>
+  );
+}

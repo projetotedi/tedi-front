@@ -15,6 +15,7 @@ export { SignOutButton } from "./components/SignOutButton";
 export { ValidateRegistrationDialog } from "./components/ValidateRegistrationDialog";
 export { useAuth } from "./hooks/useAuth";
 export { useCan } from "./hooks/useCan";
+export { usePermissionCheck } from "./hooks/usePermissionCheck";
 export { authMenuItems } from "./menu";
 export { ForbiddenPage } from "./pages/ForbiddenPage";
 export { authProtectedRoutes, authRoutes } from "./routes";

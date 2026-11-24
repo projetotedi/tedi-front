@@ -5,6 +5,7 @@ import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@mod
 import { createCatalogRoutes } from "@modules/catalog";
 import { peopleRoutes } from "@modules/people";
 import { createClassesRoutes } from "@modules/classes";
+import { hoursRoutes } from "@modules/hours";
 import { lessonsRoutes } from "@modules/lessons";
 
 import { catalogRouteSlots } from "./catalog-slots";
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
               ...createClassesRoutes(classesRouteSlots),
               ...lessonsRoutes,
               ...assignmentsRoutes,
+              ...hoursRoutes,
               ...prototypeRoutes,
               ...authProtectedRoutes,
               { path: "*", element: <Navigate to="/" replace /> },

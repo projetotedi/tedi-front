@@ -48,6 +48,15 @@
   --color-tedi-texture-light: #c2e2f5;
   --color-tedi-info-subtle: #eff6ff;
 
+  /* Banco de horas (Figma "tedi-status-*", "tedi-surface-subtle", "tedi-text-link", "tedi-action-primary", "success"; GUS-163 e GUS-165). Vermelho: #b91c1c sobre #fee2e2 dá 5,3:1. */
+  --color-tedi-status-danger: #fee2e2;
+  --color-tedi-status-danger-foreground: #b91c1c;
+  --color-tedi-status-warning-foreground: #854d0e;
+  --color-tedi-surface-subtle: #f8fafc;
+  --color-tedi-text-link: #2563eb;
+  --color-tedi-action-primary: #2563eb;
+  --color-tedi-action-success: #17c964;
+
   /* Cartão da tela 403 (não usa o <Card> de shared/ui: layout central próprio do Figma). */
   --shadow-tedi-card:
     0 2px 4px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.06), 0 0 1px rgb(0 0 0 / 0.06);
