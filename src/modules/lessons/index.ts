@@ -4,7 +4,8 @@ import ptBR from "./locales/pt-BR.json";
 
 registerModuleLocales("lessons", { "pt-BR": ptBR, "en-US": enUS });
 
-export { lessonsRoutes } from "./routes";
+export { createLessonsRoutes } from "./routes";
+export type { LessonsRouteSlots } from "./routes";
 export { lessonsMenuItems } from "./menu";
 export { NewLessonButton } from "./components/NewLessonButton";
 export type { NewLessonButtonProps } from "./components/NewLessonButton";

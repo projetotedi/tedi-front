@@ -8,7 +8,6 @@ import { Role } from "@shared/lib/role";
 import { findRouteTitle } from "@shared/lib/route-handle";
 
 import { lessonsMenuItems } from "../menu";
-import { lessonsRoutes } from "../routes";
 import {
   buildLessonListItem,
   buildLessonsPage,
@@ -24,6 +23,7 @@ import {
 } from "./handlers";
 import {
   expectNoRequestBesidesSession,
+  lessonsRoutes,
   renderRoutes,
   server,
   setupLessonsTestServer,

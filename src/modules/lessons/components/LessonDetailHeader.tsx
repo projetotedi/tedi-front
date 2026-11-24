@@ -25,7 +25,7 @@ export interface LessonDetailHeaderProps {
  *
  * The actions go on the right of the title, in the order of the Figma: Remarcar aula (`tertiary`),
  * Cancelar aula (`danger-soft`) and Editar aula (`secondary`). "Registrar chamada" (`primary`) comes
- * last, with the attendance module (E6), and is not drawn today. The container of the actions has no
+ * last, by the slot of the attendance module. The container of the actions has no
  * size when what is in it draws nothing (a member, who cannot manage lessons).
  */
 export function LessonDetailHeader({ lesson, actions }: LessonDetailHeaderProps): ReactElement {

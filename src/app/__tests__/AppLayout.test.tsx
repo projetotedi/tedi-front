@@ -15,13 +15,14 @@ import {
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { hoursRoutes } from "@modules/hours";
 import { bankHandlers, createBankStore } from "@modules/hours/__tests__/bank-handlers";
-import { lessonsRoutes } from "@modules/lessons";
+import { createLessonsRoutes } from "@modules/lessons";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
 import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
 import { AppLayout } from "../layouts/AppLayout";
+import { lessonsRouteSlots } from "../lessons-slots";
 import { prototypeRoutes } from "../prototype-routes";
 
 setupAuthTestServer();
@@ -53,7 +54,7 @@ async function renderApp(user: MeResponseDto, route = "/") {
                 children: [
                   { index: true, element: <Navigate to="/profile" replace /> },
                   ...peopleRoutes,
-                  ...lessonsRoutes,
+                  ...createLessonsRoutes(lessonsRouteSlots),
                   ...hoursRoutes,
                   ...prototypeRoutes,
                   ...authProtectedRoutes,

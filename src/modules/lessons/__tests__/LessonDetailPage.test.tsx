@@ -7,7 +7,6 @@ import { getGetLessonQueryKey } from "@api/generated/lessons/lessons";
 import type { LessonResponseDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { lessonsRoutes } from "../routes";
 import {
   buildCancelledLesson,
   buildLesson,
@@ -27,6 +26,7 @@ import {
 import {
   createDeferred,
   expectNoRequestBesidesSession,
+  lessonsRoutes,
   renderRoutes,
   server,
   setupLessonsTestServer,
@@ -338,17 +338,17 @@ describe("LessonDetailPage", () => {
   });
 
   describe("what the lesson does not have yet", () => {
-    it("keeps Chamada, Cobertura da aula and Registro as Em breve", async () => {
+    it("keeps Cobertura da aula and Registro as Em breve", async () => {
       await renderPage();
 
-      for (const title of ["Chamada", "Cobertura da aula", "Registro"]) {
+      for (const title of ["Cobertura da aula", "Registro"]) {
         const soon = card(title);
         expect(within(soon).getByText("Em breve")).toBeInTheDocument();
         expect(within(soon).queryByRole("table")).not.toBeInTheDocument();
         expect(within(soon).queryByRole("link")).not.toBeInTheDocument();
         expect(within(soon).queryByRole("button")).not.toBeInTheDocument();
       }
-      expect(screen.getAllByText("Em breve")).toHaveLength(3);
+      expect(screen.getAllByText("Em breve")).toHaveLength(2);
     });
 
     it("puts Chamada and Registro under the data, and Cobertura da aula after the links", async () => {
@@ -356,8 +356,8 @@ describe("LessonDetailPage", () => {
 
       const follows = (first: HTMLElement, second: HTMLElement) =>
         Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
-      expect(follows(card("Dados da aula"), card("Chamada"))).toBe(true);
-      expect(follows(card("Chamada"), card("Registro"))).toBe(true);
+      expect(follows(card("Dados da aula"), screen.getByText("Chamada (slot)"))).toBe(true);
+      expect(follows(screen.getByText("Chamada (slot)"), card("Registro"))).toBe(true);
       expect(follows(card("Vínculos"), card("Cancelamento"))).toBe(true);
       expect(follows(card("Cancelamento"), card("Cobertura da aula"))).toBe(true);
     });

@@ -6,10 +6,11 @@ import { createCatalogRoutes } from "@modules/catalog";
 import { createPeopleRoutes } from "@modules/people";
 import { createClassesRoutes } from "@modules/classes";
 import { hoursRoutes } from "@modules/hours";
-import { lessonsRoutes } from "@modules/lessons";
+import { createLessonsRoutes } from "@modules/lessons";
 
 import { catalogRouteSlots } from "./catalog-slots";
 import { classesRouteSlots } from "./classes-slots";
+import { lessonsRouteSlots } from "./lessons-slots";
 import { peopleRouteSlots } from "./people-slots";
 import { AppLayout } from "./layouts/AppLayout";
 import { PublicLayout } from "./layouts/PublicLayout";
@@ -20,10 +21,11 @@ import { prototypeRoutes } from "./prototype-routes";
  *
  * Cada módulo em src/modules/<modulo>/ exporta suas rotas em `routes.tsx`
  * (re-exportadas pelo index.ts do módulo). Aqui elas só são concatenadas, e o item de
- * menu de cada uma entra em `app/menu.ts`. O `catalog`, o `classes` e o `people` são a exceção: cada
- * um exporta uma fábrica (`createCatalogRoutes`, `createClassesRoutes`, `createPeopleRoutes`) que
+ * menu de cada uma entra em `app/menu.ts`. O `catalog`, o `classes`, o `lessons` e o `people` são a exceção: cada
+ * um exporta uma fábrica (`createCatalogRoutes`, `createClassesRoutes`, `createLessonsRoutes`, `createPeopleRoutes`) que
  * recebe os slots com o que as telas dele pedem a outros módulos (`catalog-slots.tsx`, hoje o card
  * "Turmas deste curso" do `classes`; `classes-slots.tsx`, hoje o "+ Nova aula" do `lessons`;
+ * `lessons-slots.tsx`, hoje a chamada do `attendance`;
  * `people-slots.tsx`, hoje as horas do Meu perfil, do `hours`).
  *
  * Rotas públicas (login, formulário de pré-inscrição) ficam sob PublicLayout;
@@ -55,7 +57,7 @@ export const router = createBrowserRouter([
               ...createPeopleRoutes(peopleRouteSlots),
               ...createCatalogRoutes(catalogRouteSlots),
               ...createClassesRoutes(classesRouteSlots),
-              ...lessonsRoutes,
+              ...createLessonsRoutes(lessonsRouteSlots),
               ...assignmentsRoutes,
               ...hoursRoutes,
               ...prototypeRoutes,
