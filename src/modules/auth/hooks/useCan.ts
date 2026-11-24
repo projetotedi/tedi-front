@@ -1,6 +1,6 @@
-import { can, type Permission, type PermissionTarget } from "@shared/lib/permissions";
+import type { Permission, PermissionTarget } from "@shared/lib/permissions";
 
-import { useAuth } from "./useAuth";
+import { usePermissionCheck } from "./usePermissionCheck";
 
 /**
  * Se o usuário logado pode `permission` (lida do `permissions` do `/auth/me`). Botões e ações
@@ -8,6 +8,5 @@ import { useAuth } from "./useAuth";
  * é a flag que o back calcula para o recurso quando o escopo é department/allocated/lessonTeacher.
  */
 export function useCan(permission: Permission, target?: PermissionTarget): boolean {
-  const { user } = useAuth();
-  return can(user, permission, target);
+  return usePermissionCheck()(permission, target);
 }

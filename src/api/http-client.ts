@@ -8,6 +8,7 @@
  *  - enviar cookie de sessão httpOnly via `credentials: "include"`
  *  - normalizar qualquer resposta não-2xx em `ApiError`
  *  - avisar a aplicação quando a sessão expirar (401)
+ *  - entregar um download (`Content-Disposition: attachment`) como `File`, com o nome do header
  */
 
 /** Evento disparado no `window` quando a API responde 401. O módulo `auth` escuta e encerra a sessão. */
@@ -35,8 +36,44 @@ export class ApiError extends Error {
   }
 }
 
+const ATTACHMENT = /^\s*attachment\b/i;
+// RFC 6266: `filename*=<charset>'<language>'<percent-encoded name>` wins over the plain `filename=`.
+const EXTENDED_FILE_NAME = /filename\*=[^']*'[^']*'([^;]+)/i;
+const FILE_NAME = /filename="?([^";]+)"?/i;
+
+/**
+ * The name of the file of a download (`Content-Disposition: attachment`), or `null` when the answer
+ * is not a download. An attachment without a name gives "". The header can be read because the API
+ * answers on the same origin (`/api`, the Vite proxy and the Vercel rewrite).
+ */
+function attachmentFileName(response: Response): string | null {
+  const disposition = response.headers.get("content-disposition") ?? "";
+  if (!ATTACHMENT.test(disposition)) return null;
+
+  const extended = EXTENDED_FILE_NAME.exec(disposition)?.[1];
+  if (extended !== undefined) return decodeFileName(extended.trim());
+  return FILE_NAME.exec(disposition)?.[1] ?? "";
+}
+
+/** A percent-encoded name. One that does not decode (a stray `%`) is still a name: it is kept as it came. */
+function decodeFileName(encoded: string): string {
+  try {
+    return decodeURIComponent(encoded);
+  } catch {
+    return encoded;
+  }
+}
+
 async function parseBody<T>(response: Response): Promise<T> {
   if (response.status === 204) return undefined as T;
+  // A download (an exported CSV, for one) is a File with the name the API gave it: the generated
+  // type is Blob, and a File is one. The bytes stay as they came, the BOM of the CSV included
+  // (`response.text()` would drop it).
+  const fileName = attachmentFileName(response);
+  if (fileName !== null) {
+    const type = response.headers.get("content-type") ?? "";
+    return new File([await response.arrayBuffer()], fileName, { type }) as unknown as T;
+  }
   const contentType = response.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) return (await response.json()) as T;
   return (await response.text()) as unknown as T;

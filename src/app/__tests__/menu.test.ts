@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { assignmentsMenuItems } from "@modules/assignments";
+import { hoursMenuItems } from "@modules/hours";
 import { lessonsMenuItems } from "@modules/lessons";
 import i18n from "@shared/i18n";
 import { groupMenuItems, MENU_GROUP_IDS } from "@shared/lib/menu";
@@ -84,6 +85,22 @@ describe("app menu", () => {
       }),
     );
     expect(appMenuItems).toEqual(expect.arrayContaining(assignmentsMenuItems));
+  });
+
+  it("takes Banco de horas and Validação de horas from the hours module, not from the prototype", () => {
+    for (const path of ["/hours", "/hours/review"]) {
+      expect(prototypeMenuItems.map((item) => item.path)).not.toContain(path);
+      expect(prototypeRoutes.map((route) => `/${route.path}`)).not.toContain(path);
+    }
+    expect(appMenuItems).toEqual(expect.arrayContaining(hoursMenuItems));
+    expect(hoursMenuItems).toEqual([
+      expect.objectContaining({ path: "/hours", permission: "hours.viewOthers", group: "hours" }),
+      expect.objectContaining({
+        path: "/hours/review",
+        permission: "hours.review",
+        group: "hours",
+      }),
+    ]);
   });
 
   it("keeps every item in a listed group", () => {

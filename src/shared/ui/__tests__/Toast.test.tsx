@@ -116,6 +116,80 @@ describe("Toast", () => {
     }
   });
 
+  it("shows the action of a success toast; pressing it runs the action and closes the toast", async () => {
+    const user = userEvent.setup();
+    const onPress = vi.fn();
+    renderProvider();
+
+    act(() => {
+      toast.success("Lançamento ajustado", {
+        description: "Beatriz Nunes: 4h declaradas, 2h validadas.",
+        action: { label: "Ver histórico", onPress },
+      });
+    });
+    const region = await screen.findByRole("region", { name: "Notificações" });
+    await user.click(within(region).getByRole("button", { name: "Ver histórico" }));
+
+    expect(onPress).toHaveBeenCalledOnce();
+    expect(screen.queryByText("Lançamento ajustado")).not.toBeInTheDocument();
+  });
+
+  it("keeps a toast with an action open after eight seconds", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      renderProvider();
+
+      act(() => {
+        toast.success("Lançamento ajustado", {
+          action: { label: "Ver histórico", onPress: () => {} },
+        });
+      });
+      expect(await screen.findByText("Lançamento ajustado")).toBeInTheDocument();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20_000);
+      });
+
+      expect(screen.getByText("Lançamento ajustado")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Ver histórico" })).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("shows a neutral toast as an alert", async () => {
+    renderProvider();
+
+    act(() => {
+      toast.neutral("Lançamento rejeitado", {
+        description: "Rafael Souza vê o motivo no extrato e pode lançar de novo.",
+      });
+    });
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Lançamento rejeitado");
+    expect(alert).toHaveTextContent("Rafael Souza vê o motivo no extrato e pode lançar de novo.");
+    expect(within(alert).queryByRole("button", { name: "Ver histórico" })).not.toBeInTheDocument();
+  });
+
+  it("close removes one toast by its key", async () => {
+    renderProvider();
+
+    let key = "";
+    act(() => {
+      key = toast.success("Lançamento ajustado", {
+        action: { label: "Ver histórico", onPress: () => {} },
+      });
+    });
+    await screen.findByText("Lançamento ajustado");
+
+    act(() => {
+      toast.close(key);
+    });
+
+    expect(screen.queryByText("Lançamento ajustado")).not.toBeInTheDocument();
+  });
+
   it("clear removes every message", async () => {
     renderProvider();
 

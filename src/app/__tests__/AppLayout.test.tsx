@@ -13,6 +13,8 @@ import {
   meHandler,
 } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
+import { hoursRoutes } from "@modules/hours";
+import { bankHandlers, createBankStore } from "@modules/hours/__tests__/bank-handlers";
 import { lessonsRoutes } from "@modules/lessons";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
 import { peopleRoutes } from "@modules/people/__tests__/test-routes";
@@ -33,8 +35,9 @@ async function openAllGroups(container: HTMLElement) {
 
 async function renderApp(user: MeResponseDto, route = "/") {
   await i18n.changeLanguage("pt-BR");
-  // The route `/` lands on My profile, which reads the registration from GET /members/me.
-  server.use(meHandler({ user }), myProfileHandler());
+  // The route `/` lands on My profile, which reads the registration from GET /members/me; the
+  // screens of the hours read the bank of hours.
+  server.use(meHandler({ user }), myProfileHandler(), ...bankHandlers(createBankStore()));
 
   const router = createMemoryRouter(
     [
@@ -51,6 +54,7 @@ async function renderApp(user: MeResponseDto, route = "/") {
                   { index: true, element: <Navigate to="/profile" replace /> },
                   ...peopleRoutes,
                   ...lessonsRoutes,
+                  ...hoursRoutes,
                   ...prototypeRoutes,
                   ...authProtectedRoutes,
                 ],

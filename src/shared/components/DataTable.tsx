@@ -1,7 +1,10 @@
 import type { ReactNode } from "react";
 
 export interface Column<T> {
+  /** The title of the column, read in the header; also its key. */
   header: string;
+  /** Drawn in the header cell instead of `header` (a "select all" checkbox). `header` stays the key. */
+  headerContent?: ReactNode;
   render: (row: T) => ReactNode;
   headerClassName?: string;
   cellClassName?: string;
@@ -53,7 +56,7 @@ export function DataTable<T>({
                 scope="col"
                 className={joinClasses(HEADER_CLASS, column.headerClassName)}
               >
-                {column.header}
+                {column.headerContent ?? column.header}
               </th>
             ))}
           </tr>

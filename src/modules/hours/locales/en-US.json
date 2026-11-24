@@ -147,5 +147,209 @@
       "network": "We could not remove the entry. Try again.",
       "unknown": "We could not remove the entry. Try again."
     }
+  },
+  "bank": {
+    "filters": {
+      "search": "Search member",
+      "searchPlaceholder": "Search member by name…",
+      "period": "Period",
+      "periodValue": "{{month}}/{{year}}",
+      "view": "View",
+      "all": "Everyone",
+      "clearMember": "Back to Everyone"
+    },
+    "export": "Export report",
+    "exportAll": "Export report of everyone",
+    "exportError": "The report could not be exported.",
+    "exportFileName": "hours-bank-{{period}}.csv",
+    "totals": {
+      "label": "Totals of the period",
+      "declared": "Total hours logged",
+      "validated": "Validated hours",
+      "pending": "Awaiting validation",
+      "adjustedOrRejected": "Adjusted / rejected"
+    },
+    "members": {
+      "title": "Hours by member",
+      "caption": "Hours by member, with department, hours logged and pending",
+      "member": "Member",
+      "department": "Department",
+      "declared": "Logged",
+      "pending": "Pending",
+      "actions": "Actions",
+      "viewMember": "View member",
+      "viewMemberLabel": "View member {{name}}",
+      "summary": "Showing {{shown}} of {{total}} members, pending ones first",
+      "viewAll": "View all",
+      "noPending": "Nothing pending",
+      "removed": "Member removed",
+      "loading": "Loading members…",
+      "empty": "No entries in this period",
+      "emptyDescription": "When members log hours, they show up here.",
+      "noResults": "No member found",
+      "noResultsDescription": "No member matches the search. Try another name.",
+      "clearSearch": "Clear search",
+      "pagination": {
+        "nav": "Pages of members",
+        "previous": "Previous page",
+        "next": "Next page",
+        "page": "Page {{page}}"
+      }
+    },
+    "categories": {
+      "title": "Hours of the member by category",
+      "caption": "Hours of the member by category, with the pending ones",
+      "category": "Category",
+      "hours": "Hours",
+      "pending": "Pending",
+      "loading": "Loading categories…",
+      "empty": "No entries of this member in the period",
+      "labels": {
+        "lesson": "Lesson",
+        "planning": "Planning",
+        "event": "Event",
+        "management": "Management",
+        "meeting": "Meeting",
+        "support": "Support",
+        "other": "Other"
+      }
+    },
+    "states": {
+      "error": "The hours bank could not be loaded",
+      "errorDescription": "Check the connection and try again. If the problem persists, tell the coordination team.",
+      "retry": "Try again",
+      "memberError": "This member could not be opened",
+      "backToAll": "Back to Everyone"
+    }
+  },
+  "review": {
+    "title": "Entries awaiting validation ({{count}})",
+    "titlePending": "Entries awaiting validation",
+    "caption": "Entries awaiting validation, with date, member, activity, category and hours",
+    "select": "Selection",
+    "selectAll": "Select all on this page",
+    "selectEntry": "Select the entry of {{name}} on {{date}}",
+    "date": "Date",
+    "member": "Member",
+    "activity": "Activity",
+    "category": "Category",
+    "hours": "Hours",
+    "actions": "Actions",
+    "selection_one": "{{count}} of {{total}} selected · {{hours}}",
+    "selection_other": "{{count}} of {{total}} selected · {{hours}}",
+    "clearSelection": "Clear selection",
+    "validateSelected": "Validate selected ({{count}})",
+    "validate": "Validate",
+    "adjust": "Adjust",
+    "reject": "Reject",
+    "validateLabel": "Validate the entry of {{name}} on {{date}}",
+    "adjustLabel": "Adjust the entry of {{name}} on {{date}}",
+    "rejectLabel": "Reject the entry of {{name}} on {{date}}",
+    "validated_one": "{{count}} entry validated",
+    "validated_other": "{{count}} entries validated",
+    "validatedDescription": "{{hours}} went into the hours bank of {{names}}.",
+    "selfReviewHint": "You cannot review your own entry.",
+    "errors": {
+      "notPending": "One of the entries was already reviewed. The list was updated.",
+      "notFound": "One of the entries was removed. The list was updated.",
+      "selfReview": "You cannot review your own entry.",
+      "entryGone": "This entry is no longer pending.",
+      "generic": "The validation failed. Try again."
+    },
+    "loading": "Loading entries…",
+    "empty": "No pending entries",
+    "emptyDescription": "When someone logs hours, the entry shows up here to be validated.",
+    "error": "The pending entries could not be loaded",
+    "summary": "Showing {{shown}} of {{total}} entries",
+    "pagination": {
+      "nav": "Pages of pending entries",
+      "previous": "Previous page",
+      "next": "Next page",
+      "page": "Page {{page}}"
+    },
+    "entrySummary": {
+      "line": "{{name}} · {{category}} · {{date}}",
+      "loggedBySelf": "Logged by the member on {{date}}",
+      "loggedOnBehalf": "Logged on behalf of the member on {{date}}",
+      "loggedByAttendance": "Recorded by the attendance of the lesson on {{date}}",
+      "pendingSuffix": "awaiting validation"
+    }
+  },
+  "adjust": {
+    "title": "Adjust entry",
+    "close": "Close",
+    "declared": "Declared value",
+    "newValue": "New value (hours)",
+    "newValuePlaceholder": "E.g. 2h30",
+    "justification": "Justification",
+    "justificationHelp": "Required. The member sees this text in the statement.",
+    "notice": "The declared value ({{declared}}) stays recorded next to the adjustment. The validated hours become {{validated}}.",
+    "noticeDeclaredOnly": "The declared value ({{declared}}) stays recorded next to the adjustment.",
+    "back": "Back",
+    "submit": "Save adjustment",
+    "success": "Entry adjusted",
+    "successDescription": "{{name}}: {{declared}} declared, {{validated}} validated.",
+    "viewHistory": "View history",
+    "errors": {
+      "newValueRequired": "Enter the new value.",
+      "newValueFormat": "Use the format 2h or 2h30.",
+      "newValueRange": "Enter a value between 0h01 and {{max}}.",
+      "unchanged": "The new value must differ from the declared one.",
+      "justificationRequired": "Write the justification.",
+      "tooLong": "Use up to {{max}} characters.",
+      "generic": "The adjustment could not be saved. Try again."
+    }
+  },
+  "reject": {
+    "title": "Reject entry",
+    "close": "Close",
+    "reason": "Reason for rejection",
+    "reasonHelp": "Required. The member sees this text in the statement.",
+    "notice": "The {{hours}} do not go into the hours bank. The entry stays in the history as Rejected.",
+    "back": "Back",
+    "submit": "Reject entry",
+    "success": "Entry rejected",
+    "successDescription": "{{name}} sees the reason in the statement and can log it again.",
+    "errors": {
+      "reasonRequired": "Write the reason for the rejection.",
+      "tooLong": "Use up to {{max}} characters.",
+      "generic": "The entry could not be rejected. Try again."
+    }
+  },
+  "history": {
+    "title": "History of the entry",
+    "close": "Close",
+    "current": {
+      "pending": "Current status: Pending · declared {{declared}}",
+      "approved": "Current status: Approved · declared {{declared}} · validated {{validated}}",
+      "adjusted": "Current status: Adjusted · declared {{declared}} · validated {{validated}}",
+      "rejected": "Current status: Rejected · declared {{declared}}"
+    },
+    "timeline": "Timeline",
+    "when": "{{date}} · {{time}}",
+    "events": {
+      "created": "{{actor}} logged {{hours}} in {{category}}",
+      "adjusted": "{{actor}} adjusted from {{from}} to {{to}}",
+      "approved": "{{actor}} validated {{hours}}",
+      "rejected": "{{actor}} rejected the entry",
+      "removed": "{{actor}} removed the entry",
+      "reversed": "The hours were reversed"
+    },
+    "details": {
+      "justification": "Justification: “{{note}}”",
+      "reason": "Reason: “{{note}}”",
+      "reversed": "Attendance corrected or lesson cancelled."
+    },
+    "statusDetail": {
+      "pending": "Status: awaiting validation",
+      "approved": "Status: approved",
+      "adjusted": "Status: adjusted",
+      "rejected": "Status: rejected"
+    },
+    "unknownActor": "Someone",
+    "immutable": "The history cannot be edited or deleted.",
+    "loading": "Loading the history…",
+    "loadError": "The history could not be loaded.",
+    "retry": "Try again"
   }
 }
