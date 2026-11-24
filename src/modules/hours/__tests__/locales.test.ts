@@ -5,6 +5,8 @@ import { HourEntryCategory, HourEntryEventType, HourEntryStatus } from "@api/gen
 import enUS from "../locales/en-US.json";
 import ptBR from "../locales/pt-BR.json";
 
+const PLURAL_SUFFIX = /_(zero|one|two|few|many|other)$/;
+
 function flattenKeys(value: object, prefix = ""): string[] {
   return Object.entries(value).flatMap(([key, child]) =>
     typeof child === "object" && child !== null
@@ -22,9 +24,44 @@ function valueAt(locale: object, key: string): unknown {
   }, locale);
 }
 
+/** The key without its plural suffix: pt-BR has the plural form `many` (from 1 million on), en-US does not. */
+function baseKey(key: string): string {
+  return key.replace(PLURAL_SUFFIX, "");
+}
+
+function baseKeys(locale: object): string[] {
+  return [...new Set(flattenKeys(locale).map(baseKey))].sort();
+}
+
+/** The variables `{{name}}` of each key, every plural form of the key together. */
+function variablesByKey(locale: object): Map<string, string> {
+  const variables = new Map<string, Set<string>>();
+  for (const key of flattenKeys(locale)) {
+    const names = variables.get(baseKey(key)) ?? new Set<string>();
+    for (const match of String(valueAt(locale, key)).matchAll(/{{(\w+)}}/g)) names.add(match[1]);
+    variables.set(baseKey(key), names);
+  }
+  return new Map([...variables].map(([key, names]) => [key, [...names].sort().join(",")]));
+}
+
 describe("hours locales", () => {
-  it("pt-BR and en-US have the same keys", () => {
-    expect(flattenKeys(enUS).sort()).toEqual(flattenKeys(ptBR).sort());
+  it("pt-BR and en-US have the same keys, apart from the plural forms of each language", () => {
+    expect(baseKeys(enUS)).toEqual(baseKeys(ptBR));
+  });
+
+  it("uses only the plural forms of each language", () => {
+    for (const [language, locale] of [
+      ["pt-BR", ptBR],
+      ["en-US", enUS],
+    ] as const) {
+      const categories = new Intl.PluralRules(language).resolvedOptions().pluralCategories;
+      const foreign = flattenKeys(locale).filter((key) => {
+        const category = PLURAL_SUFFIX.exec(key)?.[1];
+        return category !== undefined && !categories.some((known) => known === category);
+      });
+
+      expect(foreign, language).toEqual([]);
+    }
   });
 
   it("has no empty text", () => {
@@ -39,12 +76,7 @@ describe("hours locales", () => {
   });
 
   it("uses the same interpolation variables in both languages", () => {
-    const variables = (locale: object, key: string): string[] =>
-      [...String(valueAt(locale, key)).matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort();
-
-    for (const key of flattenKeys(ptBR)) {
-      expect(variables(enUS, key), key).toEqual(variables(ptBR, key));
-    }
+    expect(variablesByKey(enUS)).toEqual(variablesByKey(ptBR));
   });
 
   it("has a label for every category, status and event type of the contract", () => {
