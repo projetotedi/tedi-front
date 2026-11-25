@@ -6,21 +6,32 @@ import {
   LessonPlanUsageStatus,
   type ApiFieldErrorDto,
   type ArchiveDto,
+  type ClassesSummaryByCourseResponseDto,
   type CourseDetailDto,
+  type CourseListItemDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
+  type CourseResponseDto,
+  type CreateCourseDto,
   type CreateLessonPlanDto,
+  type DuplicateCourseDto,
   type LessonPlanDetailDto,
   type LessonPlanResponseDto,
   type LessonPlanUsageResponseDto,
   type MeResponseDto,
   type PermissionsDto,
   type ReplaceCourseLessonPlansDto,
+  type UpdateCourseDto,
   type UpdateLessonPlanDto,
+} from "@api/generated/model";
+import {
+  LessonPlanListStatus,
+  type LessonPlanListItemDto,
+  type ListLessonPlans200,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { MOCK_LESSON_PLANS, type LessonPlanMock } from "../mocks/lesson-plans.mock";
+import { MOCK_LESSON_PLANS, type LessonPlanMock } from "./lesson-plan-catalog";
 
 function permissionsWith(granted: Partial<PermissionsDto>): PermissionsDto {
   return granted as PermissionsDto;
@@ -30,6 +41,7 @@ const MANAGER_PERMISSIONS = permissionsWith({
   "catalog.view": "all",
   "lessonPlans.manage": "all",
   "courses.manage": "all",
+  "courses.duplicateArchive": "all",
 });
 
 const PERMISSIONS_BY_ROLE: Record<Role, PermissionsDto> = {
@@ -37,6 +49,7 @@ const PERMISSIONS_BY_ROLE: Record<Role, PermissionsDto> = {
     "catalog.view": "all",
     "lessonPlans.manage": "none",
     "courses.manage": "none",
+    "courses.duplicateArchive": "none",
   }),
   [Role.director]: MANAGER_PERMISSIONS,
   [Role.coordinator]: MANAGER_PERMISSIONS,
@@ -159,6 +172,8 @@ export function buildSequenceItem(
     ...overrides,
   };
 }
+
+const LESSON_PLAN_CONTENTS_SEGMENT = "contents";
 
 const ARCHIVED_AT = "2026-10-10T13:00:00.000Z";
 
@@ -308,6 +323,13 @@ export const COURSE_ARCHIVED_ERROR: ApiErrorOptions = {
   message: "Archived courses are read-only.",
 };
 
+/** Another course already has the name, archived ones included, ignoring case (`duplicateCourse`). */
+export const COURSE_NAME_TAKEN_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "COURSE_NAME_TAKEN",
+  message: "A course with this name already exists.",
+};
+
 export const DUPLICATE_LESSON_PLAN_ERROR: ApiErrorOptions = {
   statusCode: 400,
   error: "DUPLICATE_LESSON_PLAN",
@@ -365,6 +387,11 @@ interface ReplaceSequenceCall {
   body: ReplaceCourseLessonPlansDto;
 }
 
+interface DuplicateCourseCall {
+  id: string;
+  body: DuplicateCourseDto;
+}
+
 interface UsageCall {
   id: string;
   /** `null` when the request does not send `expectedDurationMinutes`. */
@@ -401,6 +428,8 @@ export function getLessonPlanHandler({
   onCall,
 }: HandlerOptions<IdCall, LessonPlanDetailDto> = {}) {
   return http.get("*/lesson-plans/:id", async ({ params }) => {
+    // The API declares GET /lesson-plans/contents before :id; so does the server of the tests.
+    if (params.id === LESSON_PLAN_CONTENTS_SEGMENT) return undefined;
     onCall?.({ id: String(params.id) });
     if (delay) await delay;
 
@@ -517,6 +546,8 @@ export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): Cou
   return {
     id: COURSE_ID,
     name: COURSE_SOCIAL_NETWORKS.courseName,
+    archivedAt: null,
+    archiveReason: null,
     category: CourseCategory.intermediate,
     status: CourseStatus.active,
     createdAt: "2024-02-12T12:00:00.000Z",
@@ -543,10 +574,19 @@ export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): Cou
   };
 }
 
+/** When and why the course of `buildArchivedCourseDetail` was archived (noon UTC: same day anywhere). */
+export const COURSE_ARCHIVED_AT = "2026-10-14T12:00:00.000Z";
+export const COURSE_ARCHIVE_REASON = "Conteúdo substituído pelo curso Redes Sociais 2026.";
+
 export function buildArchivedCourseDetail(
   overrides: Partial<CourseDetailDto> = {},
 ): CourseDetailDto {
-  return buildCourseDetail({ status: CourseStatus.archived, ...overrides });
+  return buildCourseDetail({
+    status: CourseStatus.archived,
+    archivedAt: COURSE_ARCHIVED_AT,
+    archiveReason: COURSE_ARCHIVE_REASON,
+    ...overrides,
+  });
 }
 
 /**
@@ -673,10 +713,402 @@ export function getLessonPlansByIdHandler(
   onCall?: (call: IdCall) => void,
 ) {
   return http.get("*/lesson-plans/:id", ({ params }) => {
+    if (params.id === LESSON_PLAN_CONTENTS_SEGMENT) return undefined;
     const id = String(params.id);
     onCall?.({ id });
 
     const plan = plans.find((candidate) => candidate.id === id);
     return plan === undefined ? apiErrorResponse(NOT_FOUND_ERROR) : HttpResponse.json(plan);
+  });
+}
+
+/**
+ * The id of the copy that `POST /courses/:id/duplicate` makes. It is not the `...c2` of
+ * `COURSE_SMARTPHONES`, the prerequisite of the default course: a copy and a prerequisite with the
+ * same id would make a test that follows one of them pass by following the other.
+ */
+export const COURSE_COPY_ID = "01952ef7-0000-7000-8000-0000000000c4";
+
+export const COURSE_COPY_NAME = "Redes Sociais com Segurança (cópia)";
+
+/**
+ * Response of `POST /courses/:id/duplicate` for the default course: the copy has its own id, the
+ * name that was sent, the description, the objective and the category of the original, no
+ * prerequisites (they are not copied) and it is born active, even when the original is archived.
+ * The creator is the person who duplicated it.
+ */
+export function buildCourseCopy(overrides: Partial<CourseResponseDto> = {}): CourseResponseDto {
+  const original = buildCourseDetail();
+
+  return {
+    id: COURSE_COPY_ID,
+    name: COURSE_COPY_NAME,
+    category: original.category,
+    status: CourseStatus.active,
+    description: original.description,
+    objective: original.objective,
+    prerequisites: [],
+    archivedAt: null,
+    archivedById: null,
+    archiveReason: null,
+    createdById: buildMeUser().id,
+    createdAt: "2026-11-15T12:00:00.000Z",
+    updatedAt: "2026-11-15T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/**
+ * Response of `GET /courses/:id` for the copy: the sequence of the original, in the same order, and
+ * no prerequisites, no course that requires it and the person who duplicated it as its creator.
+ */
+export function buildCourseCopyDetail(overrides: Partial<CourseDetailDto> = {}): CourseDetailDto {
+  const copy = buildCourseCopy();
+
+  return buildCourseDetail({
+    id: copy.id,
+    name: copy.name,
+    createdAt: copy.createdAt,
+    updatedAt: copy.updatedAt,
+    createdBy: { id: copy.createdById, name: buildMeUser().name },
+    prerequisites: [],
+    requiredBy: [],
+    ...overrides,
+  });
+}
+
+export function duplicateCourseHandler({
+  response = buildCourseCopy(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<DuplicateCourseCall, CourseResponseDto> = {}) {
+  return http.post("*/courses/:id/duplicate", async ({ request, params }) => {
+    onCall?.({
+      id: String(params.id),
+      body: (await readBody<DuplicateCourseDto>(request)) as DuplicateCourseDto,
+    });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+/** Response of `PATCH /courses/:id/archive`: the course of the Figma, archived with the reason. */
+export function buildArchivedCourse(overrides: Partial<CourseResponseDto> = {}): CourseResponseDto {
+  const detail = buildCourseDetail();
+
+  return {
+    id: detail.id,
+    name: detail.name,
+    category: detail.category,
+    status: CourseStatus.archived,
+    description: detail.description,
+    objective: detail.objective,
+    prerequisites: [],
+    archivedAt: COURSE_ARCHIVED_AT,
+    archivedById: buildMeUser().id,
+    archiveReason: COURSE_ARCHIVE_REASON,
+    createdById: buildMeUser().id,
+    createdAt: detail.createdAt,
+    updatedAt: COURSE_ARCHIVED_AT,
+    ...overrides,
+  };
+}
+
+/** Response of `PATCH /courses/:id/unarchive`: the same course, active again. */
+export function buildReactivatedCourse(
+  overrides: Partial<CourseResponseDto> = {},
+): CourseResponseDto {
+  return buildArchivedCourse({
+    status: CourseStatus.active,
+    archivedAt: null,
+    archivedById: null,
+    archiveReason: null,
+    ...overrides,
+  });
+}
+
+export function archiveCourseHandler({
+  response = buildArchivedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ArchiveCall, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id/archive", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody<ArchiveDto>(request) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export function unarchiveCourseHandler({
+  response = buildReactivatedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id/unarchive", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/**
+ * `GET /classes/summary-by-course`, read by Arquivar curso for "As N turmas…". By default the
+ * course has 2 classes, as in the Figma.
+ */
+export function classesSummaryHandler({
+  response,
+  total = 2,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ courseIds: string }, ClassesSummaryByCourseResponseDto[]> & {
+  total?: number;
+} = {}) {
+  return http.get("*/classes/summary-by-course", async ({ request }) => {
+    const courseIds = new URL(request.url).searchParams.get("courseIds") ?? "";
+    onCall?.({ courseIds });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(
+      response ??
+        courseIds
+          .split(",")
+          .filter(Boolean)
+          .map((courseId) => ({ courseId, total, active: total })),
+    );
+  });
+}
+
+/** A line of `GET /courses`: "Informática Básica", basic, active, 6 plans, 12h, no prerequisite. */
+export function buildCourseListItem(overrides: Partial<CourseListItemDto> = {}): CourseListItemDto {
+  return {
+    id: COURSE_ID,
+    name: "Informática Básica",
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    lessonPlanCount: 6,
+    plannedWorkloadMinutes: 720,
+    prerequisites: [],
+    createdAt: "2026-09-01T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** The six courses of the Figma of the list (514:31941), the last one archived. */
+export function buildFigmaCourseList(): CourseListItemDto[] {
+  const id = (n: number) => `01952ef7-0000-7000-8000-0000000001${String(n).padStart(2, "0")}`;
+  return [
+    buildCourseListItem({ id: id(1) }),
+    buildCourseListItem({
+      id: id(2),
+      name: "Smartphones no dia a dia",
+      lessonPlanCount: 5,
+      plannedWorkloadMinutes: 510,
+    }),
+    buildCourseListItem({
+      id: id(3),
+      name: "Redes Sociais com Segurança",
+      category: CourseCategory.intermediate,
+      lessonPlanCount: 4,
+      plannedWorkloadMinutes: 420,
+      prerequisites: [{ id: id(2), name: "Smartphones no dia a dia" }],
+    }),
+    buildCourseListItem({
+      id: id(4),
+      name: "Internet e Serviços Públicos",
+      category: CourseCategory.intermediate,
+      lessonPlanCount: 5,
+      plannedWorkloadMinutes: 540,
+      prerequisites: [{ id: id(1), name: "Informática Básica" }],
+    }),
+    buildCourseListItem({
+      id: id(5),
+      name: "Fotografia no Celular",
+      lessonPlanCount: 3,
+      plannedWorkloadMinutes: 270,
+    }),
+    buildCourseListItem({
+      id: id(6),
+      name: "Informática Básica (2023)",
+      status: CourseStatus.archived,
+    }),
+  ];
+}
+
+interface ListCoursesCall {
+  params: Record<string, string>;
+}
+
+/**
+ * `GET /courses`. Answers `courses` paginated by `page` and `limit` of the request, with `total`
+ * from them unless given; `onCall` gets every query parameter, to check what the screen sent.
+ */
+export function listCoursesHandler({
+  courses = buildFigmaCourseList(),
+  total,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: Omit<HandlerOptions<ListCoursesCall>, "response"> & {
+  courses?: CourseListItemDto[];
+  total?: number;
+} = {}) {
+  return http.get("*/courses", async ({ request }) => {
+    const url = new URL(request.url);
+    const params = Object.fromEntries(url.searchParams.entries());
+    onCall?.({ params });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+
+    const page = Number(params.page ?? 1);
+    const limit = Number(params.limit ?? 20);
+    return HttpResponse.json({
+      data: courses.slice((page - 1) * limit, page * limit),
+      total: total ?? courses.length,
+      page,
+      limit,
+    });
+  });
+}
+
+/** Response of `POST /courses` and `PATCH /courses/:id`: the course of the Figma, as saved. */
+export function buildSavedCourse(overrides: Partial<CourseResponseDto> = {}): CourseResponseDto {
+  return buildReactivatedCourse(overrides);
+}
+
+export function createCourseHandler({
+  response = buildSavedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ body: CreateCourseDto }, CourseResponseDto> = {}) {
+  return http.post("*/courses", async ({ request }) => {
+    onCall?.({ body: (await readBody<CreateCourseDto>(request)) as CreateCourseDto });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+export function updateCourseHandler({
+  response = buildSavedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ id: string; body: UpdateCourseDto }, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id", async ({ request, params }) => {
+    onCall?.({
+      id: String(params.id),
+      body: (await readBody<UpdateCourseDto>(request)) as UpdateCourseDto,
+    });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export const PREREQUISITE_CYCLE_ERROR: ApiErrorOptions = {
+  statusCode: 400,
+  error: "PREREQUISITE_CYCLE",
+  message: "The prerequisites would form a cycle.",
+};
+
+const LIST_UPDATED_AT = "2026-10-01T12:00:00.000Z";
+
+/** A plan of the catalog of the tests as a line of `GET /lesson-plans`. */
+export function toLessonPlanListItem(
+  plan: LessonPlanMock,
+  overrides: Partial<LessonPlanListItemDto> = {},
+): LessonPlanListItemDto {
+  return {
+    id: plan.id,
+    title: plan.title,
+    contents: plan.contents,
+    expectedDurationMinutes: plan.expectedDurationMinutes,
+    materialUrl: plan.materialUrl,
+    courseCount: plan.courseCount,
+    status: LessonPlanListStatus[plan.usage],
+    archivedAt: plan.usage === "archived" ? ARCHIVED_AT : null,
+    updatedAt: LIST_UPDATED_AT,
+    ...overrides,
+  };
+}
+
+/** A page of `GET /lesson-plans`: `total` can be more than the items of the page. */
+export function buildLessonPlansPage(
+  items: LessonPlanListItemDto[],
+  {
+    total = items.length,
+    page = 1,
+    limit = 7,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListLessonPlans200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a `GET /lesson-plans`, as an object of the parameters that were sent. */
+export type ListLessonPlansCall = Record<string, string>;
+
+/**
+ * `GET /lesson-plans`. Without `response` it answers the catalog of the tests that is not archived,
+ * by title, in one page, as the API answers the picker of the sequence. It is a default handler of
+ * the server of this module (`test-utils`), since the dialog of the sequence asks for it.
+ */
+export function listLessonPlansHandler({
+  response,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListLessonPlansCall, ListLessonPlans200> = {}) {
+  return http.get("*/lesson-plans", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    if (response) return HttpResponse.json(response);
+    const items = MOCK_LESSON_PLANS.filter((plan) => plan.usage !== "archived")
+      .map((plan) => toLessonPlanListItem(plan))
+      .sort((first, second) => first.title.localeCompare(second.title, "pt-BR"));
+    return HttpResponse.json(buildLessonPlansPage(items, { limit: 100 }));
+  });
+}
+
+/** `GET /lesson-plans/contents`: the suggestions of the filter Conteúdo. */
+export function listLessonPlanContentsHandler({
+  response = ["Janelas do sistema", "Janela anônima"],
+  onCall,
+}: { response?: string[]; onCall?: (search: string | null) => void } = {}) {
+  return http.get("*/lesson-plans/contents", ({ request }) => {
+    onCall?.(new URL(request.url).searchParams.get("search"));
+    return HttpResponse.json(response);
   });
 }

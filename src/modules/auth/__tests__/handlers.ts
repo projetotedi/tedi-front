@@ -3,17 +3,19 @@ import { http, HttpResponse } from "msw";
 import {
   InviteListItemDtoStatus,
   InviteType,
+  MemberRegistrationStatus,
+  MemberStatus,
   type AcceptInviteDto,
-  type AccessResponseDto,
   type ApiFieldErrorDto,
   type CreateInviteDto,
   type CreateInviteResponseDto,
   type DepartmentResponseDto,
   type InviteListItemDto,
   type InviteResponseDto,
-  type ListAccess200,
+  type ListMembers200,
   type LoginDto,
   type MeResponseDto,
+  type MemberListItemResponseDto,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
@@ -185,27 +187,34 @@ export function acceptInviteHandler({
   });
 }
 
-type AccessOverrides = Partial<Omit<AccessResponseDto, "ra" | "email">> & {
-  /** String de verdade: o tipo `{ [key: string]: unknown }` gerado pelo Orval é um bug do Swagger. */
-  ra?: string;
-  email?: string;
-};
+export const MEMBER_DEPARTMENT = {
+  id: "01952ef7-0000-7000-8000-0000000000d1",
+  name: "Pedagogia",
+} as const;
 
-export function buildAccess(overrides: AccessOverrides = {}): AccessResponseDto {
-  const { ra = "2024RA0001", email = "ana@example.com", ...rest } = overrides;
+/** A member of the list as `GET /members` returns it: approved, in the project, with department and function. */
+export function buildMember(
+  overrides: Partial<MemberListItemResponseDto> = {},
+): MemberListItemResponseDto {
   return {
     id: "01952ef7-0000-7000-8000-000000000010",
     name: "Ana Coordenadora",
+    ra: "2024RA0001",
     role: Role.coordinator,
     accessEnabled: true,
-    ...rest,
-    ra: ra as unknown as AccessResponseDto["ra"],
-    email: email as unknown as AccessResponseDto["email"],
+    department: MEMBER_DEPARTMENT,
+    mainFunction: "Monitora",
+    joinedAt: "2025-03-01",
+    registrationStatus: MemberRegistrationStatus.approved,
+    status: MemberStatus.active,
+    exitDate: null,
+    exitReason: null,
+    ...overrides,
   };
 }
 
-interface ListAccessHandlerOptions {
-  data?: AccessResponseDto[];
+interface ListMembersHandlerOptions {
+  data?: MemberListItemResponseDto[];
   total?: number;
   page?: number;
   limit?: number;
@@ -215,8 +224,9 @@ interface ListAccessHandlerOptions {
   onCall?: (params: URLSearchParams) => void;
 }
 
-export function listAccessHandler({
-  data = [buildAccess()],
+// Exact path "members": not to be confused with GET /members/me (the profile of the user).
+export function listMembersHandler({
+  data = [buildMember()],
   total,
   page = 1,
   limit = 12,
@@ -224,14 +234,14 @@ export function listAccessHandler({
   networkError = false,
   delay,
   onCall,
-}: ListAccessHandlerOptions = {}) {
-  return http.get("*/access", async ({ request }) => {
+}: ListMembersHandlerOptions = {}) {
+  return http.get("*/members", async ({ request }) => {
     onCall?.(new URL(request.url).searchParams);
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();
     if (error) return apiErrorResponse(error);
-    const body: ListAccess200 = { data, page, limit, total: total ?? data.length };
+    const body: ListMembers200 = { data, page, limit, total: total ?? data.length };
     return HttpResponse.json(body);
   });
 }

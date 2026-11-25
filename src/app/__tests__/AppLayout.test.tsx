@@ -6,10 +6,18 @@ import { describe, expect, it } from "vitest";
 
 import type { MeResponseDto } from "@api/generated/model";
 import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
-import { buildMeUser, logoutHandler, meHandler } from "@modules/auth/__tests__/handlers";
+import {
+  buildMeUser,
+  listMembersHandler,
+  logoutHandler,
+  meHandler,
+} from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
-import { peopleRoutes } from "@modules/people";
+import { hoursRoutes } from "@modules/hours";
+import { bankHandlers, createBankStore } from "@modules/hours/__tests__/bank-handlers";
+import { lessonsRoutes } from "@modules/lessons";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
+import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -27,8 +35,9 @@ async function openAllGroups(container: HTMLElement) {
 
 async function renderApp(user: MeResponseDto, route = "/") {
   await i18n.changeLanguage("pt-BR");
-  // The route `/` lands on My profile, which reads the registration from GET /members/me.
-  server.use(meHandler({ user }), myProfileHandler());
+  // The route `/` lands on My profile, which reads the registration from GET /members/me; the
+  // screens of the hours read the bank of hours.
+  server.use(meHandler({ user }), myProfileHandler(), ...bankHandlers(createBankStore()));
 
   const router = createMemoryRouter(
     [
@@ -44,6 +53,8 @@ async function renderApp(user: MeResponseDto, route = "/") {
                 children: [
                   { index: true, element: <Navigate to="/profile" replace /> },
                   ...peopleRoutes,
+                  ...lessonsRoutes,
+                  ...hoursRoutes,
                   ...prototypeRoutes,
                   ...authProtectedRoutes,
                 ],
@@ -77,12 +88,12 @@ describe("AppLayout", () => {
     expect(within(nav).getByRole("link", { name: "Cursos" })).toBeInTheDocument();
   });
 
-  it("hides Membros from the director but keeps Banco de horas", async () => {
+  it("shows Membros to the director, who has members.list, besides Banco de horas", async () => {
     const { nav } = await renderApp(buildMeUser({ role: Role.director }));
     await openAllGroups(nav);
 
+    expect(within(nav).getByRole("link", { name: "Membros" })).toHaveAttribute("href", "/members");
     expect(within(nav).getByRole("link", { name: "Banco de horas" })).toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
   });
 
   it("hides Membros and Banco de horas from the member", async () => {
@@ -143,7 +154,7 @@ describe("AppLayout", () => {
   });
 
   it("opens the profile from the profile menu", async () => {
-    const { router } = await renderApp(buildMeUser({ name: "Maria Souza" }), "/courses");
+    const { router } = await renderApp(buildMeUser({ name: "Maria Souza" }), "/students");
 
     await userEvent.click(screen.getByRole("button", { name: "Menu do perfil de Maria Souza" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Perfil" }));
@@ -165,6 +176,10 @@ describe("AppLayout", () => {
     const drawer = await screen.findByRole("dialog", { name: "Menu principal" });
     expect(drawer).toHaveAttribute("id", "app-menu");
     expect(button).toHaveAttribute("aria-expanded", "true");
+
+    // O Drawer leva o foco para dentro dele logo depois de abrir, não no mesmo instante: o primeiro
+    // Tab só vale depois disso (antes, ele sai do <body> e percorre a página atrás).
+    await waitFor(() => expect(drawer.contains(document.activeElement)).toBe(true));
 
     // Os grupos chegam fechados e abrem pelo teclado, dentro do Drawer.
     const people = within(drawer).getByRole("button", { name: "Pessoas" });
@@ -265,5 +280,14 @@ describe("AppLayout", () => {
     await renderApp(buildMeUser({ role: Role.member }), "/members");
 
     expect(await screen.findByText("Você não tem acesso a esta tela")).toBeInTheDocument();
+  });
+
+  it("lets the director open Membros through the URL", async () => {
+    server.use(listMembersHandler({ data: [], total: 0 }));
+    await renderApp(buildMeUser({ role: Role.director }), "/members");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Membros" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Membros (0)" })).toBeInTheDocument();
+    expect(screen.queryByText("Você não tem acesso a esta tela")).not.toBeInTheDocument();
   });
 });

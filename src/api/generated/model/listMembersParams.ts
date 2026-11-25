@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MemberRegistrationStatus } from "./memberRegistrationStatus.ts";
+import type { MemberStatus } from "./memberStatus.ts";
 import type { Role } from "./role.ts";
 
 export type ListMembersParams = {
@@ -26,5 +27,9 @@ export type ListMembersParams = {
   role?: Role;
   departmentId?: string;
   registrationStatus?: MemberRegistrationStatus;
+  /**
+   * Participation in the project. Omitted lists every status; a person without member profile counts as active.
+   */
+  status?: MemberStatus;
   enabled?: boolean;
 };

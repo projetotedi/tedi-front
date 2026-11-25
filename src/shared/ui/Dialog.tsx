@@ -10,8 +10,20 @@ export interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   isDismissable?: boolean;
-  size?: "default" | "wide";
+  /** `default` 640px, `wide` 800px, `table` 1128px (a table of many columns, with no sideways scroll). */
+  size?: "default" | "wide" | "table";
+  /**
+   * The id (or ids, separated by spaces) of what in the body also describes the dialog, read when it
+   * opens, after the `description`. For a notice that has to sit in the body, under the title.
+   */
+  "aria-describedby"?: string;
 }
+
+const SIZE_CLASSES = {
+  default: "max-w-160",
+  wide: "max-w-200",
+  table: "max-w-282",
+} as const satisfies Record<NonNullable<DialogProps["size"]>, string>;
 
 export function Dialog({
   isOpen,
@@ -23,8 +35,12 @@ export function Dialog({
   footer,
   isDismissable = true,
   size = "default",
+  "aria-describedby": ariaDescribedBy,
 }: DialogProps): ReactElement {
   const descriptionId = useId();
+  const describedBy = [description ? descriptionId : undefined, ariaDescribedBy].filter(
+    (id): id is string => id !== undefined && id !== "",
+  );
 
   return (
     <Modal.Backdrop
@@ -36,8 +52,8 @@ export function Dialog({
       {/* O HeroUI ajusta o container ao conteúdo (`sm:w-fit`) e limita o diálogo a 448px: `sm:w-full` e `max-w-160` dão os 640px. */}
       <Modal.Container placement="center" className="sm:w-full">
         <Modal.Dialog
-          className={size === "wide" ? "max-w-200" : "max-w-160"}
-          aria-describedby={description ? descriptionId : undefined}
+          className={SIZE_CLASSES[size]}
+          aria-describedby={describedBy.length === 0 ? undefined : describedBy.join(" ")}
         >
           <Modal.CloseTrigger
             aria-label={closeLabel}

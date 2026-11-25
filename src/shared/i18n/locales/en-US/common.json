@@ -16,6 +16,7 @@
     "students": "Students",
     "lessons": "Lessons",
     "calendar": "Calendar",
+    "myLessons": "My lessons",
     "enrollments": "Enrollments",
     "members": "Members",
     "hours": "Hours bank",
@@ -45,6 +46,10 @@
   },
   "comingSoon": {
     "description": "This area is still under construction and is coming soon."
+  },
+  "details": {
+    "empty": "—",
+    "notInformed": "Not provided"
   },
   "toast": {
     "region": "Notifications",

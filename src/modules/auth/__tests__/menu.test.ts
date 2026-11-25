@@ -12,13 +12,14 @@ describe("authMenuItems", () => {
     }
   });
 
-  it("shows Membros only with access.manage", () => {
+  it("shows Membros with members.list, not with access.manage", () => {
     expect(authMenuItems).toContainEqual(
       expect.objectContaining({
         path: "/members",
-        permission: "access.manage",
+        permission: "members.list",
         group: "people",
       }),
     );
+    expect(authMenuItems.map((item) => item.permission)).not.toContain("access.manage");
   });
 });

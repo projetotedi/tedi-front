@@ -3,6 +3,7 @@
   "newPlan": "+ Novo plano de aula",
   "search": "Buscar plano de aula por título",
   "searchPlaceholder": "Buscar plano por título...",
+  "contentPlaceholder": "Conteúdo: todos",
   "content": "Conteúdo",
   "duration": "Duração",
   "usage": "Uso",
@@ -20,8 +21,6 @@
   "courseCount_one": "{{count}} curso",
   "courseCount_other": "{{count}} cursos",
   "classesUsed": "Turmas que já usaram",
-  "classesUsedCount_one": "{{count}} turma",
-  "classesUsedCount_other": "{{count}} turmas",
   "classesCountUnavailable": "Contagem de turmas disponível quando o módulo de aulas existir",
   "material": "Material",
   "status": "Situação",
@@ -33,6 +32,7 @@
   "previous": "Página anterior",
   "next": "Próxima página",
   "page": "Página {{page}}",
+  "pagination": "Páginas da lista de planos de aula",
   "empty": "Nenhum plano de aula ainda",
   "emptyDescription": "Comece criando o primeiro plano de aula.",
   "noResults": "Nada encontrado",
@@ -218,10 +218,6 @@
         "objective": "Objetivo"
       }
     },
-    "classes": {
-      "title": "Turmas deste curso",
-      "unavailable": "As turmas deste curso vão aparecer aqui em breve."
-    },
     "workload": {
       "title": "Carga horária prevista",
       "total": "Total previsto",
@@ -234,7 +230,9 @@
     },
     "history": {
       "title": "Catálogo e histórico",
-      "createdBy": "Criado por"
+      "createdBy": "Criado por",
+      "archivedAt": "Arquivado em",
+      "archiveReason": "Motivo"
     },
     "plan": {
       "title": "Plano do curso",
@@ -293,6 +291,105 @@
         "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
         "unknown": "Não foi possível salvar a sequência. Tente novamente."
       }
+    },
+    "duplicate": {
+      "action": "Duplicar curso",
+      "title": "Duplicar curso",
+      "nameLabel": "Nome do novo curso",
+      "suggestedName": "{{name}} (cópia)",
+      "copiedTitle": "O que é copiado",
+      "copiedDescription_zero": "Este curso ainda não tem planos de aula na sequência. Descrição, objetivo e categoria são copiados. Pré-requisitos e turmas não são copiados.",
+      "copiedDescription_one": "O {{count}} plano de aula e a ordem dele. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+      "copiedDescription_other": "Os {{count}} planos de aula e a ordem deles. Descrição, objetivo e categoria também. Pré-requisitos e turmas não são copiados.",
+      "back": "Voltar",
+      "submit": "Duplicar curso",
+      "submitting": "Duplicando…",
+      "success": "Curso duplicado",
+      "fieldErrors": {
+        "nameRequired": "Informe o nome do novo curso.",
+        "nameTooLong": "O nome pode ter no máximo {{nameMax}} caracteres.",
+        "nameTaken": "Já existe um curso com este nome. Escolha outro nome.",
+        "nameInvalid": "Revise o nome do novo curso."
+      },
+      "errors": {
+        "courseNotFound": "Não foi possível duplicar: este curso não existe mais.",
+        "network": "Não foi possível duplicar o curso. Verifique sua conexão e tente novamente.",
+        "unknown": "Não foi possível duplicar o curso. Tente novamente."
+      }
+    },
+    "archive": {
+      "action": "Arquivar curso",
+      "title": "Arquivar curso",
+      "warningTitle": "Arquivar impede novas turmas",
+      "keepsClasses_one": "A {{count}} turma já criada continua como está e segue visível. O curso sai da lista de opções ao criar turma e pode ser reativado depois.",
+      "keepsClasses_other": "As {{count}} turmas já criadas continuam como estão e seguem visíveis. O curso sai da lista de opções ao criar turma e pode ser reativado depois.",
+      "keepsClassesNoCount": "As turmas já criadas continuam como estão e seguem visíveis. O curso sai da lista de opções ao criar turma e pode ser reativado depois.",
+      "reason": "Motivo (opcional)",
+      "reasonExample": "Conteúdo substituído pelo curso Redes Sociais 2026.",
+      "reasonHelp": "Fica registrado no histórico do curso.",
+      "back": "Voltar",
+      "confirm": "Arquivar curso",
+      "confirming": "Arquivando…",
+      "success": "Curso arquivado.",
+      "errors": {
+        "reasonTooLong": "O motivo pode ter no máximo {{reasonMax}} caracteres."
+      }
+    },
+    "unarchive": {
+      "action": "Reativar curso",
+      "title": "Reativar curso",
+      "description": "O curso volta a aceitar novas turmas e a aparecer nas listas de opções. As turmas já criadas não mudam.",
+      "back": "Voltar",
+      "confirm": "Reativar curso",
+      "confirming": "Reativando…",
+      "success": "Curso reativado."
+    },
+    "actionErrors": {
+      "archived": "Este curso está arquivado.",
+      "notFound": "Curso não encontrado. Ele pode ter sido removido.",
+      "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      "unknown": "Não foi possível concluir a ação. Tente novamente."
+    },
+    "form": {
+      "newTitle": "Novo curso",
+      "editTitle": "Editar curso",
+      "action": "Novo curso",
+      "editAction": "Editar curso",
+      "name": "Nome do curso",
+      "category": "Categoria",
+      "categoryPlaceholder": "Escolha a categoria",
+      "prerequisites": "Pré-requisitos",
+      "prerequisitesPlaceholder": "Nenhum",
+      "prerequisitesLoading": "Carregando cursos…",
+      "prerequisitesLoadError": "Não foi possível carregar os cursos. Os pré-requisitos atuais continuam.",
+      "archivedPrerequisite": "{{name}} (arquivado)",
+      "description": "Descrição",
+      "objective": "Objetivo",
+      "categoryChangedTitle": "A categoria vai mudar",
+      "categoryChangedDescription": "As turmas deste curso passam a mostrar a nova categoria.",
+      "cancel": "Cancelar",
+      "save": "Salvar curso",
+      "saveChanges": "Salvar alterações",
+      "saving": "Salvando…",
+      "created": "Curso criado.",
+      "updated": "Curso atualizado.",
+      "loading": "Carregando o curso…",
+      "loadError": "Não foi possível carregar o curso. Feche e tente de novo.",
+      "archivedHint": "Curso arquivado: reative o curso para editar.",
+      "errors": {
+        "nameRequired": "Informe o nome do curso.",
+        "nameTooLong": "O nome pode ter no máximo {{nameMax}} caracteres.",
+        "nameTaken": "Já existe um curso com esse nome (arquivados também contam).",
+        "categoryRequired": "Escolha a categoria.",
+        "descriptionRequired": "Informe a descrição.",
+        "descriptionTooLong": "A descrição pode ter no máximo {{descriptionMax}} caracteres.",
+        "objectiveTooLong": "O objetivo pode ter no máximo {{objectiveMax}} caracteres.",
+        "prerequisitesTooMany": "Escolha no máximo {{prerequisitesMax}} pré-requisitos.",
+        "prerequisiteCycle": "Esses pré-requisitos formariam um ciclo: um curso acabaria exigindo a si mesmo.",
+        "prerequisiteNotFound": "Um dos pré-requisitos não existe mais. Revise a lista.",
+        "prerequisiteArchived": "Um dos pré-requisitos foi arquivado e não pode ser adicionado.",
+        "serverInvalid": "Revise este campo."
+      }
     }
   },
   "mock": {
@@ -327,5 +424,44 @@
     "notFound": "Plano de aula não encontrado.",
     "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
     "unknown": "Não foi possível concluir a ação. Tente novamente."
+  },
+  "courses": {
+    "title_one": "Cursos ({{count}})",
+    "title_other": "Cursos ({{count}})",
+    "search": "Buscar curso por nome",
+    "searchPlaceholder": "Buscar curso por nome...",
+    "filters": {
+      "category": "Categoria",
+      "prerequisite": "Pré-requisito",
+      "status": "Status",
+      "all": "Todos",
+      "allFeminine": "Todas",
+      "withPrerequisite": "Com pré-requisito",
+      "withoutPrerequisite": "Sem pré-requisito"
+    },
+    "columns": {
+      "course": "Curso",
+      "category": "Categoria",
+      "lessonPlans": "Planos de aula",
+      "workload": "Carga prevista",
+      "prerequisite": "Pré-requisito",
+      "classes": "Turmas",
+      "status": "Status",
+      "actions": "Ações"
+    },
+    "actions": {
+      "archive": "Arquivar curso: {{name}}",
+      "unarchive": "Reativar curso: {{name}}",
+      "unarchiveShort": "Reativar",
+      "edit": "Editar curso: {{name}}"
+    },
+    "summary": "Mostrando {{shown}} de {{total}} cursos",
+    "pagination": "Páginas de cursos",
+    "loading": "Carregando cursos…",
+    "error": "Não foi possível carregar os cursos.",
+    "empty": "Nenhum curso ainda",
+    "emptyDescription": "Os cursos do catálogo aparecem aqui.",
+    "noResults": "Nenhum curso encontrado com esses filtros.",
+    "create": "+ Novo curso"
   }
 }

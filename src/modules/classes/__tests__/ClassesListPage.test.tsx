@@ -1,162 +1,313 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
-import "../index";
-import i18n from "@shared/i18n";
-import { ClassesListPage } from "../pages/ClassesListPage";
+import { describe, expect, it, vi } from "vitest";
 
-function renderPage(route = "/classes") {
-  void i18n.changeLanguage("pt-BR");
-  window.history.replaceState({}, "", route);
-  return render(
-    <MemoryRouter initialEntries={[route]}>
-      <ClassesListPage />
-    </MemoryRouter>,
+import { ClassStatus } from "@api/generated/model";
+import { Role } from "@shared/lib/role";
+
+import {
+  archiveClassHandler,
+  buildClassDetail,
+  buildClassesPage,
+  buildClassListItem,
+  buildMeUser,
+  CLASS_HAS_ACTIVE_ENROLLMENTS_ERROR,
+  CLASS_ID,
+  COURSE_ID,
+  EDITION_2025_ID,
+  getClassHandler,
+  listClassesHandler,
+  listCoursesHandler,
+  listEditionsHandler,
+  unarchiveClassHandler,
+  type ListClassesCall,
+} from "./handlers";
+import { classesRoutes, renderRoutes, server, setupClassesTestServer } from "./test-utils";
+
+setupClassesTestServer();
+
+const ARCHIVED_ROW = buildClassListItem({
+  id: "01952ef7-0000-7000-8000-0000000000d2",
+  code: "INFO-Z",
+  name: null,
+  archivedAt: "2026-10-10T13:00:00.000Z",
+});
+
+async function renderList({
+  route = "/classes",
+  role = Role.coordinator,
+  onCall,
+  page = buildClassesPage(),
+}: {
+  route?: string;
+  role?: Role;
+  onCall?: (call: ListClassesCall) => void;
+  page?: ReturnType<typeof buildClassesPage>;
+} = {}) {
+  server.use(
+    listEditionsHandler(),
+    listCoursesHandler(),
+    listClassesHandler({ response: page, onCall }),
   );
+  const view = await renderRoutes(classesRoutes, { route, user: buildMeUser(role) });
+  return view;
 }
 
-describe("classes list", () => {
-  it("renders mock rows, seats, status and pagination", () => {
-    renderPage();
-    expect(screen.getByRole("heading", { name: "Turmas (12)" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
-    expect(screen.getByText("12/15")).toBeInTheDocument();
-    expect(screen.getByRole("navigation", { name: "Ações" })).toBeInTheDocument();
-    expect(screen.getByText("Mostrando 10 de 12 turmas")).toBeInTheDocument();
-  });
+const table = () => screen.findByRole("table", { name: /Turmas/ });
 
-  it("applies search and supports creating a local record", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.type(
-      screen.getByRole("textbox", { name: "Buscar por código, turma ou curso" }),
-      "TUR-2025.2",
-    );
-    expect(screen.getByRole("link", { name: /Turma 2025\.2/ })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
-    await user.clear(screen.getByRole("textbox", { name: "Buscar por código, turma ou curso" }));
-    await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
-    expect(screen.getByRole("dialog", { name: "Nova turma" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Curso/ })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Edição" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Local")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Status/ })).toBeInTheDocument();
-    await user.type(screen.getByRole("textbox", { name: "Código da turma" }), "TUR-NEW");
-    await user.click(screen.getByRole("button", { name: "Salvar turma" }));
-    expect(await screen.findByRole("link", { name: "TUR-NEW" })).toBeInTheDocument();
-  }, 10000);
+describe("ClassesListPage", () => {
+  describe("reading the API", () => {
+    it("shows the classes of listClasses with the columns of the Figma", async () => {
+      await renderList({ page: buildClassesPage([buildClassListItem()], { total: 12 }) });
 
-  it("initializes the course filter from the URL and clears unmatched search", async () => {
-    renderPage("/classes?courseId=internet");
-    expect(screen.getByRole("link", { name: /Turma 2025\.2/ })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
-    const input = screen.getByRole("textbox", { name: "Buscar por código, turma ou curso" });
-    fireEvent.change(input, { target: { value: "impossível" } });
-    const state = await screen.findByText("Nada encontrado");
-    expect(state).toBeInTheDocument();
-    await userEvent.click(
-      within(state.parentElement as HTMLElement).getByRole("button", { name: "Limpar filtros" }),
-    );
-    expect(await screen.findByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
-  });
+      const rows = within(await table()).getAllByRole("row");
+      const row = rows[1];
 
-  it.each([
-    ["loading", "Carregando turmas…"],
-    ["error", "Não foi possível carregar as turmas"],
-    ["empty", "Nenhuma turma ainda"],
-  ])("shows only the %s state and keeps filters available", (state, label) => {
-    renderPage(`/classes?mockState=${state}&courseId=internet`);
-    expect(screen.getByText(label)).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: "Status" })).toBeInTheDocument();
-    expect(screen.getByRole("table")).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "Turma" })).toBeInTheDocument();
-  });
-
-  it("shows Brazilian date formatting and supports cancelling an edit", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    expect(screen.getByText("03/03/26 - 27/05/26")).toBeInTheDocument();
-    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
-    await user.clear(screen.getByRole("textbox", { name: "Código da turma" }));
-    await user.type(
-      screen.getByRole("textbox", { name: "Código da turma" }),
-      "ALTERACAO-DESCARTADA",
-    );
-    await user.click(screen.getByRole("button", { name: "Cancelar" }));
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Turma 2026.2" })).toBeInTheDocument();
-  });
-
-  it("saves edits locally without changing the class name", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getAllByRole("button", { name: "Editar" })[0]);
-    fireEvent.change(screen.getByLabelText(/Data de início/), {
-      target: { value: "2026-03-04" },
+      expect(screen.getByRole("heading", { name: "Turmas (12)" })).toBeInTheDocument();
+      expect(
+        within(row).getByRole("link", { name: "Informática Básica — Turma A" }),
+      ).toHaveAttribute("href", `/classes/${CLASS_ID}`);
+      expect(within(row).getByText("INFO-A · Informática Básica")).toBeInTheDocument();
+      expect(within(row).getByText("12/15")).toBeInTheDocument();
+      expect(within(row).getByText("Em andamento")).toBeInTheDocument();
+      expect(screen.getByText("Mostrando 1 de 12 turmas")).toBeInTheDocument();
     });
-    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
-    expect(await screen.findByText("04/03/26 - 27/05/26")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Turma 2026.2" })).toBeInTheDocument();
-  });
 
-  it("blocks a class whose end date is before its start date", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
-    await user.type(screen.getByRole("textbox", { name: "Código da turma" }), "INFO-NEW");
-    fireEvent.change(screen.getByLabelText(/Data de início/), {
-      target: { value: "2026-06-27" },
+    it("asks the first page, by the latest start, with no filter", async () => {
+      const onCall = vi.fn();
+      await renderList({ onCall });
+
+      await table();
+      expect(onCall).toHaveBeenCalledWith({ page: "1", limit: "10", sort: "startDate" });
     });
-    fireEvent.change(screen.getByLabelText(/Data de término/), {
-      target: { value: "2026-03-03" },
+
+    it("sends the filters of the URL to the API", async () => {
+      const onCall = vi.fn();
+      await renderList({
+        onCall,
+        route: `/classes?search=INFO&editionId=${EDITION_2025_ID}&courseId=${COURSE_ID}&category=basic&status=planned,in_progress&archived=true&page=2`,
+      });
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenCalledWith({
+          page: "2",
+          limit: "10",
+          sort: "startDate",
+          search: "INFO",
+          editionId: EDITION_2025_ID,
+          courseId: COURSE_ID,
+          category: "basic",
+          status: "planned,in_progress",
+          archived: "true",
+        }),
+      );
     });
-    await user.click(screen.getByRole("button", { name: "Salvar turma" }));
-    expect(
-      await screen.findByText("A data de término deve ser igual ou posterior à data de início."),
-    ).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "INFO-NEW" })).not.toBeInTheDocument();
+
+    it("keeps ?courseId= from Ver todas of the screen of a course", async () => {
+      const onCall = vi.fn();
+      await renderList({ onCall, route: `/classes?courseId=${COURSE_ID}` });
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenCalledWith(expect.objectContaining({ courseId: COURSE_ID })),
+      );
+      expect(
+        await screen.findByRole("button", { name: /Curso: informática básica/i }),
+      ).toBeVisible();
+    });
+
+    it("names an archived class by its code and tags it Arquivada", async () => {
+      await renderList({ page: buildClassesPage([ARCHIVED_ROW]) });
+
+      const row = within(await table()).getAllByRole("row")[1];
+
+      expect(within(row).getByRole("link", { name: "INFO-Z" })).toBeInTheDocument();
+      expect(within(row).getByText("Arquivada")).toBeInTheDocument();
+    });
   });
 
-  it("uses two pages for twelve mock classes", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    expect(screen.getByRole("button", { name: "Página 2" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Página 3" })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Página 2" }));
-    expect(screen.getByRole("link", { name: "Mensagens e contatos" })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Turma 2026.2" })).not.toBeInTheDocument();
+  describe("filters", () => {
+    it("searches after the typing stops and goes back to page 1", async () => {
+      const onCall = vi.fn();
+      const user = userEvent.setup();
+      await renderList({ onCall, route: "/classes?page=2" });
+      await table();
+
+      await user.type(
+        screen.getByRole("textbox", { name: "Buscar por código, turma ou curso" }),
+        "INFO",
+      );
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenLastCalledWith(
+          expect.objectContaining({ search: "INFO", page: "1" }),
+        ),
+      );
+    });
+
+    it("filters by an edition of the API, by its id", async () => {
+      const onCall = vi.fn();
+      const user = userEvent.setup();
+      await renderList({ onCall });
+      await table();
+
+      await user.click(screen.getByRole("button", { name: /Edição/ }));
+      await user.click(await screen.findByRole("option", { name: "2025.2" }));
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenLastCalledWith(
+          expect.objectContaining({ editionId: EDITION_2025_ID }),
+        ),
+      );
+    });
+
+    it("takes more than one status and Arquivadas apart, as archived=true", async () => {
+      const onCall = vi.fn();
+      const user = userEvent.setup();
+      await renderList({ onCall });
+      await table();
+
+      await user.click(screen.getByRole("button", { name: /Status/ }));
+      await user.click(await screen.findByRole("option", { name: "Planejada" }));
+      await user.click(screen.getByRole("option", { name: "Arquivadas" }));
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenLastCalledWith(
+          expect.objectContaining({ status: ClassStatus.planned, archived: "true" }),
+        ),
+      );
+    });
   });
 
-  it("archives and restores a class without deleting it", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getAllByRole("button", { name: "Arquivar" })[0]);
-    expect(screen.getByRole("dialog", { name: "Deseja arquivar esta turma?" })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Arquivar" }));
-    expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
-    await user.click(screen.getByText(/^Status:/));
-    await user.click(screen.getByRole("checkbox", { name: "Arquivadas" }));
-    expect(screen.getByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Restaurar" }));
-    expect(screen.queryByRole("link", { name: /Turma 2026\.2/ })).not.toBeInTheDocument();
+  describe("states", () => {
+    it("says when there is no class yet and offers + Nova turma", async () => {
+      await renderList({ page: buildClassesPage([]) });
+
+      expect(await screen.findByText("Nenhuma turma ainda")).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: "+ Nova turma" })).toHaveLength(2);
+    });
+
+    it("says when the filters find nothing and clears them", async () => {
+      const onCall = vi.fn();
+      const user = userEvent.setup();
+      await renderList({ onCall, page: buildClassesPage([]), route: "/classes?category=advanced" });
+
+      await user.click(await screen.findByRole("button", { name: "Limpar filtros" }));
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenLastCalledWith({ page: "1", limit: "10", sort: "startDate" }),
+      );
+    });
+
+    it("shows the error and tries again", async () => {
+      server.use(
+        listEditionsHandler(),
+        listCoursesHandler(),
+        listClassesHandler({ networkError: true }),
+      );
+      const user = userEvent.setup();
+      await renderRoutes(classesRoutes, { route: "/classes" });
+
+      const retry = await screen.findByRole("button", { name: "Tentar de novo" });
+      server.use(listClassesHandler());
+      await user.click(retry);
+
+      expect(await table()).toBeInTheDocument();
+    });
   });
 
-  it("shows active classes when more than one status is selected", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByText(/^Status:/));
-    await user.click(screen.getByRole("checkbox", { name: "Planejada" }));
-    await user.click(screen.getByRole("checkbox", { name: "Em andamento" }));
-    expect(screen.getByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Turma 2024/ })).toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Informática Básica — B/ })).not.toBeInTheDocument();
-  });
+  describe("actions", () => {
+    it("the member sees no + Nova turma and no actions", async () => {
+      await renderList({ role: Role.member });
+      await table();
 
-  it("retries the mock error state", async () => {
-    const user = userEvent.setup();
-    renderPage("/classes?mockState=error");
-    await user.click(screen.getByRole("button", { name: "Tentar de novo" }));
-    expect(await screen.findByRole("link", { name: /Turma 2026\.2/ })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "+ Nova turma" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("columnheader", { name: "Ações" })).not.toBeInTheDocument();
+    });
+
+    it("the pencil opens Editar turma filled with the class", async () => {
+      server.use(getClassHandler({ response: buildClassDetail() }));
+      const user = userEvent.setup();
+      await renderList();
+
+      await user.click(
+        within(await table()).getByRole("button", {
+          name: "Editar turma Informática Básica — Turma A",
+        }),
+      );
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar turma" });
+      expect(await within(dialog).findByDisplayValue("INFO-A")).toBeInTheDocument();
+    });
+
+    it("+ Nova turma opens the empty form", async () => {
+      const user = userEvent.setup();
+      await renderList();
+      await table();
+
+      await user.click(screen.getByRole("button", { name: "+ Nova turma" }));
+
+      expect(await screen.findByRole("dialog", { name: "Nova turma" })).toBeInTheDocument();
+    });
+
+    it("the bin archives with the reason and the list is fetched again", async () => {
+      const onArchive = vi.fn();
+      const onList = vi.fn();
+      server.use(archiveClassHandler({ onCall: onArchive }));
+      const user = userEvent.setup();
+      await renderList({ onCall: onList });
+
+      await user.click(
+        within(await table()).getByRole("button", {
+          name: "Arquivar turma Informática Básica — Turma A",
+        }),
+      );
+      const dialog = await screen.findByRole("dialog", { name: "Arquivar turma" });
+      expect(within(dialog).getByText("Arquivar encerra a oferta da turma")).toBeInTheDocument();
+      await user.type(
+        within(dialog).getByRole("textbox", { name: "Motivo (opcional)" }),
+        "Sem alunos.",
+      );
+      const callsBefore = onList.mock.calls.length;
+      await user.click(within(dialog).getByRole("button", { name: "Arquivar turma" }));
+
+      expect(await screen.findByText("Turma arquivada.")).toBeInTheDocument();
+      expect(onArchive).toHaveBeenCalledWith({ id: CLASS_ID, body: { reason: "Sem alunos." } });
+      await waitFor(() => expect(onList.mock.calls.length).toBeGreaterThan(callsBefore));
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("explains the 409 of a class with students and keeps the dialog open", async () => {
+      server.use(archiveClassHandler({ error: CLASS_HAS_ACTIVE_ENROLLMENTS_ERROR }));
+      const user = userEvent.setup();
+      await renderList();
+
+      await user.click(
+        within(await table()).getByRole("button", {
+          name: "Arquivar turma Informática Básica — Turma A",
+        }),
+      );
+      const dialog = await screen.findByRole("dialog", { name: "Arquivar turma" });
+      await user.click(within(dialog).getByRole("button", { name: "Arquivar turma" }));
+
+      expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+        "Esta turma ainda tem alunos matriculados.",
+      );
+    });
+
+    it("an archived row has Reativar instead of the pencil and the bin", async () => {
+      const onCall = vi.fn();
+      server.use(unarchiveClassHandler({ onCall }));
+      const user = userEvent.setup();
+      await renderList({ page: buildClassesPage([ARCHIVED_ROW]), route: "/classes?archived=true" });
+
+      const row = within(await table()).getAllByRole("row")[1];
+      expect(within(row).queryByRole("button", { name: /Editar turma/ })).not.toBeInTheDocument();
+      await user.click(within(row).getByRole("button", { name: "Reativar turma INFO-Z" }));
+      const dialog = await screen.findByRole("dialog", { name: "Reativar turma" });
+      await user.click(within(dialog).getByRole("button", { name: "Reativar turma" }));
+
+      expect(await screen.findByText("Turma reativada.")).toBeInTheDocument();
+      expect(onCall).toHaveBeenCalledWith({ id: ARCHIVED_ROW.id, body: undefined });
+    });
   });
 });

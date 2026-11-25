@@ -8,7 +8,7 @@
 import type { ClassStatus } from "./classStatus.ts";
 
 /**
- * Every field is optional: omit to keep. courseId is not editable (RN-13): the course of a class never changes, and a courseId in the body is ignored.
+ * Every field is optional: omit to keep. courseId moves the class to another course, only while it is planned and has no enrollments (active, dropped or completed; a removed one does not count). There is no category: the class shows the one of its course, and a category in the body is ignored.
  */
 export interface UpdateClassDto {
   /**
@@ -22,6 +22,8 @@ export interface UpdateClassDto {
    * @maxLength 30
    */
   code?: string;
+  /** Omit to keep. Never null. Id of another course. It changes only while the class is planned and has no enrollments, in any status (409 COURSE_CHANGE_NOT_ALLOWED), and the new course must be active (400 COURSE_NOT_FOUND, 409 COURSE_ARCHIVED). The course the class already has is not a change. */
+  courseId?: string;
   /**
    * Omit to keep. Never null. Year and term, "<year>.<term>". Created on demand when it does not exist.
    * @maxLength 20

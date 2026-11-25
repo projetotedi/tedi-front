@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Badge, Button, Card, Chip } from "@shared/ui";
@@ -12,12 +13,15 @@ interface ProfileHeaderCardProps {
   status: AccountStatus;
   department: string | null;
   joinedAt: string | null;
+  /** The actions of other modules, after "Editar meus dados" (today "+ Lançar horas", by a slot). */
+  actions: ReactNode;
 }
 
 /**
- * Header of the profile. The "edit my details" and "log hours" buttons open modals that are out of
- * the scope of GUS-86, so until then they show disabled. The RA, department and "since" chips only
- * show when there is a value: a person with no member profile (the seeded coordinator) has none.
+ * Header of the profile. "Editar meus dados" opens a modal that is another card, so until then it
+ * shows disabled; the actions of other modules come in `actions`, after it. The RA, department and
+ * "since" chips only show when there is a value: a person with no member profile (the seeded
+ * coordinator) has none.
  */
 export function ProfileHeaderCard({
   name,
@@ -26,6 +30,7 @@ export function ProfileHeaderCard({
   status,
   department,
   joinedAt,
+  actions,
 }: ProfileHeaderCardProps) {
   const { t, i18n } = useTranslation("people");
 
@@ -64,7 +69,7 @@ export function ProfileHeaderCard({
           <Button variant="outline" isDisabled>
             {t("profile.actions.editData")}
           </Button>
-          <Button isDisabled>{t("profile.actions.logHours")}</Button>
+          {actions}
         </div>
       </div>
     </Card>

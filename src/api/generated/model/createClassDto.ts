@@ -19,7 +19,7 @@ export interface CreateClassDto {
    * @maxLength 30
    */
   code: string;
-  /** Id of the course this class offers. It cannot be changed after the class is created (RN-13). */
+  /** Id of the course this class offers. Must be an active course: 400 COURSE_NOT_FOUND when it does not exist, 409 COURSE_ARCHIVED when it is archived (RF-020). It changes later only while the class is planned and has no enrollments. */
   courseId: string;
   /**
    * Year and term, "<year>.<term>". Created on demand when it does not exist.

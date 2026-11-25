@@ -38,6 +38,53 @@ describe("Dialog", () => {
     expect(screen.getByRole("dialog", { name: "Gerar convite" })).toHaveClass("max-w-160");
   });
 
+  it("the table size limits the dialog to 1128px", () => {
+    render(
+      <Dialog isOpen onOpenChange={() => {}} title="Tabela larga" closeLabel="Fechar" size="table">
+        <p>Conteúdo largo</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Tabela larga" })).toHaveClass("max-w-282");
+  });
+
+  it("is described by an element of its body named by aria-describedby", () => {
+    const { rerender } = render(
+      <Dialog
+        isOpen
+        onOpenChange={() => {}}
+        title="Diálogo com aviso"
+        closeLabel="Fechar"
+        aria-describedby="notice"
+      >
+        <p id="notice">Aviso que fica no corpo do diálogo.</p>
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Diálogo com aviso" })).toHaveAccessibleDescription(
+      "Aviso que fica no corpo do diálogo.",
+    );
+
+    rerender(
+      <Dialog
+        isOpen
+        onOpenChange={() => {}}
+        title="Diálogo com aviso"
+        description="Descrição do diálogo."
+        closeLabel="Fechar"
+        aria-describedby="notice"
+      >
+        <p id="notice">Aviso que fica no corpo do diálogo.</p>
+        <p>Conteúdo</p>
+      </Dialog>,
+    );
+
+    expect(screen.getByRole("dialog", { name: "Diálogo com aviso" })).toHaveAccessibleDescription(
+      "Descrição do diálogo. Aviso que fica no corpo do diálogo.",
+    );
+  });
+
   it("close button calls onOpenChange(false)", async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();

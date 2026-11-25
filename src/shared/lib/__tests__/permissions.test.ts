@@ -72,6 +72,16 @@ describe("can", () => {
     }
   });
 
+  it("hours.review never acts on the person's own entry, even with scope all", () => {
+    const user = userWith(Role.coordinator);
+
+    expect(scopeOf(user, "hours.review")).toBe("all");
+    expect(can(user, "hours.review")).toBe(true);
+    expect(can(user, "hours.review", { personId: OTHER })).toBe(true);
+    expect(can(user, "hours.review", { personId: SELF })).toBe(false);
+    expect(can(user, "hours.review", { personId: SELF, serverGrant: true })).toBe(false);
+  });
+
   it("member: cannot hours.viewOthers nor access.manage", () => {
     const user = userWith(Role.member);
     expect(can(user, "hours.viewOthers")).toBe(false);
