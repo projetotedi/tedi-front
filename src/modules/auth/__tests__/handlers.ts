@@ -5,8 +5,11 @@ import {
   InviteType,
   MemberRegistrationStatus,
   MemberStatus,
+  type AcceptInviteDto,
+  type ApiFieldErrorDto,
   type CreateInviteDto,
   type CreateInviteResponseDto,
+  type DepartmentResponseDto,
   type InviteListItemDto,
   type InviteResponseDto,
   type ListMembers200,
@@ -16,7 +19,6 @@ import {
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import type { AcceptInviteSubmission } from "../lib/legacy-accept-invite";
 import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
 
 /**
@@ -95,18 +97,36 @@ export function loginHandler({
   });
 }
 
-interface ApiErrorOptions {
+export interface ApiErrorOptions {
   statusCode: number;
   error: string;
   message?: string;
+  /** Os campos do 400 VALIDATION_FAILED, em notação de ponto (`registration.cpf`). */
+  details?: ApiFieldErrorDto[];
 }
 
-function apiErrorResponse({ statusCode, error, message }: ApiErrorOptions) {
+function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptions) {
   return HttpResponse.json(
-    { statusCode, error, message: message ?? error },
+    { statusCode, error, message: message ?? error, ...(details ? { details } : {}) },
     { status: statusCode },
   );
 }
+
+/** O 400 VALIDATION_FAILED do aceite: cada nome é o caminho que o back devolve, como `registration.cpf`. */
+export function validationFailed(...fields: string[]): ApiErrorOptions {
+  return {
+    statusCode: 400,
+    error: "VALIDATION_FAILED",
+    message: "Bad request.",
+    details: fields.map((field) => ({ field, message: `${field} is invalid` })),
+  };
+}
+
+/** Os departamentos que o convite oferece, na ordem de nome em que o back os devolve. */
+export const DEPARTMENTS: DepartmentResponseDto[] = [
+  { id: "01999a3e-1111-7000-8000-000000000001", name: "Pedagogia" },
+  { id: "01999a3e-1111-7000-8000-000000000002", name: "Tecnologia" },
+];
 
 export function buildInvite(overrides: Partial<InviteResponseDto> = {}): InviteResponseDto {
   return {
@@ -148,8 +168,7 @@ interface AcceptInviteHandlerOptions {
   error?: ApiErrorOptions;
   networkError?: boolean;
   delay?: Promise<void>;
-  // TODO(GUS-120): volta a ser AcceptInviteDto.
-  onCall?: (body: AcceptInviteSubmission) => void;
+  onCall?: (body: AcceptInviteDto) => void;
 }
 
 export function acceptInviteHandler({
@@ -159,7 +178,7 @@ export function acceptInviteHandler({
   onCall,
 }: AcceptInviteHandlerOptions = {}) {
   return http.post("*/auth/invites/accept", async ({ request }) => {
-    onCall?.((await request.json()) as AcceptInviteSubmission);
+    onCall?.((await request.json()) as AcceptInviteDto);
     if (delay) await delay;
 
     if (networkError) return HttpResponse.error();

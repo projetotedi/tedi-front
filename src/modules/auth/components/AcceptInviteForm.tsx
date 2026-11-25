@@ -11,17 +11,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import type { DepartmentResponseDto } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 import { Alert, Button, Stepper } from "@shared/ui";
 
 import { useInviteAcceptance } from "../hooks/useInviteAcceptance";
-import { toAcceptFieldError } from "../lib/invite-error";
+import type { RegistrationFieldError } from "../lib/invite-error";
+import { toAcceptInviteDto } from "../lib/registration-payload";
 import {
   acceptInviteFormSchema,
   STEP_ONE_FIELDS,
+  STEP_OF_FIELD,
   STEP_TWO_FIELDS,
-  type AcceptInviteFormValues,
-} from "../schemas/password.schema";
+  type AcceptInviteFieldName,
+  type AcceptInviteFormInput,
+  type AcceptInviteFormOutput,
+  type InviteStep,
+} from "../schemas/accept-invite-form.schema";
 import { AcademicStep } from "./AcademicStep";
 import { PasswordFields } from "./PasswordFields";
 import { PersonalStep } from "./PersonalStep";
@@ -30,23 +36,43 @@ import { STEP_HEADING_CLASS } from "./step-section";
 export interface AcceptInviteFormProps {
   token: string;
   role: Role | null;
+  /** Os departamentos que o convite oferece; vazio esconde o campo. */
+  departments: DepartmentResponseDto[];
   onAccepted: (ra: string) => void;
   onInvalidInvite: () => void;
 }
 
-type Step = 1 | 2 | 3;
-
 const TOTAL_STEPS = 3;
 
+const EMPTY_VALUES: AcceptInviteFormInput = {
+  ra: "",
+  institutionalEmail: "",
+  course: "",
+  semester: "",
+  className: "",
+  departmentId: "",
+  volunteerTermUrl: "",
+  name: "",
+  birthDate: "",
+  cpf: "",
+  phone: "",
+  personalEmail: "",
+  address: "",
+  city: "",
+  state: "",
+  password: "",
+  passwordConfirmation: "",
+};
+
 const STEP_FIELDS = { 1: STEP_ONE_FIELDS, 2: STEP_TWO_FIELDS } as const;
-const NEXT_STEP = { 1: 2, 2: 3 } as const satisfies Record<1 | 2, Step>;
-const PREVIOUS_STEP = { 2: 1, 3: 2 } as const satisfies Record<2 | 3, Step>;
+const NEXT_STEP = { 1: 2, 2: 3 } as const satisfies Record<1 | 2, InviteStep>;
+const PREVIOUS_STEP = { 2: 1, 3: 2 } as const satisfies Record<2 | 3, InviteStep>;
 
 const STEP_DESCRIPTION_KEYS = {
   1: "invite.academicStep.description",
   2: "invite.personalStep.description",
   3: "invite.passwordStep.description",
-} as const satisfies Record<Step, string>;
+} as const satisfies Record<InviteStep, string>;
 
 const ROLE_LABEL_KEYS = {
   [Role.member]: "invite.roles.member",
@@ -61,6 +87,7 @@ function roleLabelKey(role: Role | null) {
 export function AcceptInviteForm({
   token,
   role,
+  departments,
   onAccepted,
   onInvalidInvite,
 }: AcceptInviteFormProps): ReactElement {
@@ -68,35 +95,29 @@ export function AcceptInviteForm({
   const errorId = useId();
   const summaryId = useId();
 
-  const [step, setStep] = useState<Step>(1);
+  const [step, setStep] = useState<InviteStep>(1);
   const [hasChangedStep, setHasChangedStep] = useState(false);
+  // Campo que deve receber o foco assim que o passo dele estiver na tela e os campos, liberados.
+  // Estado, e não ref: o pedido chega no meio do ciclo da mutação e precisa disparar o efeito.
+  const [focusRequest, setFocusRequest] = useState<AcceptInviteFieldName | null>(null);
   const stepHeadingRef = useRef<HTMLHeadingElement>(null);
-  const previousStepRef = useRef<Step>(step);
+  const previousStepRef = useRef<InviteStep>(step);
+  // O RA que foi mesmo enviado (já aparado pelo schema): é o que a tela final mostra.
+  const submittedRaRef = useRef("");
 
-  const form = useForm<AcceptInviteFormValues>({
+  const form = useForm<AcceptInviteFormInput, unknown, AcceptInviteFormOutput>({
     resolver: zodResolver(acceptInviteFormSchema),
     mode: "onSubmit",
-    defaultValues: {
-      name: "",
-      ra: "",
-      email: "",
-      password: "",
-      passwordConfirmation: "",
-    },
+    defaultValues: EMPTY_VALUES,
   });
   const { handleSubmit, trigger, getValues, setError, setFocus } = form;
 
   const acceptance = useInviteAcceptance({
-    onAccepted: () => onAccepted(getValues("ra").trim()),
+    onAccepted: () => onAccepted(submittedRaRef.current),
     onInvalidInvite,
-    onConflict: (field, key) => {
-      setStep(1);
-      setError(field, { message: `invite.errors.${key}` });
-    },
+    onFieldErrors: showFieldErrors,
   });
-  const { isBusy, showSlowNotice, errorKey } = acceptance;
-  const conflictField = errorKey ? toAcceptFieldError(errorKey) : null;
-  const generalErrorKey = errorKey === "network" || errorKey === "unknown" ? errorKey : null;
+  const { isBusy, showSlowNotice, generalErrorKey } = acceptance;
 
   useEffect(() => {
     if (previousStepRef.current === step) return;
@@ -104,19 +125,34 @@ export function AcceptInviteForm({
     stepHeadingRef.current?.focus();
   }, [step]);
 
-  // Em efeito porque o onError roda antes de reabilitar os campos e remontar o passo 1, e input
+  // Em efeito porque o onError roda antes de reabilitar os campos e remontar o passo, e input
   // desabilitado ou desmontado não recebe foco. Depois do efeito do título: o último foco vence.
+  // O pedido não é apagado aqui: quem muda de etapa ou envia de novo o apaga (`changeStep` e
+  // `submitRegistration`), e são os únicos momentos em que as dependências deste efeito mudam.
   useEffect(() => {
-    if (step === 1 && conflictField) setFocus(conflictField);
-  }, [step, conflictField, setFocus]);
+    if (focusRequest === null || isBusy || STEP_OF_FIELD[focusRequest] !== step) return;
+    setFocus(focusRequest);
+  }, [focusRequest, isBusy, step, setFocus]);
 
   useEffect(() => {
     if (generalErrorKey) setFocus("password");
   }, [generalErrorKey, setFocus]);
 
-  function changeStep(next: Step) {
+  function changeStep(next: InviteStep) {
     setStep(next);
     setHasChangedStep(true);
+    setFocusRequest(null);
+  }
+
+  /**
+   * Os erros chegam na ordem do formulário, então o primeiro é o campo mais antigo: a pessoa volta
+   * à etapa dele, com todos os erros já marcados nos campos, e o foco vai para esse primeiro.
+   */
+  function showFieldErrors(errors: RegistrationFieldError[]) {
+    for (const { field, message } of errors) setError(field, { type: "server", message });
+    const [first] = errors;
+    changeStep(STEP_OF_FIELD[first.field]);
+    setFocusRequest(first.field);
   }
 
   async function goToNextStep(from: 1 | 2) {
@@ -130,16 +166,10 @@ export function AcceptInviteForm({
     changeStep(PREVIOUS_STEP[from]);
   }
 
-  function submitRegistration(values: AcceptInviteFormValues) {
-    // Campo a campo, nunca `...values`: a confirmação da senha não vai para a rede.
-    // TODO(GUS-120): ainda o corpo legado (LegacyAcceptInviteBody); o back da develop exige `registration`.
-    acceptance.submit({
-      token,
-      name: values.name,
-      ra: values.ra,
-      email: values.email,
-      password: values.password,
-    });
+  function submitRegistration(values: AcceptInviteFormOutput) {
+    setFocusRequest(null);
+    submittedRaRef.current = values.ra;
+    acceptance.submit(toAcceptInviteDto(token, values));
   }
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -200,7 +230,11 @@ export function AcceptInviteForm({
         <Fragment key={`step-${step}`}>
           {step === 1 ? (
             <>
-              <AcademicStep headingRef={stepHeadingRef} isDisabled={isBusy} />
+              <AcademicStep
+                headingRef={stepHeadingRef}
+                isDisabled={isBusy}
+                departments={departments}
+              />
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <p className="text-sm text-muted">{t("invite.requiredHint")}</p>
                 <Button type="submit">{t("invite.actions.next")}</Button>
