@@ -11,7 +11,7 @@ import {
   getListMembersQueryKey,
 } from "@api/generated/people/people";
 import { Role } from "@shared/lib/role";
-import { toast, ToastProvider } from "@shared/ui";
+import { toast } from "@shared/ui";
 
 import { AuthProvider } from "../AuthProvider";
 import { ValidateRegistrationDialog } from "../components/ValidateRegistrationDialog";
@@ -71,7 +71,6 @@ async function renderDialog({
         onClose={onClose}
         onReviewed={onReviewed}
       />
-      <ToastProvider regionLabel="Notificações" closeLabel="Fechar notificação" />
     </AuthProvider>,
   );
   return { ...view, onClose, onReviewed };

@@ -3,6 +3,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
+import type { MemberListItemResponseDto } from "@api/generated/model";
 import { useListMembers } from "@api/generated/people/people";
 import { ListState } from "@shared/components/ListState";
 import { useDebounce } from "@shared/hooks/useDebounce";
@@ -13,6 +14,7 @@ import personsIcon from "../../../assets/icons/persons.svg";
 import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
+import { EditMemberDialog } from "../components/EditMemberDialog";
 import { PendingInvitesButton } from "../components/PendingInvitesButton";
 import { ValidateRegistrationDialog } from "../components/ValidateRegistrationDialog";
 import { useCan } from "../hooks/useCan";
@@ -49,10 +51,10 @@ export function AccessPage(): ReactElement {
   const titleRef = useRef<HTMLSpanElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  // Row actions (GUS-88) must use `useCan("access.manage")` and the own-account rule (decision 23).
   const canInvite = useCan("invites.manage");
   const canValidate = useCan("invites.manage");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<MemberListItemResponseDto | null>(null);
   // The id of the registration being validated (the id of the person); the modal exists only while
   // there is one.
   const [validatingId, setValidatingId] = useState<string | null>(null);
@@ -252,6 +254,7 @@ export function AccessPage(): ReactElement {
         >
           <AccessTable
             rows={query.data?.data ?? []}
+            onEditMember={setEditingMember}
             onRowClick={(row) => navigate(memberDetailPath(row.id))}
             onValidate={canValidate ? (row) => setValidatingId(row.id) : undefined}
           />
@@ -282,6 +285,14 @@ export function AccessPage(): ReactElement {
           </div>
         ) : null}
       </Card>
+
+      {editingMember ? (
+        <EditMemberDialog
+          key={editingMember.id}
+          member={editingMember}
+          onClose={() => setEditingMember(null)}
+        />
+      ) : null}
 
       {validatingId !== null ? (
         <ValidateRegistrationDialog

@@ -48,6 +48,8 @@ export { TextField } from "./TextField";
 export type { TextFieldProps } from "./TextField";
 export { toast, ToastProvider } from "./Toast";
 export type { SuccessToastOptions, ToastAction, ToastOptions, ToastProviderProps } from "./Toast";
+export { Tooltip } from "./Tooltip";
+export type { TooltipProps } from "./Tooltip";
 export { Combobox } from "./Combobox";
 export type { ComboboxProps } from "./Combobox";
 export { DatePicker } from "./DatePicker";

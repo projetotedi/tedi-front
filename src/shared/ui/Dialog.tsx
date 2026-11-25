@@ -10,8 +10,8 @@ export interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   isDismissable?: boolean;
-  /** `default` 640px, `wide` 800px, `table` 1128px (a table of many columns, with no sideways scroll). */
-  size?: "default" | "wide" | "table";
+  /** `default` 640px, `wide` 800px (listas), `extraWide` 1040px (edição em duas colunas), `table` 1128px (a table of many columns, with no sideways scroll). */
+  size?: "default" | "wide" | "extraWide" | "table";
   /**
    * The id (or ids, separated by spaces) of what in the body also describes the dialog, read when it
    * opens, after the `description`. For a notice that has to sit in the body, under the title.
@@ -22,6 +22,7 @@ export interface DialogProps {
 const SIZE_CLASSES = {
   default: "max-w-160",
   wide: "max-w-200",
+  extraWide: "max-w-260",
   table: "max-w-282",
 } as const satisfies Record<NonNullable<DialogProps["size"]>, string>;
 

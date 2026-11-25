@@ -48,11 +48,12 @@
   --color-tedi-texture-light: #c2e2f5;
   --color-tedi-info-subtle: #eff6ff;
 
-  /* Banco de horas (Figma "tedi-status-*", "tedi-surface-subtle", "tedi-text-link", "tedi-action-primary", "success"; GUS-163 e GUS-165). Vermelho: #b91c1c sobre #fee2e2 dá 5,3:1. */
+  /* Caixas de apoio dentro de um modal (card "Acesso ao sistema", resumo do membro) e Banco de horas (Figma "tedi-status-*", "tedi-surface-subtle", "tedi-text-link", "tedi-action-primary", "success"; GUS-88, GUS-163 e GUS-165). O texto #18181b sobre #f8fafc dá 16,9:1 e o `text-muted` (#71717a), 4,6:1; a borda #e2e8f0 é só decorativa. Vermelho: #b91c1c sobre #fee2e2 dá 5,3:1. */
   --color-tedi-status-danger: #fee2e2;
   --color-tedi-status-danger-foreground: #b91c1c;
   --color-tedi-status-warning-foreground: #854d0e;
   --color-tedi-surface-subtle: #f8fafc;
+  --color-tedi-border-subtle: #e2e8f0;
   --color-tedi-text-link: #2563eb;
   --color-tedi-action-primary: #2563eb;
   --color-tedi-action-success: #17c964;

@@ -3,7 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { delay, http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { MemberRegistrationStatus, type InviteListItemDto } from "@api/generated/model";
+import {
+  InviteType,
+  MemberRegistrationStatus,
+  type InviteListItemDto,
+  type MemberListItemResponseDto,
+} from "@api/generated/model";
 import { getListMembersQueryKey } from "@api/generated/people/people";
 import { Role } from "@shared/lib/role";
 import { toast } from "@shared/ui";
@@ -12,13 +17,18 @@ import { AuthProvider } from "../AuthProvider";
 import { AccessPage } from "../pages/AccessPage";
 import { authProtectedRoutes } from "../routes";
 import {
+  buildAccess,
   buildInviteListItem,
   buildMember,
   buildMeUser,
+  buildPasswordResetResponse,
   createInviteHandler,
+  createPasswordResetHandler,
   listInvitesHandler,
   listMembersHandler,
   meHandler,
+  updateAccessEnabledHandler,
+  updateAccessRoleHandler,
 } from "./handlers";
 import { PERMISSIONS_BY_ROLE } from "./fixtures/permissions";
 import {
@@ -229,12 +239,13 @@ describe("AccessPage", () => {
       expect(router.state.location.pathname).toBe("/members");
     });
 
-    it("clicking the actions button of the row does not open the member", async () => {
+    it("clicking Editar on the row opens Editar membro and does not open the member", async () => {
       const user = userEvent.setup();
       const { router } = await renderListWithMemberRoute();
 
-      await user.click(await screen.findByRole("button", { name: "Ações de Ana Torres" }));
+      await user.click(await screen.findByRole("button", { name: "Editar Ana Torres" }));
 
+      expect(await screen.findByRole("dialog", { name: "Editar membro" })).toBeInTheDocument();
       expect(router.state.location.pathname).toBe("/members");
       expect(screen.queryByText("member page")).not.toBeInTheDocument();
     });
@@ -460,7 +471,7 @@ describe("AccessPage", () => {
 
     const pending = await screen.findByRole("button", { name: "Convites pendentes (2)" });
     const create = screen.getByRole("button", { name: "Gerar link de cadastro" });
-    expect(pending).toBeDisabled();
+    expect(pending).toBeEnabled();
     expect(pending.parentElement).toBe(create.parentElement);
     expect(pending.compareDocumentPosition(create) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -822,6 +833,218 @@ describe("AccessPage", () => {
     expect(
       screen.queryByRole("navigation", { name: "Paginação da lista de membros" }),
     ).not.toBeInTheDocument();
+  });
+
+  describe("member access actions", () => {
+    const CAIO = buildMember({
+      id: "person-caio",
+      name: "Caio Lopes",
+      ra: "2024RA0003",
+      role: Role.member,
+      accessEnabled: true,
+    });
+    const CAIO_ACCESS = buildAccess({
+      id: "person-caio",
+      name: "Caio Lopes",
+      ra: "2024RA0003",
+      role: Role.member,
+      accessEnabled: true,
+    });
+    const PEOPLE = [
+      buildMember({ id: "person-ana", name: "Ana Torres", role: Role.coordinator }),
+      CAIO,
+    ];
+
+    /** GET /members com estado: os PATCH alteram a pessoa, como o back, e a lista volta atualizada. */
+    function useStatefulMembers(initial: MemberListItemResponseDto[]) {
+      let people = initial;
+      const state = { listCalls: 0 };
+      server.use(
+        http.get("*/members", () => {
+          state.listCalls += 1;
+          return HttpResponse.json({ data: people, page: 1, limit: 12, total: people.length });
+        }),
+      );
+      return {
+        state,
+        change: (id: string, patch: Partial<MemberListItemResponseDto>) => {
+          people = people.map((person) => (person.id === id ? { ...person, ...patch } : person));
+        },
+      };
+    }
+
+    // Com o modal aberto a tabela sai da árvore de acessibilidade (`hidden`) e o nome também
+    // aparece no modal: a linha é buscada só dentro da tabela.
+    const rowOf = (name: string) =>
+      within(screen.getByRole("table", { name: "Membros do TEDI", hidden: true }))
+        .getByText(name)
+        .closest("tr")!;
+
+    async function openEdit(user: ReturnType<typeof userEvent.setup>, name: string) {
+      await user.click(await screen.findByRole("button", { name: `Editar ${name}` }));
+      return screen.findByRole("dialog", { name: "Editar membro" });
+    }
+
+    it("shows the pencil on every row, clickable rows, no kebab and no trash yet", async () => {
+      useStatefulMembers(PEOPLE);
+
+      await renderAccessPage();
+      await screen.findByRole("cell", { name: "Caio Lopes" });
+
+      expect(screen.getByRole("button", { name: "Editar Ana Torres" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Editar Caio Lopes" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Ações de/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Inativar/ })).not.toBeInTheDocument();
+      expect(rowOf("Caio Lopes")).toHaveClass("cursor-pointer");
+    });
+
+    it("the pencil opens Editar membro for that person, with the access card for the coordinator", async () => {
+      useStatefulMembers(PEOPLE);
+      const user = userEvent.setup();
+
+      await renderAccessPage();
+      const dialog = await openEdit(user, "Caio Lopes");
+
+      expect(within(dialog).getByText("2024RA0003")).toBeInTheDocument();
+      expect(within(dialog).getByRole("region", { name: "Acesso ao sistema" })).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: /Perfil de acesso/ })).toHaveTextContent(
+        "Membro",
+      );
+    });
+
+    it("changing the role and saving updates the row without reloading", async () => {
+      const { change, state } = useStatefulMembers(PEOPLE);
+      const onCall = vi.fn();
+      server.use(
+        updateAccessRoleHandler({
+          person: CAIO_ACCESS,
+          onCall: (id, body) => {
+            onCall(id, body);
+            change(id, { role: body.role });
+          },
+        }),
+      );
+      const user = userEvent.setup();
+
+      await renderAccessPage();
+      await screen.findByRole("cell", { name: "Caio Lopes" });
+      expect(within(rowOf("Caio Lopes")).getByText("Membro")).toBeInTheDocument();
+      const listCallsBefore = state.listCalls;
+
+      await openEdit(user, "Caio Lopes");
+      await user.click(screen.getByRole("button", { name: /Perfil de acesso/ }));
+      await user.click(await screen.findByRole("option", { name: "Diretor" }));
+      await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(onCall).toHaveBeenCalledWith("person-caio", { role: "director" });
+      await waitFor(() =>
+        expect(within(rowOf("Caio Lopes")).getByText("Diretor")).toBeInTheDocument(),
+      );
+      expect(within(rowOf("Caio Lopes")).queryByText("Membro")).not.toBeInTheDocument();
+      expect(state.listCalls).toBeGreaterThan(listCallsBefore);
+      expect(
+        await screen.findByText("Perfil de Caio Lopes alterado para Diretor."),
+      ).toBeInTheDocument();
+    });
+
+    it("a 409 from the last coordinator keeps the row and the dialog as they were", async () => {
+      useStatefulMembers(PEOPLE);
+      server.use(
+        updateAccessRoleHandler({ error: { statusCode: 409, error: "LAST_COORDINATOR" } }),
+      );
+      const user = userEvent.setup();
+
+      await renderAccessPage();
+      await screen.findByRole("cell", { name: "Ana Torres" });
+      await openEdit(user, "Ana Torres");
+      await user.click(screen.getByRole("button", { name: /Perfil de acesso/ }));
+      await user.click(await screen.findByRole("option", { name: "Membro" }));
+      await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
+
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Esta é a última coordenação ativa.",
+      );
+      expect(screen.getByRole("dialog", { name: "Editar membro" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Perfil de acesso/ })).toHaveTextContent(
+        "Coordenadora",
+      );
+      expect(within(rowOf("Ana Torres")).getByText("Coordenadora")).toBeInTheDocument();
+    });
+
+    it("disabling then reactivating toggles the access button and refreshes the members list", async () => {
+      const { change, state } = useStatefulMembers(PEOPLE);
+      server.use(
+        updateAccessEnabledHandler({
+          person: CAIO_ACCESS,
+          onCall: (id, body) => change(id, { accessEnabled: body.enabled }),
+        }),
+      );
+      const user = userEvent.setup();
+
+      await renderAccessPage();
+      await screen.findByRole("cell", { name: "Caio Lopes" });
+      const listCallsBefore = state.listCalls;
+
+      await openEdit(user, "Caio Lopes");
+      await user.click(screen.getByRole("button", { name: "Desativar acesso" }));
+      const confirmation = await screen.findByRole("dialog", { name: "Desativar acesso" });
+      await user.click(within(confirmation).getByRole("button", { name: "Desativar acesso" }));
+
+      expect(await screen.findByRole("button", { name: "Reativar acesso" })).toBeInTheDocument();
+      await waitFor(() => expect(state.listCalls).toBeGreaterThan(listCallsBefore));
+
+      await user.click(screen.getByRole("button", { name: "Reativar acesso" }));
+
+      expect(await screen.findByRole("button", { name: "Desativar acesso" })).toBeInTheDocument();
+    });
+
+    it("a password reset link bumps the pending invites count", async () => {
+      useStatefulMembers(PEOPLE);
+      const pendingInvites: InviteListItemDto[] = [];
+      server.use(
+        listInvitesHandler({ data: pendingInvites }),
+        createPasswordResetHandler({
+          response: buildPasswordResetResponse(),
+          onCall: () =>
+            pendingInvites.push(
+              buildInviteListItem({ id: "invite-reset", type: InviteType.password_reset }),
+            ),
+        }),
+      );
+      const user = userEvent.setup();
+
+      await renderAccessPage();
+      await screen.findByRole("button", { name: "Convites pendentes (0)" });
+
+      await openEdit(user, "Caio Lopes");
+      await user.click(screen.getByRole("button", { name: "Gerar link de redefinição de senha" }));
+      const reset = await screen.findByRole("dialog", { name: "Link de redefinição de senha" });
+      await user.click(within(reset).getByRole("button", { name: "Gerar link" }));
+      await user.click(await within(reset).findByRole("button", { name: "Concluir" }));
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+      expect(
+        await screen.findByRole("button", { name: "Convites pendentes (1)" }),
+      ).toBeInTheDocument();
+    });
+
+    it("the edit dialog of one person never leaks into the next one", async () => {
+      useStatefulMembers(PEOPLE);
+      const user = userEvent.setup();
+
+      await renderAccessPage();
+      await openEdit(user, "Caio Lopes");
+      await user.click(screen.getByRole("button", { name: "Cancelar" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+
+      const dialog = await openEdit(user, "Ana Torres");
+
+      expect(within(dialog).getByRole("button", { name: /Perfil de acesso/ })).toHaveTextContent(
+        "Coordenadora",
+      );
+      expect(within(dialog).queryByText("2024RA0003")).not.toBeInTheDocument();
+    });
   });
 
   describe("filters in the URL", () => {

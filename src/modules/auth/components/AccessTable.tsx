@@ -3,41 +3,42 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import type { MemberListItemResponseDto } from "@api/generated/model";
+import pencilIcon from "@shared/assets/icons/pencil.svg";
+import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 import { DataTable, type Column } from "@shared/components/DataTable";
-import { Badge, Button } from "@shared/ui";
+import { Badge, Button, Tooltip } from "@shared/ui";
 
+import { useCan } from "../hooks/useCan";
 import { memberDetailPath } from "../lib/member-path";
 import { MEMBER_ROW_STATUS_TONE, memberRowStatus } from "../lib/member-status";
 import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: MemberListItemResponseDto[];
+  /** Opens "Editar membro" for the row. */
+  onEditMember: (row: MemberListItemResponseDto) => void;
   /**
-   * Opens the detail screen of a member (GUS-145). Clicking the links or action buttons of the row
-   * does not call this. Without this prop the row is not clickable and gets no hover highlight.
+   * Opens "Inativar membro" (GUS-149 and GUS-147). While the screen does not pass this, the trash
+   * icon is hidden: deactivating a member is different from disabling login access and has no modal
+   * or route yet.
    */
-  onRowClick?: (row: MemberListItemResponseDto) => void;
+  onDeactivateMember?: (row: MemberListItemResponseDto) => void;
   /**
    * Opens the validation of the registration of a row. Only the rows waiting for validation get
    * the Validar button, and only when this is given: the screen leaves it out for who cannot
    * validate, so the table does not check permissions.
    */
   onValidate?: (row: MemberListItemResponseDto) => void;
+  /**
+   * Opens the detail screen of a member (GUS-145). Clicking the links or action buttons of the row
+   * does not call this. Without this prop the row is not clickable and gets no hover highlight.
+   */
+  onRowClick?: (row: MemberListItemResponseDto) => void;
 }
 
 // Row highlight of the Figma: light background (from DataTable) + 3px accent bar on the left.
 const CLICKABLE_ROW_CLASS =
   "hover:shadow-[inset_3px_0_0_var(--accent)] focus-within:shadow-[inset_3px_0_0_var(--accent)]";
-
-function KebabIcon(): ReactElement {
-  return (
-    <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-      <circle cx="8" cy="3" r="1.25" />
-      <circle cx="8" cy="8" r="1.25" />
-      <circle cx="8" cy="13" r="1.25" />
-    </svg>
-  );
-}
 
 /**
  * The table of the list of members, with the six columns of the Figma: Membro, Papel, Departamento,
@@ -46,8 +47,18 @@ function KebabIcon(): ReactElement {
  * validar" for a registration waiting for validation (with the Validar button in Ações) and
  * "Recusado" for a refused one.
  */
-export function AccessTable({ rows, onRowClick, onValidate }: AccessTableProps): ReactElement {
+export function AccessTable({
+  rows,
+  onEditMember,
+  onDeactivateMember,
+  onValidate,
+  onRowClick,
+}: AccessTableProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
+  // `MemberListItemResponseDto` does not carry a per-row `canEdit` flag yet: without it the
+  // director ("department" scope) sees no pencil, and the coordinator ("all" scope) sees it on all.
+  const canEdit = useCan("members.edit", { serverGrant: false });
+  const canDeactivate = useCan("members.deactivate");
 
   function renderOptionalText(value: string | null | undefined): ReactNode {
     if (value) return value;
@@ -106,8 +117,8 @@ export function AccessTable({ rows, onRowClick, onValidate }: AccessTableProps):
     {
       header: t("access.people.columns.actions"),
       headerClassName: "w-[160px] uppercase",
-      // The menu of the row is GUS-88's; until then the kebab has no action.
       render: (row) => (
+        // 16px icons inside 44px buttons (touch target): the Figma draws only the icon.
         <div className="flex items-center gap-1">
           {onValidate && memberRowStatus(row) === "pending" ? (
             <Button
@@ -118,13 +129,30 @@ export function AccessTable({ rows, onRowClick, onValidate }: AccessTableProps):
               {t("access.people.validate")}
             </Button>
           ) : null}
-          <Button
-            isIconOnly
-            variant="ghost"
-            aria-label={t("access.people.rowActions", { name: row.name })}
-          >
-            <KebabIcon />
-          </Button>
+          {canEdit ? (
+            <Tooltip content={t("access.people.actions.editTooltip")}>
+              <Button
+                isIconOnly
+                variant="ghost"
+                aria-label={t("access.people.actions.edit", { name: row.name })}
+                onPress={() => onEditMember(row)}
+              >
+                <img src={pencilIcon} alt="" aria-hidden="true" width={16} height={16} />
+              </Button>
+            </Tooltip>
+          ) : null}
+          {canDeactivate && onDeactivateMember ? (
+            <Tooltip content={t("access.people.actions.deactivateTooltip")}>
+              <Button
+                isIconOnly
+                variant="ghost"
+                aria-label={t("access.people.actions.deactivateMember", { name: row.name })}
+                onPress={() => onDeactivateMember(row)}
+              >
+                <img src={trashBinIcon} alt="" aria-hidden="true" width={16} height={16} />
+              </Button>
+            </Tooltip>
+          ) : null}
         </div>
       ),
     },

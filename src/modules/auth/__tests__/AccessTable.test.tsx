@@ -2,12 +2,18 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import { MemberRegistrationStatus, MemberStatus } from "@api/generated/model";
+import {
+  MemberRegistrationStatus,
+  MemberStatus,
+  type MemberListItemResponseDto,
+} from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { AccessTable } from "../components/AccessTable";
-import { buildMember } from "./handlers";
-import { renderWithProviders } from "./test-utils";
+import { AccessTable, type AccessTableProps } from "../components/AccessTable";
+import { buildMember, buildMeUser } from "./handlers";
+import { renderSignedIn, setupAuthTestServer } from "./test-utils";
+
+setupAuthTestServer();
 
 const ROWS = [
   buildMember({ id: "1", name: "Ana Torres", role: Role.coordinator }),
@@ -42,9 +48,24 @@ const REJECTED = buildMember({
   registrationStatus: MemberRegistrationStatus.rejected,
 });
 
+const COORDINATOR = buildMeUser({ role: Role.coordinator });
+const DIRECTOR = buildMeUser({ role: Role.director });
+
+type TableOptions = Partial<AccessTableProps> & { me?: typeof COORDINATOR };
+
+async function renderTable({ rows = ROWS, me = COORDINATOR, ...props }: TableOptions = {}) {
+  const onEditMember = vi.fn<(row: MemberListItemResponseDto) => void>();
+  const view = await renderSignedIn(
+    <AccessTable rows={rows} onEditMember={onEditMember} {...props} />,
+    me,
+  );
+  await screen.findByRole("table", { name: "Membros do TEDI" });
+  return { ...view, onEditMember };
+}
+
 describe("AccessTable", () => {
   it("renders one row per person with name, translated role and status", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+    await renderTable();
 
     expect(screen.getAllByRole("row")).toHaveLength(4);
 
@@ -62,7 +83,7 @@ describe("AccessTable", () => {
   });
 
   it("renders the six Figma columns in order", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+    await renderTable();
 
     expect(screen.getAllByRole("columnheader").map((header) => header.textContent)).toEqual([
       "Membro",
@@ -75,13 +96,13 @@ describe("AccessTable", () => {
   });
 
   it("names the table by its caption", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+    await renderTable();
 
     expect(screen.getByRole("table", { name: "Membros do TEDI" })).toBeInTheDocument();
   });
 
   it("shows the department name and the main function", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+    await renderTable();
 
     const ana = within(screen.getByRole("row", { name: /Ana Torres/ })).getAllByRole("cell");
     expect(ana[2]).toHaveTextContent("Pedagogia");
@@ -93,11 +114,9 @@ describe("AccessTable", () => {
   });
 
   it("shows a dash read as Não informado when department or main function is missing", async () => {
-    await renderWithProviders(
-      <AccessTable
-        rows={[buildMember({ name: "Eva Sem Dados", department: null, mainFunction: null })]}
-      />,
-    );
+    await renderTable({
+      rows: [buildMember({ name: "Eva Sem Dados", department: null, mainFunction: null })],
+    });
 
     const cells = within(screen.getByRole("row", { name: /Eva Sem Dados/ })).getAllByRole("cell");
 
@@ -108,7 +127,7 @@ describe("AccessTable", () => {
   });
 
   it("shows the dash in only the field that is missing", async () => {
-    await renderWithProviders(<AccessTable rows={[PENDING]} />);
+    await renderTable({ rows: [PENDING] });
 
     const cells = within(screen.getByRole("row", { name: /Lucas Souza/ })).getAllByRole("cell");
 
@@ -117,48 +136,181 @@ describe("AccessTable", () => {
     expect(within(cells[3]).getByText("Não informado")).toBeInTheDocument();
   });
 
-  it("each row has an actions button named after the person", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+  it("does not render the kebab button anymore", async () => {
+    await renderTable();
 
-    for (const name of ["Ana Torres", "Beto Nunes", "Caio Lopes"]) {
-      const row = screen.getByRole("row", { name: new RegExp(name) });
-      expect(within(row).getByRole("button", { name: `Ações de ${name}` })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ações de/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    for (const row of screen.getAllByRole("row").slice(1)) {
+      expect(row.querySelector("svg")).toBeNull();
     }
-    expect(screen.getAllByRole("button")).toHaveLength(ROWS.length);
   });
 
-  it("row actions are reachable by keyboard, after the link of the name of each person", async () => {
-    const user = userEvent.setup();
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+  describe("row actions", () => {
+    it("coordinator sees the pencil on every row, named after the person", async () => {
+      await renderTable();
 
-    await user.tab();
-    expect(screen.getByRole("link", { name: "Ana Torres" })).toHaveFocus();
+      for (const name of ["Ana Torres", "Beto Nunes", "Caio Lopes"]) {
+        const row = screen.getByRole("row", { name: new RegExp(name) });
+        expect(within(row).getByRole("button", { name: `Editar ${name}` })).toBeInTheDocument();
+      }
+      expect(screen.getAllByRole("button")).toHaveLength(ROWS.length);
+    });
 
-    await user.tab();
-    const ana = screen.getByRole("button", { name: "Ações de Ana Torres" });
-    expect(ana).toHaveFocus();
+    it("pencil calls onEditMember with the row", async () => {
+      const user = userEvent.setup();
+      const { onEditMember } = await renderTable();
 
-    await user.tab();
-    expect(screen.getByRole("link", { name: "Beto Nunes" })).toHaveFocus();
+      await user.click(screen.getByRole("button", { name: "Editar Beto Nunes" }));
 
-    await user.tab();
-    expect(screen.getByRole("button", { name: "Ações de Beto Nunes" })).toHaveFocus();
+      expect(onEditMember).toHaveBeenCalledTimes(1);
+      expect(onEditMember).toHaveBeenCalledWith(ROWS[1]);
+    });
 
-    await user.keyboard("{Enter}");
-    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
-    expect(ana).not.toHaveAttribute("aria-haspopup");
+    it("the pencil has a 44px target with a decorative 16px icon", async () => {
+      await renderTable();
+
+      const pencil = screen.getByRole("button", { name: "Editar Ana Torres" });
+      expect(pencil).toHaveClass("min-h-11", "min-w-11");
+      const icon = pencil.querySelector("img");
+      expect(icon).toHaveAttribute("alt", "");
+      expect(icon).toHaveAttribute("aria-hidden", "true");
+      expect(icon).toHaveAttribute("width", "16");
+      expect(icon).toHaveAttribute("height", "16");
+    });
+
+    it("shows the trash only when onDeactivateMember is wired and the user can deactivate members", async () => {
+      const { unmount } = await renderTable();
+      expect(screen.queryByRole("button", { name: /Inativar/ })).not.toBeInTheDocument();
+      unmount();
+
+      const user = userEvent.setup();
+      const onDeactivateMember = vi.fn<(row: MemberListItemResponseDto) => void>();
+      await renderTable({ onDeactivateMember });
+
+      for (const name of ["Ana Torres", "Beto Nunes", "Caio Lopes"]) {
+        const row = screen.getByRole("row", { name: new RegExp(name) });
+        expect(within(row).getByRole("button", { name: `Inativar ${name}` })).toBeInTheDocument();
+      }
+
+      await user.click(screen.getByRole("button", { name: "Inativar Caio Lopes" }));
+      expect(onDeactivateMember).toHaveBeenCalledWith(ROWS[2]);
+    });
+
+    it("director sees no trash even when onDeactivateMember is wired", async () => {
+      await renderTable({ me: DIRECTOR, onDeactivateMember: vi.fn() });
+
+      expect(screen.queryByRole("button", { name: /Inativar/ })).not.toBeInTheDocument();
+    });
+
+    it("director sees no pencil because the list brings no per-row grant yet", async () => {
+      await renderTable({ me: DIRECTOR });
+
+      expect(screen.queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
+      expect(screen.queryAllByRole("button")).toHaveLength(0);
+    });
+
+    it("edit tooltip appears on keyboard focus", async () => {
+      const user = userEvent.setup();
+      await renderTable();
+
+      await user.tab();
+      await user.tab();
+
+      expect(screen.getByRole("button", { name: "Editar Ana Torres" })).toHaveFocus();
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Editar");
+    });
+
+    it("the trash tooltip names the action", async () => {
+      const user = userEvent.setup();
+      await renderTable({ onDeactivateMember: vi.fn() });
+
+      await user.tab();
+      await user.tab();
+      await user.tab();
+
+      expect(screen.getByRole("button", { name: "Inativar Ana Torres" })).toHaveFocus();
+      expect(await screen.findByRole("tooltip")).toHaveTextContent("Inativar membro");
+    });
+
+    it("each icon is one tab stop, after the link of the name, in row order", async () => {
+      const user = userEvent.setup();
+      await renderTable();
+
+      await user.tab();
+      expect(screen.getByRole("link", { name: "Ana Torres" })).toHaveFocus();
+      await user.tab();
+      expect(screen.getByRole("button", { name: "Editar Ana Torres" })).toHaveFocus();
+      await user.tab();
+      expect(screen.getByRole("link", { name: "Beto Nunes" })).toHaveFocus();
+      await user.tab();
+      expect(screen.getByRole("button", { name: "Editar Beto Nunes" })).toHaveFocus();
+      await user.tab();
+      expect(screen.getByRole("link", { name: "Caio Lopes" })).toHaveFocus();
+      await user.tab();
+      expect(screen.getByRole("button", { name: "Editar Caio Lopes" })).toHaveFocus();
+    });
+  });
+
+  describe("clickable rows", () => {
+    it("clicking the row outside the icons calls onRowClick", async () => {
+      const user = userEvent.setup();
+      const onRowClick = vi.fn<(row: MemberListItemResponseDto) => void>();
+      await renderTable({ onRowClick });
+
+      await user.click(
+        within(screen.getByRole("row", { name: /Beto Nunes/ })).getByText("Diretor"),
+      );
+
+      expect(onRowClick).toHaveBeenCalledTimes(1);
+      expect(onRowClick).toHaveBeenCalledWith(ROWS[1]);
+    });
+
+    it("clicking the pencil does not call onRowClick", async () => {
+      const user = userEvent.setup();
+      const onRowClick = vi.fn();
+      const { onEditMember } = await renderTable({ onRowClick });
+
+      await user.click(screen.getByRole("button", { name: "Editar Beto Nunes" }));
+
+      expect(onEditMember).toHaveBeenCalledTimes(1);
+      expect(onRowClick).not.toHaveBeenCalled();
+    });
+
+    it("clicking the trash does not call onRowClick", async () => {
+      const user = userEvent.setup();
+      const onRowClick = vi.fn();
+      const onDeactivateMember = vi.fn();
+      await renderTable({ onRowClick, onDeactivateMember });
+
+      await user.click(screen.getByRole("button", { name: "Inativar Beto Nunes" }));
+
+      expect(onDeactivateMember).toHaveBeenCalledTimes(1);
+      expect(onRowClick).not.toHaveBeenCalled();
+    });
+
+    it("draws the hover highlight and the 3px bar only when the row is clickable", async () => {
+      const { unmount } = await renderTable();
+      const plainRow = screen.getByRole("row", { name: /Ana Torres/ });
+      expect(plainRow).not.toHaveClass("cursor-pointer");
+      expect(plainRow.className).not.toContain("inset_3px_0_0");
+      unmount();
+
+      await renderTable({ onRowClick: vi.fn() });
+      const clickableRow = screen.getByRole("row", { name: /Ana Torres/ });
+      expect(clickableRow).toHaveClass("cursor-pointer", "hover:bg-tedi-info-subtle");
+      expect(clickableRow.className).toContain("hover:shadow-[inset_3px_0_0_var(--accent)]");
+    });
   });
 
   it("does not show the RA of the person", async () => {
-    await renderWithProviders(<AccessTable rows={[buildMember({ ra: "2024RA0001" })]} />);
+    await renderTable({ rows: [buildMember({ ra: "2024RA0001" })] });
 
     expect(screen.queryByText("2024RA0001")).not.toBeInTheDocument();
   });
 
   it("shows a superadmin as Coordenadora", async () => {
-    await renderWithProviders(
-      <AccessTable rows={[buildMember({ name: "Dora Admin", role: Role.superadmin })]} />,
-    );
+    await renderTable({ rows: [buildMember({ name: "Dora Admin", role: Role.superadmin })] });
 
     const row = screen.getByRole("row", { name: /Dora Admin/ });
     expect(within(row).getByText("Coordenadora")).toBeInTheDocument();
@@ -166,16 +318,14 @@ describe("AccessTable", () => {
   });
 
   it("shows no role badge when the person has no role", async () => {
-    await renderWithProviders(
-      <AccessTable rows={[buildMember({ name: "Eva Sem Papel", role: null })]} />,
-    );
+    await renderTable({ rows: [buildMember({ name: "Eva Sem Papel", role: null })] });
 
     const row = screen.getByRole("row", { name: /Eva Sem Papel/ });
     expect(within(row).getAllByRole("cell")[1]).toBeEmptyDOMElement();
   });
 
   it("shows Ativo, Inativo, A validar and Recusado", async () => {
-    await renderWithProviders(<AccessTable rows={[...ROWS, PENDING, REJECTED]} />);
+    await renderTable({ rows: [...ROWS, PENDING, REJECTED] });
 
     expect(
       within(screen.getByRole("row", { name: /Ana Torres/ })).getByText("Ativo"),
@@ -192,7 +342,7 @@ describe("AccessTable", () => {
   });
 
   it("colours the role and status badges by tone", async () => {
-    await renderWithProviders(<AccessTable rows={[...ROWS, PENDING, REJECTED]} />);
+    await renderTable({ rows: [...ROWS, PENDING, REJECTED] });
 
     const ana = screen.getByRole("row", { name: /Ana Torres/ });
     expect(within(ana).getByText("Coordenadora")).toHaveClass("bg-tedi-highlight");
@@ -214,7 +364,7 @@ describe("AccessTable", () => {
   });
 
   it("shows A validar and a Validar button on a pending registration", async () => {
-    await renderWithProviders(<AccessTable rows={[PENDING]} onValidate={vi.fn()} />);
+    await renderTable({ rows: [PENDING], onValidate: vi.fn() });
 
     const row = screen.getByRole("row", { name: /Lucas Souza/ });
     expect(within(row).getByText("A validar")).toBeInTheDocument();
@@ -224,7 +374,7 @@ describe("AccessTable", () => {
   });
 
   it("hides Validar without onValidate", async () => {
-    await renderWithProviders(<AccessTable rows={[PENDING]} />);
+    await renderTable({ rows: [PENDING] });
 
     expect(
       within(screen.getByRole("row", { name: /Lucas Souza/ })).getByText("A validar"),
@@ -233,9 +383,7 @@ describe("AccessTable", () => {
   });
 
   it("offers Validar only on the rows waiting for validation", async () => {
-    await renderWithProviders(
-      <AccessTable rows={[...ROWS, PENDING, REJECTED]} onValidate={vi.fn()} />,
-    );
+    await renderTable({ rows: [...ROWS, PENDING, REJECTED], onValidate: vi.fn() });
 
     expect(screen.getAllByRole("button", { name: /^Validar/ })).toHaveLength(1);
     expect(
@@ -253,7 +401,7 @@ describe("AccessTable", () => {
   it("reports the row when Validar is pressed", async () => {
     const onValidate = vi.fn();
     const user = userEvent.setup();
-    await renderWithProviders(<AccessTable rows={[...ROWS, PENDING]} onValidate={onValidate} />);
+    await renderTable({ rows: [...ROWS, PENDING], onValidate });
 
     await user.click(screen.getByRole("button", { name: "Validar cadastro de Lucas Souza" }));
 
@@ -264,7 +412,7 @@ describe("AccessTable", () => {
   it("puts Validar after the link of the name and before the row actions in the tab order", async () => {
     const onValidate = vi.fn();
     const user = userEvent.setup();
-    await renderWithProviders(<AccessTable rows={[PENDING]} onValidate={onValidate} />);
+    await renderTable({ rows: [PENDING], onValidate });
 
     await user.tab();
     expect(screen.getByRole("link", { name: "Lucas Souza" })).toHaveFocus();
@@ -276,18 +424,18 @@ describe("AccessTable", () => {
     expect(onValidate).toHaveBeenCalledWith(PENDING);
 
     await user.tab();
-    expect(screen.getByRole("button", { name: "Ações de Lucas Souza" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Editar Lucas Souza" })).toHaveFocus();
   });
 
   it("keeps the column headers and draws no row when there are no people", async () => {
-    await renderWithProviders(<AccessTable rows={[]} />);
+    await renderTable({ rows: [] });
 
     expect(screen.getAllByRole("columnheader")).toHaveLength(6);
     expect(screen.queryAllByRole("cell")).toHaveLength(0);
   });
 
   it("renders the name as a link to /members/:id", async () => {
-    await renderWithProviders(<AccessTable rows={ROWS} />);
+    await renderTable();
 
     for (const { id, name } of ROWS) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", `/members/${id}`);
@@ -297,7 +445,7 @@ describe("AccessTable", () => {
 
   it("opens the member with the keyboard, from the link of the name", async () => {
     const user = userEvent.setup();
-    const { router } = await renderWithProviders(<AccessTable rows={ROWS} />);
+    const { router } = await renderTable();
 
     await user.tab();
     await user.keyboard("{Enter}");
@@ -308,9 +456,8 @@ describe("AccessTable", () => {
   it("calls onRowClick when a cell of the row is clicked", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();
-    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={onRowClick} />);
+    await renderTable({ onRowClick });
 
-    // The Departamento cell has nothing in it: the click lands on the cell, not on a control.
     const beto = screen.getByRole("row", { name: /Beto Nunes/ });
     await user.click(within(beto).getAllByRole("cell")[2]);
 
@@ -320,7 +467,7 @@ describe("AccessTable", () => {
   it("calls onRowClick when the badge of the status is clicked", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();
-    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={onRowClick} />);
+    await renderTable({ onRowClick });
 
     const caio = screen.getByRole("row", { name: /Caio Lopes/ });
     await user.click(within(caio).getByText("Ativo"));
@@ -328,23 +475,11 @@ describe("AccessTable", () => {
     expect(onRowClick).toHaveBeenCalledExactlyOnceWith(ROWS[2]);
   });
 
-  it("does not call onRowClick when the actions button is clicked", async () => {
-    const user = userEvent.setup();
-    const onRowClick = vi.fn();
-    await renderWithProviders(<AccessTable rows={ROWS} onRowClick={onRowClick} />);
-
-    await user.click(screen.getByRole("button", { name: "Ações de Ana Torres" }));
-
-    expect(onRowClick).not.toHaveBeenCalled();
-  });
-
   it("does not call onRowClick when Validar is clicked", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();
     const onValidate = vi.fn();
-    await renderWithProviders(
-      <AccessTable rows={[PENDING]} onRowClick={onRowClick} onValidate={onValidate} />,
-    );
+    await renderTable({ rows: [PENDING], onRowClick, onValidate });
 
     await user.click(screen.getByRole("button", { name: "Validar cadastro de Lucas Souza" }));
 
@@ -355,9 +490,7 @@ describe("AccessTable", () => {
   it("does not call onRowClick when the link of the name is clicked: the link opens the member itself", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();
-    const { router } = await renderWithProviders(
-      <AccessTable rows={ROWS} onRowClick={onRowClick} />,
-    );
+    const { router } = await renderTable({ onRowClick });
 
     await user.click(screen.getByRole("link", { name: "Caio Lopes" }));
 
@@ -367,9 +500,8 @@ describe("AccessTable", () => {
 
   it("is not clickable without onRowClick", async () => {
     const user = userEvent.setup();
-    const { router } = await renderWithProviders(<AccessTable rows={ROWS} />);
+    const { router } = await renderTable();
 
-    // The Departamento cell has nothing in it: the click lands on the cell, not on a control.
     const ana = screen.getByRole("row", { name: /Ana Torres/ });
     await expect(user.click(within(ana).getAllByRole("cell")[2])).resolves.toBeUndefined();
 
