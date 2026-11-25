@@ -187,6 +187,86 @@ describe("route /members", () => {
 });
 
 describe("AccessPage", () => {
+  describe("opening a member", () => {
+    const MEMBER_ID = "01952ef7-0000-7000-8000-0000000000c1";
+
+    /** The list on `/members` and, next to it, a stand-in for the route that `people` declares. */
+    async function renderListWithMemberRoute(
+      rows = [buildMember({ id: MEMBER_ID, name: "Ana Torres" })],
+    ) {
+      server.use(
+        meHandler({ user: buildMeUser({ role: Role.coordinator }) }),
+        listMembersHandler({ data: rows }),
+      );
+      return renderRoutes(
+        [...authProtectedRoutes, { path: "members/:id", element: <p>member page</p> }],
+        { route: "/members" },
+      );
+    }
+
+    it("clicking a row opens /members/:id", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderListWithMemberRoute();
+
+      const row = await screen.findByRole("row", { name: /Ana Torres/ });
+      await user.click(within(row).getByText("Ativo"));
+
+      expect(router.state.location.pathname).toBe(`/members/${MEMBER_ID}`);
+      expect(await screen.findByText("member page")).toBeInTheDocument();
+    });
+
+    it("clicking the name opens /members/:id, with no second navigation", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderListWithMemberRoute();
+
+      await user.click(await screen.findByRole("link", { name: "Ana Torres" }));
+
+      expect(router.state.location.pathname).toBe(`/members/${MEMBER_ID}`);
+      expect(await screen.findByText("member page")).toBeInTheDocument();
+      // One entry for the member: a single step back is the list again, so the click that the row
+      // also receives did not navigate a second time.
+      await act(() => router.navigate(-1));
+      expect(router.state.location.pathname).toBe("/members");
+    });
+
+    it("clicking the actions button of the row does not open the member", async () => {
+      const user = userEvent.setup();
+      const { router } = await renderListWithMemberRoute();
+
+      await user.click(await screen.findByRole("button", { name: "Ações de Ana Torres" }));
+
+      expect(router.state.location.pathname).toBe("/members");
+      expect(screen.queryByText("member page")).not.toBeInTheDocument();
+    });
+
+    it("clicking Validar opens the registration dialog and does not open the member", async () => {
+      const user = userEvent.setup();
+      server.use(
+        getMemberRegistrationHandler({
+          registration: buildMemberRegistration({ id: REGISTRATION_ID, name: "Lucas Souza" }),
+        }),
+        listDepartmentsHandler(),
+      );
+      const { router } = await renderListWithMemberRoute([
+        buildMember({
+          id: REGISTRATION_ID,
+          name: "Lucas Souza",
+          role: null,
+          accessEnabled: false,
+          registrationStatus: MemberRegistrationStatus.pending,
+        }),
+      ]);
+
+      await user.click(
+        await screen.findByRole("button", { name: "Validar cadastro de Lucas Souza" }),
+      );
+
+      expect(await screen.findByRole("dialog", { name: /Validar cadastro/ })).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe("/members");
+      expect(screen.queryByText("member page")).not.toBeInTheDocument();
+    });
+  });
+
   it("hides Gerar link de cadastro without invites.manage", async () => {
     server.use(listMembersHandler({ data: buildPeople(1), total: 1 }));
 

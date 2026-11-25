@@ -1,15 +1,22 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import type { MemberListItemResponseDto } from "@api/generated/model";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge, Button } from "@shared/ui";
 
+import { memberDetailPath } from "../lib/member-path";
 import { MEMBER_ROW_STATUS_TONE, memberRowStatus } from "../lib/member-status";
 import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: MemberListItemResponseDto[];
+  /**
+   * Opens the detail screen of a member (GUS-145). Clicking the links or action buttons of the row
+   * does not call this. Without this prop the row is not clickable and gets no hover highlight.
+   */
+  onRowClick?: (row: MemberListItemResponseDto) => void;
   /**
    * Opens the validation of the registration of a row. Only the rows waiting for validation get
    * the Validar button, and only when this is given: the screen leaves it out for who cannot
@@ -17,6 +24,10 @@ export interface AccessTableProps {
    */
   onValidate?: (row: MemberListItemResponseDto) => void;
 }
+
+// Row highlight of the Figma: light background (from DataTable) + 3px accent bar on the left.
+const CLICKABLE_ROW_CLASS =
+  "hover:shadow-[inset_3px_0_0_var(--accent)] focus-within:shadow-[inset_3px_0_0_var(--accent)]";
 
 function KebabIcon(): ReactElement {
   return (
@@ -35,7 +46,7 @@ function KebabIcon(): ReactElement {
  * validar" for a registration waiting for validation (with the Validar button in Ações) and
  * "Recusado" for a refused one.
  */
-export function AccessTable({ rows, onValidate }: AccessTableProps): ReactElement {
+export function AccessTable({ rows, onRowClick, onValidate }: AccessTableProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
 
   function renderOptionalText(value: string | null | undefined): ReactNode {
@@ -53,7 +64,15 @@ export function AccessTable({ rows, onValidate }: AccessTableProps): ReactElemen
     {
       header: t("access.people.columns.member"),
       headerClassName: "w-[245px] uppercase",
-      render: (row) => row.name,
+      // The name is the keyboard and screen reader path to the member screen: `<tr>` does not take focus.
+      render: (row) => (
+        <Link
+          to={memberDetailPath(row.id)}
+          className="inline-flex min-h-11 items-center rounded-sm font-medium underline-offset-2 hover:underline outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+        >
+          {row.name}
+        </Link>
+      ),
     },
     {
       header: t("access.people.columns.role"),
@@ -118,6 +137,8 @@ export function AccessTable({ rows, onValidate }: AccessTableProps): ReactElemen
       rowKey={(row) => row.id}
       caption={t("access.people.caption")}
       tableClassName="table-fixed min-w-[960px]"
+      onRowClick={onRowClick}
+      rowClassName={onRowClick ? CLICKABLE_ROW_CLASS : undefined}
     />
   );
 }
