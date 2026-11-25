@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { useListMembers } from "@api/generated/people/people";
 import { ListState } from "@shared/components/ListState";
@@ -25,6 +25,7 @@ import {
   withMemberFilter,
   withoutMemberFilters,
 } from "../lib/member-filters";
+import { memberDetailPath } from "../lib/member-path";
 
 /**
  * Membros (GUS-87, GUS-150): the members of the project from `listMembers`, with their department,
@@ -47,6 +48,7 @@ export function AccessPage(): ReactElement {
   const titleId = useId();
   const titleRef = useRef<HTMLSpanElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   // Row actions (GUS-88) must use `useCan("access.manage")` and the own-account rule (decision 23).
   const canInvite = useCan("invites.manage");
   const canValidate = useCan("invites.manage");
@@ -250,6 +252,7 @@ export function AccessPage(): ReactElement {
         >
           <AccessTable
             rows={query.data?.data ?? []}
+            onRowClick={(row) => navigate(memberDetailPath(row.id))}
             onValidate={canValidate ? (row) => setValidatingId(row.id) : undefined}
           />
           {renderListState()}

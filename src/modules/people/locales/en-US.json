@@ -50,5 +50,143 @@
     },
     "empty": "—",
     "notProvided": "Not provided"
+  },
+  "student": {
+    "routeTitle": "Student",
+    "loading": "Loading the student…",
+    "loadError": "We could not load the student. Please try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Student not found",
+    "notFoundDescription": "This student does not exist or was removed.",
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "ageValue_one": "{{count}} year old",
+    "ageValue_other": "{{count}} years old",
+    "header": {
+      "accessibility": "Accessibility: {{need}}"
+    },
+    "archived": {
+      "notice": "Registration archived on {{date}}.",
+      "reason": "Reason: {{reason}}"
+    },
+    "yes": "Yes",
+    "no": "No",
+    "accessibilityNeed": {
+      "none": "None",
+      "visual": "Visual",
+      "hearing": "Hearing",
+      "motor": "Motor",
+      "cognitive": "Cognitive",
+      "other": "Other"
+    },
+    "personal": {
+      "title": "Personal details",
+      "fullName": "Full name",
+      "birthDate": "Date of birth",
+      "age": "Age",
+      "phone": "Phone",
+      "email": "Email",
+      "education": "Education",
+      "hasSmartphone": "Has a smartphone",
+      "hasComputer": "Has a computer",
+      "howFoundUs": "How they found TEDI",
+      "emergencyContactName": "Emergency contact",
+      "emergencyContactPhone": "Emergency phone",
+      "registeredBy": "Registered by",
+      "registeredByValue": "{{name}} — {{date}}",
+      "registeredOn": "On {{date}}"
+    },
+    "accessibility": {
+      "title": "Accessibility needs",
+      "columns": {
+        "category": "Category",
+        "classNeeds": "What the person needs",
+        "supportResource": "Support resource",
+        "registeredBy": "Registered by"
+      },
+      "empty": "No accessibility needs registered."
+    },
+    "enrollments": {
+      "title": "Enrollments",
+      "unavailable": "The enrollments of the student will show up here soon."
+    },
+    "summary": {
+      "title": "Summary",
+      "unavailable": "The summary of the student will show up here soon."
+    },
+    "courseHistory": {
+      "title": "Course history",
+      "unavailable": "The course history of the student will show up here soon."
+    },
+    "record": {
+      "title": "Record",
+      "registeredBy": "Registered by",
+      "updatedAt": "Last updated"
+    }
+  },
+  "member": {
+    "routeTitle": "Member",
+    "loading": "Loading the member…",
+    "loadError": "We could not load the member. Please try again.",
+    "retry": "Try again",
+    "notFoundTitle": "Member not found",
+    "notFoundDescription": "This member does not exist or was removed.",
+    "backToList": "Back to Members",
+    "breadcrumb": "Breadcrumb",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "chips": {
+      "ra": "RA {{ra}}"
+    },
+    "data": {
+      "title": "Member details",
+      "fullName": "Full name",
+      "birthDate": "Date of birth",
+      "phone": "Phone",
+      "personalEmail": "Personal email",
+      "address": "Address",
+      "city": "City",
+      "state": "State",
+      "ra": "RA",
+      "department": "Department",
+      "mainFunction": "Main function",
+      "course": "Degree",
+      "className": "Class",
+      "semester": "Semester",
+      "semesterValue": "{{count}}",
+      "institutionalEmail": "Institutional email",
+      "cpf": "CPF",
+      "volunteerTerm": "Volunteer agreement",
+      "role": "Access profile",
+      "status": "Status",
+      "joinedAt": "Joined the project",
+      "exitDate": "Left on"
+    },
+    "record": {
+      "title": "Record and permissions",
+      "approvedBy": "Registration approved by",
+      "approvedByValue": "{{name}} on {{date}}",
+      "approvedOn": "On {{date}}"
+    },
+    "assignments": {
+      "title": "Class assignments",
+      "unavailable": "The class assignments of the member will show up here soon."
+    },
+    "entries": {
+      "title": "Hour entries",
+      "unavailable": "The hour entries of the member will show up here soon."
+    },
+    "hoursBank": {
+      "title": "Hours bank",
+      "unavailable": "The hours bank of the member will show up here soon."
+    },
+    "attendance": {
+      "title": "Attendance",
+      "unavailable": "The attendance of the member in classes will show up here soon."
+    }
   }
 }

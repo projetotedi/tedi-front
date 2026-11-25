@@ -68,4 +68,66 @@ describe("DetailsCard", () => {
 
     expect(within(valueOf("City")).getByText("Not provided")).toHaveClass("sr-only");
   });
+
+  describe("columns", () => {
+    const fields = [
+      { label: "Nome", value: "Maria da Silva Santos" },
+      { label: "Cidade", value: "São Paulo" },
+      { label: "Telefone", value: null },
+      { label: "Endereço", value: "Rua das Acácias, 120", wide: true },
+    ];
+
+    /** The labels and the values in the order they are read, whatever the layout. */
+    function readPairs(): Array<[string | null, string | null]> {
+      return screen
+        .getAllByText(/.+/, { selector: "dt" })
+        .map((term) => [term.textContent, term.nextElementSibling?.textContent ?? null]);
+    }
+
+    it.each([1, 2, 3] as const)(
+      "keeps every label next to its value, in order, with %s column(s)",
+      (columns) => {
+        render(<DetailsCard title="Dados" fields={fields} columns={columns} />);
+
+        expect(readPairs()).toEqual([
+          ["Nome", "Maria da Silva Santos"],
+          ["Cidade", "São Paulo"],
+          ["Telefone", "—Não informado"],
+          ["Endereço", "Rua das Acácias, 120"],
+        ]);
+        expect(screen.getByRole("heading", { level: 2, name: "Dados" })).toBeInTheDocument();
+      },
+    );
+
+    it("uses two columns when none is asked for", () => {
+      render(<DetailsCard title="Dados" fields={fields} />);
+
+      expect(screen.getByText("Nome", { selector: "dt" }).closest("dl")).toHaveClass(
+        "sm:grid-cols-2",
+      );
+    });
+
+    it.each([
+      [1, ["grid-cols-1"], ["sm:grid-cols-2", "lg:grid-cols-3"]],
+      [2, ["grid-cols-1", "sm:grid-cols-2"], ["lg:grid-cols-3"]],
+      [3, ["grid-cols-1", "sm:grid-cols-2", "lg:grid-cols-3"], []],
+    ] as const)("sets the grid of columns=%s", (columns, has, hasNot) => {
+      render(<DetailsCard title="Dados" fields={fields} columns={columns} />);
+
+      const list = screen.getByText("Nome", { selector: "dt" }).closest("dl");
+      for (const name of has) expect(list).toHaveClass(name);
+      for (const name of hasNot) expect(list).not.toHaveClass(name);
+    });
+
+    it("lets a wide field take the whole row, however many columns there are", () => {
+      render(<DetailsCard title="Dados" fields={fields} columns={3} />);
+
+      expect(screen.getByText("Endereço", { selector: "dt" }).parentElement).toHaveClass(
+        "sm:col-span-full",
+      );
+      expect(screen.getByText("Nome", { selector: "dt" }).parentElement).not.toHaveClass(
+        "sm:col-span-full",
+      );
+    });
+  });
 });
