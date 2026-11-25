@@ -10,7 +10,7 @@ export interface RollCallDraft {
   markAbsent: (keys: readonly string[]) => void;
   selectedEntries: (pendingKeys: readonly string[]) => RollCallEntry[];
   markedEntries: (pendingKeys: readonly string[]) => RollCallEntry[];
-  clear: () => void;
+  clear: (keys: readonly string[]) => void;
 }
 
 export function useRollCallDraft(): RollCallDraft {
@@ -60,9 +60,13 @@ export function useRollCallDraft(): RollCallDraft {
         const status = statuses.get(key);
         return status === undefined ? [] : [{ key, status }];
       }),
-    clear: () => {
-      setStatuses(new Map());
-      setSelectedKeys(new Set());
+    clear: (keys) => {
+      setStatuses((current) => {
+        const next = new Map(current);
+        for (const key of keys) next.delete(key);
+        return next;
+      });
+      setSelected(keys, false);
     },
   };
 }

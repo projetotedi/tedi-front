@@ -197,6 +197,24 @@ describe("student roll call", () => {
     });
   });
 
+  it("keeps the marks of the rows that were not signed", async () => {
+    await renderCard();
+    const toggle = within(screen.getByRole("group", { name: "Presença de Maria" }));
+    await user.click(toggle.getByRole("button", { name: "Ausente" }));
+    await user.click(screen.getByRole("checkbox", { name: "Selecionar Maria" }));
+    await user.click(screen.getByRole("checkbox", { name: "Selecionar João" }));
+    await user.click(screen.getByRole("button", { name: "Assinar presença (1)" }));
+    await screen.findByText("Presença assinada para 1 aluno");
+
+    expect(
+      within(screen.getByRole("group", { name: "Presença de Maria" })).getByRole("button", {
+        name: "Ausente",
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("checkbox", { name: "Selecionar Maria" })).not.toBeChecked();
+    expect(screen.queryByRole("group", { name: "Presença de João" })).not.toBeInTheDocument();
+  });
+
   it("keeps the draft when the tab changes", async () => {
     await renderCard();
     await user.click(screen.getByRole("checkbox", { name: "Selecionar Maria" }));

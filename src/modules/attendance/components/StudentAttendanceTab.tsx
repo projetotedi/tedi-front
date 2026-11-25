@@ -70,7 +70,7 @@ export function StudentAttendanceTab({
       {
         onSuccess: () => {
           toast.success(t("students.signed", { count: entries.length }));
-          draft.clear();
+          draft.clear(entries.map((entry) => entry.key));
           onSigned();
         },
         onError: (error) => toast.error(t(`errors.${toAttendanceError(error)}`)),
