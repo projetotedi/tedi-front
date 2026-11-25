@@ -14,7 +14,6 @@ import { Role } from "@shared/lib/role";
 
 // Registers the "people" namespace.
 import "../index";
-import { peopleRoutes } from "../routes";
 import {
   buildMemberDetail,
   buildSeedMemberDetail,
@@ -24,6 +23,7 @@ import {
   MEMBER_NAME,
   MEMBER_NOT_FOUND_ERROR,
 } from "./handlers";
+import { peopleRoutes } from "./test-routes";
 
 setupAuthTestServer();
 
@@ -209,23 +209,37 @@ describe("MemberDetailPage", () => {
   });
 
   describe("the breadcrumb", () => {
-    it("shows the breadcrumb Membros › name, with a link to /members for who can list", async () => {
-      await renderPage({ role: Role.coordinator });
+    it.each([
+      ["coordinator", Role.coordinator],
+      ["director", Role.director],
+    ])(
+      "shows the breadcrumb Membros › name, with a link to /members for the %s",
+      async (_label, role) => {
+        await renderPage({ role });
 
-      const trail = screen.getByRole("navigation", { name: "Trilha de navegação" });
-      expect(within(trail).getAllByRole("listitem")).toHaveLength(2);
-      expect(within(trail).getByRole("link", { name: "Membros" })).toHaveAttribute(
-        "href",
-        "/members",
-      );
-      expect(within(trail).getByText("›")).toHaveAttribute("aria-hidden", "true");
-      const current = within(trail).getByText(MEMBER_NAME);
-      expect(current).toHaveAttribute("aria-current", "page");
-      expect(within(trail).getAllByRole("link")).toHaveLength(1);
-    });
+        const trail = screen.getByRole("navigation", { name: "Trilha de navegação" });
+        expect(within(trail).getAllByRole("listitem")).toHaveLength(2);
+        expect(within(trail).getByRole("link", { name: "Membros" })).toHaveAttribute(
+          "href",
+          "/members",
+        );
+        expect(within(trail).getByText("›")).toHaveAttribute("aria-hidden", "true");
+        const current = within(trail).getByText(MEMBER_NAME);
+        expect(current).toHaveAttribute("aria-current", "page");
+        expect(within(trail).getAllByRole("link")).toHaveLength(1);
+      },
+    );
 
     it("keeps Membros as plain text for who cannot open the list", async () => {
-      await renderPage({ role: Role.director });
+      const director = buildMeUser({ role: Role.director });
+      server.use(
+        meHandler({
+          user: { ...director, permissions: { ...director.permissions, "members.list": "none" } },
+        }),
+        getMemberHandler(),
+      );
+      await renderRoutes(peopleRoutes, { route: MEMBER_ROUTE });
+      await screen.findByRole("heading", { level: 2, name: MEMBER_NAME });
 
       const trail = screen.getByRole("navigation", { name: "Trilha de navegação" });
       expect(within(trail).getByText("Membros")).toBeInTheDocument();
@@ -460,8 +474,14 @@ describe("MemberDetailPage", () => {
   });
 
   describe("errors", () => {
-    it("shows not found for MEMBER_NOT_FOUND, with a way back for who can list", async () => {
-      server.use(meHandler(), getMemberHandler({ error: MEMBER_NOT_FOUND_ERROR }));
+    it.each([
+      ["coordinator", Role.coordinator],
+      ["director", Role.director],
+    ])("shows not found for MEMBER_NOT_FOUND, with a way back for the %s", async (_label, role) => {
+      server.use(
+        meHandler({ user: buildMeUser({ role }) }),
+        getMemberHandler({ error: MEMBER_NOT_FOUND_ERROR }),
+      );
       await renderRoutes(peopleRoutes, { route: MEMBER_ROUTE });
 
       expect(
@@ -478,8 +498,11 @@ describe("MemberDetailPage", () => {
     });
 
     it("offers no way back to who cannot open the list", async () => {
+      const director = buildMeUser({ role: Role.director });
       server.use(
-        meHandler({ user: buildMeUser({ role: Role.director }) }),
+        meHandler({
+          user: { ...director, permissions: { ...director.permissions, "members.list": "none" } },
+        }),
         getMemberHandler({ error: MEMBER_NOT_FOUND_ERROR }),
       );
       await renderRoutes(peopleRoutes, { route: MEMBER_ROUTE });

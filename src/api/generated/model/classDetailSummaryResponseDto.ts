@@ -17,7 +17,7 @@ export interface ClassDetailSummaryResponseDto {
   /** Number of seats. */
   capacity: number;
   /**
-   * Active enrollments. 0 until enrollments exist (GUS-108).
+   * Active enrollments.
    * @minimum 0
    */
   enrolledCount: number;

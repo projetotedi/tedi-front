@@ -28,6 +28,7 @@ import {
   duplicateCourseHandler,
   getCourseHandler,
   listCourseLessonPlansHandler,
+  listCoursesHandler,
   replaceCourseLessonPlansHandler,
   unarchiveCourseHandler,
 } from "./handlers";
@@ -258,18 +259,22 @@ describe("CourseDetailPage", () => {
       expect(screen.queryByText(/^Turmas do curso /)).not.toBeInTheDocument();
     });
 
-    it("has Duplicar curso and Arquivar curso in the header, and not the actions that do not exist yet: Editar curso and + Nova turma", async () => {
+    it("has Duplicar curso, Arquivar curso, Editar curso and then the + Nova turma of the slot, for this course", async () => {
       await renderPage({ role: Role.coordinator });
 
       expect(
         within(header())
           .getAllByRole("button")
           .map((button) => button.textContent),
-      ).toEqual(["Duplicar curso", "Arquivar curso"]);
-      for (const name of ["Editar curso", "+ Nova turma"]) {
-        expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-        expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
-      }
+      ).toEqual(["Duplicar curso", "Arquivar curso", "Editar curso", `Nova turma ${COURSE_ID}`]);
+    });
+
+    it("tells the slot of + Nova turma that the course is archived", async () => {
+      await renderPage({ role: Role.coordinator, course: buildArchivedCourseDetail() });
+
+      expect(
+        within(header()).getByRole("button", { name: `Nova turma ${COURSE_ID}` }),
+      ).toBeDisabled();
     });
 
     it("draws Duplicar curso as the tertiary button of the header, before the actions that will come", async () => {
@@ -423,7 +428,12 @@ describe("CourseDetailPage", () => {
       expect(card("Carga horária prevista")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Editar sequência" })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Duplicar curso" })).not.toBeInTheDocument();
-      expect(within(header()).queryByRole("button")).not.toBeInTheDocument();
+      // Only the slot of + Nova turma is left, and its permission is the `classes` module's to check.
+      expect(
+        within(header())
+          .getAllByRole("button")
+          .map((button) => button.textContent),
+      ).toEqual([`Nova turma ${COURSE_ID}`]);
     });
 
     it.each([
@@ -909,6 +919,25 @@ describe("CourseDetailPage", () => {
       expect(valueOf(card("Catálogo e histórico"), "Motivo")).toHaveTextContent(
         COURSE_ARCHIVE_REASON,
       );
+    });
+  });
+
+  describe("editing the course (GUS-129)", () => {
+    it("opens Editar curso from the header, filled with the course", async () => {
+      server.use(listCoursesHandler({ courses: [] }));
+      const user = userEvent.setup();
+      await renderPage();
+
+      await user.click(within(header()).getByRole("button", { name: "Editar curso" }));
+
+      const dialog = await screen.findByRole("dialog", { name: "Editar curso" });
+      expect(await within(dialog).findByDisplayValue(COURSE_NAME)).toBeInTheDocument();
+    });
+
+    it("the member does not see Editar curso", async () => {
+      await renderPage({ role: Role.member });
+
+      expect(screen.queryByRole("button", { name: "Editar curso" })).not.toBeInTheDocument();
     });
   });
 

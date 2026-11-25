@@ -1,8 +1,6 @@
 import type { MemberStatus } from "@api/generated/model";
 import type { BadgeProps } from "@shared/ui";
 
-import type { EntryStatus } from "./hours";
-
 type BadgeTone = BadgeProps["tone"];
 
 export type AccountStatus = "active" | "inactive";
@@ -41,11 +39,4 @@ export const STUDENT_STATUS_COLOR: Record<StudentStatus, BadgeTone> = {
 export const MEMBER_STATUS_COLOR: Record<MemberStatus, BadgeTone> = {
   active: "success",
   inactive: "neutral",
-};
-
-export const ENTRY_STATUS_COLOR: Record<EntryStatus, BadgeTone> = {
-  approved: "success",
-  adjusted: "info",
-  pending: "warning",
-  rejected: "danger",
 };

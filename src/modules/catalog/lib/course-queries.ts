@@ -35,6 +35,11 @@ function isCoursesKey(queryKey: readonly unknown[]): boolean {
   return typeof key === "string" && (key === base || key.startsWith(`${base}/`));
 }
 
+/** `/courses` itself: the key of every page of `listCourses`, whatever its filters. */
+function isCourseListKey(queryKey: readonly unknown[]): boolean {
+  return queryKey[0] === getCreateCourseUrl();
+}
+
 /** `/courses/<id>`: the query key of the detail of any course, and not of what hangs from it. */
 function isCourseDetailKey(queryKey: readonly unknown[]): boolean {
   const [key] = queryKey;
@@ -58,8 +63,8 @@ function isCourseDetailKey(queryKey: readonly unknown[]): boolean {
  *   the usage the RF-017 confirmation reads): all of those are fetched again when somebody looks
  *   at them.
  *
- * The list of courses (`listCourses`, the number of lesson plans and the workload of each course)
- * is not touched here yet: the screen that reads it comes with GUS-131, and its key goes here then.
+ * - the list of courses (`listCourses`, GUS-131) shows the number of lesson plans and the workload
+ *   of each course, so every page of it is fetched again too.
  */
 export async function applyReplacedSequence(
   queryClient: QueryClient,
@@ -82,6 +87,7 @@ export async function applyReplacedSequence(
     queryClient.invalidateQueries({
       predicate: ({ queryKey }) => isCourseDetailKey(queryKey) && queryKey[0] !== currentDetailKey,
     }),
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCourseListKey(queryKey) }),
     invalidateLessonPlans(queryClient),
   ]);
 }
@@ -139,4 +145,30 @@ export async function invalidateAfterCourseArchiveChanged(
   );
 
   await queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) });
+}
+
+/** `/classes` and everything under it: the lists, the detail and the summaries of classes. */
+function isClassesKey(queryKey: readonly unknown[]): boolean {
+  const [key] = queryKey;
+  return typeof key === "string" && (key === "/classes" || key.startsWith("/classes/"));
+}
+
+/**
+ * What the app has to know after a course is created or edited (GUS-129):
+ *
+ * - every key under `/courses`: the list (name, category and prerequisites of each course), the
+ *   detail of this course and the detail of the courses that show it as a prerequisite or in
+ *   `requiredBy`, with its name and category;
+ * - every key under `/classes`: a class shows the current category and name of its course
+ *   (RN-14, GUS-102), so its list and its detail are fetched again. The URL is the one of the
+ *   generated client of the classes routes, which this module only reads through its keys.
+ *
+ * Nothing is written into the cache from the answer: it is a `CourseResponseDto`, and the detail
+ * brings more than it (the prerequisites with their status, the sequence and the workload).
+ */
+export async function invalidateAfterCourseSaved(queryClient: QueryClient): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isCoursesKey(queryKey) }),
+    queryClient.invalidateQueries({ predicate: ({ queryKey }) => isClassesKey(queryKey) }),
+  ]);
 }

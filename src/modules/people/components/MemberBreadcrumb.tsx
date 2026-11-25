@@ -16,18 +16,16 @@ export interface MemberBreadcrumbProps {
  * the static title "Membro" of the route, so the trail lives in the page: the name is a person's
  * data and the topbar only reads the `handle` of the route.
  *
- * "Membros" is a link back to the list only for who can open it. The list is `/members`, the
- * management of accesses, which asks for `access.manage`; the director has `members.view` for the
- * members of the department but not that one, and the link would lead to a page of "no access", so
- * for the director it is plain text. GUS-150 puts the list on `listMembers`: the permission here
- * changes to `members.list` along with the route of the list.
+ * "Membros" is a link back to the list only for who can open it (`/members`, guarded by
+ * `members.list`, GUS-150); without that permission a link would lead to a page of "no access", so
+ * it stays plain text.
  *
  * The separator is decorative (`aria-hidden`): who hears the trail reads a list of two items, the
  * second one marked as the current page.
  */
 export function MemberBreadcrumb({ name }: MemberBreadcrumbProps): ReactElement {
   const { t } = useTranslation(["people", "common"]);
-  const canOpenList = useCan("access.manage");
+  const canOpenList = useCan("members.list");
   const listLabel = t("common:nav.members");
 
   return (

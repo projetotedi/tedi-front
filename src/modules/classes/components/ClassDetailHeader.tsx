@@ -27,10 +27,10 @@ export interface ClassDetailHeaderProps {
  * GUS-157), Editar turma (`secondary`, GUS-101, with the form of GUS-133) and + Nova aula
  * (`primary`, GUS-152). Each one is shown only with `useCan`: `lessons.manage`, the permission of
  * the endpoint, for Gerar aulas and + Nova aula, and `classes.manage` for Editar turma. They go in
- * `actions`, one container, in that order. Gerar aulas and + Nova aula exist and come from the slot
- * of the screen (they belong to the `lessons` module); Editar turma waits for its own task (the form
- * of the class is still the example one of the list). The container of the actions has no size
- * when what is in it draws nothing (who cannot manage lessons).
+ * `actions`, one container, in that order. Gerar aulas and + Nova aula come from the slot of the
+ * screen (they belong to the `lessons` module), and Editar turma is the screen's own, which it gives
+ * the slot to put between them. The container of the actions has no size when what is in it draws
+ * nothing (who cannot manage lessons nor classes).
  */
 export function ClassDetailHeader({ classDetail, actions }: ClassDetailHeaderProps): ReactElement {
   const { t } = useTranslation("classes");

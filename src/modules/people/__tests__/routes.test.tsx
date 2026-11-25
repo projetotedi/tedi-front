@@ -9,7 +9,6 @@ import { Role } from "@shared/lib/role";
 
 // Registers the "people" namespace.
 import "../index";
-import { peopleRoutes } from "../routes";
 import {
   buildMemberDetail,
   buildStudentDetail,
@@ -19,6 +18,7 @@ import {
   myProfileHandler,
   STUDENT_ID,
 } from "./handlers";
+import { peopleRoutes } from "./test-routes";
 
 setupAuthTestServer();
 

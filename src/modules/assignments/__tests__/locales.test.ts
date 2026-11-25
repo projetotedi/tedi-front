@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+
+import enUS from "../locales/en-US.json";
+import ptBR from "../locales/pt-BR.json";
+
+function flattenKeys(value: object, prefix = ""): string[] {
+  return Object.entries(value).flatMap(([key, child]) =>
+    typeof child === "object" && child !== null
+      ? flattenKeys(child, `${prefix}${key}.`)
+      : [`${prefix}${key}`],
+  );
+}
+
+describe("assignments locales", () => {
+  it("pt-BR and en-US have the same keys", () => {
+    expect(flattenKeys(enUS).sort()).toEqual(flattenKeys(ptBR).sort());
+  });
+
+  it("has no text left empty", () => {
+    for (const locale of [ptBR, enUS]) {
+      const empty = flattenKeys(locale).filter((key) => {
+        const value = key
+          .split(".")
+          .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], locale);
+        return typeof value !== "string" || value.trim() === "";
+      });
+
+      expect(empty).toEqual([]);
+    }
+  });
+
+  it("the failure of a list of options asks for nothing the person cannot do", () => {
+    // The class is fixed when the dialog comes from its screen, and a window that is closed and opened
+    // again is not an answer to a list that failed: the way out is the button "Tentar de novo".
+    const ptAsks = /escolha|feche|abra|abrir|fechar/i;
+    const enAsks = /choose|close|open|again/i;
+
+    for (const key of ["membersError", "classesError", "lessonsError"] as const) {
+      expect(ptBR.newAssignment[key], key).not.toMatch(ptAsks);
+      expect(enUS.newAssignment[key], key).not.toMatch(enAsks);
+    }
+  });
+
+  it("uses the same interpolation variables in both languages", () => {
+    const variables = (locale: object, key: string): string[] => {
+      const value = key
+        .split(".")
+        .reduce<unknown>((node, part) => (node as Record<string, unknown>)[part], locale);
+      return [...String(value).matchAll(/{{(\w+)}}/g)].map((match) => match[1]).sort();
+    };
+
+    for (const key of flattenKeys(ptBR)) {
+      expect(variables(enUS, key), key).toEqual(variables(ptBR, key));
+    }
+  });
+});

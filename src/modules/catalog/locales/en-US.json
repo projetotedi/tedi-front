@@ -3,6 +3,7 @@
   "newPlan": "+ New lesson plan",
   "search": "Search lesson plans by title",
   "searchPlaceholder": "Search plans by title...",
+  "contentPlaceholder": "Content: all",
   "content": "Content",
   "duration": "Duration",
   "usage": "Usage",
@@ -20,8 +21,6 @@
   "courseCount_one": "{{count}} course",
   "courseCount_other": "{{count}} courses",
   "classesUsed": "Classes used in",
-  "classesUsedCount_one": "{{count}} class",
-  "classesUsedCount_other": "{{count}} classes",
   "classesCountUnavailable": "Class count will be available when the lessons module exists",
   "material": "Material",
   "status": "Status",
@@ -33,6 +32,7 @@
   "previous": "Previous page",
   "next": "Next page",
   "page": "Page {{page}}",
+  "pagination": "Pages of the list of lesson plans",
   "empty": "No lesson plans yet",
   "emptyDescription": "Start by creating the first lesson plan.",
   "noResults": "Nothing found",
@@ -349,6 +349,47 @@
       "notFound": "Course not found. It may have been removed.",
       "network": "Could not connect. Check your connection and try again.",
       "unknown": "Could not complete the action. Try again."
+    },
+    "form": {
+      "newTitle": "New course",
+      "editTitle": "Edit course",
+      "action": "New course",
+      "editAction": "Edit course",
+      "name": "Course name",
+      "category": "Category",
+      "categoryPlaceholder": "Choose the category",
+      "prerequisites": "Prerequisites",
+      "prerequisitesPlaceholder": "None",
+      "prerequisitesLoading": "Loading courses…",
+      "prerequisitesLoadError": "Could not load the courses. The current prerequisites stay.",
+      "archivedPrerequisite": "{{name}} (archived)",
+      "description": "Description",
+      "objective": "Objective",
+      "categoryChangedTitle": "The category will change",
+      "categoryChangedDescription": "The classes of this course will show the new category.",
+      "cancel": "Cancel",
+      "save": "Save course",
+      "saveChanges": "Save changes",
+      "saving": "Saving…",
+      "created": "Course created.",
+      "updated": "Course updated.",
+      "loading": "Loading the course…",
+      "loadError": "Could not load the course. Close and try again.",
+      "archivedHint": "Archived course: reactivate it to edit.",
+      "errors": {
+        "nameRequired": "Enter the course name.",
+        "nameTooLong": "The name can have at most {{nameMax}} characters.",
+        "nameTaken": "A course with this name already exists (archived ones count too).",
+        "categoryRequired": "Choose the category.",
+        "descriptionRequired": "Enter the description.",
+        "descriptionTooLong": "The description can have at most {{descriptionMax}} characters.",
+        "objectiveTooLong": "The objective can have at most {{objectiveMax}} characters.",
+        "prerequisitesTooMany": "Choose at most {{prerequisitesMax}} prerequisites.",
+        "prerequisiteCycle": "These prerequisites would form a cycle: a course would end up requiring itself.",
+        "prerequisiteNotFound": "One of the prerequisites no longer exists. Review the list.",
+        "prerequisiteArchived": "One of the prerequisites was archived and cannot be added.",
+        "serverInvalid": "Review this field."
+      }
     }
   },
   "mock": {
@@ -383,5 +424,44 @@
     "notFound": "Lesson plan not found.",
     "network": "Could not connect. Check your connection and try again.",
     "unknown": "Could not complete the action. Try again."
+  },
+  "courses": {
+    "title_one": "Courses ({{count}})",
+    "title_other": "Courses ({{count}})",
+    "search": "Search course by name",
+    "searchPlaceholder": "Search course by name...",
+    "filters": {
+      "category": "Category",
+      "prerequisite": "Prerequisite",
+      "status": "Status",
+      "all": "All",
+      "allFeminine": "All",
+      "withPrerequisite": "With prerequisite",
+      "withoutPrerequisite": "Without prerequisite"
+    },
+    "columns": {
+      "course": "Course",
+      "category": "Category",
+      "lessonPlans": "Lesson plans",
+      "workload": "Planned workload",
+      "prerequisite": "Prerequisite",
+      "classes": "Classes",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "actions": {
+      "archive": "Archive course: {{name}}",
+      "unarchive": "Reactivate course: {{name}}",
+      "unarchiveShort": "Reactivate",
+      "edit": "Edit course: {{name}}"
+    },
+    "summary": "Showing {{shown}} of {{total}} courses",
+    "pagination": "Pages of courses",
+    "loading": "Loading courses…",
+    "error": "Could not load the courses.",
+    "empty": "No course yet",
+    "emptyDescription": "The courses of the catalog show up here.",
+    "noResults": "No course found with these filters.",
+    "create": "+ New course"
   }
 }

@@ -1,6 +1,48 @@
 {
   "components": {
     "schemas": {
+      "AbsenceJustificationReason": {
+        "description": "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+        "enum": ["health", "other"],
+        "type": "string"
+      },
+      "AbsenceJustificationResponseDto": {
+        "properties": {
+          "justifiedAt": {
+            "description": "When the absence was justified the last time.",
+            "example": "2026-03-10T14:20:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "justifiedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "Who justified the absence the last time. Null when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "note": {
+            "description": "Free text of the justification. Null when it has none.",
+            "example": "Consulta médica marcada.",
+            "nullable": true,
+            "type": "string"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AbsenceJustificationReason"
+              }
+            ],
+            "description": "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+            "example": "health"
+          }
+        },
+        "required": ["reason", "note", "justifiedBy", "justifiedAt"],
+        "type": "object"
+      },
       "AcceptInviteDto": {
         "properties": {
           "password": {
@@ -334,6 +376,57 @@
         "enum": ["pending", "confirmed", "declined", "cancelled"],
         "type": "string"
       },
+      "AttendanceCorrectionResponseDto": {
+        "properties": {
+          "correctedAt": {
+            "description": "When it was corrected.",
+            "example": "2026-03-10T15:05:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "correctedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "Who corrected it. Null when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "fromStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StudentAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            "example": "present"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-000000000c01",
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Why it was corrected. Null when the caller does not take the roll call of the lesson: it may carry health data.",
+            "example": "Marcado por engano: o aluno saiu antes do início da aula.",
+            "nullable": true,
+            "type": "string"
+          },
+          "toStatus": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StudentAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            "example": "absent"
+          }
+        },
+        "required": ["id", "fromStatus", "toStatus", "reason", "correctedBy", "correctedAt"],
+        "type": "object"
+      },
       "AttendanceLessonRefResponseDto": {
         "properties": {
           "date": {
@@ -362,6 +455,34 @@
           }
         },
         "required": ["id", "title", "date", "startTime", "endTime"],
+        "type": "object"
+      },
+      "AvailableStudentItemResponseDto": {
+        "properties": {
+          "age": {
+            "description": "Whole years today in America/Sao_Paulo.",
+            "example": 68,
+            "type": "integer"
+          },
+          "currentClasses": {
+            "description": "The other classes where the student has an active enrollment, the most recent edition first.",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentClassRefResponseDto"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Person id of the student.",
+            "example": "01999a3e-7c1b-7000-8000-000000000001",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": "Maria Silva Santos",
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "age", "currentClasses"],
         "type": "object"
       },
       "BrazilianState": {
@@ -546,7 +667,7 @@
             "type": "string"
           },
           "enrollmentsPreview": {
-            "description": "Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments (GUS-108). Empty when there are none.",
+            "description": "Up to 5 active enrollments, the earliest first. The full list is GET /classes/{id}/enrollments. Empty when there are none.",
             "items": {
               "$ref": "#/components/schemas/ClassEnrollmentPreviewItemResponseDto"
             },
@@ -629,7 +750,7 @@
             "type": "integer"
           },
           "enrolledCount": {
-            "description": "Active enrollments. 0 until enrollments exist (GUS-108).",
+            "description": "Active enrollments.",
             "example": 12,
             "minimum": 0,
             "type": "integer"
@@ -661,6 +782,49 @@
           "lessonsTotal",
           "averageAttendance"
         ],
+        "type": "object"
+      },
+      "ClassEnrollmentItemResponseDto": {
+        "properties": {
+          "attendanceRate": {
+            "description": "The attendance rate of the enrollment (F6.3): its presences over the roll calls recorded for it in lessons that were not cancelled, from 0 to 1 with two decimals. A justified absence counts as an absence. Null while no roll call of it is recorded, and without the attendance module.",
+            "example": 0.75,
+            "maximum": 1,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "enrolledAt": {
+            "example": "2026-03-03T13:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id of the enrollment.",
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentStatus"
+              }
+            ],
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "example": "active"
+          },
+          "statusChangedAt": {
+            "description": "From when the current status holds, YYYY-MM-DD in America/Sao_Paulo.",
+            "example": "2026-03-03",
+            "format": "date",
+            "type": "string"
+          },
+          "student": {
+            "$ref": "#/components/schemas/EnrollmentStudentResponseDto"
+          }
+        },
+        "required": ["id", "student", "status", "enrolledAt", "statusChangedAt", "attendanceRate"],
         "type": "object"
       },
       "ClassEnrollmentPreviewItemResponseDto": {
@@ -824,6 +988,89 @@
         ],
         "type": "object"
       },
+      "ClassListItemDto": {
+        "properties": {
+          "archivedAt": {
+            "description": "Null while the class is not archived (RN-27).",
+            "example": null,
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "capacity": {
+            "example": 15,
+            "minimum": 1,
+            "type": "number"
+          },
+          "code": {
+            "example": "INFO-A",
+            "type": "string"
+          },
+          "course": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ClassCourseResponseDto"
+              }
+            ],
+            "description": "The course of the class, with its current category (RN-14)."
+          },
+          "edition": {
+            "$ref": "#/components/schemas/EditionResponseDto"
+          },
+          "endDate": {
+            "example": "2026-06-27",
+            "format": "date",
+            "type": "string"
+          },
+          "enrolledCount": {
+            "description": "Active enrollments only: dropped, completed and removed ones are left out.",
+            "example": 12,
+            "minimum": 0,
+            "type": "number"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000c1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": "Informática Básica — A",
+            "nullable": true,
+            "type": "string"
+          },
+          "startDate": {
+            "example": "2026-03-03",
+            "format": "date",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ClassStatus"
+              }
+            ],
+            "example": "planned"
+          }
+        },
+        "required": [
+          "id",
+          "code",
+          "name",
+          "course",
+          "edition",
+          "startDate",
+          "endDate",
+          "enrolledCount",
+          "capacity",
+          "status",
+          "archivedAt"
+        ],
+        "type": "object"
+      },
+      "ClassListSort": {
+        "enum": ["startDate", "code"],
+        "type": "string"
+      },
       "ClassResponseDto": {
         "properties": {
           "archiveReason": {
@@ -973,6 +1220,27 @@
         "required": ["courseId", "total", "active"],
         "type": "object"
       },
+      "CompletedCourseResponseDto": {
+        "properties": {
+          "completedAt": {
+            "description": "The latest statusChangedAt of the completed enrollments of the course, YYYY-MM-DD.",
+            "example": "2025-12-12",
+            "format": "date",
+            "type": "string"
+          },
+          "courseId": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000b1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": "Informática Básica",
+            "type": "string"
+          }
+        },
+        "required": ["courseId", "name", "completedAt"],
+        "type": "object"
+      },
       "ConfirmMemberAttendanceDto": {
         "description": "The attendance of confirmed assignments of the lesson of the URL, from 1 to 100 entries, all or none. The first signature of a member signs it; the same status again changes nothing; the other status is a correction (attendance.correct). Present records the lesson hours of the member; correcting to absent reverses them. Nobody signs her own attendance.",
         "properties": {
@@ -987,6 +1255,29 @@
           }
         },
         "required": ["entries"],
+        "type": "object"
+      },
+      "CorrectStudentAttendanceDto": {
+        "description": "The correction of a signed attendance: the new status, which must differ from the current one, and the reason, required. It goes to the history of the attendance.",
+        "properties": {
+          "reason": {
+            "description": "Why the attendance is corrected. Required: missing, empty or blank after the trim is 400 VALIDATION_FAILED. It goes to the history of the attendance, never to an event (it may carry health data).",
+            "example": "Marcado por engano: o aluno saiu antes do início da aula.",
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StudentAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            "example": "absent"
+          }
+        },
+        "required": ["status", "reason"],
         "type": "object"
       },
       "CourseCategory": {
@@ -1015,7 +1306,7 @@
             "type": "string"
           },
           "enrolledCount": {
-            "description": "Active enrollments of the class. Always 0 until the enrollments exist (GUS-108).",
+            "description": "Active enrollments of the class.",
             "example": 12,
             "minimum": 0,
             "type": "integer"
@@ -2009,6 +2300,248 @@
         "required": ["name", "phone"],
         "type": "object"
       },
+      "EnrollStudentsDto": {
+        "properties": {
+          "studentIds": {
+            "description": "Person ids of the students, from 1 to 100. The same student twice, in any letter case, is 400 DUPLICATE_STUDENT.",
+            "example": [
+              "01999a3e-7c1b-7000-8000-000000000001",
+              "01999a3e-7c1b-7000-8000-000000000002"
+            ],
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["studentIds"],
+        "type": "object"
+      },
+      "EnrollStudentsResponseDto": {
+        "properties": {
+          "enrolled": {
+            "description": "The enrollments made now, in the order of the body.",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentResponseDto"
+            },
+            "type": "array"
+          },
+          "skipped": {
+            "description": "The students left out because they already have an enrollment in the class.",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentSkippedResponseDto"
+            },
+            "type": "array"
+          },
+          "warnings": {
+            "description": "One item per enrolled student and prerequisite she did not complete, in the order of the body and then of the name of the course.",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentWarningResponseDto"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["enrolled", "skipped", "warnings"],
+        "type": "object"
+      },
+      "EnrollmentClassRefResponseDto": {
+        "properties": {
+          "code": {
+            "example": "INFO-A",
+            "type": "string"
+          },
+          "edition": {
+            "$ref": "#/components/schemas/EditionResponseDto"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000c1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": null,
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["id", "code", "name", "edition"],
+        "type": "object"
+      },
+      "EnrollmentResponseDto": {
+        "properties": {
+          "classId": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000c1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "enrolledAt": {
+            "example": "2026-03-03T13:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id of the enrollment.",
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentStatus"
+              }
+            ],
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "example": "active"
+          },
+          "statusChangedAt": {
+            "description": "From when the current status holds, YYYY-MM-DD in America/Sao_Paulo: the day of the enrollment, or the effectiveDate of the last change.",
+            "example": "2026-03-03",
+            "format": "date",
+            "type": "string"
+          },
+          "statusReason": {
+            "description": "The reason of the last change of status; null without one.",
+            "example": "Mudou de cidade.",
+            "nullable": true,
+            "type": "string"
+          },
+          "student": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "The enrolled student."
+          }
+        },
+        "required": [
+          "id",
+          "classId",
+          "student",
+          "status",
+          "enrolledAt",
+          "statusChangedAt",
+          "statusReason"
+        ],
+        "type": "object"
+      },
+      "EnrollmentSkipReason": {
+        "enum": ["ALREADY_ENROLLED"],
+        "type": "string"
+      },
+      "EnrollmentSkippedResponseDto": {
+        "properties": {
+          "enrollmentId": {
+            "description": "The enrollment the student already has in the class.",
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentSkipReason"
+              }
+            ],
+            "example": "ALREADY_ENROLLED"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentStatus"
+              }
+            ],
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "example": "dropped"
+          },
+          "studentId": {
+            "example": "01999a3e-7c1b-7000-8000-000000000001",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": ["studentId", "reason", "enrollmentId", "status"],
+        "type": "object"
+      },
+      "EnrollmentStatus": {
+        "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+        "enum": ["active", "dropped", "completed"],
+        "type": "string"
+      },
+      "EnrollmentStudentResponseDto": {
+        "properties": {
+          "accessibilityNeed": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccessibilityNeed"
+              }
+            ],
+            "description": "null when the caller cannot see students (students.view).",
+            "example": "none",
+            "nullable": true
+          },
+          "age": {
+            "description": "Whole years today in America/Sao_Paulo.",
+            "example": 68,
+            "type": "integer"
+          },
+          "id": {
+            "description": "Person id of the student.",
+            "example": "01999a3e-7c1b-7000-8000-000000000001",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": "Maria Silva Santos",
+            "type": "string"
+          },
+          "phone": {
+            "description": "Digits only. Null when the student has none or when the caller cannot see students (students.view).",
+            "example": "43999990000",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "age", "phone", "accessibilityNeed"],
+        "type": "object"
+      },
+      "EnrollmentWarningCode": {
+        "enum": ["PREREQUISITE_NOT_COMPLETED"],
+        "type": "string"
+      },
+      "EnrollmentWarningResponseDto": {
+        "properties": {
+          "code": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentWarningCode"
+              }
+            ],
+            "example": "PREREQUISITE_NOT_COMPLETED"
+          },
+          "courseId": {
+            "description": "The prerequisite course the student did not complete.",
+            "example": "01999a3e-7c1b-7000-8000-000000000003",
+            "format": "uuid",
+            "type": "string"
+          },
+          "courseName": {
+            "example": "Informática Básica",
+            "type": "string"
+          },
+          "studentId": {
+            "example": "01999a3e-7c1b-7000-8000-000000000001",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": ["studentId", "code", "courseId", "courseName"],
+        "type": "object"
+      },
       "GenerateClassLessonsDto": {
         "properties": {
           "endTime": {
@@ -2678,6 +3211,29 @@
         "enum": ["access", "password_reset"],
         "type": "string"
       },
+      "JustifyAbsenceDto": {
+        "description": "The justification of an absence: why, and optionally a note. Justifying again replaces it; the same reason and note change nothing. The absence stays an absence.",
+        "properties": {
+          "note": {
+            "description": "A note about the absence. Optional; trimmed, and empty becomes null. Omitted or empty, it clears the note of a previous justification: justifying replaces it as a whole. It may carry health data: it never goes to an event, and only whoever takes the roll call of the lesson reads it.",
+            "example": "Consulta médica marcada.",
+            "maxLength": 500,
+            "nullable": true,
+            "type": "string"
+          },
+          "reason": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AbsenceJustificationReason"
+              }
+            ],
+            "description": "Why the student missed the lesson: health or other (the note says more). The front translates by the value.",
+            "example": "health"
+          }
+        },
+        "required": ["reason"],
+        "type": "object"
+      },
       "LessonAssignmentResponseDto": {
         "properties": {
           "cancelledAt": {
@@ -2796,6 +3352,20 @@
         ],
         "type": "object"
       },
+      "LessonAttendanceDto": {
+        "properties": {
+          "pending": {
+            "description": "True when the roll call is pending: the lesson is not cancelled, it has ended (its day is before today, or it is today and its endTime has come, in America/Sao_Paulo) and students.signed is below students.total. False for a lesson without students, and without the attendance module.",
+            "example": false,
+            "type": "boolean"
+          },
+          "students": {
+            "$ref": "#/components/schemas/LessonStudentAttendanceCountDto"
+          }
+        },
+        "required": ["students", "pending"],
+        "type": "object"
+      },
       "LessonClassRefDto": {
         "properties": {
           "archivedAt": {
@@ -2910,6 +3480,11 @@
       },
       "LessonListItemResponseDto": {
         "properties": {
+          "attendancePending": {
+            "description": "True when the roll call of the students is pending, the \"Chamada pendente\" of the row (GUS-166): the lesson is not cancelled, it has ended and some student has no attendance. The same rule as attendance.pending of the lesson in full. False without the attendance module.",
+            "example": false,
+            "type": "boolean"
+          },
           "belowExpectedMonitors": {
             "description": "True when the lesson has fewer CONFIRMED monitors than it expects (F4.4, F5.4, RF-050): a pending monitor does not count. False for a cancelled lesson and when the lesson does not say how many monitors it expects (expectedMonitors null, so nothing is missing). The teacher is not part of it: a lesson without a teacher shows a dash in teacher. It is the same rule as belowExpectedMonitors of the lesson in full.",
             "example": false,
@@ -2977,7 +3552,8 @@
           "title",
           "status",
           "teacher",
-          "belowExpectedMonitors"
+          "belowExpectedMonitors",
+          "attendancePending"
         ],
         "type": "object"
       },
@@ -3128,6 +3704,82 @@
           "usedIn"
         ],
         "type": "object"
+      },
+      "LessonPlanListItemDto": {
+        "properties": {
+          "archivedAt": {
+            "description": "Null while the plan is not archived (RN-27).",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          },
+          "contents": {
+            "description": "The contents of the plan, in their order.",
+            "example": ["Teclado e mouse", "Janelas do sistema"],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "courseCount": {
+            "description": "Courses whose sequence has the plan, archived courses included: the same count as the sequence and the detail of the plan.",
+            "example": 2,
+            "minimum": 0,
+            "type": "number"
+          },
+          "expectedDurationMinutes": {
+            "example": 90,
+            "type": "number"
+          },
+          "id": {
+            "example": "01999a3e-7c1b-7000-8000-000000000010",
+            "format": "uuid",
+            "type": "string"
+          },
+          "materialUrl": {
+            "example": "https://drive.google.com/file/d/exemplo/view",
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonPlanListStatus"
+              }
+            ],
+            "description": "archived when the plan is archived; else in_use when courseCount > 0, unused when not.",
+            "example": "in_use"
+          },
+          "title": {
+            "example": "Teclado, mouse e janelas",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "contents",
+          "expectedDurationMinutes",
+          "materialUrl",
+          "courseCount",
+          "status",
+          "archivedAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "LessonPlanListSort": {
+        "enum": ["title", "updatedAt"],
+        "type": "string"
+      },
+      "LessonPlanListStatus": {
+        "description": "archived when the plan is archived; else in_use when courseCount > 0, unused when not.",
+        "enum": ["in_use", "unused", "archived"],
+        "type": "string"
       },
       "LessonPlanRefDto": {
         "properties": {
@@ -3285,6 +3937,10 @@
         ],
         "type": "object"
       },
+      "LessonPlanUsageFilter": {
+        "enum": ["in_use", "unused", "archived"],
+        "type": "string"
+      },
       "LessonPlanUsageResponseDto": {
         "properties": {
           "courses": {
@@ -3374,6 +4030,14 @@
       },
       "LessonResponseDto": {
         "properties": {
+          "attendance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LessonAttendanceDto"
+              }
+            ],
+            "description": "The roll call of the students of the lesson (F6.1, GUS-166): how many students it has, how many are signed, and whether it is pending. Zeros and pending false without the attendance module."
+          },
           "belowExpectedMonitors": {
             "description": "True when fewer monitors are confirmed than expectedMonitors. Confirmed only: a pending monitor does not count. False for a cancelled lesson and when expectedMonitors is null (nothing is expected). The teacher is not part of it: read coverage.teacher.",
             "example": false,
@@ -3572,6 +4236,7 @@
           "expectedMonitors",
           "coverage",
           "belowExpectedMonitors",
+          "attendance",
           "subject",
           "postNotes",
           "status",
@@ -3591,6 +4256,22 @@
         "description": "Status of the lesson (F4.5). A lesson that was rescheduled keeps its status. cancelled is final: the lesson stays, with its reason, and cannot be edited or rescheduled.",
         "enum": ["planned", "confirmed", "done", "cancelled"],
         "type": "string"
+      },
+      "LessonStudentAttendanceCountDto": {
+        "properties": {
+          "signed": {
+            "description": "The students with an attendance signed in the lesson, present or absent. Never above total. 0 without the attendance module.",
+            "example": 10,
+            "type": "integer"
+          },
+          "total": {
+            "description": "The students of the roll call of the lesson: the enrollments of the class the lesson expects (made before the lesson ended, and active from its day or before, or dropped or completed only after its day), plus the ones with an attendance signed in the lesson whatever their status today. 0 without the attendance module.",
+            "example": 12,
+            "type": "integer"
+          }
+        },
+        "required": ["total", "signed"],
+        "type": "object"
       },
       "LessonTeacherCoverageDto": {
         "properties": {
@@ -5478,9 +6159,52 @@
         "enum": ["member", "director", "coordinator", "superadmin"],
         "type": "string"
       },
+      "RollCallEnrollmentResponseDto": {
+        "properties": {
+          "id": {
+            "description": "Id of the enrollment: the enrollmentId the PUT takes.",
+            "example": "01952ef7-0000-7000-8000-000000000010",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentStatus"
+              }
+            ],
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "example": "active"
+          },
+          "statusChangedAt": {
+            "description": "From when the current status holds, YYYY-MM-DD in America/Sao_Paulo.",
+            "example": "2026-03-03",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": ["id", "status", "statusChangedAt"],
+        "type": "object"
+      },
       "Scope": {
         "enum": ["all", "own", "department", "allocated", "lessonTeacher", "none"],
         "type": "string"
+      },
+      "SignStudentAttendanceDto": {
+        "description": "The attendance of enrollments of the roll call of the lesson of the URL, from 1 to 100 entries, all or none, signed by the actor at one instant. The same status of an attendance already signed is a no-op; another status is 409 STUDENT_ATTENDANCE_ALREADY_SIGNED: a signed attendance changes through correctStudentAttendance, with a reason.",
+        "properties": {
+          "entries": {
+            "description": "From 1 to 100 entries. The same enrollment twice, in any letter case, is 400 DUPLICATE_ENROLLMENT.",
+            "items": {
+              "$ref": "#/components/schemas/StudentAttendanceEntryDto"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["entries"],
+        "type": "object"
       },
       "SkippedLessonPlanResponseDto": {
         "properties": {
@@ -5507,6 +6231,155 @@
           }
         },
         "required": ["sequenceOrder", "lessonPlanId", "title", "archivedAt"],
+        "type": "object"
+      },
+      "StudentAttendanceEntryDto": {
+        "properties": {
+          "enrollmentId": {
+            "description": "An enrollment of the roll call of the lesson of the URL (enrollment.id of the list); any other is 400 ENROLLMENT_NOT_IN_ROLL_CALL.",
+            "example": "01952ef7-0000-7000-8000-000000000010",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StudentAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            "example": "present"
+          }
+        },
+        "required": ["enrollmentId", "status"],
+        "type": "object"
+      },
+      "StudentAttendanceResponseDto": {
+        "description": "The attendance of a student at a lesson: the status, who signed it first and when, whether the absence is justified, and the history of its corrections.",
+        "properties": {
+          "corrections": {
+            "description": "The corrections of the attendance, the oldest first. Empty when it has none.",
+            "items": {
+              "$ref": "#/components/schemas/AttendanceCorrectionResponseDto"
+            },
+            "type": "array"
+          },
+          "enrollmentId": {
+            "example": "01952ef7-0000-7000-8000-000000000010",
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "description": "The id the PATCH routes take (justifyAbsence, correctStudentAttendance).",
+            "example": "01999a3e-7c1b-7000-8000-000000000a11",
+            "format": "uuid",
+            "type": "string"
+          },
+          "justification": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AbsenceJustificationResponseDto"
+              }
+            ],
+            "description": "Null when not justified, or when the caller does not take the roll call of the lesson (it may carry health data): read justified.",
+            "nullable": true,
+            "type": "object"
+          },
+          "justified": {
+            "description": "Whether the absence is justified. Always told, also to whoever does not see the justification itself.",
+            "example": true,
+            "type": "boolean"
+          },
+          "lessonId": {
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "signedAt": {
+            "description": "When it was signed the first time.",
+            "example": "2026-03-10T14:05:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "signedBy": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "Who signed the attendance the first time; a correction does not change it. Null when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StudentAttendanceStatus"
+              }
+            ],
+            "description": "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+            "example": "absent"
+          }
+        },
+        "required": [
+          "id",
+          "lessonId",
+          "enrollmentId",
+          "status",
+          "signedBy",
+          "signedAt",
+          "justified",
+          "justification",
+          "corrections"
+        ],
+        "type": "object"
+      },
+      "StudentAttendanceStatus": {
+        "description": "present or absent. A justified absence is still absent: it counts as an absence in the attendance rate. Students generate no hours.",
+        "enum": ["present", "absent"],
+        "type": "string"
+      },
+      "StudentByEnrollmentItemResponseDto": {
+        "properties": {
+          "accessibilityNeed": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AccessibilityNeed"
+              }
+            ],
+            "description": "Category of what the student needs in class, never a diagnosis (RNF-13).",
+            "example": "none"
+          },
+          "age": {
+            "description": "Whole years today in America/Sao_Paulo.",
+            "example": 68,
+            "type": "integer"
+          },
+          "currentClasses": {
+            "description": "The classes where the student has an active enrollment, the most recent edition first.",
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentClassRefResponseDto"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Person id of the student.",
+            "example": "01999a3e-7c1b-7000-8000-000000000001",
+            "format": "uuid",
+            "type": "string"
+          },
+          "name": {
+            "example": "Maria Silva Santos",
+            "type": "string"
+          },
+          "phone": {
+            "description": "Digits only.",
+            "example": "43999990000",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["id", "name", "age", "phone", "accessibilityNeed", "currentClasses"],
         "type": "object"
       },
       "StudentDetailDto": {
@@ -5642,6 +6515,105 @@
           "archivedAt",
           "archiveReason"
         ],
+        "type": "object"
+      },
+      "StudentEnrollmentItemResponseDto": {
+        "properties": {
+          "attendanceRate": {
+            "description": "The attendance rate of the enrollment (F6.3): its presences over the roll calls recorded for it in lessons that were not cancelled, from 0 to 1 with two decimals. A justified absence counts as an absence. Null while no roll call of it is recorded, and without the attendance module.",
+            "example": 0.75,
+            "maximum": 1,
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "class": {
+            "$ref": "#/components/schemas/EnrollmentClassRefResponseDto"
+          },
+          "course": {
+            "$ref": "#/components/schemas/ClassCourseResponseDto"
+          },
+          "enrolledAt": {
+            "example": "2025-08-04T13:00:00.000Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Id of the enrollment.",
+            "example": "01999a3e-7c1b-7000-8000-0000000000f1",
+            "format": "uuid",
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentStatus"
+              }
+            ],
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "example": "completed"
+          },
+          "statusChangedAt": {
+            "description": "From when the current status holds, YYYY-MM-DD in America/Sao_Paulo.",
+            "example": "2025-12-12",
+            "format": "date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "enrolledAt",
+          "statusChangedAt",
+          "class",
+          "course",
+          "attendanceRate"
+        ],
+        "type": "object"
+      },
+      "StudentEnrollmentSituation": {
+        "enum": ["enrolled", "not_enrolled"],
+        "type": "string"
+      },
+      "StudentEnrollmentsResponseDto": {
+        "properties": {
+          "enrollments": {
+            "description": "Every enrollment that is not removed, the newest first; archived classes too.",
+            "items": {
+              "$ref": "#/components/schemas/StudentEnrollmentItemResponseDto"
+            },
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/StudentEnrollmentsSummaryResponseDto"
+          }
+        },
+        "required": ["enrollments", "summary"],
+        "type": "object"
+      },
+      "StudentEnrollmentsSummaryResponseDto": {
+        "properties": {
+          "activeClasses": {
+            "description": "Active enrollments.",
+            "example": 1,
+            "type": "integer"
+          },
+          "completedCourses": {
+            "description": "One item per course with a completed enrollment, by completedAt and then name.",
+            "items": {
+              "$ref": "#/components/schemas/CompletedCourseResponseDto"
+            },
+            "type": "array"
+          },
+          "firstEnrollmentAt": {
+            "description": "The earliest enrolledAt; null without enrollments.",
+            "example": "2025-08-04T13:00:00.000Z",
+            "format": "date-time",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["activeClasses", "completedCourses", "firstEnrollmentAt"],
         "type": "object"
       },
       "StudentResponseDto": {
@@ -5790,6 +6762,36 @@
         ],
         "type": "object"
       },
+      "StudentRollCallItemResponseDto": {
+        "description": "A student of the roll call of the lesson: an enrollment the lesson expects (made before it ended and in force on its day), or one already signed in it, with its status as of today, the student and the attendance.",
+        "properties": {
+          "attendance": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StudentAttendanceResponseDto"
+              }
+            ],
+            "description": "The attendance of the student at the lesson. Null while it is not signed.",
+            "nullable": true,
+            "type": "object"
+          },
+          "enrollment": {
+            "$ref": "#/components/schemas/RollCallEnrollmentResponseDto"
+          },
+          "student": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonRefDto"
+              }
+            ],
+            "description": "The student: id and name only. Null when the person was removed.",
+            "nullable": true,
+            "type": "object"
+          }
+        },
+        "required": ["enrollment", "student", "attendance"],
+        "type": "object"
+      },
       "UpdateAccessEnabledDto": {
         "properties": {
           "enabled": {
@@ -5815,7 +6817,7 @@
         "type": "object"
       },
       "UpdateClassDto": {
-        "description": "Every field is optional: omit to keep. courseId moves the class to another course, only while it is planned and has no active enrollments. There is no category: the class shows the one of its course, and a category in the body is ignored.",
+        "description": "Every field is optional: omit to keep. courseId moves the class to another course, only while it is planned and has no enrollments (active, dropped or completed; a removed one does not count). There is no category: the class shows the one of its course, and a category in the body is ignored.",
         "properties": {
           "capacity": {
             "description": "Omit to keep. Never null. Number of seats. It cannot go below the number of active enrollments (409 CAPACITY_BELOW_ENROLLED).",
@@ -5831,7 +6833,7 @@
             "type": "string"
           },
           "courseId": {
-            "description": "Omit to keep. Never null. Id of another course. It changes only while the class is planned and has no active enrollments (409 COURSE_CHANGE_NOT_ALLOWED), and the new course must be active (400 COURSE_NOT_FOUND, 409 COURSE_ARCHIVED). The course the class already has is not a change.",
+            "description": "Omit to keep. Never null. Id of another course. It changes only while the class is planned and has no enrollments, in any status (409 COURSE_CHANGE_NOT_ALLOWED), and the new course must be active (400 COURSE_NOT_FOUND, 409 COURSE_ARCHIVED). The course the class already has is not a change.",
             "example": "01999a3e-7c1b-7000-8000-000000000001",
             "format": "uuid",
             "type": "string"
@@ -5923,6 +6925,34 @@
             "uniqueItems": true
           }
         },
+        "type": "object"
+      },
+      "UpdateEnrollmentStatusDto": {
+        "properties": {
+          "effectiveDate": {
+            "description": "From when the new status holds (\"A partir de\"), YYYY-MM-DD, between the day of the enrollment and today (America/Sao_Paulo), both included.",
+            "example": "2026-04-10",
+            "format": "date",
+            "type": "string"
+          },
+          "reason": {
+            "description": "Optional reason; it replaces the reason of the last change, and a change without one clears it. Never in a listing nor in an event (RNF-13).",
+            "example": "Mudou de cidade.",
+            "maxLength": 500,
+            "nullable": true,
+            "type": "string"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentStatus"
+              }
+            ],
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "example": "dropped"
+          }
+        },
+        "required": ["status", "effectiveDate"],
         "type": "object"
       },
       "UpdateLessonDto": {
@@ -7478,6 +8508,185 @@
       }
     },
     "/classes": {
+      "get": {
+        "operationId": "listClasses",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Search by the code or the name of the class, or by the name of its course, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "info",
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the classes of this edition.",
+            "in": "query",
+            "name": "editionId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the classes of this course.",
+            "in": "query",
+            "name": "courseId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the classes whose course has this category (RN-14).",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CourseCategory"
+            }
+          },
+          {
+            "description": "One or more statuses, comma separated (planned, in_progress, completed, cancelled). Omitted lists every status.",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "example": "planned,in_progress",
+              "type": "string"
+            }
+          },
+          {
+            "description": "true lists only the archived classes. Omitted (or false) lists only the classes that are not archived (RN-27).",
+            "in": "query",
+            "name": "archived",
+            "required": false,
+            "schema": {
+              "example": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "startDate puts the class that starts last first; code is alphabetical.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/ClassListSort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/ClassListItemDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      },
       "post": {
         "operationId": "createClass",
         "parameters": [],
@@ -7811,7 +9020,7 @@
                 }
               }
             },
-            "description": "CLASS_ARCHIVED | COURSE_CHANGE_NOT_ALLOWED | COURSE_ARCHIVED | CLASS_CODE_TAKEN | CAPACITY_BELOW_ENROLLED (the last one from GUS-108, when enrollments exist)"
+            "description": "CLASS_ARCHIVED | COURSE_CHANGE_NOT_ALLOWED | COURSE_ARCHIVED | CLASS_CODE_TAKEN | CAPACITY_BELOW_ENROLLED"
           },
           "500": {
             "content": {
@@ -7911,7 +9120,380 @@
                 }
               }
             },
-            "description": "CLASS_HAS_ACTIVE_ENROLLMENTS (from GUS-108, when enrollments exist)"
+            "description": "CLASS_HAS_ACTIVE_ENROLLMENTS"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      }
+    },
+    "/classes/{id}/available-students": {
+      "get": {
+        "operationId": "listAvailableStudents",
+        "parameters": [
+          {
+            "description": "Id of the class.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Part of the name of the student, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "Maria",
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/AvailableStudentItemResponseDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "CLASS_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      }
+    },
+    "/classes/{id}/enrollments": {
+      "get": {
+        "operationId": "listClassEnrollments",
+        "parameters": [
+          {
+            "description": "Id of the class.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Part of the name of the student, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "Maria",
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "description": "active, dropped or completed. Only active enrollments take a seat of the class; the completed ones are the courses the student finished (RN-16).",
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EnrollmentStatus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/ClassEnrollmentItemResponseDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "CLASS_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      },
+      "post": {
+        "operationId": "enrollStudents",
+        "parameters": [
+          {
+            "description": "Id of the class.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnrollStudentsDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollStudentsResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | DUPLICATE_STUDENT | STUDENT_NOT_FOUND (the last two with details on studentIds.<i>)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "CLASS_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "CLASS_ARCHIVED | CLASS_CLOSED | STUDENT_ARCHIVED (details on studentIds.<i>) | CLASS_FULL | ALREADY_ENROLLED. CLASS_FULL carries the seats left as a decimal string in details[0].message, with details[0].field = studentIds."
           },
           "500": {
             "content": {
@@ -9441,6 +11023,329 @@
         "tags": ["classes"]
       }
     },
+    "/enrollments/students": {
+      "get": {
+        "operationId": "listStudentsByEnrollment",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Part of the name of the student, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "Maria",
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the enrollments of this class. An id that is not a class answers no one enrolled and everybody not enrolled.",
+            "in": "query",
+            "name": "classId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "enrolled: students with an active enrollment (in classId, or in any class); not_enrolled: students not archived without one. Omitted = enrolled.",
+            "in": "query",
+            "name": "situation",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/StudentEnrollmentSituation"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/StudentByEnrollmentItemResponseDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      }
+    },
+    "/enrollments/{id}": {
+      "delete": {
+        "operationId": "removeEnrollment",
+        "parameters": [
+          {
+            "description": "Id of the enrollment.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Removed."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ENROLLMENT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "CLASS_ARCHIVED | ENROLLMENT_NOT_REMOVABLE (not active, or with an attendance signed: change its status instead)"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      },
+      "patch": {
+        "operationId": "updateEnrollmentStatus",
+        "parameters": [
+          {
+            "description": "Id of the enrollment.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEnrollmentStatusDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | EFFECTIVE_DATE_IN_FUTURE | EFFECTIVE_DATE_BEFORE_ENROLLMENT (the last two with details on effectiveDate)"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "ENROLLMENT_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "CLASS_ARCHIVED | CLASS_CLOSED | STUDENT_ARCHIVED | CLASS_FULL. The last three only going back to active; CLASS_FULL carries the seats left as a decimal string in details[0].message, with details[0].field = status."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "check",
@@ -10501,6 +12406,188 @@
       }
     },
     "/lesson-plans": {
+      "get": {
+        "operationId": "listLessonPlans",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "example": 1,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "example": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Search by title, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "teclado",
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "description": "Only the plans with a content that contains this text, ignoring case and accents.",
+            "in": "query",
+            "name": "content",
+            "required": false,
+            "schema": {
+              "example": "janela",
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "description": "in_use: not archived and in at least one course; unused: not archived and in no course; archived: only the archived ones. Omitted lists every plan that is not archived.",
+            "in": "query",
+            "name": "usage",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LessonPlanUsageFilter"
+            }
+          },
+          {
+            "description": "Only the plans of at least this many minutes.",
+            "in": "query",
+            "name": "minDuration",
+            "required": false,
+            "schema": {
+              "example": 60,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Only the plans of at most this many minutes. Not below minDuration.",
+            "in": "query",
+            "name": "maxDuration",
+            "required": false,
+            "schema": {
+              "example": 120,
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "description": "Leaves out the plans that are in the sequence of this course: the picker of the sequence sends it.",
+            "in": "query",
+            "name": "excludeCourseId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "title is alphabetical; updatedAt puts the plan changed last first.",
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LessonPlanListSort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/LessonPlanListItemDto"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 20,
+                      "type": "integer"
+                    },
+                    "page": {
+                      "example": 1,
+                      "type": "integer"
+                    },
+                    "total": {
+                      "example": 42,
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["data", "total", "page", "limit"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["catalog"]
+      },
       "post": {
         "operationId": "createLessonPlan",
         "parameters": [],
@@ -10534,6 +12621,90 @@
               }
             },
             "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["catalog"]
+      }
+    },
+    "/lesson-plans/contents": {
+      "get": {
+        "operationId": "listLessonPlanContents",
+        "parameters": [
+          {
+            "description": "Only the contents that contain this text, ignoring case and accents.",
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "example": "jan",
+              "maxLength": 100,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Up to 20 distinct contents of the plans that are not archived, for the suggestions of the filter Conteúdo."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
           },
           "401": {
             "content": {
@@ -12143,6 +14314,190 @@
               }
             },
             "description": "LESSON_CANCELLED | LESSON_IN_FUTURE"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      }
+    },
+    "/lessons/{id}/attendance/students": {
+      "get": {
+        "operationId": "listStudentAttendance",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudentRollCallItemResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The roll call of the lesson, by the name of the student: the enrollments the lesson expects (made before it ended, and active from its day or before, or dropped or completed only after it), plus the ones already signed in it, with the status of each enrollment and the attendance (null while not signed). Not paginated."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      },
+      "put": {
+        "operationId": "signStudentAttendance",
+        "parameters": [
+          {
+            "description": "Id of the lesson.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignStudentAttendanceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudentRollCallItemResponseDto"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The roll call of the lesson after the commit, the same list as the GET. All or none: any error writes nothing."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | DUPLICATE_ENROLLMENT | ENROLLMENT_NOT_IN_ROLL_CALL"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_CANCELLED | LESSON_IN_FUTURE | CLASS_ARCHIVED | STUDENT_ATTENDANCE_ALREADY_SIGNED"
           },
           "500": {
             "content": {
@@ -14330,6 +16685,206 @@
         "tags": ["people"]
       }
     },
+    "/student-attendance/{id}/correct": {
+      "patch": {
+        "operationId": "correctStudentAttendance",
+        "parameters": [
+          {
+            "description": "Id of the attendance of the student (attendance.id of the roll call).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorrectStudentAttendanceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAttendanceResponseDto"
+                }
+              }
+            },
+            "description": "The attendance after the commit, with the new correction last in corrections."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED | STUDENT_ATTENDANCE_STATUS_UNCHANGED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "STUDENT_ATTENDANCE_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_CANCELLED | CLASS_ARCHIVED"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      }
+    },
+    "/student-attendance/{id}/justify": {
+      "patch": {
+        "operationId": "justifyAbsence",
+        "parameters": [
+          {
+            "description": "Id of the attendance of the student (attendance.id of the roll call).",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JustifyAbsenceDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentAttendanceResponseDto"
+                }
+              }
+            },
+            "description": "The attendance after the commit, with the justification. The same reason and note again change nothing."
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "VALIDATION_FAILED"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "FORBIDDEN_SCOPE"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "STUDENT_ATTENDANCE_NOT_FOUND"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "LESSON_CANCELLED | CLASS_ARCHIVED | STUDENT_ATTENDANCE_NOT_ABSENT"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["attendance"]
+      }
+    },
     "/students": {
       "post": {
         "operationId": "createStudent",
@@ -14673,6 +17228,16 @@
             },
             "description": "STUDENT_NOT_FOUND"
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "STUDENT_HAS_ACTIVE_ENROLLMENTS"
+          },
           "500": {
             "content": {
               "application/json": {
@@ -14685,6 +17250,86 @@
           }
         },
         "tags": ["people"]
+      }
+    },
+    "/students/{id}/enrollments": {
+      "get": {
+        "operationId": "listStudentEnrollments",
+        "parameters": [
+          {
+            "description": "Person id of the student.",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudentEnrollmentsResponseDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": "STUDENT_NOT_FOUND"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": ["classes"]
       }
     },
     "/students/{id}/unarchive": {

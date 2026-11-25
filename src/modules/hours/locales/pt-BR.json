@@ -1,0 +1,359 @@
+{
+  "entries": {
+    "close": "Fechar",
+    "retry": "Tentar de novo",
+    "loadError": "Não foi possível carregar as suas horas.",
+    "categories": {
+      "lesson": "Aula",
+      "planning": "Planejamento",
+      "event": "Evento",
+      "management": "Gestão",
+      "meeting": "Reunião",
+      "support": "Atendimento",
+      "other": "Outros"
+    },
+    "status": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "adjusted": "Ajustado",
+      "rejected": "Rejeitado"
+    },
+    "columns": {
+      "date": "Data",
+      "activity": "Atividade",
+      "category": "Categoria",
+      "declared": "Declarado",
+      "validated": "Validado",
+      "status": "Status"
+    },
+    "summary": {
+      "title": "Resumo de horas",
+      "total": "Total de horas lançadas",
+      "validated": "Horas validadas",
+      "pending": "Pendentes de validação",
+      "adjustedOrRejected": "Ajustadas / rejeitadas",
+      "loading": "Carregando as suas horas…"
+    },
+    "recent": {
+      "title": "Meus lançamentos",
+      "viewStatement": "Ver extrato completo",
+      "empty": "Nenhum lançamento ainda.",
+      "loading": "Carregando os seus lançamentos…"
+    },
+    "byCategory": {
+      "title": "Horas por categoria",
+      "empty": "Nenhuma hora lançada em {{month}}.",
+      "loading": "Carregando as horas por categoria…",
+      "columns": {
+        "category": "Categoria",
+        "hours": "Horas",
+        "pending": "Pendentes"
+      },
+      "noPending": "Sem pendência",
+      "pendingLabel": {
+        "hours_one": "{{count}} hora pendente",
+        "hours_many": "{{count}} de horas pendentes",
+        "hours_other": "{{count}} horas pendentes",
+        "minutes_one": "{{count}} minuto pendente",
+        "minutes_many": "{{count}} de minutos pendentes",
+        "minutes_other": "{{count}} minutos pendentes",
+        "hourPart_one": "{{count}} hora",
+        "hourPart_many": "{{count}} de horas",
+        "hourPart_other": "{{count}} horas",
+        "minutePart_one": "{{count}} minuto",
+        "minutePart_many": "{{count}} de minutos",
+        "minutePart_other": "{{count}} minutos",
+        "hoursAndMinutes": "{{hours}} e {{minutes}} pendentes"
+      }
+    }
+  },
+  "logHours": {
+    "open": "Lançar horas",
+    "title": "Lançar horas",
+    "titleOnBehalf": "Lançar horas para {{name}}",
+    "onBehalfNotice": "Você está lançando em nome de {{name}}. Fica registrado quem fez o lançamento, e ele entra como pendente de validação da coordenação.",
+    "activity": "Atividade",
+    "activityPlaceholder": "Ex.: Preparação de material da aula 12",
+    "category": "Categoria",
+    "categoryPlaceholder": "Selecione a categoria",
+    "date": "Data",
+    "hours": "Horas",
+    "hoursPlaceholder": "Ex.: 2h30",
+    "notes": "Observações",
+    "cancel": "Cancelar",
+    "submit": "Lançar horas",
+    "submitting": "Lançando…",
+    "toastTitle": "Horas lançadas",
+    "toastTitleOnBehalf": "Horas lançadas para {{name}}",
+    "toastDescription": "{{hours}} em {{date}}, aguardando a validação da coordenação.",
+    "fieldErrors": {
+      "activityRequired": "Descreva a atividade.",
+      "activityTooLong": "Use no máximo 200 caracteres.",
+      "categoryRequired": "Escolha a categoria.",
+      "dateRequired": "Informe a data.",
+      "dateInFuture": "A data não pode ser depois de hoje.",
+      "dateTooOld": "Informe uma data a partir de 01/01/2000.",
+      "hoursRequired": "Informe as horas.",
+      "hoursFormat": "Use o formato 2h30.",
+      "hoursRange": "Informe de 0h01 a 24h.",
+      "notesTooLong": "Use no máximo 2.000 caracteres.",
+      "serverInvalid": "Confira este campo."
+    },
+    "errors": {
+      "network": "Não foi possível lançar as horas. Verifique a conexão e tente de novo.",
+      "forbidden": "Você não pode lançar horas para esta pessoa.",
+      "forbiddenOwn": "Você não pode lançar horas.",
+      "memberNotFound": "Não encontramos este membro. Atualize a página e tente de novo.",
+      "selfOnBehalf": "Para lançar as suas próprias horas, use + Lançar horas no Meu perfil.",
+      "unknown": "Não foi possível lançar as horas. Tente de novo."
+    }
+  },
+  "myEntries": {
+    "title": "Meus lançamentos",
+    "columns": {
+      "actions": "Ações"
+    },
+    "reviewNote": {
+      "adjusted": "Ajustado pela coordenação: “{{note}}”",
+      "rejected": "Rejeitado pela coordenação: “{{note}}”"
+    },
+    "remove": "Remover",
+    "removeLabel": "Remover o lançamento de {{date}}: {{activity}}",
+    "loading": "Carregando os seus lançamentos…",
+    "emptyTitle": "Nenhum lançamento ainda",
+    "emptyDescription": "Use + Lançar horas no seu perfil para registrar horas de planejamento, eventos e gestão.",
+    "errorTitle": "Não foi possível carregar os seus lançamentos",
+    "errorDescription": "Verifique a conexão e tente de novo.",
+    "pagination": {
+      "nav": "Paginação do extrato",
+      "previous": "Página anterior",
+      "next": "Próxima página",
+      "page": "Página {{page}}"
+    }
+  },
+  "removeEntry": {
+    "title": "Remover lançamento",
+    "summary": "{{date}} · {{category}} · {{hours}} declaradas",
+    "pendingLabel": "Pendente de validação",
+    "warningTitle": "Lançamento enviado não pode ser editado.",
+    "warningDescription": "Para corrigir, remova e lance de novo com os dados certos. Só dá para remover enquanto estiver pendente de validação.",
+    "back": "Voltar",
+    "submit": "Remover lançamento",
+    "submitting": "Removendo…",
+    "toastTitle": "Lançamento removido",
+    "toastDescription": "{{activity}} ({{date}}) saiu do seu extrato.",
+    "warnings": {
+      "notPending": "A coordenação já validou este lançamento. Ele não pode mais ser removido.",
+      "attendance": "Horas de aula vêm da presença e não podem ser removidas aqui."
+    },
+    "errors": {
+      "notFound": "Este lançamento não existe mais.",
+      "network": "Não foi possível remover o lançamento. Tente de novo.",
+      "unknown": "Não foi possível remover o lançamento. Tente de novo."
+    }
+  },
+  "bank": {
+    "filters": {
+      "search": "Buscar membro",
+      "searchPlaceholder": "Buscar membro por nome…",
+      "period": "Período",
+      "periodValue": "{{month}}/{{year}}",
+      "view": "Visão",
+      "all": "Todos",
+      "clearMember": "Voltar para Todos"
+    },
+    "export": "Exportar relatório",
+    "exportAll": "Exportar relatório de todos",
+    "exportError": "Não foi possível exportar o relatório.",
+    "exportFileName": "banco-de-horas-{{period}}.csv",
+    "totals": {
+      "label": "Totais do período",
+      "declared": "Total de horas lançadas",
+      "validated": "Horas validadas",
+      "pending": "Pendentes de validação",
+      "adjustedOrRejected": "Ajustadas / rejeitadas"
+    },
+    "members": {
+      "title": "Horas por membro",
+      "caption": "Horas por membro, com departamento, horas lançadas e pendentes",
+      "member": "Membro",
+      "department": "Departamento",
+      "declared": "Lançadas",
+      "pending": "Pendentes",
+      "actions": "Ações",
+      "viewMember": "Ver membro",
+      "viewMemberLabel": "Ver membro {{name}}",
+      "summary": "Mostrando {{shown}} de {{total}} membros, com pendências primeiro",
+      "viewAll": "Ver todos",
+      "noPending": "Sem pendência",
+      "removed": "Membro removido",
+      "loading": "Carregando membros…",
+      "empty": "Nenhum lançamento neste período",
+      "emptyDescription": "Quando os membros lançarem horas, elas aparecem aqui.",
+      "noResults": "Nenhum membro encontrado",
+      "noResultsDescription": "Nenhum membro combina com a busca. Tente outro nome.",
+      "clearSearch": "Limpar busca",
+      "pagination": {
+        "nav": "Páginas dos membros",
+        "previous": "Página anterior",
+        "next": "Próxima página",
+        "page": "Página {{page}}"
+      }
+    },
+    "categories": {
+      "title": "Horas por categoria do membro",
+      "caption": "Horas do membro por categoria, com as pendentes",
+      "category": "Categoria",
+      "hours": "Horas",
+      "pending": "Pendentes",
+      "loading": "Carregando categorias…",
+      "empty": "Nenhum lançamento deste membro no período",
+      "labels": {
+        "lesson": "Aula",
+        "planning": "Planejamento",
+        "event": "Evento",
+        "management": "Gestão",
+        "meeting": "Reunião",
+        "support": "Atendimento",
+        "other": "Outros"
+      }
+    },
+    "states": {
+      "error": "Não foi possível carregar o banco de horas",
+      "errorDescription": "Verifique a conexão e tente de novo. Se o problema continuar, avise a coordenação.",
+      "retry": "Tentar de novo",
+      "memberError": "Não foi possível abrir este membro",
+      "backToAll": "Voltar para Todos"
+    }
+  },
+  "review": {
+    "title": "Lançamentos pendentes de validação ({{count}})",
+    "titlePending": "Lançamentos pendentes de validação",
+    "caption": "Lançamentos pendentes de validação, com data, membro, atividade, categoria e horas",
+    "select": "Seleção",
+    "selectAll": "Selecionar todos desta página",
+    "selectEntry": "Selecionar lançamento de {{name}} em {{date}}",
+    "date": "Data",
+    "member": "Membro",
+    "activity": "Atividade",
+    "category": "Categoria",
+    "hours": "Horas",
+    "actions": "Ações",
+    "selection_one": "{{count}} de {{total}} selecionado · {{hours}}",
+    "selection_other": "{{count}} de {{total}} selecionados · {{hours}}",
+    "clearSelection": "Limpar seleção",
+    "validateSelected": "Validar selecionados ({{count}})",
+    "validate": "Validar",
+    "adjust": "Ajustar",
+    "reject": "Rejeitar",
+    "validateLabel": "Validar lançamento de {{name}} em {{date}}",
+    "adjustLabel": "Ajustar lançamento de {{name}} em {{date}}",
+    "rejectLabel": "Rejeitar lançamento de {{name}} em {{date}}",
+    "validated_one": "{{count}} lançamento validado",
+    "validated_other": "{{count}} lançamentos validados",
+    "validatedDescription": "{{hours}} entraram no banco de horas de {{names}}.",
+    "selfReviewHint": "Você não pode revisar o próprio lançamento.",
+    "errors": {
+      "notPending": "Um dos lançamentos já foi revisado. A lista foi atualizada.",
+      "notFound": "Um dos lançamentos foi removido. A lista foi atualizada.",
+      "selfReview": "Você não pode revisar o próprio lançamento.",
+      "entryGone": "Este lançamento já não está pendente.",
+      "generic": "Não foi possível validar. Tente de novo."
+    },
+    "loading": "Carregando lançamentos…",
+    "empty": "Nenhum lançamento pendente",
+    "emptyDescription": "Quando alguém lançar horas, o lançamento aparece aqui para validar.",
+    "error": "Não foi possível carregar os lançamentos pendentes",
+    "summary": "Mostrando {{shown}} de {{total}} lançamentos",
+    "pagination": {
+      "nav": "Páginas dos lançamentos pendentes",
+      "previous": "Página anterior",
+      "next": "Próxima página",
+      "page": "Página {{page}}"
+    },
+    "entrySummary": {
+      "line": "{{name}} · {{category}} · {{date}}",
+      "loggedBySelf": "Lançado pelo próprio membro em {{date}}",
+      "loggedOnBehalf": "Lançado em nome do membro em {{date}}",
+      "loggedByAttendance": "Registrado pela presença da aula em {{date}}",
+      "pendingSuffix": "pendente de validação"
+    }
+  },
+  "adjust": {
+    "title": "Ajustar lançamento",
+    "close": "Fechar",
+    "declared": "Valor declarado",
+    "newValue": "Novo valor (horas)",
+    "newValuePlaceholder": "Ex.: 2h30",
+    "justification": "Justificativa",
+    "justificationHelp": "Obrigatória. O membro vê este texto no extrato.",
+    "notice": "O valor declarado ({{declared}}) continua registrado ao lado do ajuste. As horas validadas passam a ser {{validated}}.",
+    "noticeDeclaredOnly": "O valor declarado ({{declared}}) continua registrado ao lado do ajuste.",
+    "back": "Voltar",
+    "submit": "Salvar ajuste",
+    "success": "Lançamento ajustado",
+    "successDescription": "{{name}}: {{declared}} declaradas, {{validated}} validadas.",
+    "viewHistory": "Ver histórico",
+    "errors": {
+      "newValueRequired": "Informe o novo valor.",
+      "newValueFormat": "Use o formato 2h ou 2h30.",
+      "newValueRange": "Informe um valor entre 0h01 e {{max}}.",
+      "unchanged": "O novo valor precisa ser diferente do declarado.",
+      "justificationRequired": "Escreva a justificativa.",
+      "tooLong": "Use até {{max}} caracteres.",
+      "generic": "Não foi possível salvar o ajuste. Tente de novo."
+    }
+  },
+  "reject": {
+    "title": "Rejeitar lançamento",
+    "close": "Fechar",
+    "reason": "Motivo da rejeição",
+    "reasonHelp": "Obrigatório. O membro vê este texto no extrato.",
+    "notice": "As {{hours}} não entram no banco de horas. O lançamento fica no histórico como Rejeitado.",
+    "back": "Voltar",
+    "submit": "Rejeitar lançamento",
+    "success": "Lançamento rejeitado",
+    "successDescription": "{{name}} vê o motivo no extrato e pode lançar de novo.",
+    "errors": {
+      "reasonRequired": "Escreva o motivo da rejeição.",
+      "tooLong": "Use até {{max}} caracteres.",
+      "generic": "Não foi possível rejeitar o lançamento. Tente de novo."
+    }
+  },
+  "history": {
+    "title": "Histórico do lançamento",
+    "close": "Fechar",
+    "current": {
+      "pending": "Situação atual: Pendente · declarado {{declared}}",
+      "approved": "Situação atual: Aprovado · declarado {{declared}} · validado {{validated}}",
+      "adjusted": "Situação atual: Ajustado · declarado {{declared}} · validado {{validated}}",
+      "rejected": "Situação atual: Rejeitado · declarado {{declared}}"
+    },
+    "timeline": "Linha do tempo",
+    "when": "{{date}} · {{time}}",
+    "events": {
+      "created": "{{actor}} lançou {{hours}} em {{category}}",
+      "adjusted": "{{actor}} ajustou de {{from}} para {{to}}",
+      "approved": "{{actor}} validou {{hours}}",
+      "rejected": "{{actor}} rejeitou o lançamento",
+      "removed": "{{actor}} removeu o lançamento",
+      "reversed": "As horas foram estornadas"
+    },
+    "details": {
+      "justification": "Justificativa: “{{note}}”",
+      "reason": "Motivo: “{{note}}”",
+      "reversed": "Correção da presença ou aula cancelada."
+    },
+    "statusDetail": {
+      "pending": "Status: pendente de validação",
+      "approved": "Status: aprovado",
+      "adjusted": "Status: ajustado",
+      "rejected": "Status: rejeitado"
+    },
+    "unknownActor": "Alguém",
+    "immutable": "O histórico não pode ser editado nem apagado.",
+    "loading": "Carregando o histórico…",
+    "loadError": "Não foi possível carregar o histórico.",
+    "retry": "Tentar de novo"
+  }
+}

@@ -49,12 +49,12 @@ function LoadingPlaceholder({ label }: { label: string }): ReactElement {
 
 /**
  * The member does not exist, or the id cannot be one: the page says it. The way back to the list is
- * only offered to who can open it (`access.manage`, the permission of `/members` today); the
- * director cannot, and a link to a page of "no access" would not be a way back.
+ * only offered to who can open it (`members.list`, the permission of `/members`); without it a link
+ * to a page of "no access" would not be a way back.
  */
 function MemberNotFound(): ReactElement {
   const { t } = useTranslation("people");
-  const canOpenList = useCan("access.manage");
+  const canOpenList = useCan("members.list");
 
   return (
     <Card title={t("member.notFoundTitle")}>

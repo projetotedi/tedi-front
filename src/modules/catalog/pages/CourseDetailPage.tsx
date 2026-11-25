@@ -10,6 +10,7 @@ import { Alert, Button, Card, Skeleton } from "@shared/ui";
 import { ArchiveCourseDialog } from "../components/ArchiveCourseDialog";
 import { BuildSequenceDialog } from "../components/BuildSequenceDialog";
 import { CourseDataCard } from "../components/CourseDataCard";
+import { CourseFormDialog } from "../components/CourseFormDialog";
 import { CourseDetailHeader } from "../components/CourseDetailHeader";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { CoursePlanCard } from "../components/CoursePlanCard";
@@ -45,7 +46,7 @@ function LoadingPlaceholder({ label }: { label: string }): ReactElement {
   );
 }
 
-/** There is no list of courses to go back to yet, so the page says it and stops. */
+/** The course does not exist: the page says it and stops (the menu leads back to Cursos). */
 function CourseNotFound(): ReactElement {
   const { t } = useTranslation("catalog");
 
@@ -59,11 +60,15 @@ function CourseNotFound(): ReactElement {
 /** The slot for the card "Turmas deste curso": see `CatalogRouteSlots.renderCourseClasses`. */
 type RenderCourseClasses = (courseId: string) => ReactNode;
 
+/** The slot for + Nova turma in the header: see `CatalogRouteSlots.renderNewClassAction`. */
+type RenderNewClassAction = (course: { id: string; isArchived: boolean }) => ReactNode;
+
 interface CourseDetailViewProps {
   /** The id of the route, which is what the cache keys of the course are made from. */
   courseId: string;
   course: CourseDetailDto;
   renderCourseClasses: RenderCourseClasses;
+  renderNewClassAction: RenderNewClassAction;
 }
 
 /**
@@ -74,10 +79,12 @@ function CourseDetailView({
   courseId,
   course,
   renderCourseClasses,
+  renderNewClassAction,
 }: CourseDetailViewProps): ReactElement {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isEditingCourse, setIsEditingCourse] = useState(false);
   const [archiveDialog, setArchiveDialog] = useState<"archive" | "unarchive" | null>(null);
   const [archivedBySave, setArchivedBySave] = useState(false);
   const archivedHintRef = useRef<HTMLParagraphElement>(null);
@@ -109,6 +116,8 @@ function CourseDetailView({
         onDuplicate={() => setIsDuplicating(true)}
         onArchive={() => setArchiveDialog("archive")}
         onUnarchive={() => setArchiveDialog("unarchive")}
+        onEdit={() => setIsEditingCourse(true)}
+        newClassAction={renderNewClassAction({ id: courseId, isArchived })}
       />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
@@ -151,6 +160,15 @@ function CourseDetailView({
         <DuplicateCourseDialog course={course} onClose={() => setIsDuplicating(false)} />
       ) : null}
 
+      {isEditingCourse ? (
+        <CourseFormDialog
+          mode="edit"
+          courseId={courseId}
+          onClose={() => setIsEditingCourse(false)}
+          onCourseArchived={handleCourseArchived}
+        />
+      ) : null}
+
       {archiveDialog === "archive" ? (
         <ArchiveCourseDialog course={course} onClose={() => setArchiveDialog(null)} />
       ) : null}
@@ -172,9 +190,14 @@ function CourseDetailView({
 interface CourseDetailProps {
   courseId: string;
   renderCourseClasses: RenderCourseClasses;
+  renderNewClassAction: RenderNewClassAction;
 }
 
-function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): ReactElement {
+function CourseDetail({
+  courseId,
+  renderCourseClasses,
+  renderNewClassAction,
+}: CourseDetailProps): ReactElement {
   const { t } = useTranslation("catalog");
   const courseQuery = useGetCourse(courseId);
   const course = courseQuery.data;
@@ -203,6 +226,7 @@ function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): Rea
       courseId={courseId}
       course={course}
       renderCourseClasses={renderCourseClasses}
+      renderNewClassAction={renderNewClassAction}
     />
   );
 }
@@ -219,7 +243,8 @@ function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): Rea
  * The one card that has a query of its own is "Turmas deste curso" (`listCourseClasses`), and it
  * keeps the query to itself so that its failure shows only there. It is not drawn by this module:
  * the classes belong to the `classes` module, which `catalog` does not import, so the page calls
- * `renderCourseClasses(courseId)`, the slot that the composition in `app/` fills with that card.
+ * `renderCourseClasses(courseId)`, the slot that the composition in `app/` fills with that card;
+ * + Nova turma, in the header, comes the same way (`renderNewClassAction`).
  * The title of the page is on the topbar (`handle.title` of the route), so there is no `<h1>`.
  *
  * An id that is not a UUID is "not found" at once, with no request. The id is also the `key` of the
@@ -240,14 +265,21 @@ function CourseDetail({ courseId, renderCourseClasses }: CourseDetailProps): Rea
  */
 export function CourseDetailPage({
   renderCourseClasses,
+  renderNewClassAction,
 }: {
   renderCourseClasses: RenderCourseClasses;
+  renderNewClassAction: RenderNewClassAction;
 }): ReactElement {
   const { courseId = "" } = useParams();
 
   if (!isCourseId(courseId)) return <CourseNotFound />;
 
   return (
-    <CourseDetail key={courseId} courseId={courseId} renderCourseClasses={renderCourseClasses} />
+    <CourseDetail
+      key={courseId}
+      courseId={courseId}
+      renderCourseClasses={renderCourseClasses}
+      renderNewClassAction={renderNewClassAction}
+    />
   );
 }

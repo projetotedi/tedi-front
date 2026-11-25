@@ -8,9 +8,11 @@ import {
   type ArchiveDto,
   type ClassesSummaryByCourseResponseDto,
   type CourseDetailDto,
+  type CourseListItemDto,
   type CourseLessonPlanItemResponseDto,
   type CourseLessonPlansResponseDto,
   type CourseResponseDto,
+  type CreateCourseDto,
   type CreateLessonPlanDto,
   type DuplicateCourseDto,
   type LessonPlanDetailDto,
@@ -19,11 +21,17 @@ import {
   type MeResponseDto,
   type PermissionsDto,
   type ReplaceCourseLessonPlansDto,
+  type UpdateCourseDto,
   type UpdateLessonPlanDto,
+} from "@api/generated/model";
+import {
+  LessonPlanListStatus,
+  type LessonPlanListItemDto,
+  type ListLessonPlans200,
 } from "@api/generated/model";
 import { Role } from "@shared/lib/role";
 
-import { MOCK_LESSON_PLANS, type LessonPlanMock } from "../mocks/lesson-plans.mock";
+import { MOCK_LESSON_PLANS, type LessonPlanMock } from "./lesson-plan-catalog";
 
 function permissionsWith(granted: Partial<PermissionsDto>): PermissionsDto {
   return granted as PermissionsDto;
@@ -164,6 +172,8 @@ export function buildSequenceItem(
     ...overrides,
   };
 }
+
+const LESSON_PLAN_CONTENTS_SEGMENT = "contents";
 
 const ARCHIVED_AT = "2026-10-10T13:00:00.000Z";
 
@@ -418,6 +428,8 @@ export function getLessonPlanHandler({
   onCall,
 }: HandlerOptions<IdCall, LessonPlanDetailDto> = {}) {
   return http.get("*/lesson-plans/:id", async ({ params }) => {
+    // The API declares GET /lesson-plans/contents before :id; so does the server of the tests.
+    if (params.id === LESSON_PLAN_CONTENTS_SEGMENT) return undefined;
     onCall?.({ id: String(params.id) });
     if (delay) await delay;
 
@@ -701,6 +713,7 @@ export function getLessonPlansByIdHandler(
   onCall?: (call: IdCall) => void,
 ) {
   return http.get("*/lesson-plans/:id", ({ params }) => {
+    if (params.id === LESSON_PLAN_CONTENTS_SEGMENT) return undefined;
     const id = String(params.id);
     onCall?.({ id });
 
@@ -881,5 +894,221 @@ export function classesSummaryHandler({
           .filter(Boolean)
           .map((courseId) => ({ courseId, total, active: total })),
     );
+  });
+}
+
+/** A line of `GET /courses`: "Informática Básica", basic, active, 6 plans, 12h, no prerequisite. */
+export function buildCourseListItem(overrides: Partial<CourseListItemDto> = {}): CourseListItemDto {
+  return {
+    id: COURSE_ID,
+    name: "Informática Básica",
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    lessonPlanCount: 6,
+    plannedWorkloadMinutes: 720,
+    prerequisites: [],
+    createdAt: "2026-09-01T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+/** The six courses of the Figma of the list (514:31941), the last one archived. */
+export function buildFigmaCourseList(): CourseListItemDto[] {
+  const id = (n: number) => `01952ef7-0000-7000-8000-0000000001${String(n).padStart(2, "0")}`;
+  return [
+    buildCourseListItem({ id: id(1) }),
+    buildCourseListItem({
+      id: id(2),
+      name: "Smartphones no dia a dia",
+      lessonPlanCount: 5,
+      plannedWorkloadMinutes: 510,
+    }),
+    buildCourseListItem({
+      id: id(3),
+      name: "Redes Sociais com Segurança",
+      category: CourseCategory.intermediate,
+      lessonPlanCount: 4,
+      plannedWorkloadMinutes: 420,
+      prerequisites: [{ id: id(2), name: "Smartphones no dia a dia" }],
+    }),
+    buildCourseListItem({
+      id: id(4),
+      name: "Internet e Serviços Públicos",
+      category: CourseCategory.intermediate,
+      lessonPlanCount: 5,
+      plannedWorkloadMinutes: 540,
+      prerequisites: [{ id: id(1), name: "Informática Básica" }],
+    }),
+    buildCourseListItem({
+      id: id(5),
+      name: "Fotografia no Celular",
+      lessonPlanCount: 3,
+      plannedWorkloadMinutes: 270,
+    }),
+    buildCourseListItem({
+      id: id(6),
+      name: "Informática Básica (2023)",
+      status: CourseStatus.archived,
+    }),
+  ];
+}
+
+interface ListCoursesCall {
+  params: Record<string, string>;
+}
+
+/**
+ * `GET /courses`. Answers `courses` paginated by `page` and `limit` of the request, with `total`
+ * from them unless given; `onCall` gets every query parameter, to check what the screen sent.
+ */
+export function listCoursesHandler({
+  courses = buildFigmaCourseList(),
+  total,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: Omit<HandlerOptions<ListCoursesCall>, "response"> & {
+  courses?: CourseListItemDto[];
+  total?: number;
+} = {}) {
+  return http.get("*/courses", async ({ request }) => {
+    const url = new URL(request.url);
+    const params = Object.fromEntries(url.searchParams.entries());
+    onCall?.({ params });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+
+    const page = Number(params.page ?? 1);
+    const limit = Number(params.limit ?? 20);
+    return HttpResponse.json({
+      data: courses.slice((page - 1) * limit, page * limit),
+      total: total ?? courses.length,
+      page,
+      limit,
+    });
+  });
+}
+
+/** Response of `POST /courses` and `PATCH /courses/:id`: the course of the Figma, as saved. */
+export function buildSavedCourse(overrides: Partial<CourseResponseDto> = {}): CourseResponseDto {
+  return buildReactivatedCourse(overrides);
+}
+
+export function createCourseHandler({
+  response = buildSavedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ body: CreateCourseDto }, CourseResponseDto> = {}) {
+  return http.post("*/courses", async ({ request }) => {
+    onCall?.({ body: (await readBody<CreateCourseDto>(request)) as CreateCourseDto });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response, { status: 201 });
+  });
+}
+
+export function updateCourseHandler({
+  response = buildSavedCourse(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<{ id: string; body: UpdateCourseDto }, CourseResponseDto> = {}) {
+  return http.patch("*/courses/:id", async ({ request, params }) => {
+    onCall?.({
+      id: String(params.id),
+      body: (await readBody<UpdateCourseDto>(request)) as UpdateCourseDto,
+    });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export const PREREQUISITE_CYCLE_ERROR: ApiErrorOptions = {
+  statusCode: 400,
+  error: "PREREQUISITE_CYCLE",
+  message: "The prerequisites would form a cycle.",
+};
+
+const LIST_UPDATED_AT = "2026-10-01T12:00:00.000Z";
+
+/** A plan of the catalog of the tests as a line of `GET /lesson-plans`. */
+export function toLessonPlanListItem(
+  plan: LessonPlanMock,
+  overrides: Partial<LessonPlanListItemDto> = {},
+): LessonPlanListItemDto {
+  return {
+    id: plan.id,
+    title: plan.title,
+    contents: plan.contents,
+    expectedDurationMinutes: plan.expectedDurationMinutes,
+    materialUrl: plan.materialUrl,
+    courseCount: plan.courseCount,
+    status: LessonPlanListStatus[plan.usage],
+    archivedAt: plan.usage === "archived" ? ARCHIVED_AT : null,
+    updatedAt: LIST_UPDATED_AT,
+    ...overrides,
+  };
+}
+
+/** A page of `GET /lesson-plans`: `total` can be more than the items of the page. */
+export function buildLessonPlansPage(
+  items: LessonPlanListItemDto[],
+  {
+    total = items.length,
+    page = 1,
+    limit = 7,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListLessonPlans200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a `GET /lesson-plans`, as an object of the parameters that were sent. */
+export type ListLessonPlansCall = Record<string, string>;
+
+/**
+ * `GET /lesson-plans`. Without `response` it answers the catalog of the tests that is not archived,
+ * by title, in one page, as the API answers the picker of the sequence. It is a default handler of
+ * the server of this module (`test-utils`), since the dialog of the sequence asks for it.
+ */
+export function listLessonPlansHandler({
+  response,
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListLessonPlansCall, ListLessonPlans200> = {}) {
+  return http.get("*/lesson-plans", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    if (response) return HttpResponse.json(response);
+    const items = MOCK_LESSON_PLANS.filter((plan) => plan.usage !== "archived")
+      .map((plan) => toLessonPlanListItem(plan))
+      .sort((first, second) => first.title.localeCompare(second.title, "pt-BR"));
+    return HttpResponse.json(buildLessonPlansPage(items, { limit: 100 }));
+  });
+}
+
+/** `GET /lesson-plans/contents`: the suggestions of the filter Conteúdo. */
+export function listLessonPlanContentsHandler({
+  response = ["Janelas do sistema", "Janela anônima"],
+  onCall,
+}: { response?: string[]; onCall?: (search: string | null) => void } = {}) {
+  return http.get("*/lesson-plans/contents", ({ request }) => {
+    onCall?.(new URL(request.url).searchParams.get("search"));
+    return HttpResponse.json(response);
   });
 }

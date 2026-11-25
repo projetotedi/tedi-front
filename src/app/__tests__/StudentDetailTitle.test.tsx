@@ -7,13 +7,13 @@ import { AccessibilityNeed, type StudentDetailDto } from "@api/generated/model";
 import { AuthProvider, RequireRole } from "@modules/auth";
 import { buildMeUser, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
-import { peopleRoutes } from "@modules/people";
 import {
   buildStudentDetail,
   getStudentHandler,
   STUDENT_ID,
   STUDENT_NAME,
 } from "@modules/people/__tests__/handlers";
+import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 

@@ -9,57 +9,7 @@
       "since": "Desde {{date}}"
     },
     "actions": {
-      "editData": "Editar meus dados",
-      "logHours": "Lançar horas"
-    },
-    "summary": {
-      "title": "Resumo de horas",
-      "total": "Total de horas lançadas",
-      "validated": "Horas validadas",
-      "pending": "Pendentes de validação",
-      "adjustedOrRejected": "Ajustadas / rejeitadas",
-      "badges": {
-        "validated": "Validado",
-        "pending": "Aguardando",
-        "review": "Revisar"
-      }
-    },
-    "entries": {
-      "title": "Meus lançamentos",
-      "columns": {
-        "date": "Data",
-        "activity": "Atividade",
-        "category": "Categoria",
-        "declared": "Declarado",
-        "validated": "Validado",
-        "status": "Status"
-      },
-      "empty": "Nenhum lançamento ainda."
-    },
-    "byCategory": {
-      "title": "Horas por categoria",
-      "columns": {
-        "category": "Categoria",
-        "hours": "Horas",
-        "pending": "Pendentes",
-        "note": "Observação"
-      },
-      "noPending": "Sem pendência",
-      "pendingLabel": {
-        "hours_one": "{{count}} hora pendente",
-        "hours_many": "{{count}} de horas pendentes",
-        "hours_other": "{{count}} horas pendentes",
-        "minutes_one": "{{count}} minuto pendente",
-        "minutes_many": "{{count}} de minutos pendentes",
-        "minutes_other": "{{count}} minutos pendentes",
-        "hourPart_one": "{{count}} hora",
-        "hourPart_many": "{{count}} de horas",
-        "hourPart_other": "{{count}} horas",
-        "minutePart_one": "{{count}} minuto",
-        "minutePart_many": "{{count}} de minutos",
-        "minutePart_other": "{{count}} minutos",
-        "hoursAndMinutes": "{{hours}} e {{minutes}} pendentes"
-      }
+      "editData": "Editar meus dados"
     },
     "personal": {
       "title": "Informações pessoais",
@@ -98,22 +48,8 @@
       "active": "Ativa",
       "inactive": "Inativa"
     },
-    "entryStatus": {
-      "approved": "Aprovado",
-      "adjusted": "Ajustado",
-      "pending": "Pendente",
-      "rejected": "Rejeitado"
-    },
-    "categories": {
-      "class": "Aula",
-      "management": "Gestão",
-      "planning": "Planejamento",
-      "event": "Evento",
-      "other": "Outros"
-    },
     "empty": "—",
-    "notProvided": "Não informado",
-    "hoursUnavailable": "O banco de horas chega com o módulo de horas."
+    "notProvided": "Não informado"
   },
   "student": {
     "routeTitle": "Aluno",

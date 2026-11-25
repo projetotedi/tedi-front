@@ -7,15 +7,15 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { MemberDetailResponseDto } from "@api/generated/model";
 import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import {
-  buildAccess,
+  buildMember,
   buildMeUser,
-  listAccessHandler,
   listInvitesHandler,
+  listMembersHandler,
   meHandler,
 } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
-import { peopleRoutes } from "@modules/people";
 import { getMemberHandler, MEMBER_ID, MEMBER_NAME } from "@modules/people/__tests__/handlers";
+import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
@@ -45,7 +45,7 @@ async function renderApp(
   server.use(
     meHandler({ user: buildMeUser({ role, name: "Ana Coordenadora" }) }),
     getMemberHandler({ member, delay }),
-    listAccessHandler({ data: [buildAccess({ id: MEMBER_ID, name: MEMBER_NAME })] }),
+    listMembersHandler({ data: [buildMember({ id: MEMBER_ID, name: MEMBER_NAME })] }),
     listInvitesHandler(),
   );
 

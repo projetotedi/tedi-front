@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { useGetLesson } from "@api/generated/lessons/lessons";
 import type { LessonResponseDto } from "@api/generated/model";
@@ -13,6 +13,7 @@ import {
   buildMeUser,
   cancelLessonHandler,
   getLessonHandler,
+  LESSON_CANCELLED_ERROR,
   LESSON_ID,
 } from "./handlers";
 import { renderWithProviders, server, setupLessonsTestServer } from "./test-utils";
@@ -20,6 +21,16 @@ import { renderWithProviders, server, setupLessonsTestServer } from "./test-util
 setupLessonsTestServer();
 
 const button = (name: string) => screen.getByRole("button", { name });
+
+const ACTIONS = ["Remarcar aula", "Cancelar aula", "Editar aula"] as const;
+
+const CANCELLED_HINT = "Aula cancelada: não pode ser remarcada, cancelada nem editada.";
+const ARCHIVED_HINT = "A turma está arquivada: as aulas dela ficam só para leitura.";
+
+/** The class of the lesson, archived: its lessons are read-only (RN-27). */
+function inArchivedClass(lesson: LessonResponseDto): LessonResponseDto {
+  return { ...lesson, class: { ...lesson.class, archivedAt: "2026-10-10T13:00:00.000Z" } };
+}
 
 /** The way the screen of a lesson will use it: the lesson comes from the cache, so it follows a save. */
 function DetailHarness() {
@@ -35,6 +46,20 @@ describe("LessonDetailActions", () => {
       });
 
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ["a cancelled lesson", buildCancelledLesson()],
+      ["a lesson of an archived class", inArchivedClass(buildLesson())],
+    ])("member sees no button, not even a turned-off one, for %s", async (_label, lesson) => {
+      const { container } = await renderWithProviders(<LessonDetailActions lesson={lesson} />, {
+        user: buildMeUser(Role.member),
+      });
+
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      expect(screen.queryByText(CANCELLED_HINT)).not.toBeInTheDocument();
+      expect(screen.queryByText(ARCHIVED_HINT)).not.toBeInTheDocument();
+      expect(container).toBeEmptyDOMElement();
     });
 
     it.each([
@@ -58,21 +83,84 @@ describe("LessonDetailActions", () => {
       },
     );
 
-    it("shows nothing for a cancelled lesson, which is final", async () => {
-      await renderWithProviders(<LessonDetailActions lesson={buildCancelledLesson()} />);
+    it("keeps the three actions turned on, with no reason, for a lesson that can be changed", async () => {
+      await renderWithProviders(<LessonDetailActions lesson={buildLesson()} />);
 
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      for (const name of ACTIONS) {
+        expect(button(name)).toBeEnabled();
+        expect(button(name)).not.toHaveAccessibleDescription();
+      }
+      expect(screen.queryByText(CANCELLED_HINT)).not.toBeInTheDocument();
+      expect(screen.queryByText(ARCHIVED_HINT)).not.toBeInTheDocument();
     });
 
-    it("shows nothing when the class is archived: it is read-only (RN-27)", async () => {
-      const lesson = buildLesson();
+    it("turns the three actions off for a cancelled lesson, with the reason", async () => {
+      await renderWithProviders(<LessonDetailActions lesson={buildCancelledLesson()} />);
+
+      expect(screen.getAllByRole("button").map((item) => item.textContent)).toEqual([...ACTIONS]);
+      for (const name of ACTIONS) {
+        expect(button(name)).toBeDisabled();
+        expect(button(name)).toHaveAccessibleDescription(CANCELLED_HINT);
+      }
+    });
+
+    it("turns the three actions off when the class is archived, with the reason (RN-27)", async () => {
+      await renderWithProviders(<LessonDetailActions lesson={inArchivedClass(buildLesson())} />);
+
+      expect(screen.getAllByRole("button").map((item) => item.textContent)).toEqual([...ACTIONS]);
+      for (const name of ACTIONS) {
+        expect(button(name)).toBeDisabled();
+        expect(button(name)).toHaveAccessibleDescription(ARCHIVED_HINT);
+      }
+    });
+
+    it("gives the reason of the lesson when it is cancelled and its class is archived too", async () => {
       await renderWithProviders(
-        <LessonDetailActions
-          lesson={{ ...lesson, class: { ...lesson.class, archivedAt: "2026-10-10T13:00:00.000Z" } }}
-        />,
+        <LessonDetailActions lesson={inArchivedClass(buildCancelledLesson())} />,
       );
 
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+      for (const name of ACTIONS) {
+        expect(button(name)).toBeDisabled();
+        expect(button(name)).toHaveAccessibleDescription(CANCELLED_HINT);
+      }
+    });
+
+    it.each([
+      ["a cancelled lesson", buildCancelledLesson(), CANCELLED_HINT],
+      ["a lesson of an archived class", inArchivedClass(buildLesson()), ARCHIVED_HINT],
+    ])(
+      "writes the reason for %s as text under the buttons, tied to each one",
+      async (_label, lesson, reason) => {
+        await renderWithProviders(<LessonDetailActions lesson={lesson} />);
+
+        const text = screen.getByText(reason);
+        // On the screen for everybody, not only for the screen reader.
+        expect(text).not.toHaveClass("sr-only");
+        expect(text.id).not.toBe("");
+        for (const name of ACTIONS) {
+          expect(button(name)).toHaveAttribute("aria-describedby", text.id);
+          expect(
+            button(name).compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING,
+          ).toBeTruthy();
+        }
+      },
+    );
+
+    it("keeps the order and the variants of the Figma when the actions are turned off", async () => {
+      await renderWithProviders(<LessonDetailActions lesson={buildCancelledLesson()} />);
+
+      expect(button("Remarcar aula")).toHaveClass("button--tertiary");
+      expect(button("Cancelar aula")).toHaveClass("button--danger-soft");
+      expect(button("Editar aula")).toHaveClass("button--secondary");
+    });
+
+    it("opens no dialog when a turned-off action is pressed", async () => {
+      const user = userEvent.setup();
+      await renderWithProviders(<LessonDetailActions lesson={buildCancelledLesson()} />);
+
+      for (const name of ACTIONS) await user.click(button(name));
+
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
@@ -148,7 +236,7 @@ describe("LessonDetailActions", () => {
   });
 
   describe("with the lesson read from the cache, as the screen of the lesson does", () => {
-    it("cancelling shows the toast and closes the dialog, and then the actions go away", async () => {
+    it("cancelling shows the toast and closes the dialog, and then the actions turn off", async () => {
       const cancelled = buildCancelledLesson({ cancelReason: "Feriado municipal." });
       server.use(getLessonHandler(), cancelLessonHandler({ response: cancelled }));
       const user = userEvent.setup();
@@ -167,14 +255,71 @@ describe("LessonDetailActions", () => {
       expect(await screen.findByText("Aula cancelada")).toBeInTheDocument();
       await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
       // The toast has its own close button, so the three actions are looked for by name.
-      await waitFor(() =>
-        expect(
-          screen.queryByRole("button", { name: /^(Remarcar|Cancelar|Editar) aula$/ }),
-        ).not.toBeInTheDocument(),
-      );
+      await waitFor(() => {
+        for (const name of ACTIONS) {
+          expect(button(name)).toBeDisabled();
+          expect(button(name)).toHaveAccessibleDescription(CANCELLED_HINT);
+        }
+      });
       expect(queryClient.getQueryData<LessonResponseDto>(["/lessons/" + LESSON_ID])?.status).toBe(
         "cancelled",
       );
+    });
+  });
+
+  describe("onCancelled", () => {
+    async function cancelWithReason(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(button("Cancelar aula"));
+      await user.type(
+        await screen.findByRole("textbox", { name: "Motivo do cancelamento" }),
+        "Feriado municipal.",
+      );
+      await user.click(
+        within(screen.getByRole("dialog")).getByRole("button", { name: "Cancelar aula" }),
+      );
+    }
+
+    it("calls onCancelled with the lesson the API answered", async () => {
+      const cancelled = buildCancelledLesson({ cancelReason: "Feriado municipal." });
+      server.use(cancelLessonHandler({ response: cancelled }));
+      const onCancelled = vi.fn();
+      const user = userEvent.setup();
+      await renderWithProviders(
+        <LessonDetailActions lesson={buildLesson()} onCancelled={onCancelled} />,
+      );
+
+      await cancelWithReason(user);
+
+      await waitFor(() => expect(onCancelled).toHaveBeenCalledExactlyOnceWith(cancelled));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    });
+
+    it("does not call onCancelled when the API refuses to cancel", async () => {
+      server.use(cancelLessonHandler({ error: LESSON_CANCELLED_ERROR }));
+      const onCancelled = vi.fn();
+      const user = userEvent.setup();
+      await renderWithProviders(
+        <LessonDetailActions lesson={buildLesson()} onCancelled={onCancelled} />,
+      );
+
+      await cancelWithReason(user);
+
+      expect(
+        await screen.findByText("Esta aula está cancelada e não pode mais ser alterada."),
+      ).toBeInTheDocument();
+      expect(onCancelled).not.toHaveBeenCalled();
+      expect(screen.getByRole("dialog", { name: "Cancelar aula" })).toBeInTheDocument();
+    });
+
+    it("works without onCancelled, as before", async () => {
+      server.use(cancelLessonHandler());
+      const user = userEvent.setup();
+      await renderWithProviders(<LessonDetailActions lesson={buildLesson()} />);
+
+      await cancelWithReason(user);
+
+      expect(await screen.findByText("Aula cancelada")).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     });
   });
 });

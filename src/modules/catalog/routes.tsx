@@ -3,6 +3,7 @@ import type { RouteObject } from "react-router-dom";
 import type { RouteHandle } from "@shared/lib/route-handle";
 import { RequirePermission } from "@modules/auth";
 import { CourseDetailPage } from "./pages/CourseDetailPage";
+import { CoursesPage } from "./pages/CoursesPage";
 import { LessonPlanDetailPage } from "./pages/LessonPlanDetailPage";
 import { LessonPlansPage } from "./pages/LessonPlansPage";
 
@@ -17,6 +18,12 @@ export interface CatalogRouteSlots {
    * module, so this module only says where the card goes and which course it is for.
    */
   renderCourseClasses: (courseId: string) => ReactNode;
+  /**
+   * + Nova turma, last of the actions of the header of the course screen (GUS-133): it opens the
+   * form of a new class of the `classes` module with this course chosen. It gets whether the course
+   * is archived, because an archived course takes no new class (RN-27) and the button is then off.
+   */
+  renderNewClassAction: (course: { id: string; isArchived: boolean }) => ReactNode;
 }
 
 export function createCatalogRoutes(slots: CatalogRouteSlots): RouteObject[] {
@@ -34,17 +41,25 @@ export function createCatalogRoutes(slots: CatalogRouteSlots): RouteObject[] {
         },
       ],
     },
-    // Besides the "Cursos" of the prototype ("Em breve", `/courses`): there is no list of courses
-    // yet, so this one has no menu item. It is reached from "Onde este plano é usado" and from the
-    // prerequisites of another course.
+    // Cursos (GUS-131) is the list; the detail of a course is reached from it, from "Onde este
+    // plano é usado" and from the prerequisites of another course.
     {
-      path: "courses/:courseId",
-      handle: { title: "catalog:course.routeTitle" } satisfies RouteHandle,
-      element: (
-        <RequirePermission permission="catalog.view">
-          <CourseDetailPage renderCourseClasses={slots.renderCourseClasses} />
-        </RequirePermission>
-      ),
+      path: "courses",
+      handle: { title: "common:nav.courses" } satisfies RouteHandle,
+      element: <RequirePermission permission="catalog.view" />,
+      children: [
+        { index: true, element: <CoursesPage /> },
+        {
+          path: ":courseId",
+          handle: { title: "catalog:course.routeTitle" } satisfies RouteHandle,
+          element: (
+            <CourseDetailPage
+              renderCourseClasses={slots.renderCourseClasses}
+              renderNewClassAction={slots.renderNewClassAction}
+            />
+          ),
+        },
+      ],
     },
   ];
 }
