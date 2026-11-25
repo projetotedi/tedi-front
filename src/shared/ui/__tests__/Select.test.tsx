@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { createRef, useState } from "react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -93,6 +93,36 @@ describe("Select", () => {
     render(<Harness autoFocus />);
 
     expect(screen.getByRole("button", { name: /Perfil/ })).toHaveFocus();
+  });
+
+  it("hands the trigger button to triggerRef, so a form library can focus it", () => {
+    const triggerRef = createRef<HTMLButtonElement>();
+    render(<Harness triggerRef={triggerRef} />);
+
+    const trigger = screen.getByRole("button", { name: /Perfil/ });
+    expect(triggerRef.current).toBe(trigger);
+    expect(trigger).not.toHaveFocus();
+
+    act(() => triggerRef.current?.focus());
+
+    expect(trigger).toHaveFocus();
+  });
+
+  it("accepts a callback triggerRef, like the ref of react-hook-form", () => {
+    let element: HTMLButtonElement | null = null;
+    const { unmount } = render(
+      <Harness
+        triggerRef={(node) => {
+          element = node;
+        }}
+      />,
+    );
+
+    expect(element).toBe(screen.getByRole("button", { name: /Perfil/ }));
+
+    unmount();
+
+    expect(element).toBeNull();
   });
 
   it("shows the error message", () => {
