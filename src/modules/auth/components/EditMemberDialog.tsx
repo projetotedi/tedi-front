@@ -3,12 +3,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useUpdateAccessRole } from "@api/generated";
-import type { AccessResponseDto } from "@api/generated/model";
 import { Button, Dialog, toast } from "@shared/ui";
 
 import { useCan } from "../hooks/useCan";
 import { toAccessActionErrorKey } from "../lib/access-action-error";
-import { accessText } from "../lib/access-format";
+import { accessText, type MemberAccessTarget } from "../lib/access-format";
 import { invalidateAccessList } from "../lib/access-queries";
 import { toAssignableRole, type AssignableRole } from "../lib/role-label";
 import { ActionError } from "./ActionError";
@@ -16,7 +15,7 @@ import { MemberAccessCard } from "./MemberAccessCard";
 
 export interface EditMemberDialogProps {
   /** A linha da listagem. A edição guarda a própria cópia: desativar o acesso a atualiza aqui. */
-  member: AccessResponseDto;
+  member: MemberAccessTarget;
   onClose: () => void;
 }
 

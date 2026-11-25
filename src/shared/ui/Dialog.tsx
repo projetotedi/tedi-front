@@ -10,15 +10,21 @@ export interface DialogProps {
   children: ReactNode;
   footer?: ReactNode;
   isDismissable?: boolean;
-  /** `default` 640px, `wide` 800px (listas), `extraWide` 1040px (edição em duas colunas). */
-  size?: "default" | "wide" | "extraWide";
+  /** `default` 640px, `wide` 800px (listas), `extraWide` 1040px (edição em duas colunas), `table` 1128px (a table of many columns, with no sideways scroll). */
+  size?: "default" | "wide" | "extraWide" | "table";
+  /**
+   * The id (or ids, separated by spaces) of what in the body also describes the dialog, read when it
+   * opens, after the `description`. For a notice that has to sit in the body, under the title.
+   */
+  "aria-describedby"?: string;
 }
 
 const SIZE_CLASSES = {
   default: "max-w-160",
   wide: "max-w-200",
   extraWide: "max-w-260",
-} as const;
+  table: "max-w-282",
+} as const satisfies Record<NonNullable<DialogProps["size"]>, string>;
 
 export function Dialog({
   isOpen,
@@ -30,8 +36,12 @@ export function Dialog({
   footer,
   isDismissable = true,
   size = "default",
+  "aria-describedby": ariaDescribedBy,
 }: DialogProps): ReactElement {
   const descriptionId = useId();
+  const describedBy = [description ? descriptionId : undefined, ariaDescribedBy].filter(
+    (id): id is string => id !== undefined && id !== "",
+  );
 
   return (
     <Modal.Backdrop
@@ -44,7 +54,7 @@ export function Dialog({
       <Modal.Container placement="center" className="sm:w-full">
         <Modal.Dialog
           className={SIZE_CLASSES[size]}
-          aria-describedby={description ? descriptionId : undefined}
+          aria-describedby={describedBy.length === 0 ? undefined : describedBy.join(" ")}
         >
           <Modal.CloseTrigger
             aria-label={closeLabel}

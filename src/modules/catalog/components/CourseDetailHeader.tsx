@@ -1,14 +1,25 @@
-import type { ReactElement } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { CourseDetailDto } from "@api/generated/model";
+import { useCan } from "@modules/auth";
 import { formatHours } from "@shared/lib/format";
-import { Badge, Card } from "@shared/ui";
+import { Badge, Button, Card } from "@shared/ui";
 
 export interface CourseDetailHeaderProps {
   course: CourseDetailDto;
   /** The course is archived (RN-27): the API says so, or a save was refused with 409 `COURSE_ARCHIVED`. */
   isArchived: boolean;
+  /** Duplicar curso was pressed: the screen opens the dialog that names the copy. */
+  onDuplicate: () => void;
+  /** Arquivar curso was pressed (the course is active): the screen opens `ArchiveCourseDialog`. */
+  onArchive: () => void;
+  /** Reativar curso was pressed (the course is archived): the screen asks for confirmation. */
+  onUnarchive: () => void;
+  /** Editar curso was pressed (the course is active): the screen opens `CourseFormDialog`. */
+  onEdit: () => void;
+  /** + Nova turma, from the `classes` module by slot: it draws nothing for who cannot create classes. */
+  newClassAction?: ReactNode;
 }
 
 /**
@@ -17,15 +28,33 @@ export interface CourseDetailHeaderProps {
  * Figma comes with the query of the classes of the course (GUS-102), and not before.
  *
  * The actions go on the right of this row, in the order of the Figma: Duplicar curso (`tertiary`,
- * GUS-117), Arquivar or Reativar curso (`danger-soft`, GUS-116), Editar curso (`secondary`, the
+ * GUS-140), Arquivar or Reativar curso (`danger-soft`, GUS-116), Editar curso (`secondary`, the
  * form of GUS-97) and + Nova turma (`primary`, the `classes` module). Each one is shown only with
  * `useCan`: `courses.duplicateArchive` for the first two, `courses.manage` for Editar curso and the
  * permission of the `classes` module for + Nova turma; and, for an archived course, the editing
- * ones stay turned off with the reason on the page (see `CoursePlanCard`). None of them exists
- * yet, so none is drawn, and the container of the actions is created with the first one.
+ * ones stay turned off with the reason on the page (see `CoursePlanCard`).
+ *
+ * Duplicar curso stays on an archived course: the API accepts it and the copy is born active,
+ * which is how the content of an archived course gets back into use (RN-27). Arquivar curso
+ * (GUS-139) becomes Reativar curso when the course is archived. Editar curso (GUS-129, after them)
+ * is turned off on an archived course, with the reason read by the screen reader, as Editar
+ * sequência is; + Nova turma (GUS-133) belongs to the `classes` module, comes ready in
+ * `newClassAction` and follows the same rule. The container of the actions hides itself when
+ * nothing in it is drawn, so a member sees the name and the tags and nothing else.
  */
-export function CourseDetailHeader({ course, isArchived }: CourseDetailHeaderProps): ReactElement {
+export function CourseDetailHeader({
+  course,
+  isArchived,
+  onDuplicate,
+  onArchive,
+  onUnarchive,
+  onEdit,
+  newClassAction,
+}: CourseDetailHeaderProps): ReactElement {
   const { t } = useTranslation("catalog");
+  const canDuplicate = useCan("courses.duplicateArchive");
+  const canManage = useCan("courses.manage");
+  const editHintId = useId();
 
   return (
     <Card>
@@ -55,6 +84,44 @@ export function CourseDetailHeader({ course, isArchived }: CourseDetailHeaderPro
             </li>
           </ul>
         </div>
+        {canDuplicate || canManage || newClassAction ? (
+          <div className="flex flex-wrap gap-3 empty:hidden">
+            {canDuplicate ? (
+              <>
+                <Button variant="tertiary" onPress={onDuplicate}>
+                  {t("course.duplicate.action")}
+                </Button>
+                {isArchived ? (
+                  <Button variant="secondary" onPress={onUnarchive}>
+                    {t("course.unarchive.action")}
+                  </Button>
+                ) : (
+                  <Button variant="danger-soft" onPress={onArchive}>
+                    {t("course.archive.action")}
+                  </Button>
+                )}
+              </>
+            ) : null}
+            {canManage ? (
+              <>
+                <Button
+                  variant="secondary"
+                  isDisabled={isArchived}
+                  aria-describedby={isArchived ? editHintId : undefined}
+                  onPress={onEdit}
+                >
+                  {t("course.form.editAction")}
+                </Button>
+                {isArchived ? (
+                  <span id={editHintId} className="sr-only">
+                    {t("course.form.archivedHint")}
+                  </span>
+                ) : null}
+              </>
+            ) : null}
+            {newClassAction}
+          </div>
+        ) : null}
       </div>
     </Card>
   );

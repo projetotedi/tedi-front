@@ -9,53 +9,7 @@
       "since": "Since {{date}}"
     },
     "actions": {
-      "editData": "Edit my details",
-      "logHours": "Log hours"
-    },
-    "summary": {
-      "title": "Hours summary",
-      "total": "Total hours logged",
-      "validated": "Validated hours",
-      "pending": "Awaiting validation",
-      "adjustedOrRejected": "Adjusted / rejected",
-      "badges": {
-        "validated": "Validated",
-        "pending": "Waiting",
-        "review": "Review"
-      }
-    },
-    "entries": {
-      "title": "My entries",
-      "columns": {
-        "date": "Date",
-        "activity": "Activity",
-        "category": "Category",
-        "declared": "Declared",
-        "validated": "Validated",
-        "status": "Status"
-      },
-      "empty": "No entries yet."
-    },
-    "byCategory": {
-      "title": "Hours by category",
-      "columns": {
-        "category": "Category",
-        "hours": "Hours",
-        "pending": "Pending",
-        "note": "Note"
-      },
-      "noPending": "Nothing pending",
-      "pendingLabel": {
-        "hours_one": "{{count}} hour pending",
-        "hours_other": "{{count}} hours pending",
-        "minutes_one": "{{count}} minute pending",
-        "minutes_other": "{{count}} minutes pending",
-        "hourPart_one": "{{count}} hour",
-        "hourPart_other": "{{count}} hours",
-        "minutePart_one": "{{count}} minute",
-        "minutePart_other": "{{count}} minutes",
-        "hoursAndMinutes": "{{hours}} and {{minutes}} pending"
-      }
+      "editData": "Edit my details"
     },
     "personal": {
       "title": "Personal information",
@@ -94,21 +48,7 @@
       "active": "Active",
       "inactive": "Inactive"
     },
-    "entryStatus": {
-      "approved": "Approved",
-      "adjusted": "Adjusted",
-      "pending": "Pending",
-      "rejected": "Rejected"
-    },
-    "categories": {
-      "class": "Class",
-      "management": "Management",
-      "planning": "Planning",
-      "event": "Event",
-      "other": "Other"
-    },
     "empty": "—",
-    "notProvided": "Not provided",
-    "hoursUnavailable": "The hours bank arrives with the hours module."
+    "notProvided": "Not provided"
   }
 }

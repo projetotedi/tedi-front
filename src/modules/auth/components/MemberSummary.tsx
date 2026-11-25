@@ -1,12 +1,10 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 
-import type { AccessResponseDto } from "@api/generated/model";
-
-import { accessText } from "../lib/access-format";
+import { accessText, type MemberAccessTarget } from "../lib/access-format";
 
 export interface MemberSummaryProps {
-  access: AccessResponseDto;
+  access: MemberAccessTarget;
 }
 
 /**

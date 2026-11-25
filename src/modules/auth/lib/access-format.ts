@@ -1,3 +1,17 @@
+import type { AccessResponseDto, MemberListItemResponseDto } from "@api/generated/model";
+
+/**
+ * Campos de acesso compartilhados entre a linha de `GET /members` (`MemberListItemResponseDto`) e
+ * o retorno das mutações de acesso (`AccessResponseDto`).
+ */
+export type MemberAccessTarget = Pick<
+  MemberListItemResponseDto,
+  "id" | "name" | "role" | "accessEnabled"
+> & {
+  ra: MemberListItemResponseDto["ra"] | AccessResponseDto["ra"];
+  email?: AccessResponseDto["email"];
+};
+
 /**
  * `ra` e `email` do `AccessResponseDto` saem tipados como objeto pelo Orval (o Swagger do back os
  * descreve mal), mas chegam como texto. Devolve o texto ou `null` se não houver nada para mostrar.

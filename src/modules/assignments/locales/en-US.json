@@ -1,0 +1,234 @@
+{
+  "close": "Close",
+  "retry": "Try again",
+  "role": {
+    "teacher": "Teacher",
+    "monitor": "Monitor"
+  },
+  "status": {
+    "pending": "Pending",
+    "applied": "Applied",
+    "confirmed": "Confirmed",
+    "declined": "Declined",
+    "cancelled": "Cancelled"
+  },
+  "newAssignment": {
+    "button": "New assignment",
+    "title": "New member assignment",
+    "member": "Member",
+    "class": "Class",
+    "lesson": "Lesson",
+    "role": "Role in the lesson",
+    "status": "Assignment status",
+    "placeholders": {
+      "member": "Choose the member",
+      "class": "Choose the class",
+      "lesson": "Choose the lesson",
+      "role": "Choose the role"
+    },
+    "submit": "Save assignment",
+    "submitting": "Saving…",
+    "cancel": "Cancel",
+    "membersLoading": "Loading the members…",
+    "membersEmpty": "There is no active member to assign.",
+    "membersError": "The members could not be loaded.",
+    "classesLoading": "Loading the classes…",
+    "classesEmpty": "No class has lessons from today on.",
+    "classesError": "The classes could not be loaded.",
+    "lessonsLoading": "Loading the lessons…",
+    "lessonsEmpty": "This class has no lesson that takes assignments.",
+    "lessonsError": "The lessons could not be loaded.",
+    "chooseClassFirst": "Choose the class to see its lessons."
+  },
+  "warnings": {
+    "duplicateRole": "This member already has a place in this lesson, as a teacher or as a monitor. Each member takes one place per lesson.",
+    "teacherTaken": "This lesson already has a confirmed teacher. Choose the monitor role or save the assignment as pending.",
+    "lessonCancelled": "This lesson is cancelled and takes no assignments. Choose another lesson.",
+    "memberInactive": "This member is not active in the project and cannot be assigned.",
+    "assignmentNotActive": "This assignment is no longer active, so there is nothing to cancel."
+  },
+  "fieldErrors": {
+    "required": "Choose an option.",
+    "memberNotFound": "This member was not found. Choose another one.",
+    "serverInvalid": "Review this field and try again."
+  },
+  "errors": {
+    "lessonNotFound": "Lesson not found. It may have been removed.",
+    "assignmentNotFound": "Assignment not found. It may have been removed.",
+    "forbidden": "You do not have access to this information.",
+    "network": "Could not connect. Check your connection and try again.",
+    "unknown": "The action could not be completed. Try again."
+  },
+  "coverage": {
+    "title": "Lesson coverage",
+    "students": "Students",
+    "teacher": "Teacher",
+    "monitors": "Monitors",
+    "monitorsOf": "{{confirmed}} of {{expected}}",
+    "belowExpected": "Below expected",
+    "applications": "Applications",
+    "studentsLoading": "Loading the students…",
+    "loading": "Loading the coverage of the lesson…",
+    "error": "The coverage of the lesson could not be loaded."
+  },
+  "lessonTeacher": {
+    "loading": "Loading the teacher…",
+    "error": "The teacher could not be loaded."
+  },
+  "memberAssignments": {
+    "title": "Lesson assignments",
+    "caption": "Lesson assignments of the member",
+    "columns": {
+      "lesson": "Lesson",
+      "date": "Date",
+      "role": "Role",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "empty": "No assignment yet.",
+    "viewAll_one": "View the {{count}} assignment",
+    "viewAll_other": "View all {{count}}",
+    "viewLess": "View less",
+    "loading": "Loading the assignments of the member…",
+    "error": "The assignments of the member could not be loaded.",
+    "forbidden": "You only see the assignments of members of your department.",
+    "cancelFor": "Cancel the assignment in {{title}} on {{date}}"
+  },
+  "cancelDialog": {
+    "title": "Cancel assignment",
+    "description": "You are about to cancel the {{role}} assignment in “{{title}}”, on {{date}}. The place becomes free and the coverage of the lesson is updated.",
+    "back": "Back",
+    "submit": "Cancel assignment",
+    "submitting": "Cancelling…"
+  },
+  "toast": {
+    "created": "Assignment saved",
+    "cancelled": "Assignment cancelled"
+  },
+  "timeRange": "{{start}}–{{end}}",
+  "lessonLabel": "Lesson {{order}} · {{title}}",
+  "rolesInline": {
+    "teacher": "teacher",
+    "monitor": "monitor"
+  },
+  "vacancies": {
+    "teacher": "Teacher {{confirmed}} of {{expected}}",
+    "monitors": "Monitors {{confirmed}} of {{expected}}",
+    "complete": "Team complete",
+    "summary": "Vacancies: {{coverage}}"
+  },
+  "myLessons": {
+    "summary": {
+      "title": "Summary of your lessons",
+      "upcoming": "Upcoming lessons (4 weeks)",
+      "confirmed": "Confirmed",
+      "pending": "Awaiting confirmation",
+      "openLessons": "Lessons with a vacancy for you",
+      "loading": "Loading the summary of your lessons…"
+    },
+    "upcoming": {
+      "title": "My upcoming lessons",
+      "caption": "Your upcoming lessons, with date, time, class, lesson, role and status",
+      "columns": {
+        "date": "Date",
+        "time": "Time",
+        "class": "Class",
+        "lesson": "Lesson",
+        "role": "Role",
+        "status": "Status"
+      },
+      "footer": "Lessons you are assigned to or applied for, in the next 4 weeks",
+      "viewCalendar": "See calendar",
+      "empty": "You are not assigned to any lesson, and have not applied for one, in the next 4 weeks.",
+      "loading": "Loading your upcoming lessons…",
+      "error": "Your upcoming lessons could not be loaded."
+    },
+    "open": {
+      "title": "Lessons with a vacancy to apply for ({{count}})",
+      "titleWithoutCount": "Lessons with a vacancy to apply for",
+      "caption": "Lessons with a vacancy to apply for, with date, time, class, lesson, vacancies and the Apply button",
+      "columns": {
+        "date": "Date",
+        "time": "Time",
+        "class": "Class",
+        "lesson": "Lesson",
+        "vacancies": "Vacancies",
+        "actions": "Actions"
+      },
+      "apply": "Apply",
+      "applyLabel": "Apply to {{lesson}}, {{day}}",
+      "empty": "No lesson with a vacancy for you in the next 4 weeks.",
+      "loading": "Loading the lessons with a vacancy…",
+      "error": "The lessons with a vacancy could not be loaded."
+    },
+    "status": {
+      "pending": "Awaiting confirmation",
+      "confirmed": "Confirmed",
+      "declined": "Declined",
+      "cancelled": "Cancelled"
+    }
+  },
+  "apply": {
+    "title": "Apply to the lesson",
+    "role": "Role in the lesson",
+    "monitorDescription": "Supports the students one by one",
+    "teacherDescription": "Leads the lesson",
+    "noVacancy": "No vacancy in this lesson",
+    "descriptionWithoutVacancy": "{{description}} · {{reason}}",
+    "note": "Note for whoever will review",
+    "noteHint": "Optional.",
+    "notePlaceholder": "I can arrive 15 min early to turn the computers on.",
+    "info": "The board or the coordination confirms or declines the application, and you follow its status in My lessons. You cannot be teacher and monitor in the same lesson.",
+    "back": "Back",
+    "submit": "Send application",
+    "submitting": "Sending…",
+    "toastTitle": "Application sent",
+    "toastDescription": "The board or the coordination will confirm your participation as {{role}} on {{day}}.",
+    "fieldErrors": {
+      "roleRequired": "Choose the role in the lesson.",
+      "noteTooLong": "The note can have at most {{max}} characters.",
+      "serverInvalid": "Review this field and try again."
+    },
+    "errors": {
+      "roleFull": "This role was just filled. Choose another role, if there is still a vacancy, or go back to see the lessons with a vacancy.",
+      "alreadyApplied": "You already have a place in this lesson, as teacher or monitor. Follow its status in My lessons.",
+      "lessonClosed": "This lesson no longer takes applications.",
+      "lessonNotFound": "Lesson not found. It may have been removed.",
+      "memberInactive": "Your member registration is not active. Talk to the coordination.",
+      "network": "Could not connect. Check your connection and try again.",
+      "unknown": "Could not send the application. Try again."
+    }
+  },
+  "pendingApplications": {
+    "button": "Pending applications ({{count}})",
+    "buttonLoading": "Pending applications",
+    "title": "Pending applications ({{count}})",
+    "titleWithoutCount": "Pending applications",
+    "requestedBy": "{{name}} · {{role}}",
+    "sentOn": "Sent on {{day}}",
+    "sentOnWithNote": "Sent on {{day}} · “{{note}}”",
+    "removedPerson": "Person removed",
+    "confirm": "Confirm",
+    "confirmLabel": "Confirm the application of {{name}}",
+    "reject": "Decline",
+    "rejectLabel": "Decline the application of {{name}}",
+    "lessonCancelledBadge": "Cancelled",
+    "lessonCancelled": "Lesson cancelled: it can only be declined.",
+    "info": "Confirming puts the member in the lesson with the role asked for. Declining frees the vacancy and the member sees the status in My lessons. A member cannot have two roles in the same lesson.",
+    "empty": "No pending application.",
+    "loading": "Loading the pending applications…",
+    "error": "The pending applications could not be loaded.",
+    "toastConfirmed": "Application confirmed",
+    "toastRejected": "Application declined",
+    "toastDescription": "{{name}} · {{role}} on {{day}}",
+    "errors": {
+      "roleFull": "The vacancy for this role was already filled. The list was updated: decline the application if it is no longer needed.",
+      "notPending": "This application was already decided. The list was updated.",
+      "notFound": "Application not found. It may have been removed. The list was updated.",
+      "lessonCancelled": "The lesson was cancelled: the application can only be declined.",
+      "memberInactive": "This member's registration is not active, so the application cannot be confirmed.",
+      "network": "Could not connect. Check your connection and try again.",
+      "unknown": "Could not complete the action. Try again."
+    }
+  }
+}

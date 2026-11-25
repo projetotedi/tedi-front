@@ -8,6 +8,7 @@ import { Button, Select, toast } from "@shared/ui";
 
 import { useAuth } from "../hooks/useAuth";
 import { toAccessActionErrorKey } from "../lib/access-action-error";
+import type { MemberAccessTarget } from "../lib/access-format";
 import { invalidateAccessList } from "../lib/access-queries";
 import { INVITABLE_ROLES, type AssignableRole } from "../lib/role-label";
 import { ActionError } from "./ActionError";
@@ -15,7 +16,7 @@ import { DisableAccessDialog } from "./DisableAccessDialog";
 import { PasswordResetDialog } from "./PasswordResetDialog";
 
 export interface MemberAccessCardProps {
-  access: AccessResponseDto;
+  access: MemberAccessTarget;
   /** O perfil escolhido no select. Só vira PATCH quando quem edita salva (`EditMemberDialog`). */
   selectedRole: AssignableRole | null;
   onRoleChange: (role: AssignableRole) => void;

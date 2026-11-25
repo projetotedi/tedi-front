@@ -4,5 +4,6 @@ import ptBR from "./locales/pt-BR.json";
 
 registerModuleLocales("catalog", { "pt-BR": ptBR, "en-US": enUS });
 
-export { catalogRoutes } from "./routes";
+export { createCatalogRoutes } from "./routes";
+export type { CatalogRouteSlots } from "./routes";
 export { catalogMenuItems } from "./menu";

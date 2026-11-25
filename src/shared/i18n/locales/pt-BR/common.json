@@ -16,6 +16,7 @@
     "students": "Alunos",
     "lessons": "Aulas",
     "calendar": "Calendário",
+    "myLessons": "Minhas aulas",
     "enrollments": "Matrículas",
     "members": "Membros",
     "hours": "Banco de horas",
@@ -45,6 +46,10 @@
   },
   "comingSoon": {
     "description": "Esta área ainda está em construção e chega em breve."
+  },
+  "details": {
+    "empty": "—",
+    "notInformed": "Não informado"
   },
   "toast": {
     "region": "Notificações",

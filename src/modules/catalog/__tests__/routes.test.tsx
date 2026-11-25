@@ -6,7 +6,6 @@ import i18n from "@shared/i18n";
 import { Role } from "@shared/lib/role";
 
 import { catalogMenuItems } from "../menu";
-import { catalogRoutes } from "../routes";
 import {
   buildMeUser,
   COURSE_ID,
@@ -14,13 +13,18 @@ import {
   getLessonPlanHandler,
   LESSON_PLAN_ID,
 } from "./handlers";
-import { renderRoutes, server, setupCatalogTestServer } from "./test-utils";
+import { catalogRoutes, renderRoutes, server, setupCatalogTestServer } from "./test-utils";
 
 setupCatalogTestServer();
 
 describe("catalogMenuItems", () => {
-  it("has the Planos de aula item, which needs catalog.view", () => {
+  it("has Cursos and then Planos de aula, in the order of the Figma, both with catalog.view", () => {
     expect(catalogMenuItems).toEqual([
+      expect.objectContaining({
+        label: "common:nav.courses",
+        path: "/courses",
+        permission: "catalog.view",
+      }),
       expect.objectContaining({
         label: "common:nav.lessonPlans",
         path: "/lesson-plans",
@@ -37,12 +41,8 @@ describe("catalogMenuItems", () => {
     }
   });
 
-  it("has no item for the course route: there is no list of courses to open it from yet", () => {
-    const declared = catalogRoutes.map((route) => `/${route.path}`);
-
-    expect(declared).toContain("/courses/:courseId");
+  it("has no item for the detail of a course: it is opened from the list", () => {
     expect(catalogMenuItems.map((item) => item.path)).not.toContain("/courses/:courseId");
-    expect(catalogMenuItems.map((item) => item.path)).not.toContain("/courses");
   });
 
   it("asks for the same permission as the route guard (menu and guard go together)", () => {
@@ -124,17 +124,19 @@ describe("catalogRoutes (lesson plan detail)", () => {
 describe("catalogRoutes (course)", () => {
   const courseRoute = `/courses/${COURSE_ID}`;
 
-  it("declares the course title used by the topbar, and it is translated", () => {
-    const course = catalogRoutes.find((route) => route.path === "courses/:courseId");
+  const coursesRoute = () => catalogRoutes.find((route) => route.path === "courses");
 
+  it("declares the course title used by the topbar, and it is translated", () => {
+    const course = coursesRoute()?.children?.find((route) => route.path === ":courseId");
+
+    expect(coursesRoute()?.handle).toEqual({ title: "common:nav.courses" });
     expect(course?.handle).toEqual({ title: "catalog:course.routeTitle" });
     expect(i18n.t("catalog:course.routeTitle", { lng: "pt-BR" })).toBe("Curso");
     expect(i18n.t("catalog:course.routeTitle", { lng: "en-US" })).toBe("Course");
   });
 
-  it("asks for catalog.view, the permission of the whole catalog", () => {
-    const course = catalogRoutes.find((route) => route.path === "courses/:courseId");
-    const guard = course?.element as ReactElement<{ permission: string }> | undefined;
+  it("asks for catalog.view, the permission of the whole catalog, for the list and the detail", () => {
+    const guard = coursesRoute()?.element as ReactElement<{ permission: string }> | undefined;
 
     expect(guard?.props.permission).toBe("catalog.view");
   });

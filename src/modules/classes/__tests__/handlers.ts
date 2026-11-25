@@ -1,0 +1,566 @@
+import { http, HttpResponse } from "msw";
+
+import {
+  ClassStatus,
+  CourseCategory,
+  CourseStatus,
+  type ClassDetailCourseResponseDto,
+  type ClassDetailDto,
+  type ClassDetailSummaryResponseDto,
+  type ClassEnrollmentPreviewItemResponseDto,
+  type ClassListItemDto,
+  type ClassResponseDto,
+  type CourseListItemDto,
+  type EditionResponseDto,
+  type ListClasses200,
+  type CourseClassItemResponseDto,
+  type CourseDetailDto,
+  type ListCourseClasses200,
+  type MeResponseDto,
+  type PermissionsDto,
+} from "@api/generated/model";
+import { Role } from "@shared/lib/role";
+
+function permissionsWith(granted: Partial<PermissionsDto>): PermissionsDto {
+  return granted as PermissionsDto;
+}
+
+// The matrix of the back (docs/PERMISSIONS.md): everybody sees classes and the catalog, and only
+// the director and the coordination manage classes and enrollments.
+const VIEWER_PERMISSIONS = permissionsWith({
+  "catalog.view": "all",
+  "classes.view": "all",
+  "classes.manage": "none",
+  "enrollments.manage": "none",
+});
+
+const MANAGER_PERMISSIONS = permissionsWith({
+  "catalog.view": "all",
+  "classes.view": "all",
+  "classes.manage": "all",
+  "enrollments.manage": "all",
+});
+
+const PERMISSIONS_BY_ROLE: Record<Role, PermissionsDto> = {
+  [Role.member]: VIEWER_PERMISSIONS,
+  [Role.director]: MANAGER_PERMISSIONS,
+  [Role.coordinator]: MANAGER_PERMISSIONS,
+  [Role.superadmin]: MANAGER_PERMISSIONS,
+};
+
+export function buildMeUser(role: Role = Role.coordinator): MeResponseDto {
+  return {
+    id: "01952ef7-0000-7000-8000-000000000001",
+    name: "Ana Coordenadora",
+    ra: null,
+    email: null,
+    role,
+    permissions: PERMISSIONS_BY_ROLE[role],
+  };
+}
+
+/** The same user without `classes.view`, the permission of everything the classes module shows. */
+export function buildMeUserWithoutClasses(role: Role = Role.coordinator): MeResponseDto {
+  const user = buildMeUser(role);
+  return { ...user, permissions: { ...user.permissions, "classes.view": "none" } };
+}
+
+interface MeHandlerOptions {
+  user?: MeResponseDto | null;
+}
+
+export function meHandler({ user = buildMeUser() }: MeHandlerOptions = {}) {
+  return http.get("*/auth/me", () => {
+    if (!user) {
+      return HttpResponse.json({ statusCode: 401, message: "Unauthorized" }, { status: 401 });
+    }
+    return HttpResponse.json(user);
+  });
+}
+
+export const COURSE_ID = "01952ef7-0000-7000-8000-0000000000c1";
+export const CLASS_ID = "01952ef7-0000-7000-8000-0000000000d1";
+export const EDITION_ID = "01952ef7-0000-7000-8000-0000000000e1";
+
+export const CLASS_NAME = "Informática Básica — Turma A";
+export const COURSE_NAME = "Informática Básica";
+
+/** The students of the preview of the Figma, the earliest enrollment first. */
+export const STUDENT_NAMES = [
+  "Maria das Dores Silva",
+  "José Carlos Pereira",
+  "Ana Lúcia Souza",
+  "Antônio Ferreira Lima",
+  "Helena Barbosa Costa",
+  "Francisco de Assis Rocha",
+  "Terezinha Moreira",
+] as const;
+
+/**
+ * An item of `enrollmentsPreview`: the student number `index` (from 0) of `STUDENT_NAMES`,
+ * enrolled one day after the one before. The dates are at noon UTC, so they stay on the same day
+ * in Brazil, the time zone the suite runs in (see `setupClassesTestServer`).
+ */
+export function buildEnrollment(
+  index: number,
+  overrides: Partial<ClassEnrollmentPreviewItemResponseDto> = {},
+): ClassEnrollmentPreviewItemResponseDto {
+  const number = String(index + 1).padStart(2, "0");
+
+  return {
+    id: `01999a3e-7c1b-7000-8000-0000000001${number}`,
+    student: {
+      id: `01999a3e-7c1b-7000-8000-0000000002${number}`,
+      name: STUDENT_NAMES[index % STUDENT_NAMES.length],
+    },
+    enrolledAt: `2026-02-${String(20 + index).padStart(2, "0")}T12:00:00.000Z`,
+    ...overrides,
+  };
+}
+
+export function buildClassCourse(
+  overrides: Partial<ClassDetailCourseResponseDto> = {},
+): ClassDetailCourseResponseDto {
+  return {
+    id: COURSE_ID,
+    name: COURSE_NAME,
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    lessonPlanCount: 6,
+    plannedWorkloadMinutes: 450,
+    ...overrides,
+  };
+}
+
+/**
+ * The numbers of the card Resumo: 12 of 15 seats, and no lessons or attendance yet, which is what
+ * the API answers until the lessons module exists. `occupancyRate` follows the two counts, rounded
+ * to two decimals as the API does, unless an override says otherwise.
+ */
+export function buildClassSummary(
+  overrides: Partial<ClassDetailSummaryResponseDto> = {},
+): ClassDetailSummaryResponseDto {
+  const enrolledCount = overrides.enrolledCount ?? 12;
+  const capacity = overrides.capacity ?? 15;
+
+  return {
+    enrolledCount,
+    capacity,
+    occupancyRate: Math.round((enrolledCount * 100) / capacity) / 100,
+    lessonsDone: null,
+    lessonsTotal: null,
+    averageAttendance: null,
+    ...overrides,
+  };
+}
+
+/**
+ * Response of `GET /classes/:id`: "Informática Básica — Turma A" as in the Figma. It is in
+ * progress, basic (the level of its course), has 12 of 15 seats taken, the preview with the first
+ * five students and no lessons or attendance yet. `enrollmentsTotal` and `summary` follow the
+ * number of enrolled students (`enrollmentsTotal`, else `summary.enrolledCount`, else 12) and the
+ * capacity, as the API derives them, so a test that changes one does not repeat the rest; an
+ * override still wins. The dates are at noon UTC, so they stay on the same day in Brazil, the time
+ * zone the suite runs in (see `setupClassesTestServer`).
+ */
+export function buildClassDetail(overrides: Partial<ClassDetailDto> = {}): ClassDetailDto {
+  const capacity = overrides.capacity ?? overrides.summary?.capacity ?? 15;
+  const enrolledCount = overrides.enrollmentsTotal ?? overrides.summary?.enrolledCount ?? 12;
+
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-03",
+    endDate: "2026-06-27",
+    location: "Laboratório 3, bloco B",
+    capacity,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    createdAt: "2026-02-12T12:00:00.000Z",
+    createdBy: { id: "01999a3e-0000-7000-8000-0000000000aa", name: "Carla Menezes" },
+    course: buildClassCourse(),
+    summary: buildClassSummary({ enrolledCount, capacity }),
+    enrollmentsPreview: Array.from({ length: Math.min(enrolledCount, 5) }, (_, index) =>
+      buildEnrollment(index),
+    ),
+    enrollmentsTotal: enrolledCount,
+    ...overrides,
+  };
+}
+
+export function buildArchivedClassDetail(overrides: Partial<ClassDetailDto> = {}): ClassDetailDto {
+  return buildClassDetail({ archivedAt: "2026-10-10T13:00:00.000Z", ...overrides });
+}
+
+export interface ApiErrorOptions {
+  statusCode: number;
+  error: string;
+  message?: string;
+}
+
+export const COURSE_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 404,
+  error: "COURSE_NOT_FOUND",
+  message: "Course not found.",
+};
+
+export const CLASS_NOT_FOUND_ERROR: ApiErrorOptions = {
+  statusCode: 404,
+  error: "CLASS_NOT_FOUND",
+  message: "Class not found.",
+};
+
+function apiErrorResponse({ statusCode, error, message }: ApiErrorOptions) {
+  return HttpResponse.json(
+    { statusCode, error, message: message ?? error },
+    { status: statusCode },
+  );
+}
+
+interface HandlerOptions<TCall, TResponse> {
+  response?: TResponse;
+  error?: ApiErrorOptions;
+  networkError?: boolean;
+  /** Holds the answer until the test resolves it, to look at the loading state. */
+  delay?: Promise<void>;
+  onCall?: (call: TCall) => void;
+}
+
+/** An item of `GET /courses/:id/classes`: "Turma 2026.1", in progress with 12 of 15 seats taken. */
+export function buildCourseClassItem(
+  overrides: Partial<CourseClassItemResponseDto> = {},
+): CourseClassItemResponseDto {
+  return {
+    id: CLASS_ID,
+    code: "TUR-2026.1",
+    name: "Turma 2026.1",
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-03",
+    endDate: "2026-05-27",
+    capacity: 15,
+    enrolledCount: 12,
+    status: ClassStatus.in_progress,
+    ...overrides,
+  };
+}
+
+/** The answer of `GET /courses/:id/classes`: `total` can be more than the items of the page. */
+export function buildCourseClassesPage(
+  items: CourseClassItemResponseDto[] = [buildCourseClassItem()],
+  total: number = items.length,
+): ListCourseClasses200 {
+  return { data: items, total, page: 1, limit: 5 };
+}
+
+export interface ListCourseClassesCall {
+  id: string;
+  /** `null` when the request does not send the parameter. */
+  page: number | null;
+  limit: number | null;
+  status: string | null;
+}
+
+function numberOrNull(value: string | null): number | null {
+  return value === null ? null : Number(value);
+}
+
+export function listCourseClassesHandler({
+  response = buildCourseClassesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListCourseClassesCall, ListCourseClasses200> = {}) {
+  return http.get("*/courses/:id/classes", async ({ request, params }) => {
+    const query = new URL(request.url).searchParams;
+    onCall?.({
+      id: String(params.id),
+      page: numberOrNull(query.get("page")),
+      limit: numberOrNull(query.get("limit")),
+      status: query.get("status"),
+    });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export const PREREQUISITE_COURSE = {
+  id: "01952ef7-0000-7000-8000-0000000000c2",
+  name: "Smartphones no dia a dia",
+} as const;
+
+/**
+ * Response of `GET /courses/:id`: "Informática Básica", basic, active, with 6 lesson plans and no
+ * prerequisite. The lesson plans themselves are not needed by this module, only how many there are.
+ */
+export function buildCourseDetail(overrides: Partial<CourseDetailDto> = {}): CourseDetailDto {
+  return {
+    id: COURSE_ID,
+    name: "Informática Básica",
+    category: CourseCategory.basic,
+    archivedAt: null,
+    archiveReason: null,
+    status: CourseStatus.active,
+    createdAt: "2024-02-12T12:00:00.000Z",
+    updatedAt: "2026-10-01T12:00:00.000Z",
+    description: "O computador do zero: ligar, navegar e se proteger.",
+    objective: "Usar o computador com autonomia.",
+    createdBy: { id: "01952ef7-0000-7000-8000-000000000002", name: "Ana Paula Torres" },
+    lessonPlans: [],
+    lessonPlanCount: 6,
+    plannedWorkloadMinutes: 540,
+    prerequisites: [],
+    requiredBy: [],
+    ...overrides,
+  };
+}
+
+export interface CourseCall {
+  id: string;
+}
+
+export function getCourseHandler({
+  response = buildCourseDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<CourseCall, CourseDetailDto> = {}) {
+  return http.get("*/courses/:id", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+interface IdCall {
+  id: string;
+}
+
+export function getClassHandler({
+  response = buildClassDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<IdCall, ClassDetailDto> = {}) {
+  return http.get("*/classes/:id", async ({ params }) => {
+    onCall?.({ id: String(params.id) });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+export const EDITION_2025_ID = "01952ef7-0000-7000-8000-0000000000e2";
+export const OTHER_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c3";
+export const ARCHIVED_COURSE_ID = "01952ef7-0000-7000-8000-0000000000c4";
+
+/** The editions of `GET /editions`, the latest first. */
+export const EDITIONS: EditionResponseDto[] = [
+  { id: EDITION_ID, name: "2026.1" },
+  { id: EDITION_2025_ID, name: "2025.2" },
+];
+
+export function listEditionsHandler({
+  response = EDITIONS,
+  error,
+}: HandlerOptions<void, EditionResponseDto[]> = {}) {
+  return http.get("*/editions", () =>
+    error ? apiErrorResponse(error) : HttpResponse.json(response),
+  );
+}
+
+/** An item of `GET /courses`, with the fields the class screens read. */
+export function buildCourseListItem(overrides: Partial<CourseListItemDto> = {}): CourseListItemDto {
+  return {
+    id: COURSE_ID,
+    name: COURSE_NAME,
+    category: CourseCategory.basic,
+    status: CourseStatus.active,
+    createdAt: "2024-02-12T12:00:00.000Z",
+    lessonPlanCount: 6,
+    plannedWorkloadMinutes: 450,
+    prerequisites: [],
+    ...overrides,
+  };
+}
+
+/** Informática Básica and Smartphones, active, and Redes Sociais, archived. */
+export const COURSE_ITEMS: CourseListItemDto[] = [
+  buildCourseListItem(),
+  buildCourseListItem({
+    id: OTHER_COURSE_ID,
+    name: "Smartphones no dia a dia",
+    category: CourseCategory.intermediate,
+  }),
+  buildCourseListItem({
+    id: ARCHIVED_COURSE_ID,
+    name: "Redes Sociais",
+    status: CourseStatus.archived,
+  }),
+];
+
+export function listCoursesHandler({
+  response = COURSE_ITEMS,
+}: { response?: CourseListItemDto[] } = {}) {
+  return http.get("*/courses", () =>
+    HttpResponse.json({ data: response, total: response.length, page: 1, limit: 100 }),
+  );
+}
+
+/** An item of `GET /classes`: "Informática Básica — Turma A", in progress, 12 of 15 seats. */
+export function buildClassListItem(overrides: Partial<ClassListItemDto> = {}): ClassListItemDto {
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    course: {
+      id: COURSE_ID,
+      name: COURSE_NAME,
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+    },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-03",
+    endDate: "2026-06-27",
+    capacity: 15,
+    enrolledCount: 12,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    ...overrides,
+  };
+}
+
+export function buildClassesPage(
+  items: ClassListItemDto[] = [buildClassListItem()],
+  {
+    total = items.length,
+    page = 1,
+    limit = 10,
+  }: { total?: number; page?: number; limit?: number } = {},
+): ListClasses200 {
+  return { data: items, total, page, limit };
+}
+
+/** The query of a `GET /classes`, as an object of the parameters that were sent. */
+export type ListClassesCall = Record<string, string>;
+
+export function listClassesHandler({
+  response = buildClassesPage(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: HandlerOptions<ListClassesCall, ListClasses200> = {}) {
+  return http.get("*/classes", async ({ request }) => {
+    onCall?.(Object.fromEntries(new URL(request.url).searchParams));
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return apiErrorResponse(error);
+    return HttpResponse.json(response);
+  });
+}
+
+/** The answer of the mutations of a class: the class as saved. */
+export function buildClassResponse(overrides: Partial<ClassResponseDto> = {}): ClassResponseDto {
+  return {
+    id: CLASS_ID,
+    code: "INFO-A",
+    name: CLASS_NAME,
+    courseId: COURSE_ID,
+    course: {
+      id: COURSE_ID,
+      name: COURSE_NAME,
+      category: CourseCategory.basic,
+      status: CourseStatus.active,
+    },
+    edition: { id: EDITION_ID, name: "2026.1" },
+    startDate: "2026-03-03",
+    endDate: "2026-06-27",
+    location: "Laboratório 3, bloco B",
+    capacity: 15,
+    status: ClassStatus.in_progress,
+    archivedAt: null,
+    archiveReason: null,
+    archivedById: null,
+    createdAt: "2026-02-12T12:00:00.000Z",
+    createdById: "01999a3e-0000-7000-8000-0000000000aa",
+    updatedAt: "2026-02-12T12:00:00.000Z",
+    ...overrides,
+  };
+}
+
+export interface MutationCall {
+  id: string | null;
+  body: unknown;
+}
+
+function classMutationHandler(
+  method: "post" | "patch",
+  path: string,
+  defaultResponse: () => ClassResponseDto,
+  status = 200,
+) {
+  return ({
+    response,
+    error,
+    networkError = false,
+    delay,
+    onCall,
+  }: HandlerOptions<MutationCall, ClassResponseDto> = {}) =>
+    http[method](path, async ({ request, params }) => {
+      const text = await request.text();
+      onCall?.({
+        id: params.id ? String(params.id) : null,
+        body: text ? JSON.parse(text) : undefined,
+      });
+      if (delay) await delay;
+
+      if (networkError) return HttpResponse.error();
+      if (error) return apiErrorResponse(error);
+      return HttpResponse.json(response ?? defaultResponse(), { status });
+    });
+}
+
+export const createClassHandler = classMutationHandler(
+  "post",
+  "*/classes",
+  () => buildClassResponse({ status: ClassStatus.planned }),
+  201,
+);
+export const updateClassHandler = classMutationHandler("patch", "*/classes/:id", () =>
+  buildClassResponse(),
+);
+export const archiveClassHandler = classMutationHandler("patch", "*/classes/:id/archive", () =>
+  buildClassResponse({ archivedAt: "2026-10-10T13:00:00.000Z" }),
+);
+export const unarchiveClassHandler = classMutationHandler("patch", "*/classes/:id/unarchive", () =>
+  buildClassResponse(),
+);
+
+export const CLASS_CODE_TAKEN_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CLASS_CODE_TAKEN",
+};
+export const INVALID_PERIOD_ERROR: ApiErrorOptions = { statusCode: 400, error: "INVALID_PERIOD" };
+export const CAPACITY_BELOW_ENROLLED_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CAPACITY_BELOW_ENROLLED",
+};
+export const CLASS_HAS_ACTIVE_ENROLLMENTS_ERROR: ApiErrorOptions = {
+  statusCode: 409,
+  error: "CLASS_HAS_ACTIVE_ENROLLMENTS",
+};
+export const COURSE_ARCHIVED_ERROR: ApiErrorOptions = { statusCode: 409, error: "COURSE_ARCHIVED" };

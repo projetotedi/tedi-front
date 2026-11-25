@@ -12,9 +12,33 @@ import i18n from "@shared/i18n";
 import { toast, ToastProvider } from "@shared/ui";
 
 import "../index";
-import { buildMeUser, meHandler } from "./handlers";
+import { createCatalogRoutes } from "../routes";
+import {
+  buildMeUser,
+  listLessonPlanContentsHandler,
+  listLessonPlansHandler,
+  meHandler,
+} from "./handlers";
 
-export const server = setupServer();
+/**
+ * The server of the tests of this module. `listLessonPlansHandler` and the suggestions of Conteúdo
+ * answer by default, because the picker of the sequence and the list of plans ask for them; a test
+ * can still override them with `server.use`.
+ */
+export const server = setupServer(listLessonPlansHandler(), listLessonPlanContentsHandler());
+
+/**
+ * The routes of the catalog as the tests of this module render them. The card "Turmas deste curso"
+ * and + Nova turma belong to the `classes` module, which `catalog` does not import, so here the
+ * slots are stand-ins that only say which course they were asked for. The real card is tested with the `classes` module
+ * and put together with these routes in `app/__tests__/catalog-slots.test.tsx`.
+ */
+export const catalogRoutes = createCatalogRoutes({
+  renderCourseClasses: (courseId) => <p>{`Turmas do curso ${courseId}`}</p>,
+  renderNewClassAction: (course) => (
+    <button type="button" disabled={course.isArchived}>{`Nova turma ${course.id}`}</button>
+  ),
+});
 
 export function setupCatalogTestServer(): void {
   beforeAll(() => server.listen({ onUnhandledRequest: "error" }));

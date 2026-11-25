@@ -8,11 +8,12 @@ import { ConfirmDialog } from "@shared/components/ConfirmDialog";
 import { Alert, toast } from "@shared/ui";
 
 import { toAccessActionErrorKey } from "../lib/access-action-error";
+import type { MemberAccessTarget } from "../lib/access-format";
 import { invalidateAccessList } from "../lib/access-queries";
 import { MemberSummary } from "./MemberSummary";
 
 export interface DisableAccessDialogProps {
-  access: AccessResponseDto;
+  access: MemberAccessTarget;
   onClose: () => void;
   /** Recebe a pessoa já com o acesso desativado, para a tela que abriu o diálogo se atualizar. */
   onDisabled: (updated: AccessResponseDto) => void;

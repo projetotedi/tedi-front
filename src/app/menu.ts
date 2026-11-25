@@ -4,9 +4,12 @@ import clockIcon from "../assets/icons/clock.svg";
 import graduationCapIcon from "../assets/icons/graduation-cap.svg";
 import personIcon from "../assets/icons/person.svg";
 
+import { assignmentsMenuItems } from "@modules/assignments";
 import { authMenuItems } from "@modules/auth";
 import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
+import { hoursMenuItems } from "@modules/hours";
+import { lessonsMenuItems } from "@modules/lessons";
 import type { MenuGroup, MenuItem } from "@shared/lib/menu";
 
 /**
@@ -26,42 +29,34 @@ export const appMenuGroups: MenuGroup[] = [
  * (rotas em `prototypeRoutes`, com o mesmo `RequirePermission` do item). Quando um módulo
  * nascer, ele exporta o próprio `<modulo>MenuItems` e substitui a linha correspondente aqui.
  * "Membros" já saiu daqui: é a tela de gestão de acessos do `auth` (GUS-87), em `authMenuItems`.
- * Calendário (`/lessons/calendar`) e Validação de horas (`/hours/review`) são caminhos
- * provisórios; o módulo dono confirma quando nascer.
+ * "Cursos" também (GUS-131): é a listagem do `catalog`, em `catalogMenuItems`.
+ * Aulas e Calendário também saíram (GUS-152): são do módulo `lessons`, em `lessonsMenuItems`.
+ * Minhas aulas (GUS-161) nasceu no módulo `assignments`, em `assignmentsMenuItems`.
+ * Banco de horas e Validação de horas (GUS-165) são do módulo `hours`, em `hoursMenuItems`.
  */
 export const prototypeMenuItems: MenuItem[] = [
-  { label: "common:nav.courses", path: "/courses", permission: "catalog.view", group: "catalog" },
   {
     label: "common:nav.enrollments",
     path: "/enrollments",
     permission: "enrollments.manage",
     group: "classes",
   },
-  { label: "common:nav.lessons", path: "/lessons", permission: "lessons.view", group: "lessons" },
-  {
-    label: "common:nav.calendar",
-    path: "/lessons/calendar",
-    permission: "lessons.view",
-    group: "lessons",
-  },
   { label: "common:nav.students", path: "/students", permission: "students.view", group: "people" },
-  { label: "common:nav.hours", path: "/hours", permission: "hours.viewOthers", group: "hours" },
-  {
-    label: "common:nav.hoursReview",
-    path: "/hours/review",
-    permission: "hours.review",
-    group: "hours",
-  },
 ];
 
 /**
  * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale
- * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Planos de
- * aula (`catalogMenuItems`) depois de Cursos, e Membros (`authMenuItems`) depois de Alunos,
- * como no Figma.
+ * a ordem deste array. Por isso Turmas (`classesMenuItems`) vem antes de Matrículas, Cursos e
+ * Planos de aula (`catalogMenuItems`) na ordem do Figma, e Membros (`authMenuItems`) depois de Alunos,
+ * como no Figma. Aulas e Calendário (`lessonsMenuItems`) já saem na ordem do Figma, e Minhas aulas
+ * (`assignmentsMenuItems`) vem logo depois deles, no mesmo grupo. Banco de horas e Validação de
+ * horas (`hoursMenuItems`) formam o grupo Horas, nessa ordem.
  */
 export const appMenuItems: MenuItem[] = [
   ...classesMenuItems,
+  ...lessonsMenuItems,
+  ...assignmentsMenuItems,
+  ...hoursMenuItems,
   ...prototypeMenuItems,
   ...catalogMenuItems,
   ...authMenuItems,

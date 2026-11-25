@@ -38,6 +38,8 @@
     "errors": {
       "invalidCredentials": "Matrícula ou senha incorretos",
       "accessDisabled": "Seu acesso está inativo, fale com a coordenação",
+      "registrationPending": "Seu cadastro está aguardando a validação da coordenação. Assim que for aprovado, você poderá entrar.",
+      "registrationRejected": "Seu cadastro não foi aprovado. Fale com a coordenação.",
       "tooManyAttempts": "Muitas tentativas, aguarde alguns minutos",
       "network": "Não foi possível conectar",
       "unknown": "Não foi possível entrar. Tente novamente."
@@ -175,7 +177,7 @@
       "title": "Membros ({{total}})",
       "titlePending": "Membros",
       "pendingInvites": "Convites pendentes ({{count}})",
-      "caption": "Membros com acesso ao TEDI",
+      "caption": "Membros do TEDI",
       "columns": {
         "member": "Membro",
         "role": "Papel",
@@ -190,13 +192,17 @@
         "deactivateMember": "Inativar {{name}}",
         "deactivateTooltip": "Inativar membro"
       },
+      "validate": "Validar",
+      "validateLabel": "Validar cadastro de {{name}}",
       "status": {
         "active": "Ativo",
-        "inactive": "Inativo"
+        "inactive": "Inativo",
+        "pending": "A validar",
+        "rejected": "Recusado"
       },
       "search": {
         "label": "Buscar por nome ou RA",
-        "placeholder": "Buscar membro por nome…"
+        "placeholder": "Buscar por nome ou RA…"
       },
       "filters": {
         "label": "Filtros da lista de membros",
@@ -218,7 +224,8 @@
       "states": {
         "empty": {
           "title": "Nenhum membro ainda",
-          "description": "Gere um link de cadastro e envie para a pessoa. Ela aparece aqui assim que concluir o cadastro."
+          "description": "Gere um link de cadastro e envie para a pessoa. Ela aparece aqui assim que concluir o cadastro.",
+          "descriptionReadOnly": "Os membros aparecem aqui assim que concluírem o cadastro."
         },
         "noResults": {
           "title": "Nada encontrado",
@@ -357,6 +364,107 @@
       "accessDisabled": "Acesso de {{name}} desativado.",
       "accessEnabled": "Acesso de {{name}} reativado.",
       "inviteRevoked": "Convite revogado."
+    }
+  },
+  "registrationReview": {
+    "title": "Validar cadastro de membro",
+    "close": "Fechar",
+    "back": "Voltar",
+    "badge": "A validar",
+    "required": "obrigatório",
+    "loading": "Carregando cadastro…",
+    "summary": {
+      "sent": "{{name}} enviou o cadastro pelo link em {{submittedAt}}",
+      "sentNoDate": "{{name}} enviou o cadastro pelo link",
+      "invitedAs": " · convite para {{role}}"
+    },
+    "submitted": {
+      "title": "Dados enviados pelo membro",
+      "legend": "Confira com o RA e o termo. Se algo estiver errado, recuse com uma observação para o membro corrigir.",
+      "notProvided": "Não informado",
+      "birthDate_one": "{{date}} ({{count}} ano)",
+      "birthDate_other": "{{date}} ({{count}} anos)",
+      "semester": "{{semester}}º",
+      "openTerm": "Abrir termo de voluntariado (abre em nova aba)",
+      "fields": {
+        "name": "Nome completo",
+        "birthDate": "Data de nascimento",
+        "cpf": "CPF",
+        "phone": "Telefone",
+        "personalEmail": "E-mail pessoal",
+        "institutionalEmail": "E-mail institucional",
+        "address": "Endereço",
+        "city": "Cidade",
+        "state": "Estado (UF)",
+        "ra": "RA",
+        "course": "Curso da faculdade",
+        "semester": "Período",
+        "className": "Turma da faculdade",
+        "department": "Departamento indicado",
+        "volunteerTerm": "Termo de voluntariado"
+      }
+    },
+    "review": {
+      "title": "Definido pela coordenação",
+      "legend": "Vem preenchido com o convite e o que o membro indicou; ajuste antes de aprovar.",
+      "role": "Perfil de acesso",
+      "department": "Departamento",
+      "departmentPlaceholder": "Selecione um departamento",
+      "departmentLoading": "Carregando departamentos…",
+      "noDepartment": "Sem departamento",
+      "mainFunction": "Função principal",
+      "joinedAt": "Entrada no projeto",
+      "note": "Observação da validação",
+      "noteHelp": "Obrigatória ao recusar. Fica registrada no cadastro; não escreva dados pessoais."
+    },
+    "departments": {
+      "emptyTitle": "Nenhum departamento cadastrado",
+      "emptyDescription": "A coordenação precisa cadastrar os departamentos antes de aprovar um membro ou diretor. Para aprovar como Coordenadora, o departamento é opcional.",
+      "error": "Não foi possível carregar os departamentos.",
+      "retry": "Tentar de novo"
+    },
+    "actions": {
+      "approve": "Aprovar",
+      "approving": "Aprovando…",
+      "reject": "Recusar",
+      "rejecting": "Recusando…"
+    },
+    "decided": {
+      "approved": "Este cadastro já foi aprovado.",
+      "rejected": "Este cadastro já foi recusado.",
+      "description": "Ele aparece aqui só para consulta, sem ações."
+    },
+    "loadError": {
+      "notFound": "Cadastro não encontrado. Ele pode ter sido removido.",
+      "failed": "Não foi possível carregar o cadastro. Verifique a sua conexão e tente de novo.",
+      "retry": "Tentar de novo"
+    },
+    "toast": {
+      "approvedTitle": "Cadastro aprovado",
+      "approvedDescription": "{{name}} agora tem acesso como {{role}} e já pode entrar com o RA {{ra}}.",
+      "approvedDescriptionNoRa": "{{name}} agora tem acesso como {{role}} e já pode entrar.",
+      "rejectedTitle": "Cadastro recusado",
+      "rejectedDescription": "{{name}} não recebe acesso. A observação fica registrada no cadastro dele."
+    },
+    "validation": {
+      "roleRequired": "Escolha o perfil de acesso",
+      "roleInvalid": "Este perfil não pode ser concedido. Escolha outro.",
+      "departmentRequired": "Escolha o departamento",
+      "departmentNotFound": "Este departamento não existe mais. Escolha outro.",
+      "mainFunctionRequired": "Informe a função principal",
+      "mainFunctionMax": "A função principal pode ter no máximo {{maxMainFunctionLength}} caracteres",
+      "mainFunctionInvalid": "A função principal não foi aceita. Confira o texto e tente de novo.",
+      "joinedAtInvalid": "Informe uma data entre 01/01/2000 e hoje",
+      "noteRequired": "Escreva uma observação para recusar",
+      "noteMax": "A observação pode ter no máximo {{maxNoteLength}} caracteres",
+      "noteInvalid": "A observação não foi aceita. Confira o texto e tente de novo."
+    },
+    "errors": {
+      "notPending": "Este cadastro já foi validado por outra pessoa da coordenação. Feche e confira a lista atualizada.",
+      "notFound": "Cadastro não encontrado. Ele pode ter sido removido.",
+      "invalidData": "Algum dado não foi aceito. Confira os campos e tente de novo.",
+      "network": "Não foi possível conectar. Verifique a sua conexão e tente de novo.",
+      "unknown": "Não foi possível concluir a validação. Tente novamente."
     }
   }
 }

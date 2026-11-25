@@ -3,10 +3,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
 import { useCreatePasswordReset } from "@api/generated";
-import type { AccessResponseDto } from "@api/generated/model";
 import { Button, Dialog } from "@shared/ui";
 
 import { toAccessActionErrorKey } from "../lib/access-action-error";
+import type { MemberAccessTarget } from "../lib/access-format";
 import { invalidatePendingInvites } from "../lib/access-queries";
 import { INVITE_VALIDITY_HOURS } from "../lib/invite-validity";
 import { ActionError } from "./ActionError";
@@ -14,7 +14,7 @@ import { GeneratedLink } from "./GeneratedLink";
 import { MemberSummary } from "./MemberSummary";
 
 export interface PasswordResetDialogProps {
-  access: AccessResponseDto;
+  access: MemberAccessTarget;
   onClose: () => void;
 }
 

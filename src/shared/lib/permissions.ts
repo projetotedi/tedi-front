@@ -17,6 +17,15 @@ export interface PermissionTarget {
   serverGrant?: boolean;
 }
 
+/**
+ * Permissions that never act on the person herself, whatever the scope: nobody confirms her own
+ * presence, and nobody reviews her own hours (the API answers 409 SELF_REVIEW_NOT_ALLOWED).
+ */
+const NEVER_ON_ONESELF: ReadonlySet<Permission> = new Set([
+  "attendance.confirmMember",
+  "hours.review",
+]);
+
 /** Escopo que o back concedeu ao usuário para a permissão; "none" sem sessão. */
 export function scopeOf(user: PermissionSubject | null | undefined, permission: Permission): Scope {
   return user?.permissions?.[permission] ?? "none";
@@ -37,8 +46,7 @@ export function can(
   const scope = scopeOf(user, permission);
   if (scope === "none") return false;
 
-  // Regra fixa: ninguém confirma a própria presença, nem com escopo "all".
-  if (permission === "attendance.confirmMember" && target?.personId === user.id) return false;
+  if (NEVER_ON_ONESELF.has(permission) && target?.personId === user.id) return false;
 
   if (scope === "all") return true;
   if (!target) return true;

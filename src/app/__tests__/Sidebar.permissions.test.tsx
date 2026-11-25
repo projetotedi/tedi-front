@@ -38,7 +38,7 @@ async function renderSidebar(role: Role) {
         ],
       },
     ],
-    { initialEntries: ["/courses"] },
+    { initialEntries: ["/students"] },
   );
 
   render(
@@ -82,7 +82,7 @@ describe("Sidebar by permission", () => {
 
     expect(itemsOf(nav, "Catálogo")).toEqual(["Cursos", "Planos de aula"]);
     expect(itemsOf(nav, "Turmas")).toEqual(["Turmas"]);
-    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário"]);
+    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário", "Minhas aulas"]);
     expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos"]);
     expect(linkNames(nav)).toEqual([
       "Cursos",
@@ -90,6 +90,7 @@ describe("Sidebar by permission", () => {
       "Turmas",
       "Aulas",
       "Calendário",
+      "Minhas aulas",
       "Alunos",
     ]);
   });
@@ -105,7 +106,7 @@ describe("Sidebar by permission", () => {
     expect(nav.queryByRole("link", { name: "Validação de horas" })).not.toBeInTheDocument();
   });
 
-  it("director sees Horas with Banco de horas only", async () => {
+  it("director sees Horas with Banco de horas only, and Membros in Pessoas", async () => {
     const nav = await renderSidebar(Role.director);
 
     expect(groupNames(nav)).toEqual(["Catálogo", "Turmas", "Aulas", "Pessoas", "Horas"]);
@@ -114,12 +115,13 @@ describe("Sidebar by permission", () => {
 
     expect(itemsOf(nav, "Horas")).toEqual(["Banco de horas"]);
     expect(itemsOf(nav, "Turmas")).toEqual(["Turmas", "Matrículas"]);
-    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos"]);
+    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário", "Minhas aulas"]);
+    // The list of members asks for members.list, which the director has (GUS-150).
+    expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos", "Membros"]);
     expect(nav.queryByRole("link", { name: "Validação de horas" })).not.toBeInTheDocument();
-    expect(nav.queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
   });
 
-  it("coordinator sees the 5 groups with the 10 Figma items", async () => {
+  it("coordinator sees the 5 groups with the 11 items (the 10 of the Figma and Minhas aulas)", async () => {
     const nav = await renderSidebar(Role.coordinator);
 
     expect(groupNames(nav)).toEqual(["Catálogo", "Turmas", "Aulas", "Pessoas", "Horas"]);
@@ -129,7 +131,7 @@ describe("Sidebar by permission", () => {
     expect(nav.getAllByRole("link")).toHaveLength(appMenuItems.length);
     expect(itemsOf(nav, "Catálogo")).toEqual(["Cursos", "Planos de aula"]);
     expect(itemsOf(nav, "Turmas")).toEqual(["Turmas", "Matrículas"]);
-    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário"]);
+    expect(itemsOf(nav, "Aulas")).toEqual(["Aulas", "Calendário", "Minhas aulas"]);
     expect(itemsOf(nav, "Pessoas")).toEqual(["Alunos", "Membros"]);
     expect(itemsOf(nav, "Horas")).toEqual(["Banco de horas", "Validação de horas"]);
   });

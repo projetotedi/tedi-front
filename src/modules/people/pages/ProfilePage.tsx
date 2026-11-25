@@ -1,13 +1,11 @@
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useGetMyProfile } from "@api/generated/people/people";
 import { SignOutButton } from "@modules/auth";
 import { Alert, Button, Skeleton } from "@shared/ui";
 
-import { CategoryHoursCard } from "../components/CategoryHoursCard";
 import { DetailsCard } from "../components/DetailsCard";
-import { EntriesCard } from "../components/EntriesCard";
-import { HoursSummary } from "../components/HoursSummary";
 import { ProfileHeaderCard } from "../components/ProfileHeaderCard";
 import { formatDate, formatInstant, formatPhone } from "../lib/format";
 import { accountStatusOf } from "../lib/status-colors";
@@ -39,13 +37,27 @@ function ProfileLoading({ label }: { label: string }) {
   );
 }
 
+export interface ProfilePageProps {
+  /** The actions of other modules in the header, after "Editar meus dados". */
+  renderActions: () => ReactNode;
+  /** The numbers of the hours, between the header and the columns. */
+  renderHoursSummary: () => ReactNode;
+  /** The cards of the hours, on top of the main column. */
+  renderHoursCards: () => ReactNode;
+}
+
 /**
  * "My profile" (Figma "Telas · Conta"), where everyone lands after signing in. Name, role, RA and
  * the whole registration come from `GET /members/me` (GUS-122); a field with no value shows a dash.
- * The hours cards stay in an empty state until the hours bank arrives (GUS-163). The title of the
- * page is on the topbar.
+ * The hours belong to the `hours` module and arrive through the slots (GUS-163): "+ Lançar horas" in
+ * the header, the numbers under it and the cards on top of the main column. The slots are drawn only
+ * once the registration is there. The title of the page is on the topbar.
  */
-export function ProfilePage() {
+export function ProfilePage({
+  renderActions,
+  renderHoursSummary,
+  renderHoursCards,
+}: ProfilePageProps) {
   const { t, i18n } = useTranslation("people");
   const { t: tCommon } = useTranslation();
   // `gcTime: 0` drops the registration from the cache as soon as the page unmounts, which is what
@@ -104,15 +116,13 @@ export function ProfilePage() {
         status={status}
         department={department}
         joinedAt={joinedAt}
+        actions={renderActions()}
       />
 
-      <HoursSummary minutes={null} />
+      {renderHoursSummary()}
 
       <div className={TWO_COLUMNS}>
-        <div className="flex min-w-0 flex-col gap-6">
-          <EntriesCard entries={null} />
-          <CategoryHoursCard byCategory={null} />
-        </div>
+        <div className="flex min-w-0 flex-col gap-6">{renderHoursCards()}</div>
 
         <div className="flex min-w-0 flex-col gap-6">
           <DetailsCard
