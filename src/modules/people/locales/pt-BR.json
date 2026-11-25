@@ -50,5 +50,143 @@
     },
     "empty": "—",
     "notProvided": "Não informado"
+  },
+  "student": {
+    "routeTitle": "Aluno",
+    "loading": "Carregando o aluno…",
+    "loadError": "Não foi possível carregar o aluno. Tente novamente.",
+    "retry": "Tentar de novo",
+    "notFoundTitle": "Aluno não encontrado",
+    "notFoundDescription": "Este aluno não existe ou foi removido.",
+    "status": {
+      "active": "Ativa",
+      "archived": "Arquivada"
+    },
+    "ageValue_one": "{{count}} ano",
+    "ageValue_other": "{{count}} anos",
+    "header": {
+      "accessibility": "Acessibilidade: {{need}}"
+    },
+    "archived": {
+      "notice": "Cadastro arquivado em {{date}}.",
+      "reason": "Motivo: {{reason}}"
+    },
+    "yes": "Sim",
+    "no": "Não",
+    "accessibilityNeed": {
+      "none": "Nenhuma",
+      "visual": "Visual",
+      "hearing": "Auditiva",
+      "motor": "Motora",
+      "cognitive": "Cognitiva",
+      "other": "Outra"
+    },
+    "personal": {
+      "title": "Dados pessoais",
+      "fullName": "Nome completo",
+      "birthDate": "Data de nascimento",
+      "age": "Idade",
+      "phone": "Telefone",
+      "email": "E-mail",
+      "education": "Escolaridade",
+      "hasSmartphone": "Tem smartphone",
+      "hasComputer": "Tem computador",
+      "howFoundUs": "Como conheceu o TEDI",
+      "emergencyContactName": "Contato de emergência",
+      "emergencyContactPhone": "Telefone de emergência",
+      "registeredBy": "Cadastrada por",
+      "registeredByValue": "{{name}} — {{date}}",
+      "registeredOn": "Em {{date}}"
+    },
+    "accessibility": {
+      "title": "Necessidades de acessibilidade",
+      "columns": {
+        "category": "Categoria",
+        "classNeeds": "O que a pessoa precisa",
+        "supportResource": "Recurso de apoio",
+        "registeredBy": "Registrado por"
+      },
+      "empty": "Nenhuma necessidade de acessibilidade registrada."
+    },
+    "enrollments": {
+      "title": "Matrículas",
+      "unavailable": "As matrículas do aluno vão aparecer aqui em breve."
+    },
+    "summary": {
+      "title": "Resumo",
+      "unavailable": "O resumo do aluno vai aparecer aqui em breve."
+    },
+    "courseHistory": {
+      "title": "Histórico de cursos",
+      "unavailable": "O histórico de cursos do aluno vai aparecer aqui em breve."
+    },
+    "record": {
+      "title": "Registro",
+      "registeredBy": "Cadastrada por",
+      "updatedAt": "Última atualização"
+    }
+  },
+  "member": {
+    "routeTitle": "Membro",
+    "loading": "Carregando o membro…",
+    "loadError": "Não foi possível carregar o membro. Tente novamente.",
+    "retry": "Tentar de novo",
+    "notFoundTitle": "Membro não encontrado",
+    "notFoundDescription": "Este membro não existe ou foi removido.",
+    "backToList": "Voltar para Membros",
+    "breadcrumb": "Trilha de navegação",
+    "status": {
+      "active": "Ativa",
+      "inactive": "Inativa"
+    },
+    "chips": {
+      "ra": "RA {{ra}}"
+    },
+    "data": {
+      "title": "Dados do membro",
+      "fullName": "Nome completo",
+      "birthDate": "Data de nascimento",
+      "phone": "Telefone",
+      "personalEmail": "E-mail pessoal",
+      "address": "Endereço",
+      "city": "Cidade",
+      "state": "Estado (UF)",
+      "ra": "RA",
+      "department": "Departamento",
+      "mainFunction": "Função principal",
+      "course": "Curso da faculdade",
+      "className": "Turma da faculdade",
+      "semester": "Período",
+      "semesterValue": "{{count}}º",
+      "institutionalEmail": "E-mail institucional",
+      "cpf": "CPF",
+      "volunteerTerm": "Termo de voluntariado",
+      "role": "Perfil de acesso",
+      "status": "Status",
+      "joinedAt": "Entrada no projeto",
+      "exitDate": "Saída"
+    },
+    "record": {
+      "title": "Registro e permissões",
+      "approvedBy": "Cadastro aprovado por",
+      "approvedByValue": "{{name}} em {{date}}",
+      "approvedOn": "Em {{date}}"
+    },
+    "assignments": {
+      "title": "Alocações em aulas",
+      "unavailable": "As alocações do membro em aulas vão aparecer aqui em breve."
+    },
+    "entries": {
+      "title": "Lançamentos de horas",
+      "unavailable": "Os lançamentos de horas do membro vão aparecer aqui em breve."
+    },
+    "hoursBank": {
+      "title": "Banco de horas",
+      "unavailable": "O banco de horas do membro vai aparecer aqui em breve."
+    },
+    "attendance": {
+      "title": "Presença",
+      "unavailable": "A presença do membro nas aulas vai aparecer aqui em breve."
+    }
   }
 }

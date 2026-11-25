@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 import type { MemberListItemResponseDto } from "@api/generated/model";
 import pencilIcon from "@shared/assets/icons/pencil.svg";
@@ -8,16 +9,18 @@ import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge, Button, Tooltip } from "@shared/ui";
 
 import { useCan } from "../hooks/useCan";
+import { memberDetailPath } from "../lib/member-path";
 import { MEMBER_ROW_STATUS_TONE, memberRowStatus } from "../lib/member-status";
 import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: MemberListItemResponseDto[];
-  /** Abre "Editar membro" da linha. */
+  /** Opens "Editar membro" for the row. */
   onEditMember: (row: MemberListItemResponseDto) => void;
   /**
-   * Abre "Inativar membro" (GUS-149 e GUS-147). Enquanto a tela não passar isto, a lixeira não
-   * aparece: inativar é diferente de desativar o acesso e ainda não tem modal nem rota.
+   * Opens "Inativar membro" (GUS-149 and GUS-147). While the screen does not pass this, the trash
+   * icon is hidden: deactivating a member is different from disabling login access and has no modal
+   * or route yet.
    */
   onDeactivateMember?: (row: MemberListItemResponseDto) => void;
   /**
@@ -27,13 +30,13 @@ export interface AccessTableProps {
    */
   onValidate?: (row: MemberListItemResponseDto) => void;
   /**
-   * Abre a ficha do membro (GUS-145). Clicar nos ícones da linha não chama isto. Sem esta prop a
-   * linha não é clicável e não ganha o realce de hover.
+   * Opens the detail screen of a member (GUS-145). Clicking the links or action buttons of the row
+   * does not call this. Without this prop the row is not clickable and gets no hover highlight.
    */
   onRowClick?: (row: MemberListItemResponseDto) => void;
 }
 
-// Realce de linha do Figma: fundo claro (do DataTable) + barra de 3px da cor de ação à esquerda.
+// Row highlight of the Figma: light background (from DataTable) + 3px accent bar on the left.
 const CLICKABLE_ROW_CLASS =
   "hover:shadow-[inset_3px_0_0_var(--accent)] focus-within:shadow-[inset_3px_0_0_var(--accent)]";
 
@@ -52,8 +55,8 @@ export function AccessTable({
   onRowClick,
 }: AccessTableProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
-  // `MemberListItemResponseDto` ainda não traz a flag `canEdit` por linha: sem ela o diretor
-  // (escopo "department") não vê o lápis, e a coordenação (escopo "all") vê em todas.
+  // `MemberListItemResponseDto` does not carry a per-row `canEdit` flag yet: without it the
+  // director ("department" scope) sees no pencil, and the coordinator ("all" scope) sees it on all.
   const canEdit = useCan("members.edit", { serverGrant: false });
   const canDeactivate = useCan("members.deactivate");
 
@@ -72,7 +75,15 @@ export function AccessTable({
     {
       header: t("access.people.columns.member"),
       headerClassName: "w-[245px] uppercase",
-      render: (row) => row.name,
+      // The name is the keyboard and screen reader path to the member screen: `<tr>` does not take focus.
+      render: (row) => (
+        <Link
+          to={memberDetailPath(row.id)}
+          className="inline-flex min-h-11 items-center rounded-sm font-medium underline-offset-2 hover:underline outline-hidden focus-visible:ring-3 focus-visible:ring-focus"
+        >
+          {row.name}
+        </Link>
+      ),
     },
     {
       header: t("access.people.columns.role"),
@@ -107,7 +118,7 @@ export function AccessTable({
       header: t("access.people.columns.actions"),
       headerClassName: "w-[160px] uppercase",
       render: (row) => (
-        // Ícones de 16px dentro de botões de 44px (alvo de toque): o Figma desenha só o ícone.
+        // 16px icons inside 44px buttons (touch target): the Figma draws only the icon.
         <div className="flex items-center gap-1">
           {onValidate && memberRowStatus(row) === "pending" ? (
             <Button

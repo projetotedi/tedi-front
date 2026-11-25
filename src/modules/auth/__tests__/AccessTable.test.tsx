@@ -215,6 +215,7 @@ describe("AccessTable", () => {
       await renderTable();
 
       await user.tab();
+      await user.tab();
 
       expect(screen.getByRole("button", { name: "Editar Ana Torres" })).toHaveFocus();
       expect(await screen.findByRole("tooltip")).toHaveTextContent("Editar");
@@ -226,19 +227,26 @@ describe("AccessTable", () => {
 
       await user.tab();
       await user.tab();
+      await user.tab();
 
       expect(screen.getByRole("button", { name: "Inativar Ana Torres" })).toHaveFocus();
       expect(await screen.findByRole("tooltip")).toHaveTextContent("Inativar membro");
     });
 
-    it("each icon is one tab stop, in row order", async () => {
+    it("each icon is one tab stop, after the link of the name, in row order", async () => {
       const user = userEvent.setup();
       await renderTable();
 
       await user.tab();
+      expect(screen.getByRole("link", { name: "Ana Torres" })).toHaveFocus();
+      await user.tab();
       expect(screen.getByRole("button", { name: "Editar Ana Torres" })).toHaveFocus();
       await user.tab();
+      expect(screen.getByRole("link", { name: "Beto Nunes" })).toHaveFocus();
+      await user.tab();
       expect(screen.getByRole("button", { name: "Editar Beto Nunes" })).toHaveFocus();
+      await user.tab();
+      expect(screen.getByRole("link", { name: "Caio Lopes" })).toHaveFocus();
       await user.tab();
       expect(screen.getByRole("button", { name: "Editar Caio Lopes" })).toHaveFocus();
     });
@@ -401,10 +409,13 @@ describe("AccessTable", () => {
     expect(onValidate).toHaveBeenCalledWith(PENDING);
   });
 
-  it("puts Validar before the row actions in the tab order", async () => {
+  it("puts Validar after the link of the name and before the row actions in the tab order", async () => {
     const onValidate = vi.fn();
     const user = userEvent.setup();
     await renderTable({ rows: [PENDING], onValidate });
+
+    await user.tab();
+    expect(screen.getByRole("link", { name: "Lucas Souza" })).toHaveFocus();
 
     await user.tab();
     expect(screen.getByRole("button", { name: "Validar cadastro de Lucas Souza" })).toHaveFocus();
@@ -421,5 +432,79 @@ describe("AccessTable", () => {
 
     expect(screen.getAllByRole("columnheader")).toHaveLength(6);
     expect(screen.queryAllByRole("cell")).toHaveLength(0);
+  });
+
+  it("renders the name as a link to /members/:id", async () => {
+    await renderTable();
+
+    for (const { id, name } of ROWS) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", `/members/${id}`);
+    }
+    expect(screen.getAllByRole("link")).toHaveLength(ROWS.length);
+  });
+
+  it("opens the member with the keyboard, from the link of the name", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderTable();
+
+    await user.tab();
+    await user.keyboard("{Enter}");
+
+    expect(router.state.location.pathname).toBe("/members/1");
+  });
+
+  it("calls onRowClick when a cell of the row is clicked", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    await renderTable({ onRowClick });
+
+    const beto = screen.getByRole("row", { name: /Beto Nunes/ });
+    await user.click(within(beto).getAllByRole("cell")[2]);
+
+    expect(onRowClick).toHaveBeenCalledExactlyOnceWith(ROWS[1]);
+  });
+
+  it("calls onRowClick when the badge of the status is clicked", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    await renderTable({ onRowClick });
+
+    const caio = screen.getByRole("row", { name: /Caio Lopes/ });
+    await user.click(within(caio).getByText("Ativo"));
+
+    expect(onRowClick).toHaveBeenCalledExactlyOnceWith(ROWS[2]);
+  });
+
+  it("does not call onRowClick when Validar is clicked", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const onValidate = vi.fn();
+    await renderTable({ rows: [PENDING], onRowClick, onValidate });
+
+    await user.click(screen.getByRole("button", { name: "Validar cadastro de Lucas Souza" }));
+
+    expect(onValidate).toHaveBeenCalledExactlyOnceWith(PENDING);
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
+
+  it("does not call onRowClick when the link of the name is clicked: the link opens the member itself", async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const { router } = await renderTable({ onRowClick });
+
+    await user.click(screen.getByRole("link", { name: "Caio Lopes" }));
+
+    expect(onRowClick).not.toHaveBeenCalled();
+    expect(router.state.location.pathname).toBe("/members/3");
+  });
+
+  it("is not clickable without onRowClick", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderTable();
+
+    const ana = screen.getByRole("row", { name: /Ana Torres/ });
+    await expect(user.click(within(ana).getAllByRole("cell")[2])).resolves.toBeUndefined();
+
+    expect(router.state.location.pathname).toBe("/");
   });
 });
