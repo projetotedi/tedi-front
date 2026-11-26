@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { ClassStatus, CourseCategory } from "@api/generated/model";
@@ -347,6 +348,7 @@ describe("EnrolledStudentsCard", () => {
   it("shows the name and the day of enrollment of the students in the preview, in order", async () => {
     await renderWithProviders(
       <EnrolledStudentsCard classId={CLASS_ID} preview={preview} total={12} />,
+      { user: buildMeUser(Role.member) },
     );
 
     const table = within(card("Alunos matriculados")).getByRole("table", {
@@ -373,6 +375,29 @@ describe("EnrolledStudentsCard", () => {
       [STUDENT_NAMES[3], "23/02/2026"],
       [STUDENT_NAMES[4], "24/02/2026"],
     ]);
+  });
+
+  it("gives who manages enrollments Alterar situação on each row, which opens its dialog (GUS-138)", async () => {
+    await renderWithProviders(
+      <EnrolledStudentsCard
+        classId={CLASS_ID}
+        preview={preview}
+        total={12}
+        classLabel="Informática Básica — Turma A · INFO-A · 2026.1"
+      />,
+      { user: buildMeUser(Role.coordinator) },
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: `Alterar situação da matrícula de ${STUDENT_NAMES[0]}`,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Alterar situação da matrícula" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(`${STUDENT_NAMES[0]} · Aluno`)).toBeInTheDocument();
   });
 
   it("shows only the first five students even if it is given more", async () => {
