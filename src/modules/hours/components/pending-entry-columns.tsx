@@ -8,6 +8,7 @@ import { Badge, Checkbox } from "@shared/ui";
 
 import { formatEntryDay } from "../lib/bank-format";
 import { CATEGORY_LABEL_KEYS, memberNameOf } from "../lib/bank-labels";
+import { EntryLinkNote } from "./EntryLinkNote";
 
 type Entry = MemberHourEntryResponseDto;
 
@@ -43,7 +44,8 @@ const READ_WIDTHS = {
 
 /**
  * The columns of the queue: date, member, activity, category and hours, and, for who reviews
- * (`review`), the box of the batch first and the actions last.
+ * (`review`), the box of the batch first and the actions last. Under the activity goes its link,
+ * with the tag "Aula cancelada" for the coordination to decide (`EntryLinkNote`, GUS-174).
  */
 export function pendingEntryColumns(
   t: TFunction<"hours">,
@@ -72,7 +74,12 @@ export function pendingEntryColumns(
     {
       header: t("review.activity"),
       headerClassName: `${widths.activity} uppercase`,
-      render: (row) => row.activity,
+      render: (row) => (
+        <>
+          <span className="block">{row.activity}</span>
+          <EntryLinkNote entry={row} />
+        </>
+      ),
     },
     {
       header: t("review.category"),

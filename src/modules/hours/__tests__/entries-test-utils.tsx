@@ -15,9 +15,9 @@ import { toast, ToastProvider } from "@shared/ui";
 
 // Registers the "hours" namespace.
 import "../index";
-import { ANA_ID } from "./entries-handlers";
+import { ANA_ID, linkOptionsHandlers } from "./entries-handlers";
 
-export const server = setupServer();
+export const server = setupServer(...linkOptionsHandlers());
 
 /** The time zone of the people who use the system. The suite runs in it, whatever the machine. */
 const TEST_TIME_ZONE = "America/Sao_Paulo";

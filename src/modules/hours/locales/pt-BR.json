@@ -65,6 +65,11 @@
         "minutePart_other": "{{count}} minutos",
         "hoursAndMinutes": "{{hours}} e {{minutes}} pendentes"
       }
+    },
+    "link": {
+      "lessonCancelled": "Aula cancelada",
+      "lesson": "Vinculado a uma aula",
+      "class": "Vinculado a uma turma"
     }
   },
   "logHours": {
@@ -97,7 +102,11 @@
       "hoursFormat": "Use o formato 2h30.",
       "hoursRange": "Informe de 0h01 a 24h.",
       "notesTooLong": "Use no máximo 2.000 caracteres.",
-      "serverInvalid": "Confira este campo."
+      "serverInvalid": "Confira este campo.",
+      "lessonCancelled": "Essa aula foi cancelada. Escolha outra aula ou só a turma.",
+      "classArchived": "Essa turma está arquivada. Escolha outra.",
+      "linkNotFound": "Não encontramos essa turma ou aula. Escolha de novo.",
+      "lessonNotInClass": "Essa aula não é da turma escolhida."
     },
     "errors": {
       "network": "Não foi possível lançar as horas. Verifique a conexão e tente de novo.",
@@ -106,7 +115,12 @@
       "memberNotFound": "Não encontramos este membro. Atualize a página e tente de novo.",
       "selfOnBehalf": "Para lançar as suas próprias horas, use + Lançar horas no Meu perfil.",
       "unknown": "Não foi possível lançar as horas. Tente de novo."
-    }
+    },
+    "linkClass": "Vínculo (Turma) — opcional",
+    "linkLesson": "Aula — opcional",
+    "linkNone": "Sem vínculo",
+    "lessonNone": "Só a turma",
+    "linkLessonHint": "Escolha a turma antes da aula."
   },
   "myEntries": {
     "title": "Meus lançamentos",

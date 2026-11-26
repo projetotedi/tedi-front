@@ -159,3 +159,20 @@ describe("toRemoveEntryError", () => {
     expect(isStaleEntry({ kind: "alert", alert: "unknown" })).toBe(false);
   });
 });
+
+describe("toLogHoursError — the link (GUS-174)", () => {
+  it.each([
+    [{ statusCode: 400, error: "LESSON_NOT_IN_CLASS" }, "lessonId", "lessonNotInClass"],
+    [{ statusCode: 400, error: "LESSON_NOT_FOUND" }, "lessonId", "linkNotFound"],
+    [{ statusCode: 400, error: "CLASS_NOT_FOUND" }, "classId", "linkNotFound"],
+    [{ statusCode: 409, error: "LESSON_CANCELLED" }, "lessonId", "lessonCancelled"],
+    [{ statusCode: 409, error: "CLASS_ARCHIVED" }, "classId", "classArchived"],
+    [
+      { statusCode: 409, error: "CLASS_ARCHIVED", details: [{ field: "lessonId", message: "x" }] },
+      "lessonId",
+      "classArchived",
+    ],
+  ])("puts %o on %s", (error, name, message) => {
+    expect(toLogHoursError(error)).toEqual({ kind: "fields", fields: [{ name, message }] });
+  });
+});

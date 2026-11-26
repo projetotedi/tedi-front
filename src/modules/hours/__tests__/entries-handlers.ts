@@ -689,3 +689,50 @@ export function createHoursStore() {
     ],
   };
 }
+
+export const LINK_CLASS_ID = "01999a3e-7c1b-7000-8000-0000000007c1";
+export const LINK_LESSON_ID = "01999a3e-7c1b-7000-8000-0000000007f1";
+export const CANCELLED_LESSON_ID = "01999a3e-7c1b-7000-8000-0000000007f2";
+
+/**
+ * The options of the link of "Lançar horas" (GUS-174): one class, Informática Básica — A, with a
+ * lesson on 10/03 and a cancelled one on 12/03, which the select leaves out. Every server of the
+ * entries answers them by default, so a test that does not open the link is not bothered.
+ */
+export function linkOptionsHandlers() {
+  return [
+    http.get("*/classes", () =>
+      HttpResponse.json({
+        data: [
+          {
+            id: LINK_CLASS_ID,
+            code: "INFO-A",
+            name: "A",
+            course: { id: "c", name: "Informática Básica", category: "basic", status: "active" },
+            edition: { id: "e", name: "2026.1" },
+            startDate: "2026-03-03",
+            endDate: "2026-06-27",
+            enrolledCount: 12,
+            capacity: 15,
+            status: "in_progress",
+            archivedAt: null,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 100,
+      }),
+    ),
+    http.get("*/lessons", () =>
+      HttpResponse.json({
+        data: [
+          { id: LINK_LESSON_ID, title: "Teclado e mouse", date: "2026-03-10", status: "done" },
+          { id: CANCELLED_LESSON_ID, title: "Janelas", date: "2026-03-12", status: "cancelled" },
+        ],
+        total: 2,
+        page: 1,
+        limit: 100,
+      }),
+    ),
+  ];
+}

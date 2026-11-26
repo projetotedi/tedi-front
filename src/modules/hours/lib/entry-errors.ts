@@ -1,11 +1,25 @@
 import type { ApiFieldErrorDto } from "@api/generated/model";
 
 /** The fields of "Lançar horas", in the order they are on the screen: the first invalid one takes the focus. */
-export const LOG_HOURS_FIELDS = ["activity", "category", "date", "hours", "notes"] as const;
+export const LOG_HOURS_FIELDS = [
+  "activity",
+  "category",
+  "date",
+  "hours",
+  "classId",
+  "lessonId",
+  "notes",
+] as const;
 export type LogHoursFieldName = (typeof LOG_HOURS_FIELDS)[number];
 
 /** The keys, under `logHours.fieldErrors`, of the refusals of the API that belong to a field. */
-export type LogHoursFieldMessage = "serverInvalid" | "dateInFuture";
+export type LogHoursFieldMessage =
+  | "serverInvalid"
+  | "dateInFuture"
+  | "lessonCancelled"
+  | "classArchived"
+  | "linkNotFound"
+  | "lessonNotInClass";
 
 /** The keys, under `logHours.errors`, of the refusals that have no field to point at. */
 export type LogHoursIssue = "selfOnBehalf" | "forbidden" | "memberNotFound" | "network" | "unknown";
@@ -21,7 +35,17 @@ const FIELD_OF_PROPERTY: Readonly<Record<string, LogHoursFieldName>> = {
   date: "date",
   declaredMinutes: "hours",
   notes: "notes",
+  classId: "classId",
+  lessonId: "lessonId",
 };
+
+/** The field of the link a refusal points at (`details[0].field`), else `fallback`. */
+function linkFieldOf(details: unknown, fallback: "classId" | "lessonId"): "classId" | "lessonId" {
+  const field = Array.isArray(details)
+    ? (details[0] as { field?: unknown } | undefined)?.field
+    : null;
+  return field === "classId" || field === "lessonId" ? field : fallback;
+}
 
 const GATEWAY_STATUS_CODES: ReadonlySet<number> = new Set([502, 503, 504]);
 
@@ -87,6 +111,9 @@ function validationFields(details: unknown): LogHoursError {
  * - 400 `VALIDATION_FAILED`: the fields it points at (`declaredMinutes` is Horas); one that points at
  *   none of them is `unknown`. 400 `HOUR_ENTRY_DATE_IN_FUTURE`: Data (the clock of the machine is
  *   ahead of the one of the API, in America/Sao_Paulo);
+ * - the link (GUS-172), on its field: 400 `LESSON_NOT_IN_CLASS`, `LESSON_NOT_FOUND` and
+ *   `CLASS_NOT_FOUND`, 409 `LESSON_CANCELLED` and `CLASS_ARCHIVED` (on the lesson when the class came
+ *   from it);
  * - 400 `SELF_ON_BEHALF_NOT_ALLOWED`, 403 `FORBIDDEN`/`FORBIDDEN_SCOPE` and 404 `MEMBER_NOT_FOUND`:
  *   the refusals of logging on behalf of somebody (oneself, a member out of the department of the
  *   director, a member that is gone);
@@ -101,6 +128,24 @@ export function toLogHoursError(error: unknown): LogHoursError {
       return { kind: "fields", fields: [{ name: "date", message: "dateInFuture" }] };
     }
     if (code === "SELF_ON_BEHALF_NOT_ALLOWED") return { kind: "issue", issue: "selfOnBehalf" };
+    if (code === "LESSON_NOT_IN_CLASS") {
+      return { kind: "fields", fields: [{ name: "lessonId", message: "lessonNotInClass" }] };
+    }
+    if (code === "LESSON_NOT_FOUND") {
+      return { kind: "fields", fields: [{ name: "lessonId", message: "linkNotFound" }] };
+    }
+    if (code === "CLASS_NOT_FOUND") {
+      return { kind: "fields", fields: [{ name: "classId", message: "linkNotFound" }] };
+    }
+  }
+  if (statusCode === 409 && code === "LESSON_CANCELLED") {
+    return { kind: "fields", fields: [{ name: "lessonId", message: "lessonCancelled" }] };
+  }
+  if (statusCode === 409 && code === "CLASS_ARCHIVED") {
+    return {
+      kind: "fields",
+      fields: [{ name: linkFieldOf(details, "classId"), message: "classArchived" }],
+    };
   }
   if (statusCode === 403 && FORBIDDEN_CODES.has(code)) return { kind: "issue", issue: "forbidden" };
   if (statusCode === 404 && code === "MEMBER_NOT_FOUND") {
