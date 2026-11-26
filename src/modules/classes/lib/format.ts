@@ -15,3 +15,16 @@ export function formatPercent(fraction: number, locale: string): string {
     fraction,
   );
 }
+
+/** Today in the time zone of the project (America/Sao_Paulo), as `YYYY-MM-DD`. `now` is for the tests. */
+export function todayCalendarDate(now: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Sao_Paulo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const pick = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value ?? "";
+  return `${pick("year")}-${pick("month")}-${pick("day")}`;
+}

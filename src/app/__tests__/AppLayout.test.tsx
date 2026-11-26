@@ -258,15 +258,6 @@ describe("AppLayout", () => {
     );
   });
 
-  it("shows the coming soon page for prototype areas", async () => {
-    await renderApp(buildMeUser(), "/enrollments");
-
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Matrículas" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/ainda está em construção/)).toBeInTheDocument();
-  });
-
   it("blocks Banco de horas for a member even through the URL", async () => {
     await renderApp(buildMeUser({ role: Role.member }), "/hours");
 

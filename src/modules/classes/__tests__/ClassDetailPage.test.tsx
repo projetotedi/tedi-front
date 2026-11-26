@@ -229,7 +229,7 @@ describe("ClassDetailPage", () => {
       expect(within(rows[0]).getAllByRole("cell")[1]).toHaveTextContent("20/02/2026");
       expect(within(students).getByRole("link", { name: "Ver todos os 12" })).toHaveAttribute(
         "href",
-        `/enrollments?classId=${CLASS_ID}`,
+        `/classes/${CLASS_ID}/enrollments`,
       );
     });
 

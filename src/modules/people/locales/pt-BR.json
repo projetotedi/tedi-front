@@ -124,6 +124,9 @@
       "title": "Registro",
       "registeredBy": "Cadastrada por",
       "updatedAt": "Última atualização"
+    },
+    "actions": {
+      "enroll": "Matricular em turma"
     }
   },
   "member": {

@@ -34,16 +34,10 @@ export const appMenuGroups: MenuGroup[] = [
  * Aulas e Calendário também saíram (GUS-152): são do módulo `lessons`, em `lessonsMenuItems`.
  * Minhas aulas (GUS-161) nasceu no módulo `assignments`, em `assignmentsMenuItems`.
  * Banco de horas e Validação de horas (GUS-165) são do módulo `hours`, em `hoursMenuItems`.
+ * Matrículas (GUS-138) é do módulo `classes`, em `classesMenuItems`.
  * Alunos (GUS-137) é do módulo `people`, em `peopleMenuItems`.
  */
-export const prototypeMenuItems: MenuItem[] = [
-  {
-    label: "common:nav.enrollments",
-    path: "/enrollments",
-    permission: "enrollments.manage",
-    group: "classes",
-  },
-];
+export const prototypeMenuItems: MenuItem[] = [];
 
 /**
  * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale

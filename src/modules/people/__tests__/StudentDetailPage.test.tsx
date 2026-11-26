@@ -422,24 +422,37 @@ describe("StudentDetailPage", () => {
     it.each([
       ["coordinator", Role.coordinator],
       ["director", Role.director],
-      ["member", Role.member],
     ])(
-      "has no button for the %s: the actions come with GUS-123 and GUS-138",
+      "gives the %s Matricular em turma, to the enrollment screen with the student",
       async (_label, role) => {
-        await renderPage({ role });
+        const user = userEvent.setup();
+        const { router } = await renderPage({ role });
 
-        expect(screen.queryAllByRole("button")).toHaveLength(0);
-        for (const name of [
-          "Editar dados",
-          "Matricular em turma",
-          "Arquivar aluno",
-          "Reativar aluno",
-        ]) {
-          expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-          expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
-        }
+        await user.click(screen.getByRole("button", { name: "Matricular em turma" }));
+
+        expect(router.state.location.pathname).toBe("/enrollments");
+        expect(router.state.location.search).toBe(`?studentId=${buildStudentDetail().id}`);
       },
     );
+
+    it("has no Matricular em turma for an archived student", async () => {
+      await renderPage({ student: buildStudentDetail({ archivedAt: "2026-10-10T13:00:00.000Z" }) });
+
+      expect(screen.queryByRole("button", { name: "Matricular em turma" })).not.toBeInTheDocument();
+    });
+
+    it.each([
+      ["coordinator", Role.coordinator],
+      ["director", Role.director],
+      ["member", Role.member],
+    ])("has none of the actions of GUS-123 for the %s", async (_label, role) => {
+      await renderPage({ role });
+
+      for (const name of ["Editar dados", "Arquivar aluno", "Reativar aluno"]) {
+        expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
+      }
+    });
   });
 
   describe("an archived student", () => {

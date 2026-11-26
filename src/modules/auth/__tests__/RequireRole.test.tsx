@@ -65,3 +65,11 @@ it("does not redirect nor render children while loading", async () => {
   expect(screen.queryByText("Conteúdo protegido")).not.toBeInTheDocument();
   expect(router.state.location.pathname).toBe("/people");
 });
+
+it("sends an account that must change its password to /change-password, from any route", async () => {
+  server.use(meHandler({ user: buildMeUser({ mustChangePassword: true }) }));
+  const { router } = await renderProtected("/classes");
+
+  await waitFor(() => expect(router.state.location.pathname).toBe("/change-password"));
+  expect(screen.queryByText("Conteúdo protegido")).not.toBeInTheDocument();
+});

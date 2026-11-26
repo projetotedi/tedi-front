@@ -15,10 +15,12 @@ export interface RequireRoleProps {
  * Ordem de decisão:
  * 1. sessão carregando → mensagem de carregamento, sem redirecionar nem renderizar o filho;
  * 2. anônimo → /login?returnTo=<rota atual>;
- * 3. do contrário, libera o conteúdo.
+ * 3. conta que ainda precisa trocar a senha (`mustChangePassword`, GUS-142) → /change-password,
+ *    inclusive ao recarregar a página: o back recusa as outras rotas até a troca (GUS-93);
+ * 4. do contrário, libera o conteúdo.
  */
 export function RequireRole({ children }: RequireRoleProps): ReactElement {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const { t } = useTranslation("auth");
   const location = useLocation();
 
@@ -28,6 +30,10 @@ export function RequireRole({ children }: RequireRoleProps): ReactElement {
 
   if (status === "anonymous") {
     return <Navigate to={buildLoginPath(location)} replace />;
+  }
+
+  if (user?.mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
   }
 
   return <>{children ?? <Outlet />}</>;

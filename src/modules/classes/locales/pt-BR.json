@@ -144,7 +144,10 @@
       "enrolledAt": "Matriculado em",
       "empty": "Nenhum aluno matriculado ainda.",
       "seeAll_one": "Ver o aluno matriculado",
-      "seeAll_other": "Ver todos os {{count}}"
+      "seeAll_other": "Ver todos os {{count}}",
+      "actions": "Ações",
+      "changeStatus": "Alterar situação",
+      "changeStatusLabel": "Alterar situação da matrícula de {{name}}"
     },
     "members": {
       "title": "Membros alocados"
@@ -217,5 +220,112 @@
     "confirm": "Reativar turma",
     "confirming": "Reativando…",
     "success": "Turma reativada."
+  },
+  "enrollment": {
+    "routeTitle": "Matrícula de Alunos na Turma",
+    "selectClass": "Selecionar turma",
+    "selectClassPlaceholder": "Escolha uma turma",
+    "classesLoadError": "Não foi possível carregar as turmas. Tente novamente.",
+    "pickClassFirst": "Escolha uma turma para ver os alunos disponíveis e os matriculados.",
+    "status": {
+      "active": "Ativa",
+      "dropped": "Desistente",
+      "completed": "Concluída"
+    },
+    "available": {
+      "title": "Alunos disponíveis",
+      "description": "Selecione os alunos que deseja matricular nesta turma",
+      "search": "Buscar aluno",
+      "searchPlaceholder": "Digite o nome do aluno",
+      "details": "{{age}} anos • {{situation}}",
+      "noClass": "sem turma atual",
+      "currentClasses": "turma atual: {{classes}}",
+      "unknownStudent": "aluno selecionado",
+      "pagination": "Páginas dos alunos disponíveis",
+      "selectedCount_zero": "Nenhum aluno selecionado",
+      "selectedCount_one": "{{count}} aluno selecionado",
+      "selectedCount_other": "{{count}} alunos selecionados",
+      "enrollSelected_zero": "Matricular selecionados",
+      "enrollSelected_one": "Matricular selecionado (1)",
+      "enrollSelected_other": "Matricular selecionados ({{count}})",
+      "overCapacity_zero": "A turma não tem vagas. Remova alunos da seleção ou libere vagas antes de matricular.",
+      "overCapacity_one": "A turma só tem 1 vaga. Deixe no máximo 1 aluno selecionado.",
+      "overCapacity_other": "A turma só tem {{count}} vagas. Deixe no máximo {{count}} alunos selecionados.",
+      "success_one": "1 aluno matriculado",
+      "success_other": "{{count}} alunos matriculados",
+      "nobodyEnrolled": "Nenhum aluno novo foi matriculado",
+      "skipped_one": "{{names}} já estava matriculado.",
+      "skipped_other": "{{names}} já estavam matriculados.",
+      "prerequisiteWarning": "{{name}} ainda não concluiu o pré-requisito {{course}}.",
+      "closed": {
+        "archived": "Esta turma está arquivada e não recebe matrículas.",
+        "closed": "Esta turma está encerrada e não recebe matrículas."
+      },
+      "state": {
+        "empty": "Nenhum aluno disponível para esta turma",
+        "noResults": "Nenhum aluno encontrado com essa busca",
+        "error": "Não foi possível carregar os alunos disponíveis",
+        "loading": "Carregando os alunos disponíveis…"
+      }
+    },
+    "enrolled": {
+      "title": "Matriculados nesta turma ({{count}})",
+      "listLabel": "Alunos matriculados nesta turma",
+      "since": "Matriculado(a) em {{date}}",
+      "remove": "Remover",
+      "removeLabel": "Remover a matrícula de {{name}}",
+      "confirmTitle": "Remover matrícula",
+      "confirmBody": "A matrícula de {{name}} será removida e a vaga fica livre. Se o aluno já teve presença registrada, altere a situação da matrícula em vez de remover.",
+      "confirm": "Remover matrícula",
+      "removed": "Matrícula de {{name}} removida",
+      "pagination": "Páginas dos alunos matriculados",
+      "state": {
+        "empty": "Nenhum aluno matriculado ainda",
+        "noResults": "Nenhum aluno matriculado ainda",
+        "error": "Não foi possível carregar os matriculados",
+        "loading": "Carregando os matriculados…"
+      }
+    },
+    "statusDialog": {
+      "title": "Alterar situação da matrícula",
+      "student": "{{name}} · Aluno",
+      "current": "Situação atual: {{status}} · matriculado em {{date}}",
+      "newStatus": "Nova situação",
+      "hints": {
+        "active": "Frequentando as aulas",
+        "dropped": "Deixou a turma; libera a vaga",
+        "completed": "Terminou o curso"
+      },
+      "effectiveDate": "A partir de",
+      "reason": "Motivo (opcional)",
+      "reasonExample": "Ex.: Mudou de cidade",
+      "notice": "Desistente libera a vaga e sai da chamada das próximas aulas. Concluída entra no histórico de cursos concluídos do aluno. A mudança fica registrada.",
+      "back": "Voltar",
+      "save": "Salvar situação",
+      "success": "Situação da matrícula de {{name}} alterada",
+      "errors": {
+        "required": "Escolha a nova situação.",
+        "effectiveDateInFuture": "A data não pode ser depois de hoje.",
+        "effectiveDateBeforeEnrollment": "A data não pode ser antes da matrícula.",
+        "reasonTooLong": "O motivo pode ter até {{reasonMax}} caracteres."
+      }
+    },
+    "errors": {
+      "classFull_zero": "A turma não tem mais vagas. Ninguém foi matriculado.",
+      "classFull_one": "A turma só tem 1 vaga. Ninguém foi matriculado.",
+      "classFull_other": "A turma só tem {{count}} vagas. Ninguém foi matriculado.",
+      "classClosed": "A turma está encerrada e não recebe matrículas.",
+      "classArchived": "A turma está arquivada e não pode ser alterada.",
+      "classNotFound": "Turma não encontrada. Ela pode ter sido removida.",
+      "studentArchived": "Um dos alunos está arquivado e não pode ser matriculado.",
+      "studentNotFound": "Um dos alunos não foi encontrado. Atualize a lista e tente de novo.",
+      "alreadyEnrolled": "O aluno já está matriculado nesta turma.",
+      "enrollmentNotFound": "Matrícula não encontrada. Ela pode ter sido removida.",
+      "notRemovable": "Esta matrícula não pode ser removida, porque já tem presença registrada ou não está ativa. Altere a situação da matrícula.",
+      "effectiveDateInFuture": "A data não pode ser depois de hoje.",
+      "effectiveDateBeforeEnrollment": "A data não pode ser antes da matrícula.",
+      "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      "unknown": "Não foi possível concluir a ação. Tente novamente."
+    }
   }
 }

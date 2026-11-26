@@ -533,5 +533,17 @@
       "network": "Não foi possível conectar. Verifique a sua conexão e tente de novo.",
       "unknown": "Não foi possível concluir a validação. Tente novamente."
     }
+  },
+  "changePassword": {
+    "title": "Troque sua senha",
+    "subtitle": "Por segurança, troque a senha provisória antes de usar o sistema.",
+    "account": " — primeiro acesso com a senha criada na instalação.",
+    "submit": "Salvar e continuar",
+    "success": "Senha trocada. Bem-vindo ao TEDI!",
+    "errors": {
+      "unchanged": "A nova senha precisa ser diferente da senha provisória.",
+      "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
+      "unknown": "Não foi possível trocar a senha. Tente novamente."
+    }
   }
 }
