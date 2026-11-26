@@ -7,4 +7,10 @@ export const classesMenuItems: MenuItem[] = [
     permission: "classes.view",
     group: "classes",
   },
+  {
+    label: "common:nav.enrollments",
+    path: "/enrollments",
+    permission: "enrollments.manage",
+    group: "classes",
+  },
 ];

@@ -144,7 +144,10 @@
       "enrolledAt": "Enrolled on",
       "empty": "No student enrolled yet.",
       "seeAll_one": "See the enrolled student",
-      "seeAll_other": "See all {{count}}"
+      "seeAll_other": "See all {{count}}",
+      "actions": "Actions",
+      "changeStatus": "Change status",
+      "changeStatusLabel": "Change the enrollment status of {{name}}"
     },
     "members": {
       "title": "Allocated members"
@@ -217,5 +220,112 @@
     "confirm": "Reactivate class",
     "confirming": "Reactivating…",
     "success": "Class reactivated."
+  },
+  "enrollment": {
+    "routeTitle": "Class enrollment",
+    "selectClass": "Select class",
+    "selectClassPlaceholder": "Choose a class",
+    "classesLoadError": "Could not load the classes. Try again.",
+    "pickClassFirst": "Choose a class to see the available and the enrolled students.",
+    "status": {
+      "active": "Active",
+      "dropped": "Dropped",
+      "completed": "Completed"
+    },
+    "available": {
+      "title": "Available students",
+      "description": "Select the students you want to enroll in this class",
+      "search": "Search student",
+      "searchPlaceholder": "Type the student's name",
+      "details": "{{age}} years • {{situation}}",
+      "noClass": "no current class",
+      "currentClasses": "current class: {{classes}}",
+      "unknownStudent": "selected student",
+      "pagination": "Pages of the available students",
+      "selectedCount_zero": "No student selected",
+      "selectedCount_one": "{{count}} student selected",
+      "selectedCount_other": "{{count}} students selected",
+      "enrollSelected_zero": "Enroll selected",
+      "enrollSelected_one": "Enroll selected (1)",
+      "enrollSelected_other": "Enroll selected ({{count}})",
+      "overCapacity_zero": "The class has no seats. Remove students from the selection or free seats before enrolling.",
+      "overCapacity_one": "The class has only 1 seat. Keep at most 1 student selected.",
+      "overCapacity_other": "The class has only {{count}} seats. Keep at most {{count}} students selected.",
+      "success_one": "1 student enrolled",
+      "success_other": "{{count}} students enrolled",
+      "nobodyEnrolled": "No new student was enrolled",
+      "skipped_one": "{{names}} was already enrolled.",
+      "skipped_other": "{{names}} were already enrolled.",
+      "prerequisiteWarning": "{{name}} has not completed the prerequisite {{course}} yet.",
+      "closed": {
+        "archived": "This class is archived and takes no enrollment.",
+        "closed": "This class is closed and takes no enrollment."
+      },
+      "state": {
+        "empty": "No student available for this class",
+        "noResults": "No student found for this search",
+        "error": "Could not load the available students",
+        "loading": "Loading the available students…"
+      }
+    },
+    "enrolled": {
+      "title": "Enrolled in this class ({{count}})",
+      "listLabel": "Students enrolled in this class",
+      "since": "Enrolled on {{date}}",
+      "remove": "Remove",
+      "removeLabel": "Remove the enrollment of {{name}}",
+      "confirmTitle": "Remove enrollment",
+      "confirmBody": "The enrollment of {{name}} will be removed and the seat freed. If the student already has attendance recorded, change the status of the enrollment instead.",
+      "confirm": "Remove enrollment",
+      "removed": "Enrollment of {{name}} removed",
+      "pagination": "Pages of the enrolled students",
+      "state": {
+        "empty": "No student enrolled yet",
+        "noResults": "No student enrolled yet",
+        "error": "Could not load the enrolled students",
+        "loading": "Loading the enrolled students…"
+      }
+    },
+    "statusDialog": {
+      "title": "Change enrollment status",
+      "student": "{{name}} · Student",
+      "current": "Current status: {{status}} · enrolled on {{date}}",
+      "newStatus": "New status",
+      "hints": {
+        "active": "Attending the lessons",
+        "dropped": "Left the class; frees the seat",
+        "completed": "Finished the course"
+      },
+      "effectiveDate": "From",
+      "reason": "Reason (optional)",
+      "reasonExample": "E.g.: Moved to another city",
+      "notice": "Dropped frees the seat and leaves the roll call of the next lessons. Completed goes to the student's history of completed courses. The change is recorded.",
+      "back": "Back",
+      "save": "Save status",
+      "success": "Enrollment status of {{name}} changed",
+      "errors": {
+        "required": "Choose the new status.",
+        "effectiveDateInFuture": "The date cannot be after today.",
+        "effectiveDateBeforeEnrollment": "The date cannot be before the enrollment.",
+        "reasonTooLong": "The reason can have up to {{reasonMax}} characters."
+      }
+    },
+    "errors": {
+      "classFull_zero": "The class has no seats left. Nobody was enrolled.",
+      "classFull_one": "The class has only 1 seat. Nobody was enrolled.",
+      "classFull_other": "The class has only {{count}} seats. Nobody was enrolled.",
+      "classClosed": "The class is closed and takes no enrollment.",
+      "classArchived": "The class is archived and cannot be changed.",
+      "classNotFound": "Class not found. It may have been removed.",
+      "studentArchived": "One of the students is archived and cannot be enrolled.",
+      "studentNotFound": "One of the students was not found. Refresh the list and try again.",
+      "alreadyEnrolled": "The student is already enrolled in this class.",
+      "enrollmentNotFound": "Enrollment not found. It may have been removed.",
+      "notRemovable": "This enrollment cannot be removed, because it already has attendance recorded or is not active. Change the status of the enrollment.",
+      "effectiveDateInFuture": "The date cannot be after today.",
+      "effectiveDateBeforeEnrollment": "The date cannot be before the enrollment.",
+      "network": "Could not connect. Check your connection and try again.",
+      "unknown": "Could not complete the action. Try again."
+    }
   }
 }

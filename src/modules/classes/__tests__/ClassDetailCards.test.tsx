@@ -1,4 +1,5 @@
 import { screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import { ClassStatus, CourseCategory } from "@api/generated/model";
@@ -347,6 +348,7 @@ describe("EnrolledStudentsCard", () => {
   it("shows the name and the day of enrollment of the students in the preview, in order", async () => {
     await renderWithProviders(
       <EnrolledStudentsCard classId={CLASS_ID} preview={preview} total={12} />,
+      { user: buildMeUser(Role.member) },
     );
 
     const table = within(card("Alunos matriculados")).getByRole("table", {
@@ -375,6 +377,29 @@ describe("EnrolledStudentsCard", () => {
     ]);
   });
 
+  it("gives who manages enrollments Alterar situação on each row, which opens its dialog (GUS-138)", async () => {
+    await renderWithProviders(
+      <EnrolledStudentsCard
+        classId={CLASS_ID}
+        preview={preview}
+        total={12}
+        classLabel="Informática Básica — Turma A · INFO-A · 2026.1"
+      />,
+      { user: buildMeUser(Role.coordinator) },
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: `Alterar situação da matrícula de ${STUDENT_NAMES[0]}`,
+      }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Alterar situação da matrícula" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText(`${STUDENT_NAMES[0]} · Aluno`)).toBeInTheDocument();
+  });
+
   it("shows only the first five students even if it is given more", async () => {
     const seven = Array.from({ length: 7 }, (_, index) => buildEnrollment(index));
 
@@ -396,7 +421,7 @@ describe("EnrolledStudentsCard", () => {
     const link = within(card("Alunos matriculados")).getByRole("link", {
       name: "Ver todos os 12",
     });
-    expect(link).toHaveAttribute("href", `/enrollments?classId=${CLASS_ID}`);
+    expect(link).toHaveAttribute("href", `/classes/${CLASS_ID}/enrollments`);
     expect(link).toHaveTextContent(/^Ver todos os 12\s›$/);
     expect(within(link).getByText(/›/)).toHaveAttribute("aria-hidden", "true");
   });
@@ -408,7 +433,7 @@ describe("EnrolledStudentsCard", () => {
 
     expect(screen.getByRole("link", { name: "Ver o aluno matriculado" })).toHaveAttribute(
       "href",
-      `/enrollments?classId=${CLASS_ID}`,
+      `/classes/${CLASS_ID}/enrollments`,
     );
   });
 

@@ -124,6 +124,9 @@
       "title": "Record",
       "registeredBy": "Registered by",
       "updatedAt": "Last updated"
+    },
+    "actions": {
+      "enroll": "Enroll in a class"
     }
   },
   "member": {

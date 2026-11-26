@@ -1,9 +1,10 @@
 import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 import type { StudentDetailDto } from "@api/generated/model";
 import { useGetStudent } from "@api/generated/people/people";
+import { useCan } from "@modules/auth";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
@@ -82,12 +83,30 @@ function ArchivedNotice({ archivedAt, archiveReason }: ArchivedNoticeProps): Rea
 
 /**
  * The student that was loaded: the header, the notice of an archived one and the two columns of
- * cards. No action is passed to the header yet; see `StudentDetailHeader`.
+ * cards. The header gets Matricular em turma (GUS-138) for who manages enrollments, while the
+ * student is not archived: it opens the enrollment screen with the student selected, where the
+ * class is picked. The other actions come with GUS-123; see `StudentDetailHeader`.
  */
 function StudentDetailView({ student }: { student: StudentDetailDto }): ReactElement {
+  const { t } = useTranslation("people");
+  const navigate = useNavigate();
+  const canEnroll = useCan("enrollments.manage") && student.archivedAt === null;
+
   return (
     <div className="flex flex-col gap-5">
-      <StudentDetailHeader student={student} />
+      <StudentDetailHeader
+        student={student}
+        actions={
+          canEnroll ? (
+            <Button
+              variant="primary"
+              onPress={() => navigate(`/enrollments?studentId=${encodeURIComponent(student.id)}`)}
+            >
+              {t("student.actions.enroll")}
+            </Button>
+          ) : undefined
+        }
+      />
       {student.archivedAt !== null ? (
         <ArchivedNotice archivedAt={student.archivedAt} archiveReason={student.archiveReason} />
       ) : null}

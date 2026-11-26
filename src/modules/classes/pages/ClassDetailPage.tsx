@@ -144,6 +144,7 @@ function ClassDetailView({
             classId={classDetail.id}
             preview={classDetail.enrollmentsPreview}
             total={classDetail.enrollmentsTotal}
+            classLabel={`${classDetail.course.name} — ${classDetail.name ?? classDetail.code} · ${classDetail.code} · ${classDetail.edition.name}`}
           />
         </div>
         <div className="flex min-w-0 flex-col gap-5">
