@@ -136,7 +136,7 @@ function categoryTotal(
   pendingMinutes: number,
   bankMinutes: number,
 ): HoursCategoryTotalDto {
-  return { category, entries, declaredMinutes, pendingMinutes, bankMinutes };
+  return { category, entries, declaredMinutes, pendingMinutes, bankMinutes, note: null };
 }
 
 /** The totals of everyone in March: 312h, 276h, 12h and 24h. */
@@ -237,6 +237,7 @@ export function buildEntry(
     notes: null,
     classId: null,
     lessonId: null,
+    lessonCancelled: false,
     ...overrides,
   };
 }

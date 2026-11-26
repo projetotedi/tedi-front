@@ -868,7 +868,9 @@ export const ListStudentsByEnrollmentQueryParams = zod.object({
     .string()
     .max(listStudentsByEnrollmentQuerySearchMax)
     .optional()
-    .describe("Part of the name of the student, ignoring case and accents."),
+    .describe(
+      "Part of the name or of the e-mail, ignoring case and accents; when the term has only digits and the characters space ( ) - . +, also the digits of the phone, compared as they were stored (a term with the country code +55 does not find a phone stored without it). The search of GET /students.",
+    ),
   classId: zod
     .uuid()
     .optional()
@@ -891,6 +893,10 @@ export const ListStudentsByEnrollmentResponse = zod.object({
         .describe("Category. What the person needs in class, never a diagnosis (RNF-13).")
         .describe("Category of what the student needs in class, never a diagnosis (RNF-13)."),
       age: zod.int().describe("Whole years today in America/Sao_Paulo."),
+      birthDate: zod.iso.date(),
+      createdAt: zod.iso
+        .datetime({ offset: true })
+        .describe("When the person was registered as a student."),
       currentClasses: zod
         .array(
           zod.object({
@@ -906,9 +912,15 @@ export const ListStudentsByEnrollmentResponse = zod.object({
         .describe(
           "The classes where the student has an active enrollment, the most recent edition first.",
         ),
+      email: zod.string().nullable(),
       id: zod.uuid().describe("Person id of the student."),
       name: zod.string(),
-      phone: zod.string().nullable().describe("Digits only."),
+      phone: zod
+        .string()
+        .nullable()
+        .describe(
+          "As it was stored: the API writes digits only, but a phone that came in by an import or by SQL may keep its mask.",
+        ),
     }),
   ),
   limit: zod.int(),

@@ -14,6 +14,8 @@ export interface MeResponseDto {
   /** @nullable */
   email: MeResponseDtoEmail;
   id: string;
+  /** True while the account still has to replace its password (initial coordinator, GUS-93). Until POST /auth/password succeeds, every authenticated route except GET /auth/me and POST /auth/password answers 403 PASSWORD_CHANGE_REQUIRED. */
+  mustChangePassword: boolean;
   name: string;
   /** Scope per permission for the logged-in role (source: PERMISSION_MATRIX, docs/PERMISSIONS.md). */
   permissions: PermissionsDto;

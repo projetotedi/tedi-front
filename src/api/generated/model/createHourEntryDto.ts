@@ -16,6 +16,11 @@ export interface CreateHourEntryDto {
   activity: string;
   /** Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03). */
   category: HourEntryCategory;
+  /**
+   * The class the work is about. Omitted or null means none. With lessonId, it must be the class of the lesson (else 400 LESSON_NOT_IN_CLASS); without it, the class comes from the lesson. An unknown class is 400 CLASS_NOT_FOUND, an archived one 409 CLASS_ARCHIVED.
+   * @nullable
+   */
+  classId?: string | null;
   /** Day of the work, YYYY-MM-DD, from 2000-01-01 (else 400 VALIDATION_FAILED). Today or before, in America/Sao_Paulo (else 400 HOUR_ENTRY_DATE_IN_FUTURE). */
   date: string;
   /**
@@ -24,6 +29,11 @@ export interface CreateHourEntryDto {
    * @maximum 1440
    */
   declaredMinutes: number;
+  /**
+   * The lesson the work is about. Omitted or null means none. The entry also gets the class of the lesson. An unknown lesson is 400 LESSON_NOT_FOUND, a cancelled one 409 LESSON_CANCELLED. The person does not need to be assigned to it: the entry goes through the review of the coordination.
+   * @nullable
+   */
+  lessonId?: string | null;
   /**
    * Free notes of the person. Omitted, null or blank means none.
    * @maxLength 2000
