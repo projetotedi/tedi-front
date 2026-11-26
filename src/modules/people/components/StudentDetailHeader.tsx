@@ -25,8 +25,8 @@ export interface StudentDetailHeaderProps {
  *
  * The actions go on the right of this row, in the order of the Figma: Editar dados (`secondary`,
  * `students.manage`, the form of GUS-123) and Matricular em turma (`primary`, `enrollments.manage`,
- * GUS-138), plus Arquivar or Reativar (`students.archive`, GUS-123). None of them exists yet, so
- * the page passes none; each one is shown only with `useCan`, never by comparing the profile.
+ * GUS-138), plus Arquivar or Reativar (`students.archive`, GUS-123). The page passes them, each
+ * one shown only with `useCan`, never by comparing the profile.
  */
 export function StudentDetailHeader({ student, actions }: StudentDetailHeaderProps): ReactElement {
   const { t, i18n } = useTranslation("people");

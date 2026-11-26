@@ -126,7 +126,88 @@
       "updatedAt": "Última atualização"
     },
     "actions": {
-      "enroll": "Matricular em turma"
+      "enroll": "Matricular em turma",
+      "edit": "Editar dados",
+      "archive": "Arquivar aluno",
+      "unarchive": "Reativar aluno"
+    },
+    "form": {
+      "newTitle": "Novo aluno",
+      "editTitle": "Editar dados do aluno",
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "save": "Salvar aluno",
+      "saveChanges": "Salvar alterações",
+      "saving": "Salvando…",
+      "created": "Aluno cadastrado",
+      "updated": "Dados do aluno atualizados",
+      "loading": "Carregando os dados do aluno…",
+      "loadError": "Não foi possível carregar os dados do aluno. Feche e tente de novo.",
+      "notInformed": "Não informado",
+      "phonePlaceholder": "(11) 98888-1234",
+      "ageHint_one": "{{count}} ano",
+      "ageHint_other": "{{count}} anos",
+      "accessibilityNeed": "Necessidade de acessibilidade",
+      "classNeeds": "O que a pessoa precisa em aula",
+      "noDiagnosisHint": "Registre a necessidade em aula, nunca o diagnóstico.",
+      "sections": {
+        "personal": "Dados pessoais",
+        "technology": "Uso de tecnologia",
+        "emergency": "Contato de emergência",
+        "accessibility": "Acessibilidade"
+      },
+      "educationLevels": {
+        "elementaryIncomplete": "Fundamental incompleto",
+        "elementaryComplete": "Fundamental completo",
+        "highSchoolIncomplete": "Médio incompleto",
+        "highSchoolComplete": "Médio completo",
+        "higherIncomplete": "Superior incompleto",
+        "higherComplete": "Superior completo"
+      },
+      "errors": {
+        "nameRequired": "Informe o nome completo.",
+        "nameTooLong": "Use no máximo {{nameMax}} caracteres.",
+        "nameServerInvalid": "Confira o nome.",
+        "birthDateRequired": "Informe a data de nascimento.",
+        "birthDateInvalid": "Informe uma data entre 01/01/1900 e hoje.",
+        "phoneInvalid": "Informe o telefone com DDD (10 a 13 dígitos).",
+        "emailInvalid": "Informe um e-mail válido.",
+        "emailTooLong": "Use no máximo {{emailMax}} caracteres.",
+        "emailInUse": "Este e-mail já está em uso por outra pessoa.",
+        "educationTooLong": "Use no máximo {{educationMax}} caracteres.",
+        "howFoundUsTooLong": "Use no máximo {{howFoundUsMax}} caracteres.",
+        "emergencyContactNameTooLong": "Use no máximo {{emergencyContactNameMax}} caracteres.",
+        "supportResourceTooLong": "Use no máximo {{supportResourceMax}} caracteres.",
+        "classNeedsTooLong": "Use no máximo {{classNeedsMax}} caracteres.",
+        "reasonTooLong": "Use no máximo {{reasonMax}} caracteres.",
+        "serverInvalid": "Confira este campo."
+      }
+    },
+    "archive": {
+      "title": "Arquivar aluno",
+      "warningTitle": "Arquivar tira o aluno das listagens ativas",
+      "warningDescription": "Matrículas e histórico de cursos continuam guardados. Só a coordenação pode arquivar e reativar (RN-27).",
+      "reason": "Motivo (opcional)",
+      "reasonHelp": "Fica registrado na ficha do aluno.",
+      "back": "Voltar",
+      "confirm": "Arquivar aluno",
+      "confirming": "Arquivando…",
+      "success": "Aluno arquivado"
+    },
+    "unarchive": {
+      "title": "Reativar aluno",
+      "description": "O aluno volta para as listagens ativas e pode ser matriculado de novo.",
+      "back": "Voltar",
+      "confirm": "Reativar aluno",
+      "confirming": "Reativando…",
+      "success": "Aluno reativado"
+    },
+    "actionErrors": {
+      "archived": "Este aluno está arquivado e não pode ser editado. Reative o aluno antes.",
+      "notFound": "Este aluno não existe mais.",
+      "hasActiveEnrollments": "Este aluno tem matrícula ativa. Encerre ou cancele a matrícula antes de arquivar.",
+      "network": "Sem conexão com o servidor. Tente de novo.",
+      "unknown": "Não foi possível concluir. Tente de novo."
     }
   },
   "member": {
@@ -214,7 +295,8 @@
       "age": "Idade",
       "class": "Turma",
       "situation": "Situação",
-      "contact": "Contato"
+      "contact": "Contato",
+      "actions": "Ações"
     },
     "loading": "Carregando os alunos…",
     "error": "Não foi possível carregar os alunos",
@@ -226,6 +308,11 @@
     "pagination": "Páginas da lista de alunos",
     "previous": "Página anterior",
     "next": "Próxima página",
-    "page": "Página {{page}}"
+    "page": "Página {{page}}",
+    "create": "+ Novo aluno",
+    "row": {
+      "edit": "Editar dados de {{name}}",
+      "archive": "Arquivar {{name}}"
+    }
   }
 }

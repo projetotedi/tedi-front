@@ -126,7 +126,88 @@
       "updatedAt": "Last updated"
     },
     "actions": {
-      "enroll": "Enroll in a class"
+      "enroll": "Enroll in a class",
+      "edit": "Edit details",
+      "archive": "Archive student",
+      "unarchive": "Reactivate student"
+    },
+    "form": {
+      "newTitle": "New student",
+      "editTitle": "Edit student details",
+      "close": "Close",
+      "cancel": "Cancel",
+      "save": "Save student",
+      "saveChanges": "Save changes",
+      "saving": "Saving…",
+      "created": "Student registered",
+      "updated": "Student details updated",
+      "loading": "Loading the student's details…",
+      "loadError": "Could not load the student's details. Close and try again.",
+      "notInformed": "Not informed",
+      "phonePlaceholder": "(11) 98888-1234",
+      "ageHint_one": "{{count}} year old",
+      "ageHint_other": "{{count}} years old",
+      "accessibilityNeed": "Accessibility need",
+      "classNeeds": "What the person needs in class",
+      "noDiagnosisHint": "Write the need in class, never the diagnosis.",
+      "sections": {
+        "personal": "Personal details",
+        "technology": "Use of technology",
+        "emergency": "Emergency contact",
+        "accessibility": "Accessibility"
+      },
+      "educationLevels": {
+        "elementaryIncomplete": "Elementary school, incomplete",
+        "elementaryComplete": "Elementary school, complete",
+        "highSchoolIncomplete": "High school, incomplete",
+        "highSchoolComplete": "High school, complete",
+        "higherIncomplete": "Higher education, incomplete",
+        "higherComplete": "Higher education, complete"
+      },
+      "errors": {
+        "nameRequired": "Enter the full name.",
+        "nameTooLong": "Use at most {{nameMax}} characters.",
+        "nameServerInvalid": "Check the name.",
+        "birthDateRequired": "Enter the birth date.",
+        "birthDateInvalid": "Enter a date between 01/01/1900 and today.",
+        "phoneInvalid": "Enter the phone with the area code (10 to 13 digits).",
+        "emailInvalid": "Enter a valid e-mail.",
+        "emailTooLong": "Use at most {{emailMax}} characters.",
+        "emailInUse": "This e-mail is already used by another person.",
+        "educationTooLong": "Use at most {{educationMax}} characters.",
+        "howFoundUsTooLong": "Use at most {{howFoundUsMax}} characters.",
+        "emergencyContactNameTooLong": "Use at most {{emergencyContactNameMax}} characters.",
+        "supportResourceTooLong": "Use at most {{supportResourceMax}} characters.",
+        "classNeedsTooLong": "Use at most {{classNeedsMax}} characters.",
+        "reasonTooLong": "Use at most {{reasonMax}} characters.",
+        "serverInvalid": "Check this field."
+      }
+    },
+    "archive": {
+      "title": "Archive student",
+      "warningTitle": "Archiving takes the student out of the active lists",
+      "warningDescription": "Enrollments and course history are kept. Only the coordination can archive and reactivate (RN-27).",
+      "reason": "Reason (optional)",
+      "reasonHelp": "It is kept in the student's record.",
+      "back": "Back",
+      "confirm": "Archive student",
+      "confirming": "Archiving…",
+      "success": "Student archived"
+    },
+    "unarchive": {
+      "title": "Reactivate student",
+      "description": "The student is back in the active lists and can be enrolled again.",
+      "back": "Back",
+      "confirm": "Reactivate student",
+      "confirming": "Reactivating…",
+      "success": "Student reactivated"
+    },
+    "actionErrors": {
+      "archived": "This student is archived and cannot be edited. Reactivate the student first.",
+      "notFound": "This student no longer exists.",
+      "hasActiveEnrollments": "This student has an active enrollment. End or cancel it before archiving.",
+      "network": "No connection to the server. Try again.",
+      "unknown": "Could not finish. Try again."
     }
   },
   "member": {
@@ -214,7 +295,8 @@
       "age": "Age",
       "class": "Class",
       "situation": "Situation",
-      "contact": "Contact"
+      "contact": "Contact",
+      "actions": "Actions"
     },
     "loading": "Loading the students…",
     "error": "Could not load the students",
@@ -226,6 +308,11 @@
     "pagination": "Pages of the list of students",
     "previous": "Previous page",
     "next": "Next page",
-    "page": "Page {{page}}"
+    "page": "Page {{page}}",
+    "create": "+ New student",
+    "row": {
+      "edit": "Edit details of {{name}}",
+      "archive": "Archive {{name}}"
+    }
   }
 }

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   AccessibilityNeed,
@@ -12,6 +12,7 @@ import { buildMeUser, meHandler } from "@modules/auth/__tests__/handlers";
 import { renderRoutes, server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { Role } from "@shared/lib/role";
 
+import { archiveStudentHandler } from "./handlers";
 import { peopleRoutes } from "./test-routes";
 
 setupAuthTestServer();
@@ -85,7 +86,7 @@ function useStudentHandlers({
   return calls;
 }
 
-async function renderPage(route = "/students", role = Role.coordinator) {
+async function renderPage(route = "/students", role: Role = Role.coordinator) {
   server.use(meHandler({ user: buildMeUser({ role }) }));
   return renderRoutes(peopleRoutes, { route });
 }
@@ -167,5 +168,91 @@ describe("StudentsPage", () => {
     await renderPage();
 
     expect(await screen.findByRole("button", { name: "Tentar de novo" })).toBeInTheDocument();
+  });
+
+  describe("the actions of GUS-123", () => {
+    it("gives the coordinator + Novo aluno, the pencil and the bin", async () => {
+      useStudentHandlers();
+      await renderPage();
+
+      const table = await screen.findByRole("table", { name: "Alunos (2)" });
+      expect(screen.getByRole("button", { name: "+ Novo aluno" })).toBeInTheDocument();
+      expect(
+        within(table).getByRole("button", { name: `Editar dados de ${MARIA.name}` }),
+      ).toBeInTheDocument();
+      expect(
+        within(table).getByRole("button", { name: `Arquivar ${MARIA.name}` }),
+      ).toBeInTheDocument();
+    });
+
+    it("gives the director + Novo aluno and the pencil, but not the bin", async () => {
+      useStudentHandlers();
+      await renderPage("/students", Role.director);
+
+      const table = await screen.findByRole("table", { name: "Alunos (2)" });
+      expect(screen.getByRole("button", { name: "+ Novo aluno" })).toBeInTheDocument();
+      expect(
+        within(table).getByRole("button", { name: `Editar dados de ${MARIA.name}` }),
+      ).toBeInTheDocument();
+      expect(within(table).queryByRole("button", { name: `Arquivar ${MARIA.name}` })).toBeNull();
+    });
+
+    it("gives the member no action", async () => {
+      useStudentHandlers();
+      await renderPage("/students", Role.member);
+
+      const table = await screen.findByRole("table", { name: "Alunos (2)" });
+      expect(screen.queryByRole("button", { name: "+ Novo aluno" })).toBeNull();
+      expect(within(table).queryByRole("columnheader", { name: "Ações" })).toBeNull();
+    });
+
+    it("opens Novo aluno from + Novo aluno", async () => {
+      useStudentHandlers();
+      await renderPage();
+
+      await userEvent.click(await screen.findByRole("button", { name: "+ Novo aluno" }));
+
+      expect(await screen.findByRole("dialog", { name: "Novo aluno" })).toBeInTheDocument();
+    });
+
+    it("archives from the bin with the reason, without opening the record", async () => {
+      useStudentHandlers();
+      const onCall = vi.fn();
+      server.use(archiveStudentHandler({ onCall }));
+      const { router } = await renderPage();
+
+      const table = await screen.findByRole("table", { name: "Alunos (2)" });
+      await userEvent.click(within(table).getByRole("button", { name: `Arquivar ${MARIA.name}` }));
+      const dialog = await screen.findByRole("dialog", { name: "Arquivar aluno" });
+      await userEvent.type(within(dialog).getByRole("textbox"), "Mudou de cidade.");
+      await userEvent.click(within(dialog).getByRole("button", { name: "Arquivar aluno" }));
+
+      await waitFor(() =>
+        expect(onCall).toHaveBeenCalledWith({ id: MARIA.id, body: { reason: "Mudou de cidade." } }),
+      );
+      expect(await screen.findByText("Aluno arquivado")).toBeInTheDocument();
+      expect(router.state.location.pathname).toBe("/students");
+    });
+
+    it("warns that a student with an active enrollment cannot be archived", async () => {
+      useStudentHandlers();
+      server.use(
+        archiveStudentHandler({
+          error: { statusCode: 409, error: "STUDENT_HAS_ACTIVE_ENROLLMENTS" },
+        }),
+      );
+      await renderPage();
+
+      const table = await screen.findByRole("table", { name: "Alunos (2)" });
+      await userEvent.click(within(table).getByRole("button", { name: `Arquivar ${MARIA.name}` }));
+      const dialog = await screen.findByRole("dialog", { name: "Arquivar aluno" });
+      await userEvent.click(within(dialog).getByRole("button", { name: "Arquivar aluno" }));
+
+      expect(
+        await within(dialog).findByText(
+          "Este aluno tem matrícula ativa. Encerre ou cancele a matrícula antes de arquivar.",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 });

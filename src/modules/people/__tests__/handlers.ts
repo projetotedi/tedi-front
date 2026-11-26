@@ -314,3 +314,84 @@ export function getMemberHandler({
     return HttpResponse.json(member);
   });
 }
+
+/** The `StudentResponseDto` of the writes, from the detail of the same student. */
+export function toStudentResponse(student: StudentDetailDto = buildStudentDetail()) {
+  return {
+    id: student.id,
+    name: student.name,
+    birthDate: student.birthDate,
+    age: student.age,
+    phone: student.phone,
+    email: student.email,
+    education: student.education,
+    hasSmartphone: student.hasSmartphone,
+    hasComputer: student.hasComputer,
+    howFoundUs: student.howFoundUs,
+    emergencyContactName: student.emergencyContact.name,
+    emergencyContactPhone: student.emergencyContact.phone,
+    accessibilityNeed: student.accessibilityNeed,
+    classNeeds: student.classNeeds,
+    supportResource: student.supportResource,
+    createdAt: student.createdAt,
+    createdById: student.createdBy?.id ?? "01952ef7-0000-7000-8000-0000000000f1",
+    updatedAt: student.updatedAt,
+    archivedAt: student.archivedAt,
+    archivedById: null,
+    archiveReason: student.archiveReason,
+  };
+}
+
+interface StudentWriteHandlerOptions {
+  error?: ApiErrorOptions & { details?: { field: string; message: string }[] };
+  /** Called with the body (and the id of the path, when there is one) of every request. */
+  onCall?: (call: { id?: string; body: unknown }) => void;
+}
+
+function studentWriteResponse(error: StudentWriteHandlerOptions["error"], status = 200) {
+  if (error) {
+    return HttpResponse.json(
+      {
+        statusCode: error.statusCode,
+        error: error.error,
+        message: error.message ?? error.error,
+        ...(error.details ? { details: error.details } : {}),
+      },
+      { status: error.statusCode },
+    );
+  }
+  return HttpResponse.json(toStudentResponse(), { status });
+}
+
+async function readBody(request: Request): Promise<unknown> {
+  const text = await request.text();
+  return text ? (JSON.parse(text) as unknown) : undefined;
+}
+
+export function createStudentHandler({ error, onCall }: StudentWriteHandlerOptions = {}) {
+  return http.post("*/students", async ({ request }) => {
+    onCall?.({ body: await readBody(request) });
+    return studentWriteResponse(error, 201);
+  });
+}
+
+export function updateStudentHandler({ error, onCall }: StudentWriteHandlerOptions = {}) {
+  return http.patch("*/students/:id", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody(request) });
+    return studentWriteResponse(error);
+  });
+}
+
+export function archiveStudentHandler({ error, onCall }: StudentWriteHandlerOptions = {}) {
+  return http.patch("*/students/:id/archive", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody(request) });
+    return studentWriteResponse(error);
+  });
+}
+
+export function unarchiveStudentHandler({ error, onCall }: StudentWriteHandlerOptions = {}) {
+  return http.patch("*/students/:id/unarchive", async ({ request, params }) => {
+    onCall?.({ id: String(params.id), body: await readBody(request) });
+    return studentWriteResponse(error);
+  });
+}
