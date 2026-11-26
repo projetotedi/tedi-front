@@ -188,5 +188,41 @@
       "title": "Attendance",
       "unavailable": "The attendance of the member in classes will show up here soon."
     }
+  },
+  "students": {
+    "title_one": "Students ({{count}})",
+    "title_other": "Students ({{count}})",
+    "search": "Search student",
+    "searchPlaceholder": "Search student by name, e-mail or phone…",
+    "filters": {
+      "class": "Class",
+      "situation": "Situation",
+      "accessibility": "Accessibility",
+      "allFeminine": "All",
+      "anyAccessibility": "Any need",
+      "accessibilityOff": "With Class or Situation, the accessibility filter does not apply."
+    },
+    "situation": {
+      "enrolled": "Enrolled",
+      "not_enrolled": "No class"
+    },
+    "columns": {
+      "name": "Name",
+      "age": "Age",
+      "class": "Class",
+      "situation": "Situation",
+      "contact": "Contact"
+    },
+    "loading": "Loading the students…",
+    "error": "Could not load the students",
+    "retry": "Try again",
+    "empty": "No student yet",
+    "noResults": "No student found with these filters",
+    "clear": "Clear filters",
+    "summary": "Showing {{shown}} of {{total}} students",
+    "pagination": "Pages of the list of students",
+    "previous": "Previous page",
+    "next": "Next page",
+    "page": "Page {{page}}"
   }
 }

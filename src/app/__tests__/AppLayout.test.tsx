@@ -155,7 +155,7 @@ describe("AppLayout", () => {
   });
 
   it("opens the profile from the profile menu", async () => {
-    const { router } = await renderApp(buildMeUser({ name: "Maria Souza" }), "/students");
+    const { router } = await renderApp(buildMeUser({ name: "Maria Souza" }), "/hours");
 
     await userEvent.click(screen.getByRole("button", { name: "Menu do perfil de Maria Souza" }));
     await userEvent.click(await screen.findByRole("menuitem", { name: "Perfil" }));
@@ -259,9 +259,11 @@ describe("AppLayout", () => {
   });
 
   it("shows the coming soon page for prototype areas", async () => {
-    await renderApp(buildMeUser(), "/students");
+    await renderApp(buildMeUser(), "/enrollments");
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Alunos" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Matrículas" }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/ainda está em construção/)).toBeInTheDocument();
   });
 

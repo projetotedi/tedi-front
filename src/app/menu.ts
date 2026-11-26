@@ -10,6 +10,7 @@ import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
 import { hoursMenuItems } from "@modules/hours";
 import { lessonsMenuItems } from "@modules/lessons";
+import { peopleMenuItems } from "@modules/people";
 import type { MenuGroup, MenuItem } from "@shared/lib/menu";
 
 /**
@@ -33,6 +34,7 @@ export const appMenuGroups: MenuGroup[] = [
  * Aulas e Calendário também saíram (GUS-152): são do módulo `lessons`, em `lessonsMenuItems`.
  * Minhas aulas (GUS-161) nasceu no módulo `assignments`, em `assignmentsMenuItems`.
  * Banco de horas e Validação de horas (GUS-165) são do módulo `hours`, em `hoursMenuItems`.
+ * Alunos (GUS-137) é do módulo `people`, em `peopleMenuItems`.
  */
 export const prototypeMenuItems: MenuItem[] = [
   {
@@ -41,7 +43,6 @@ export const prototypeMenuItems: MenuItem[] = [
     permission: "enrollments.manage",
     group: "classes",
   },
-  { label: "common:nav.students", path: "/students", permission: "students.view", group: "people" },
 ];
 
 /**
@@ -58,6 +59,7 @@ export const appMenuItems: MenuItem[] = [
   ...assignmentsMenuItems,
   ...hoursMenuItems,
   ...prototypeMenuItems,
+  ...peopleMenuItems,
   ...catalogMenuItems,
   ...authMenuItems,
 ];

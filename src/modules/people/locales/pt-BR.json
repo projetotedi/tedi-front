@@ -188,5 +188,41 @@
       "title": "Presença",
       "unavailable": "A presença do membro nas aulas vai aparecer aqui em breve."
     }
+  },
+  "students": {
+    "title_one": "Alunos ({{count}})",
+    "title_other": "Alunos ({{count}})",
+    "search": "Buscar aluno",
+    "searchPlaceholder": "Buscar aluno por nome, e-mail ou telefone…",
+    "filters": {
+      "class": "Turma",
+      "situation": "Situação",
+      "accessibility": "Acessibilidade",
+      "allFeminine": "Todas",
+      "anyAccessibility": "Qualquer necessidade",
+      "accessibilityOff": "Com Turma ou Situação, o filtro de acessibilidade não se aplica."
+    },
+    "situation": {
+      "enrolled": "Matriculado",
+      "not_enrolled": "Sem turma"
+    },
+    "columns": {
+      "name": "Nome",
+      "age": "Idade",
+      "class": "Turma",
+      "situation": "Situação",
+      "contact": "Contato"
+    },
+    "loading": "Carregando os alunos…",
+    "error": "Não foi possível carregar os alunos",
+    "retry": "Tentar de novo",
+    "empty": "Nenhum aluno ainda",
+    "noResults": "Nenhum aluno encontrado com esses filtros",
+    "clear": "Limpar filtros",
+    "summary": "Mostrando {{shown}} de {{total}} alunos",
+    "pagination": "Páginas da lista de alunos",
+    "previous": "Página anterior",
+    "next": "Próxima página",
+    "page": "Página {{page}}"
   }
 }
