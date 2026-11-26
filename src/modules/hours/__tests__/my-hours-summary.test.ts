@@ -61,8 +61,22 @@ describe("categoryRows", () => {
   it("keeps a category whose entries were all rejected, with 0h", () => {
     const summary = buildSummary({
       byCategory: [
-        { category: "other", entries: 1, declaredMinutes: 60, bankMinutes: 0, pendingMinutes: 0 },
-        { category: "meeting", entries: 0, declaredMinutes: 0, bankMinutes: 0, pendingMinutes: 0 },
+        {
+          category: "other",
+          entries: 1,
+          declaredMinutes: 60,
+          bankMinutes: 0,
+          pendingMinutes: 0,
+          note: null,
+        },
+        {
+          category: "meeting",
+          entries: 0,
+          declaredMinutes: 0,
+          bankMinutes: 0,
+          pendingMinutes: 0,
+          note: null,
+        },
       ],
     });
 
@@ -74,13 +88,21 @@ describe("categoryRows", () => {
   it("breaks a tie by the order of the categories of the contract", () => {
     const summary = buildSummary({
       byCategory: [
-        { category: "other", entries: 1, declaredMinutes: 60, bankMinutes: 60, pendingMinutes: 0 },
+        {
+          category: "other",
+          entries: 1,
+          declaredMinutes: 60,
+          bankMinutes: 60,
+          pendingMinutes: 0,
+          note: null,
+        },
         {
           category: "support",
           entries: 1,
           declaredMinutes: 60,
           bankMinutes: 0,
           pendingMinutes: 60,
+          note: null,
         },
         {
           category: "planning",
@@ -88,6 +110,7 @@ describe("categoryRows", () => {
           declaredMinutes: 90,
           bankMinutes: 60,
           pendingMinutes: 0,
+          note: null,
         },
         {
           category: "lesson",
@@ -95,6 +118,7 @@ describe("categoryRows", () => {
           declaredMinutes: 120,
           bankMinutes: 120,
           pendingMinutes: 0,
+          note: null,
         },
       ],
     });

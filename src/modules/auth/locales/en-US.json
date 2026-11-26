@@ -533,5 +533,17 @@
       "network": "Could not connect. Check your connection and try again.",
       "unknown": "Could not complete the validation. Please try again."
     }
+  },
+  "changePassword": {
+    "title": "Change your password",
+    "subtitle": "For security, replace the temporary password before using the system.",
+    "account": " — first access with the password created at installation.",
+    "submit": "Save and continue",
+    "success": "Password changed. Welcome to TEDI!",
+    "errors": {
+      "unchanged": "The new password must be different from the temporary one.",
+      "network": "Could not connect. Check your connection and try again.",
+      "unknown": "Could not change the password. Try again."
+    }
   }
 }

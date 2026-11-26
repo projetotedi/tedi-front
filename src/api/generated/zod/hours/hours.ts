@@ -42,7 +42,9 @@ export const ListPendingHourEntriesResponse = zod.object({
       classId: zod
         .uuid()
         .nullable()
-        .describe("The class of the lesson, for an entry created by the attendance."),
+        .describe(
+          "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+        ),
       createdAt: zod.iso.datetime({ offset: true }),
       createdById: zod
         .uuid()
@@ -50,10 +52,17 @@ export const ListPendingHourEntriesResponse = zod.object({
       date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
       declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
       id: zod.uuid(),
+      lessonCancelled: zod
+        .boolean()
+        .describe(
+          "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+        ),
       lessonId: zod
         .uuid()
         .nullable()
-        .describe("The lesson, for an entry created by the attendance."),
+        .describe(
+          "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+        ),
       member: zod
         .object({
           department: zod
@@ -139,7 +148,9 @@ export const ValidateHourEntriesResponseItem = zod.object({
   classId: zod
     .uuid()
     .nullable()
-    .describe("The class of the lesson, for an entry created by the attendance."),
+    .describe(
+      "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod
     .uuid()
@@ -147,7 +158,17 @@ export const ValidateHourEntriesResponseItem = zod.object({
   date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
   declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
   id: zod.uuid(),
-  lessonId: zod.uuid().nullable().describe("The lesson, for an entry created by the attendance."),
+  lessonCancelled: zod
+    .boolean()
+    .describe(
+      "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+    ),
+  lessonId: zod
+    .uuid()
+    .nullable()
+    .describe(
+      "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   notes: zod.string().nullable().describe("Free notes of the person. Null when there are none."),
   origin: zod
     .enum(["manual", "on_behalf", "attendance"])
@@ -221,7 +242,9 @@ export const AdjustHourEntryResponse = zod.object({
   classId: zod
     .uuid()
     .nullable()
-    .describe("The class of the lesson, for an entry created by the attendance."),
+    .describe(
+      "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod
     .uuid()
@@ -229,7 +252,17 @@ export const AdjustHourEntryResponse = zod.object({
   date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
   declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
   id: zod.uuid(),
-  lessonId: zod.uuid().nullable().describe("The lesson, for an entry created by the attendance."),
+  lessonCancelled: zod
+    .boolean()
+    .describe(
+      "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+    ),
+  lessonId: zod
+    .uuid()
+    .nullable()
+    .describe(
+      "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   notes: zod.string().nullable().describe("Free notes of the person. Null when there are none."),
   origin: zod
     .enum(["manual", "on_behalf", "attendance"])
@@ -353,7 +386,9 @@ export const RejectHourEntryResponse = zod.object({
   classId: zod
     .uuid()
     .nullable()
-    .describe("The class of the lesson, for an entry created by the attendance."),
+    .describe(
+      "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod
     .uuid()
@@ -361,7 +396,17 @@ export const RejectHourEntryResponse = zod.object({
   date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
   declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
   id: zod.uuid(),
-  lessonId: zod.uuid().nullable().describe("The lesson, for an entry created by the attendance."),
+  lessonCancelled: zod
+    .boolean()
+    .describe(
+      "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+    ),
+  lessonId: zod
+    .uuid()
+    .nullable()
+    .describe(
+      "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   notes: zod.string().nullable().describe("Free notes of the person. Null when there are none."),
   origin: zod
     .enum(["manual", "on_behalf", "attendance"])
@@ -506,6 +551,12 @@ export const GetHoursOverviewResponse = zod.object({
               ),
             declaredMinutes: zod.int().describe("Sum of their declared minutes, of any status."),
             entries: zod.int().describe("How many entries, of any status."),
+            note: zod
+              .string()
+              .nullable()
+              .describe(
+                "The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.",
+              ),
             pendingMinutes: zod
               .int()
               .describe("Declared minutes of the pending entries: what waits for review."),
@@ -577,7 +628,9 @@ export const ListMyHourEntriesResponse = zod.object({
       classId: zod
         .uuid()
         .nullable()
-        .describe("The class of the lesson, for an entry created by the attendance."),
+        .describe(
+          "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+        ),
       createdAt: zod.iso.datetime({ offset: true }),
       createdById: zod
         .uuid()
@@ -585,10 +638,17 @@ export const ListMyHourEntriesResponse = zod.object({
       date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
       declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
       id: zod.uuid(),
+      lessonCancelled: zod
+        .boolean()
+        .describe(
+          "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+        ),
       lessonId: zod
         .uuid()
         .nullable()
-        .describe("The lesson, for an entry created by the attendance."),
+        .describe(
+          "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+        ),
       notes: zod
         .string()
         .nullable()
@@ -654,6 +714,12 @@ export const LogMyHoursBody = zod.object({
     .describe(
       "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
     ),
+  classId: zod
+    .uuid()
+    .nullish()
+    .describe(
+      "The class the work is about. Omitted or null means none. With lessonId, it must be the class of the lesson (else 400 LESSON_NOT_IN_CLASS); without it, the class comes from the lesson. An unknown class is 400 CLASS_NOT_FOUND, an archived one 409 CLASS_ARCHIVED.",
+    ),
   date: zod.iso
     .date()
     .describe(
@@ -664,6 +730,12 @@ export const LogMyHoursBody = zod.object({
     .min(1)
     .max(logMyHoursBodyDeclaredMinutesMax)
     .describe("Minutes worked, a whole number: 2h30 is 150. From 1 to 1440 (one day)."),
+  lessonId: zod
+    .uuid()
+    .nullish()
+    .describe(
+      "The lesson the work is about. Omitted or null means none. The entry also gets the class of the lesson. An unknown lesson is 400 LESSON_NOT_FOUND, a cancelled one 409 LESSON_CANCELLED. The person does not need to be assigned to it: the entry goes through the review of the coordination.",
+    ),
   notes: zod
     .string()
     .max(logMyHoursBodyNotesMax)
@@ -681,7 +753,9 @@ export const LogMyHoursResponse = zod.object({
   classId: zod
     .uuid()
     .nullable()
-    .describe("The class of the lesson, for an entry created by the attendance."),
+    .describe(
+      "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod
     .uuid()
@@ -689,7 +763,17 @@ export const LogMyHoursResponse = zod.object({
   date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
   declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
   id: zod.uuid(),
-  lessonId: zod.uuid().nullable().describe("The lesson, for an entry created by the attendance."),
+  lessonCancelled: zod
+    .boolean()
+    .describe(
+      "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+    ),
+  lessonId: zod
+    .uuid()
+    .nullable()
+    .describe(
+      "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   notes: zod.string().nullable().describe("Free notes of the person. Null when there are none."),
   origin: zod
     .enum(["manual", "on_behalf", "attendance"])
@@ -763,6 +847,12 @@ export const GetMyHoursSummaryResponse = zod.object({
           ),
         declaredMinutes: zod.int().describe("Sum of their declared minutes, of any status."),
         entries: zod.int().describe("How many entries, of any status."),
+        note: zod
+          .string()
+          .nullable()
+          .describe(
+            "The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.",
+          ),
         pendingMinutes: zod
           .int()
           .describe("Declared minutes of the pending entries: what waits for review."),
@@ -819,6 +909,12 @@ export const LogHoursForMemberBody = zod.object({
     .describe(
       "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
     ),
+  classId: zod
+    .uuid()
+    .nullish()
+    .describe(
+      "The class the work is about. Omitted or null means none. With lessonId, it must be the class of the lesson (else 400 LESSON_NOT_IN_CLASS); without it, the class comes from the lesson. An unknown class is 400 CLASS_NOT_FOUND, an archived one 409 CLASS_ARCHIVED.",
+    ),
   date: zod.iso
     .date()
     .describe(
@@ -829,6 +925,12 @@ export const LogHoursForMemberBody = zod.object({
     .min(1)
     .max(logHoursForMemberBodyDeclaredMinutesMax)
     .describe("Minutes worked, a whole number: 2h30 is 150. From 1 to 1440 (one day)."),
+  lessonId: zod
+    .uuid()
+    .nullish()
+    .describe(
+      "The lesson the work is about. Omitted or null means none. The entry also gets the class of the lesson. An unknown lesson is 400 LESSON_NOT_FOUND, a cancelled one 409 LESSON_CANCELLED. The person does not need to be assigned to it: the entry goes through the review of the coordination.",
+    ),
   notes: zod
     .string()
     .max(logHoursForMemberBodyNotesMax)
@@ -846,7 +948,9 @@ export const LogHoursForMemberResponse = zod.object({
   classId: zod
     .uuid()
     .nullable()
-    .describe("The class of the lesson, for an entry created by the attendance."),
+    .describe(
+      "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   createdAt: zod.iso.datetime({ offset: true }),
   createdById: zod
     .uuid()
@@ -854,7 +958,17 @@ export const LogHoursForMemberResponse = zod.object({
   date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
   declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
   id: zod.uuid(),
-  lessonId: zod.uuid().nullable().describe("The lesson, for an entry created by the attendance."),
+  lessonCancelled: zod
+    .boolean()
+    .describe(
+      "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+    ),
+  lessonId: zod
+    .uuid()
+    .nullable()
+    .describe(
+      "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+    ),
   notes: zod.string().nullable().describe("Free notes of the person. Null when there are none."),
   origin: zod
     .enum(["manual", "on_behalf", "attendance"])
@@ -924,7 +1038,9 @@ export const GetMemberHoursResponse = zod.object({
         classId: zod
           .uuid()
           .nullable()
-          .describe("The class of the lesson, for an entry created by the attendance."),
+          .describe(
+            "The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+          ),
         createdAt: zod.iso.datetime({ offset: true }),
         createdById: zod
           .uuid()
@@ -932,10 +1048,17 @@ export const GetMemberHoursResponse = zod.object({
         date: zod.iso.date().describe("Day of the work, YYYY-MM-DD."),
         declaredMinutes: zod.int().describe("Minutes the person declares (150 = 2h30)."),
         id: zod.uuid(),
+        lessonCancelled: zod
+          .boolean()
+          .describe(
+            "True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson.",
+          ),
         lessonId: zod
           .uuid()
           .nullable()
-          .describe("The lesson, for an entry created by the attendance."),
+          .describe(
+            "The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.",
+          ),
         notes: zod
           .string()
           .nullable()
@@ -1015,6 +1138,12 @@ export const GetMemberHoursResponse = zod.object({
               ),
             declaredMinutes: zod.int().describe("Sum of their declared minutes, of any status."),
             entries: zod.int().describe("How many entries, of any status."),
+            note: zod
+              .string()
+              .nullable()
+              .describe(
+                "The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.",
+              ),
             pendingMinutes: zod
               .int()
               .describe("Declared minutes of the pending entries: what waits for review."),
@@ -1047,4 +1176,38 @@ export const GetMemberHoursResponse = zod.object({
         .describe("The last day asked, or null when the period has no upper bound."),
     })
     .describe("The totals of the member in the period, by status and by category."),
+});
+
+export const SetNoteParams = zod.object({
+  id: zod.uuid().describe("Id of the member (the person)."),
+});
+
+export const setNoteBodyNoteMax = 500;
+
+export const SetNoteBody = zod.object({
+  category: zod
+    .enum(["lesson", "planning", "event", "management", "meeting", "support", "other"])
+    .describe(
+      "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
+    )
+    .describe("The category the observation is about. Every category takes one, lesson included."),
+  note: zod
+    .string()
+    .max(setNoteBodyNoteMax)
+    .nullable()
+    .describe(
+      "Free text of coordination, trimmed, up to 500 characters. Null or blank clears the observation.",
+    ),
+});
+
+export const SetNoteResponse = zod.object({
+  category: zod
+    .enum(["lesson", "planning", "event", "management", "meeting", "support", "other"])
+    .describe(
+      "Kind of work (F7.7). lesson is refused here (400 VALIDATION_FAILED): lesson hours only come from the confirmed attendance (RN-03).",
+    ),
+  note: zod.string().nullable().describe("The observation. Null when it was cleared."),
+  personId: zod.uuid().describe("The member (the person)."),
+  updatedAt: zod.iso.datetime({ offset: true }).describe("When it was last written."),
+  updatedById: zod.uuid().describe("Who wrote or cleared it last."),
 });

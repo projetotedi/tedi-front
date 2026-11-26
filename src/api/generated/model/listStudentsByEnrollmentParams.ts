@@ -18,7 +18,7 @@ export type ListStudentsByEnrollmentParams = {
    */
   limit?: number;
   /**
-   * Part of the name of the student, ignoring case and accents.
+   * Part of the name or of the e-mail, ignoring case and accents; when the term has only digits and the characters space ( ) - . +, also the digits of the phone, compared as they were stored (a term with the country code +55 does not find a phone stored without it). The search of GET /students.
    * @maxLength 100
    */
   search?: string;

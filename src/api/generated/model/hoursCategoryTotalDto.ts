@@ -15,6 +15,11 @@ export interface HoursCategoryTotalDto {
   declaredMinutes: number;
   /** How many entries, of any status. */
   entries: number;
+  /**
+   * The observation of coordination on this category of the member (GUS-173), whatever the period. Null when there is none, and always null in GET /hours/overview, which sums the team.
+   * @nullable
+   */
+  note: string | null;
   /** Declared minutes of the pending entries: what waits for review. */
   pendingMinutes: number;
 }
