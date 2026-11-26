@@ -25,8 +25,8 @@ type OpenDialog = "reschedule" | "cancel" | "edit" | null;
  * The actions of the screen of a lesson, in the order of the Figma: Remarcar aula (`tertiary`),
  * Cancelar aula (`danger-soft`) and Editar aula (`secondary`), each one opening its dialog. They are
  * drawn only for who can manage lessons (`lessons.manage`): a member sees none of them, not even
- * turned off. The screen of the lesson (GUS-156) puts this next to the title, and the button
- * "Registrar chamada" comes with the attendance module.
+ * turned off. The screen of the lesson (GUS-156) puts this next to the title, before the button
+ * "Registrar chamada" of the attendance module.
  *
  * For who can manage, the three stay on the screen when the lesson cannot be changed, turned off,
  * with the reason written under them for everybody to read: a cancelled lesson is final (it cannot

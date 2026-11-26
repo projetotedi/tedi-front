@@ -12,6 +12,7 @@ import i18n from "@shared/i18n";
 import { toast, ToastProvider } from "@shared/ui";
 
 import "../index";
+import { createLessonsRoutes } from "../routes";
 import { buildMeUser, meHandler } from "./handlers";
 
 export const server = setupServer();
@@ -131,3 +132,9 @@ export function expectNoRequestBesidesSession(queryClient: QueryClient): void {
     );
   }
 }
+
+export const lessonsRoutes = createLessonsRoutes({
+  renderAttendance: () => <p>Chamada (slot)</p>,
+  renderAttendanceAlert: () => null,
+  renderAttendanceAction: () => null,
+});

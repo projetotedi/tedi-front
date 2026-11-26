@@ -1,0 +1,187 @@
+{
+  "title": "Chamada",
+  "loading": "Carregando a chamada…",
+  "loadError": "Não foi possível carregar a chamada.",
+  "retry": "Tentar de novo",
+  "register": "Registrar chamada",
+  "removedPerson": "Pessoa removida",
+  "tabs": {
+    "students": "Alunos",
+    "studentsCount": "Alunos ({{total}})",
+    "members": "Monitores e professores",
+    "membersCount": "Monitores e professores ({{total}})",
+    "membersShort": "Membros",
+    "membersShortCount": "Membros ({{total}})"
+  },
+  "status": {
+    "pending": "A validar",
+    "present": "Presente",
+    "absent": "Ausente",
+    "justified": "Justificada"
+  },
+  "enrollmentStatus": {
+    "active": "Ativo",
+    "dropped": "Desistente",
+    "completed": "Concluído"
+  },
+  "toggle": {
+    "label": "Presença de {{name}}"
+  },
+  "readOnly": {
+    "lessonCancelled": "Aula cancelada: a chamada fica só para leitura.",
+    "classArchived": "A turma está arquivada: a chamada fica só para leitura.",
+    "lessonInFuture": "A chamada pode ser feita a partir do dia da aula."
+  },
+  "table": {
+    "select": "Selecionar",
+    "selectAll": "Selecionar todos",
+    "selectRow": "Selecionar {{name}}",
+    "attendance": "Presença",
+    "signed": "Assinado por",
+    "actions": "Ações",
+    "notSigned": "—",
+    "signedBy": "{{name}} · {{time}}"
+  },
+  "batch": {
+    "summary": "{{total}} · {{selected}}",
+    "markAbsent": "Marcar ausência",
+    "sign": "Assinar presença",
+    "signCount": "Assinar presença ({{count}})",
+    "selected_one": "{{count}} selecionado",
+    "selected_other": "{{count}} selecionados",
+    "selected_many": "{{count}} selecionados",
+    "noneSelected": "nenhum selecionado"
+  },
+  "actions": {
+    "justify": "Justificar",
+    "justifyFor": "Justificar a falta de {{name}}",
+    "editJustification": "Editar justificativa",
+    "editJustificationFor": "Editar justificativa de {{name}}",
+    "correctFor": "Corrigir a presença de {{name}}"
+  },
+  "students": {
+    "caption": "Chamada dos alunos",
+    "empty": "Nenhum aluno na chamada desta aula.",
+    "role": "Aluno(a)",
+    "columns": {
+      "name": "Aluno",
+      "detail": "Situação"
+    },
+    "save": "Salvar chamada ({{count}})",
+    "total_one": "{{count}} aluno na chamada",
+    "total_other": "{{count}} alunos na chamada",
+    "total_many": "{{count}} alunos na chamada",
+    "signed_one": "Presença assinada para {{count}} aluno",
+    "signed_other": "Presença assinada para {{count}} alunos",
+    "signed_many": "Presença assinada para {{count}} alunos"
+  },
+  "members": {
+    "caption": "Presença dos monitores e professores",
+    "empty": "Nenhuma alocação confirmada nesta aula.",
+    "columns": {
+      "name": "Membro",
+      "detail": "Papel na aula"
+    },
+    "role": {
+      "teacher": "Professor(a)",
+      "monitor": "Monitor(a)"
+    },
+    "save": "Salvar presença dos membros ({{count}})",
+    "ownRowHint": "Você não pode confirmar a própria presença",
+    "hoursNotice": "A presença confirmada de um monitor ou professor gera automaticamente as horas de aula ({{hours}}). Reverter a presença estorna essas horas.",
+    "total_one": "{{count}} alocação confirmada",
+    "total_other": "{{count}} alocações confirmadas",
+    "total_many": "{{count}} alocações confirmadas",
+    "signed_one": "Presença assinada para {{count}} membro",
+    "signed_other": "Presença assinada para {{count}} membros",
+    "signed_many": "Presença assinada para {{count}} membros"
+  },
+  "mobile": {
+    "summary": "{{present}} · {{absent}} · {{pending}}",
+    "rowPending": "{{detail}} · A lançar",
+    "rowSigned": "{{detail}} · {{signed}}",
+    "present_one": "{{count}} presente",
+    "present_other": "{{count}} presentes",
+    "present_many": "{{count}} presentes",
+    "absent_one": "{{count}} ausente",
+    "absent_other": "{{count}} ausentes",
+    "absent_many": "{{count}} ausentes",
+    "pending_one": "{{count}} a lançar",
+    "pending_other": "{{count}} a lançar",
+    "pending_many": "{{count}} a lançar"
+  },
+  "pending": {
+    "title": "Chamada pendente",
+    "register": "Registrar chamada agora",
+    "description_one": "A aula de {{date}} terminou às {{time}} e a chamada não foi concluída: {{count}} aluno ainda sem presença.",
+    "description_other": "A aula de {{date}} terminou às {{time}} e a chamada não foi concluída: {{count}} alunos ainda sem presença.",
+    "description_many": "A aula de {{date}} terminou às {{time}} e a chamada não foi concluída: {{count}} alunos ainda sem presença."
+  },
+  "dialog": {
+    "close": "Fechar",
+    "back": "Voltar"
+  },
+  "justify": {
+    "title": "Justificar falta",
+    "student": "{{name}} · Aluno(a) · Ausente",
+    "signedBy": "Chamada assinada por {{name}} às {{time}}",
+    "reason": "Motivo",
+    "health": "Saúde",
+    "notice": "A falta continua registrada. A justificativa aparece na chamada.",
+    "submit": "Salvar justificativa",
+    "success": "Justificativa salva"
+  },
+  "correct": {
+    "title": "Corrigir presença",
+    "person": "{{name}} · {{detail}}",
+    "launched": "Lançado como {{status}} por {{name}} às {{time}}",
+    "newStatus": "Nova situação",
+    "reason": "Motivo da correção",
+    "reasonHelp": "Obrigatório. Fica no histórico da chamada.",
+    "notice": {
+      "student": "A correção fica registrada com quem corrigiu, quando e o que mudou.",
+      "member": "Marcar presença gera as horas da aula; marcar ausência estorna essas horas."
+    },
+    "history": "Histórico de correções",
+    "historyItem": "De {{from}} para {{to}} por {{name}} · {{time}}",
+    "submit": "Salvar correção",
+    "success": "Presença corrigida"
+  },
+  "validation": {
+    "reasonRequired": "Informe o motivo da falta.",
+    "correctionReasonRequired": "Informe o motivo da correção.",
+    "tooLong": "Use no máximo {{max}} caracteres.",
+    "statusRequired": "Escolha a nova situação."
+  },
+  "history": {
+    "title": "Presença",
+    "loading": "Carregando as presenças…",
+    "loadError": "Não foi possível carregar as presenças.",
+    "totals": "{{present}} · {{absent}}",
+    "empty": "Nenhuma presença registrada.",
+    "listLabel": "Aulas com presença registrada",
+    "present_one": "{{count}} presença",
+    "present_other": "{{count}} presenças",
+    "present_many": "{{count}} presenças",
+    "absent_one": "{{count}} falta",
+    "absent_other": "{{count}} faltas",
+    "absent_many": "{{count}} faltas"
+  },
+  "errors": {
+    "lessonInFuture": "A chamada só pode ser feita a partir do dia da aula.",
+    "lessonCancelled": "A aula foi cancelada e não recebe chamada.",
+    "lessonNotFound": "Esta aula não existe mais.",
+    "classArchived": "A turma está arquivada e fica só para leitura.",
+    "notInRollCall": "Um ou mais alunos não estão mais nesta chamada. A lista foi atualizada.",
+    "alreadySigned": "Um ou mais alunos já foram assinados com outra situação. Use a correção.",
+    "notAbsent": "Só uma falta pode ser justificada.",
+    "statusUnchanged": "A presença já está com essa situação.",
+    "attendanceNotFound": "Esta presença não existe mais. A lista foi atualizada.",
+    "assignmentNotConfirmed": "Uma ou mais alocações não estão mais confirmadas. A lista foi atualizada.",
+    "selfAttendance": "Você não pode confirmar a própria presença.",
+    "forbidden": "Você não tem permissão para fazer isso nesta aula.",
+    "invalid": "Os dados enviados não são válidos.",
+    "network": "Sem conexão com o servidor. Tente de novo.",
+    "unknown": "Não foi possível concluir. Tente de novo."
+  }
+}

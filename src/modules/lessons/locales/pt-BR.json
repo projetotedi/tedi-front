@@ -369,9 +369,6 @@
         "cancelReason": "Motivo do cancelamento"
       }
     },
-    "attendance": {
-      "title": "Chamada"
-    },
     "coverage": {
       "title": "Cobertura da aula"
     },

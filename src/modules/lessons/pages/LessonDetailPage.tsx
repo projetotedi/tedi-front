@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
@@ -63,6 +63,12 @@ function LessonNotFound(): ReactElement {
   );
 }
 
+export interface LessonDetailSlots {
+  renderAttendance: (lesson: LessonResponseDto) => ReactNode;
+  renderAttendanceAlert: (lesson: LessonResponseDto) => ReactNode;
+  renderAttendanceAction: (lesson: LessonResponseDto) => ReactNode;
+}
+
 /**
  * The lesson that was loaded: the trail, the header with the actions and the two columns of cards.
  * The data of the lesson come from `lesson`, which is what the query holds, so a dialog that saves
@@ -77,7 +83,13 @@ function LessonNotFound(): ReactElement {
  * once and needs no reset: a cancelled lesson is final, so neither value goes back, and the screen
  * of another lesson is a new one (`key` of the detail).
  */
-function LessonDetailView({ lesson }: { lesson: LessonResponseDto }): ReactElement {
+function LessonDetailView({
+  lesson,
+  slots,
+}: {
+  lesson: LessonResponseDto;
+  slots: LessonDetailSlots;
+}): ReactElement {
   const { t } = useTranslation("lessons");
   const changesRef = useRef<HTMLDivElement>(null);
   const [focusChanges, setFocusChanges] = useState(false);
@@ -92,12 +104,18 @@ function LessonDetailView({ lesson }: { lesson: LessonResponseDto }): ReactEleme
       <LessonBreadcrumb lesson={lesson} />
       <LessonDetailHeader
         lesson={lesson}
-        actions={<LessonDetailActions lesson={lesson} onCancelled={() => setFocusChanges(true)} />}
+        actions={
+          <>
+            <LessonDetailActions lesson={lesson} onCancelled={() => setFocusChanges(true)} />
+            {slots.renderAttendanceAction(lesson)}
+          </>
+        }
       />
+      {slots.renderAttendanceAlert(lesson)}
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <LessonDataCard lesson={lesson} />
-          <ComingSoonCard title={t("detail.attendance.title")} />
+          {slots.renderAttendance(lesson)}
           <ComingSoonCard title={t("detail.record.title")} />
         </div>
         <div className="flex min-w-0 flex-col gap-5">
@@ -110,7 +128,13 @@ function LessonDetailView({ lesson }: { lesson: LessonResponseDto }): ReactEleme
   );
 }
 
-function LessonDetail({ lessonId }: { lessonId: string }): ReactElement {
+function LessonDetail({
+  lessonId,
+  slots,
+}: {
+  lessonId: string;
+  slots: LessonDetailSlots;
+}): ReactElement {
   const { t } = useTranslation("lessons");
   const lessonQuery = useGetLesson(lessonId);
   const lesson = lessonQuery.data;
@@ -134,18 +158,16 @@ function LessonDetail({ lessonId }: { lessonId: string }): ReactElement {
     );
   }
 
-  return <LessonDetailView lesson={lesson} />;
+  return <LessonDetailView lesson={lesson} slots={slots} />;
 }
 
 /**
  * The screen of a lesson (RF-037, RF-039, RF-040, RF-042, RF-044, RF-045, RN-20): the trail, the
- * header with the title, the tags and the actions, and the cards. The page asks the API for one
- * thing, `getLesson`, and everything on it comes from that answer: the cards ask for nothing, so a
- * lesson is one request. The title of the page is on the topbar (`handle.title` of the route, "Aula"),
+ * header with the title, the tags and the actions, and the cards. The page asks the API for
+ * `getLesson` and its own cards ask for nothing else; the roll call comes by slot, with its requests. The title of the page is on the topbar (`handle.title` of the route, "Aula"),
  * so there is no `<h1>`.
  *
- * What the lesson does not have yet keeps its place with "Em breve" and no request: "Chamada" (the
- * attendance, E6), "Registro" and "Cobertura da aula" (the allocation of members, E5). The teacher
+ * What the lesson does not have yet keeps its place with "Em breve" and no request: "Registro" and "Cobertura da aula" (the allocation of members, E5). The teacher
  * is a dash in "Dados da aula" until then. The actions are for who manages lessons; the others see
  * the lesson and nothing to change.
  *
@@ -156,10 +178,10 @@ function LessonDetail({ lessonId }: { lessonId: string }): ReactElement {
  * shows the page of not found, with the way back to the lessons; any other error shows the alert
  * with "Tentar de novo".
  */
-export function LessonDetailPage(): ReactElement {
+export function LessonDetailPage(slots: LessonDetailSlots): ReactElement {
   const { lessonId = "" } = useParams();
 
   if (!isLessonId(lessonId)) return <LessonNotFound />;
 
-  return <LessonDetail key={lessonId} lessonId={lessonId} />;
+  return <LessonDetail key={lessonId} lessonId={lessonId} slots={slots} />;
 }

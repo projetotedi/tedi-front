@@ -8,8 +8,7 @@ export interface ComingSoonCardProps {
 }
 
 /**
- * A card of the screen of a lesson whose data does not exist yet: "Chamada" waits for the
- * attendance module, "Registro" for the record of the lesson and "Cobertura da aula" for the
+ * A card of the screen of a lesson whose data does not exist yet: "Registro" waits for the record of the lesson and "Cobertura da aula" for the
  * allocation of members. It keeps its place on the screen and says it is coming, with no table, no
  * request and no action.
  *

@@ -369,9 +369,6 @@
         "cancelReason": "Reason for cancelling"
       }
     },
-    "attendance": {
-      "title": "Attendance"
-    },
     "coverage": {
       "title": "Lesson coverage"
     },

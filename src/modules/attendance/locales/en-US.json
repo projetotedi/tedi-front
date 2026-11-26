@@ -1,0 +1,176 @@
+{
+  "title": "Roll call",
+  "loading": "Loading the roll call…",
+  "loadError": "The roll call could not be loaded.",
+  "retry": "Try again",
+  "register": "Take roll call",
+  "removedPerson": "Removed person",
+  "tabs": {
+    "students": "Students",
+    "studentsCount": "Students ({{total}})",
+    "members": "Monitors and teachers",
+    "membersCount": "Monitors and teachers ({{total}})",
+    "membersShort": "Members",
+    "membersShortCount": "Members ({{total}})"
+  },
+  "status": {
+    "pending": "Pending",
+    "present": "Present",
+    "absent": "Absent",
+    "justified": "Justified"
+  },
+  "enrollmentStatus": {
+    "active": "Active",
+    "dropped": "Dropped",
+    "completed": "Completed"
+  },
+  "toggle": {
+    "label": "Attendance of {{name}}"
+  },
+  "readOnly": {
+    "lessonCancelled": "Cancelled lesson: the roll call is read-only.",
+    "classArchived": "The class is archived: the roll call is read-only.",
+    "lessonInFuture": "The roll call opens on the day of the lesson."
+  },
+  "table": {
+    "select": "Select",
+    "selectAll": "Select all",
+    "selectRow": "Select {{name}}",
+    "attendance": "Attendance",
+    "signed": "Signed by",
+    "actions": "Actions",
+    "notSigned": "—",
+    "signedBy": "{{name}} · {{time}}"
+  },
+  "batch": {
+    "summary": "{{total}} · {{selected}}",
+    "markAbsent": "Mark absent",
+    "sign": "Sign attendance",
+    "signCount": "Sign attendance ({{count}})",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "noneSelected": "none selected"
+  },
+  "actions": {
+    "justify": "Justify",
+    "justifyFor": "Justify the absence of {{name}}",
+    "editJustification": "Edit justification",
+    "editJustificationFor": "Edit justification of {{name}}",
+    "correctFor": "Correct the attendance of {{name}}"
+  },
+  "students": {
+    "caption": "Roll call of the students",
+    "empty": "No students in the roll call of this lesson.",
+    "role": "Student",
+    "columns": {
+      "name": "Student",
+      "detail": "Status"
+    },
+    "save": "Save roll call ({{count}})",
+    "total_one": "{{count}} student in the roll call",
+    "total_other": "{{count}} students in the roll call",
+    "signed_one": "Attendance signed for {{count}} student",
+    "signed_other": "Attendance signed for {{count}} students"
+  },
+  "members": {
+    "caption": "Attendance of monitors and teachers",
+    "empty": "No confirmed assignments in this lesson.",
+    "columns": {
+      "name": "Member",
+      "detail": "Role in the lesson"
+    },
+    "role": {
+      "teacher": "Teacher",
+      "monitor": "Monitor"
+    },
+    "save": "Save attendance of members ({{count}})",
+    "ownRowHint": "You cannot confirm your own attendance",
+    "hoursNotice": "A confirmed attendance of a monitor or teacher generates the lesson hours ({{hours}}) automatically. Reverting it reverses those hours.",
+    "total_one": "{{count}} confirmed assignment",
+    "total_other": "{{count}} confirmed assignments",
+    "signed_one": "Attendance signed for {{count}} member",
+    "signed_other": "Attendance signed for {{count}} members"
+  },
+  "mobile": {
+    "summary": "{{present}} · {{absent}} · {{pending}}",
+    "rowPending": "{{detail}} · To be recorded",
+    "rowSigned": "{{detail}} · {{signed}}",
+    "present_one": "{{count}} present",
+    "present_other": "{{count}} present",
+    "absent_one": "{{count}} absent",
+    "absent_other": "{{count}} absent",
+    "pending_one": "{{count}} to record",
+    "pending_other": "{{count}} to record"
+  },
+  "pending": {
+    "title": "Pending roll call",
+    "register": "Take roll call now",
+    "description_one": "The lesson of {{date}} ended at {{time}} and the roll call is unfinished: {{count}} student without attendance.",
+    "description_other": "The lesson of {{date}} ended at {{time}} and the roll call is unfinished: {{count}} students without attendance."
+  },
+  "dialog": {
+    "close": "Close",
+    "back": "Back"
+  },
+  "justify": {
+    "title": "Justify absence",
+    "student": "{{name}} · Student · Absent",
+    "signedBy": "Roll call signed by {{name}} at {{time}}",
+    "reason": "Reason",
+    "health": "Health",
+    "notice": "The absence stays recorded. The justification shows in the roll call.",
+    "submit": "Save justification",
+    "success": "Justification saved"
+  },
+  "correct": {
+    "title": "Correct attendance",
+    "person": "{{name}} · {{detail}}",
+    "launched": "Recorded as {{status}} by {{name}} at {{time}}",
+    "newStatus": "New status",
+    "reason": "Reason for the correction",
+    "reasonHelp": "Required. It stays in the history of the roll call.",
+    "notice": {
+      "student": "The correction is recorded with who made it, when and what changed.",
+      "member": "Marking present generates the lesson hours; marking absent reverses them."
+    },
+    "history": "Correction history",
+    "historyItem": "From {{from}} to {{to}} by {{name}} · {{time}}",
+    "submit": "Save correction",
+    "success": "Attendance corrected"
+  },
+  "validation": {
+    "reasonRequired": "Enter the reason for the absence.",
+    "correctionReasonRequired": "Enter the reason for the correction.",
+    "tooLong": "Use at most {{max}} characters.",
+    "statusRequired": "Choose the new status."
+  },
+  "history": {
+    "title": "Attendance",
+    "loading": "Loading attendance…",
+    "loadError": "Attendance could not be loaded.",
+    "totals": "{{present}} · {{absent}}",
+    "empty": "No attendance recorded.",
+    "listLabel": "Lessons with recorded attendance",
+    "present_one": "{{count}} presence",
+    "present_other": "{{count}} presences",
+    "absent_one": "{{count}} absence",
+    "absent_other": "{{count}} absences"
+  },
+  "errors": {
+    "lessonInFuture": "The roll call only opens on the day of the lesson.",
+    "lessonCancelled": "The lesson was cancelled and takes no roll call.",
+    "lessonNotFound": "This lesson no longer exists.",
+    "classArchived": "The class is archived and read-only.",
+    "notInRollCall": "One or more students are no longer in this roll call. The list was updated.",
+    "alreadySigned": "One or more students were already signed with another status. Use the correction.",
+    "notAbsent": "Only an absence can be justified.",
+    "statusUnchanged": "The attendance already has this status.",
+    "attendanceNotFound": "This attendance no longer exists. The list was updated.",
+    "assignmentNotConfirmed": "One or more assignments are no longer confirmed. The list was updated.",
+    "selfAttendance": "You cannot confirm your own attendance.",
+    "forbidden": "You do not have permission to do this in this lesson.",
+    "invalid": "The data sent is not valid.",
+    "network": "No connection to the server. Try again.",
+    "unknown": "It could not be completed. Try again."
+  }
+}
