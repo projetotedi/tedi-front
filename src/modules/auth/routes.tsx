@@ -4,6 +4,7 @@ import type { RouteHandle } from "@shared/lib/route-handle";
 
 import { RequirePermission } from "./components/RequirePermission";
 import { AccessPage } from "./pages/AccessPage";
+import { ChangePasswordPage } from "./pages/ChangePasswordPage";
 import { InvitePage } from "./pages/InvitePage";
 import { LoginPage } from "./pages/LoginPage";
 
@@ -13,6 +14,8 @@ export const authRoutes: RouteObject[] = [
   { path: "invite", element: <InvitePage /> },
   // O back gera /invite?token=... (cadastro) e /reset-password?token=... (senha): mesma página.
   { path: "reset-password", element: <InvitePage /> },
+  // Troca obrigatória no primeiro acesso (GUS-142): layout público, mas a própria página exige sessão.
+  { path: "change-password", element: <ChangePasswordPage /> },
 ];
 
 /**
