@@ -86,7 +86,7 @@ function useStudentHandlers({
   return calls;
 }
 
-async function renderPage(route = "/students", role = Role.coordinator) {
+async function renderPage(route = "/students", role: Role = Role.coordinator) {
   server.use(meHandler({ user: buildMeUser({ role }) }));
   return renderRoutes(peopleRoutes, { route });
 }
