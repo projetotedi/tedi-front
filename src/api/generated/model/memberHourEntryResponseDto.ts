@@ -14,7 +14,7 @@ export interface MemberHourEntryResponseDto {
   activity: string;
   category: HourEntryCategory;
   /**
-   * The class of the lesson, for an entry created by the attendance.
+   * The class the entry is linked to: the class of the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.
    * @nullable
    */
   classId: string | null;
@@ -26,8 +26,10 @@ export interface MemberHourEntryResponseDto {
   /** Minutes the person declares (150 = 2h30). */
   declaredMinutes: number;
   id: string;
+  /** True when the lesson of the entry was cancelled after the entry was logged. The entry is not reversed: the work existed, and the coordination decides in the review (GUS-172). False without a lesson. */
+  lessonCancelled: boolean;
   /**
-   * The lesson, for an entry created by the attendance.
+   * The lesson the entry is linked to: the lesson of an attendance entry, or the one chosen when the entry was logged (GUS-172). Null when none.
    * @nullable
    */
   lessonId: string | null;

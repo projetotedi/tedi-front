@@ -51,36 +51,58 @@ describe("summaryTotals", () => {
 describe("categoryRows", () => {
   it("lists only the categories with entries, by hours, as the Figma: Aula 28h, Gestão 20h, Planejamento 8h, Evento 2h", () => {
     expect(categoryRows(SUMMARY_MONTH)).toEqual([
-      { category: "lesson", hoursMinutes: 1680, pendingMinutes: 0 },
-      { category: "management", hoursMinutes: 1200, pendingMinutes: 0 },
-      { category: "planning", hoursMinutes: 480, pendingMinutes: 480 },
-      { category: "event", hoursMinutes: 120, pendingMinutes: 0 },
+      { category: "lesson", hoursMinutes: 1680, pendingMinutes: 0, note: null },
+      { category: "management", hoursMinutes: 1200, pendingMinutes: 0, note: null },
+      { category: "planning", hoursMinutes: 480, pendingMinutes: 480, note: null },
+      { category: "event", hoursMinutes: 120, pendingMinutes: 0, note: null },
     ]);
   });
 
   it("keeps a category whose entries were all rejected, with 0h", () => {
     const summary = buildSummary({
       byCategory: [
-        { category: "other", entries: 1, declaredMinutes: 60, bankMinutes: 0, pendingMinutes: 0 },
-        { category: "meeting", entries: 0, declaredMinutes: 0, bankMinutes: 0, pendingMinutes: 0 },
+        {
+          category: "other",
+          entries: 1,
+          declaredMinutes: 60,
+          bankMinutes: 0,
+          pendingMinutes: 0,
+          note: null,
+        },
+        {
+          category: "meeting",
+          entries: 0,
+          declaredMinutes: 0,
+          bankMinutes: 0,
+          pendingMinutes: 0,
+          note: null,
+        },
       ],
     });
 
     expect(categoryRows(summary)).toEqual([
-      { category: "other", hoursMinutes: 0, pendingMinutes: 0 },
+      { category: "other", hoursMinutes: 0, pendingMinutes: 0, note: null },
     ]);
   });
 
   it("breaks a tie by the order of the categories of the contract", () => {
     const summary = buildSummary({
       byCategory: [
-        { category: "other", entries: 1, declaredMinutes: 60, bankMinutes: 60, pendingMinutes: 0 },
+        {
+          category: "other",
+          entries: 1,
+          declaredMinutes: 60,
+          bankMinutes: 60,
+          pendingMinutes: 0,
+          note: null,
+        },
         {
           category: "support",
           entries: 1,
           declaredMinutes: 60,
           bankMinutes: 0,
           pendingMinutes: 60,
+          note: null,
         },
         {
           category: "planning",
@@ -88,6 +110,7 @@ describe("categoryRows", () => {
           declaredMinutes: 90,
           bankMinutes: 60,
           pendingMinutes: 0,
+          note: null,
         },
         {
           category: "lesson",
@@ -95,6 +118,7 @@ describe("categoryRows", () => {
           declaredMinutes: 120,
           bankMinutes: 120,
           pendingMinutes: 0,
+          note: null,
         },
       ],
     });

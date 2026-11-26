@@ -47,6 +47,7 @@ export function buildMeUser(role: Role = Role.coordinator, id = USER_ID): MeResp
     email: null,
     role,
     permissions: role === Role.member ? MEMBER : MANAGER,
+    mustChangePassword: false,
   };
 }
 

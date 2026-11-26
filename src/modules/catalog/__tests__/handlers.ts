@@ -64,6 +64,7 @@ export function buildMeUser(role: Role = Role.coordinator): MeResponseDto {
     email: null,
     role,
     permissions: PERMISSIONS_BY_ROLE[role],
+    mustChangePassword: false,
   };
 }
 

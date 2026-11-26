@@ -40,6 +40,7 @@ async function renderPendingCell(pendingMinutes: number, language: Language) {
             declaredMinutes: 3000,
             bankMinutes: 3000,
             pendingMinutes,
+            note: null,
           },
         ],
       }),

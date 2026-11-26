@@ -44,6 +44,7 @@ export function buildMeUser(overrides: Partial<MeResponseDto> = {}): MeResponseD
     email: null,
     role,
     permissions: PERMISSIONS_BY_ROLE[role],
+    mustChangePassword: false,
     ...overrides,
   };
 }

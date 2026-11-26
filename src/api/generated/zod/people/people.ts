@@ -978,6 +978,72 @@ export const ReactivateMemberResponse = zod.object({
     .describe("Null for a person without a member profile (e.g. the seeded admin)."),
 });
 
+export const listStudentsQueryLimitMax = 100;
+
+export const listStudentsQuerySearchMax = 100;
+
+export const ListStudentsQueryParams = zod.object({
+  page: zod.number().min(1).optional(),
+  limit: zod.number().min(1).max(listStudentsQueryLimitMax).optional(),
+  search: zod
+    .string()
+    .max(listStudentsQuerySearchMax)
+    .optional()
+    .describe(
+      "Part of the name or of the e-mail, ignoring case and accents; when the term has only digits and the characters space ( ) - . +, also the digits of the phone, whatever mask it was stored with. The digits are compared as they were stored: a term with the country code (+55) does not find a phone stored without it.",
+    ),
+  accessibilityNeed: zod
+    .string()
+    .optional()
+    .describe(
+      "One or more categories, comma separated (none, visual, hearing, motor, cognitive, other), or any: every category but none. The students of any of them. Omitted or empty lists every category.",
+    ),
+  ids: zod
+    .string()
+    .optional()
+    .describe(
+      "Only these students (person ids), comma separated: from 1 to 100 ids, else 400 VALIDATION_FAILED (an empty ids too). Paginated and ordered like the rest of the list; an id that is not a student, an archived one (without archived=true) or a removed one is left out.",
+    ),
+  archived: zod
+    .boolean()
+    .optional()
+    .describe(
+      "true lists only the archived students. Omitted (or false) lists only the students that are not archived (RN-27).",
+    ),
+  sort: zod
+    .enum(["name", "createdAt"])
+    .optional()
+    .describe("name is alphabetical; createdAt puts the student registered last first."),
+});
+
+export const ListStudentsResponse = zod.object({
+  data: zod.array(
+    zod.object({
+      accessibilityNeed: zod
+        .enum(["none", "visual", "hearing", "motor", "cognitive", "other"])
+        .describe("Category. What the person needs in class, never a diagnosis (RNF-13).")
+        .describe("Category of what the student needs in class, never a diagnosis (RNF-13)."),
+      age: zod.int().describe("Whole years today in America/Sao_Paulo."),
+      birthDate: zod.iso.date(),
+      createdAt: zod.iso
+        .datetime({ offset: true })
+        .describe("When the person was registered as a student."),
+      email: zod.string().nullable(),
+      id: zod.uuid().describe("Person id of the student."),
+      name: zod.string(),
+      phone: zod
+        .string()
+        .nullable()
+        .describe(
+          "As it was stored: the API writes digits only, but a phone that came in by an import or by SQL may keep its mask.",
+        ),
+    }),
+  ),
+  limit: zod.int(),
+  page: zod.int(),
+  total: zod.int(),
+});
+
 export const createStudentBodyAccessibilityNeedDefault = `none`;
 export const createStudentBodyClassNeedsMax = 500;
 
