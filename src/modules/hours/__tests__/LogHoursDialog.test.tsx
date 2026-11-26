@@ -158,10 +158,11 @@ describe("LogHoursDialog", () => {
       ).toHaveAttribute("data-required", "true");
     });
 
-    it("has no Vínculo field", async () => {
+    it("has the optional Vínculo, with the lesson off until a class is chosen (GUS-174)", async () => {
       await renderDialog();
 
-      expect(screen.queryByText(/Vínculo/)).not.toBeInTheDocument();
+      expect(within(dialog()).getByRole("button", { name: /Vínculo \(Turma\)/ })).toBeEnabled();
+      expect(within(dialog()).getByRole("button", { name: /Aula — opcional/ })).toBeDisabled();
       expect(within(dialog()).getAllByRole("textbox")).toHaveLength(3);
     });
 

@@ -31,9 +31,15 @@ describe("toLogHoursError", () => {
     });
   });
 
+  it("puts a VALIDATION_FAILED on classId or lessonId on the field of the link (GUS-174)", () => {
+    expect(
+      toLogHoursError(apiError(400, "VALIDATION_FAILED", [{ field: "lessonId", message: "x" }])),
+    ).toEqual({ kind: "fields", fields: [{ name: "lessonId", message: "serverInvalid" }] });
+  });
+
   it("is unknown when VALIDATION_FAILED points at no field of the form", () => {
     expect(
-      toLogHoursError(apiError(400, "VALIDATION_FAILED", [{ field: "classId", message: "x" }])),
+      toLogHoursError(apiError(400, "VALIDATION_FAILED", [{ field: "personId", message: "x" }])),
     ).toEqual({ kind: "issue", issue: "unknown" });
     expect(toLogHoursError(apiError(400, "VALIDATION_FAILED"))).toEqual({
       kind: "issue",
