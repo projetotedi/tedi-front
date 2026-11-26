@@ -9,11 +9,13 @@ import {
   type ReactElement,
   type RefObject,
 } from "react";
-import { Controller, useForm, type FieldErrors } from "react-hook-form";
+import { Controller, useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { useListClasses } from "@api/generated/classes/classes";
 import { useLogHoursForMember, useLogMyHours } from "@api/generated/hours/hours";
-import type { HourEntryResponseDto } from "@api/generated/model";
+import { useListLessons } from "@api/generated/lessons/lessons";
+import { LessonStatus, type HourEntryResponseDto } from "@api/generated/model";
 import { useAuth, useCan } from "@modules/auth";
 import { formatHours } from "@shared/lib/format";
 import { Alert, Button, Dialog, Select, TextField, toast, type SelectOption } from "@shared/ui";
@@ -58,6 +60,9 @@ export interface LogHoursDialogProps {
   onLogged?: (entry: HourEntryResponseDto) => void;
 }
 
+/** How many classes and lessons the link offers: the most the API gives at once. */
+const LINK_OPTIONS_LIMIT = 100;
+
 /** The form, with today read on the calendar of the machine each time it is checked. */
 const LOG_HOURS_SCHEMA = logHoursFormSchema(() => todayIsoDate());
 
@@ -81,6 +86,9 @@ function focusSelect(wrapper: RefObject<HTMLDivElement | null>): void {
  *   refusals have their own messages. `LogHoursForMemberButton` is the button that opens it.
  * - **The fields.** Data starts with today and refuses a day after it; Horas is typed as "2h30" and
  *   sent as minutes; Categoria never offers Aula (the hours of a lesson come from the attendance).
+ *   Vínculo (GUS-174) is optional: a class that is not archived and then, if wanted, one of its
+ *   lessons that is not cancelled. Changing the class clears the lesson. A link the API refuses
+ *   (lesson cancelled, class archived meanwhile) shows on its field.
  *   An invalid field shows its message under it, the first one takes the focus and nothing is sent.
  * - **The refusals of the API.** 400 `VALIDATION_FAILED` and `HOUR_ENTRY_DATE_IN_FUTURE` go to their
  *   fields. Logging for oneself on behalf (warning), a member out of reach or gone (error) turn
@@ -105,10 +113,12 @@ export function LogHoursDialog({
   const issueId = useId();
   const issueRef = useRef<HTMLDivElement>(null);
   const categoryRef = useRef<HTMLDivElement>(null);
+  const classRef = useRef<HTMLDivElement>(null);
+  const lessonRef = useRef<HTMLDivElement>(null);
   const inFlightRef = useRef(false);
   const [issue, setIssue] = useState<LogHoursIssue | null>(null);
 
-  const { control, handleSubmit, setError, setFocus } = useForm<
+  const { control, handleSubmit, setError, setFocus, setValue } = useForm<
     LogHoursFormInput,
     unknown,
     LogHoursFormValues
@@ -133,6 +143,12 @@ export function LogHoursDialog({
     },
   });
   const isPending = logMine.isPending || logForMember.isPending;
+  const classId = useWatch({ control, name: "classId" });
+  const classesQuery = useListClasses({ limit: LINK_OPTIONS_LIMIT });
+  const lessonsQuery = useListLessons(
+    { classId, limit: LINK_OPTIONS_LIMIT },
+    { query: { enabled: classId !== "" } },
+  );
   const display = issue === null ? null : logHoursIssueDisplay(issue);
   const isBlocked = display?.blocks === true;
   // A 403 for one's own hours is not about "this person": it has a message of its own.
@@ -144,6 +160,8 @@ export function LogHoursDialog({
 
   function focusField(name: LogHoursFieldName) {
     if (name === "category") focusSelect(categoryRef);
+    else if (name === "classId") focusSelect(classRef);
+    else if (name === "lessonId") focusSelect(lessonRef);
     else setFocus(name);
   }
 
@@ -204,6 +222,23 @@ export function LogHoursDialog({
     id: category,
     label: t(ENTRY_CATEGORY_LABEL_KEYS[category]),
   }));
+
+  const classOptions: SelectOption[] = [
+    { id: "", label: t("logHours.linkNone") },
+    ...(classesQuery.data?.data ?? []).map((schoolClass) => ({
+      id: schoolClass.id,
+      label: `${schoolClass.course.name} — ${schoolClass.name ?? schoolClass.code}`,
+    })),
+  ];
+  const lessonOptions: SelectOption[] = [
+    { id: "", label: t("logHours.lessonNone") },
+    ...(lessonsQuery.data?.data ?? [])
+      .filter((lesson) => lesson.status !== LessonStatus.cancelled)
+      .map((lesson) => ({
+        id: lesson.id,
+        label: `${formatDayMonth(lesson.date, i18n.language)} — ${lesson.title}`,
+      })),
+  ];
 
   const fieldError = (message: string | undefined) =>
     message === undefined ? undefined : t(`logHours.fieldErrors.${message}`);
@@ -342,7 +377,49 @@ export function LogHoursDialog({
           />
         </div>
 
-        {/* Two columns wide, so it starts a new row: the cell next to Horas stays empty (Vínculo is GUS-172). */}
+        <div ref={classRef}>
+          <Controller
+            name="classId"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Select
+                label={t("logHours.linkClass")}
+                placeholder={t("logHours.linkNone")}
+                options={classOptions}
+                value={field.value}
+                onChange={(value) => {
+                  field.onChange(value);
+                  setValue("lessonId", "");
+                }}
+                onBlur={field.onBlur}
+                name={field.name}
+                errorMessage={fieldError(fieldState.error?.message)}
+              />
+            )}
+          />
+        </div>
+
+        <div ref={lessonRef} className="sm:col-span-2">
+          <Controller
+            name="lessonId"
+            control={control}
+            render={({ field, fieldState }) => (
+              <Select
+                label={t("logHours.linkLesson")}
+                placeholder={t("logHours.lessonNone")}
+                description={classId === "" ? t("logHours.linkLessonHint") : undefined}
+                options={lessonOptions}
+                value={field.value}
+                onChange={field.onChange}
+                onBlur={field.onBlur}
+                name={field.name}
+                isDisabled={classId === ""}
+                errorMessage={fieldError(fieldState.error?.message)}
+              />
+            )}
+          />
+        </div>
+
         <div className="sm:col-span-2">
           <Controller
             name="notes"

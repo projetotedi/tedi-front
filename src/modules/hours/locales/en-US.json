@@ -61,6 +61,11 @@
         "minutePart_other": "{{count}} minutes",
         "hoursAndMinutes": "{{hours}} and {{minutes}} pending"
       }
+    },
+    "link": {
+      "lessonCancelled": "Lesson cancelled",
+      "lesson": "Linked to a lesson",
+      "class": "Linked to a class"
     }
   },
   "logHours": {
@@ -93,7 +98,11 @@
       "hoursFormat": "Use the format 2h30.",
       "hoursRange": "Enter from 0h01 to 24h.",
       "notesTooLong": "Use at most 2,000 characters.",
-      "serverInvalid": "Check this field."
+      "serverInvalid": "Check this field.",
+      "lessonCancelled": "This lesson was cancelled. Choose another lesson or only the class.",
+      "classArchived": "This class is archived. Choose another.",
+      "linkNotFound": "We could not find this class or lesson. Choose again.",
+      "lessonNotInClass": "This lesson is not of the chosen class."
     },
     "errors": {
       "network": "We could not log the hours. Check your connection and try again.",
@@ -102,7 +111,12 @@
       "memberNotFound": "We could not find this member. Reload the page and try again.",
       "selfOnBehalf": "To log your own hours, use + Log hours in My profile.",
       "unknown": "We could not log the hours. Try again."
-    }
+    },
+    "linkClass": "Link (Class) — optional",
+    "linkLesson": "Lesson — optional",
+    "linkNone": "No link",
+    "lessonNone": "Only the class",
+    "linkLessonHint": "Choose the class before the lesson."
   },
   "myEntries": {
     "title": "My entries",

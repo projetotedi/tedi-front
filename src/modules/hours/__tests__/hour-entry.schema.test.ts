@@ -16,6 +16,8 @@ const FIGMA: LogHoursFormInput = {
   date: "2026-03-10",
   hours: "2h30",
   notes: " Revisão do roteiro e ajustes nos slides da aula. ",
+  classId: "",
+  lessonId: "",
 };
 
 /** The message of each field the schema refuses, by the name of the field. */
@@ -68,6 +70,8 @@ describe("logHoursFormSchema", () => {
       date: TODAY,
       hours: "",
       notes: "",
+      classId: "",
+      lessonId: "",
     });
   });
 
@@ -107,5 +111,17 @@ describe("logHoursFormSchema", () => {
     expect(result.success).toBe(false);
     if (result.success) return;
     expect(result.error.issues.map((issue) => issue.path[0])).toEqual(["category"]);
+  });
+
+  it("sends the class and the lesson of the link only when chosen (GUS-174)", () => {
+    const withLesson = schema.safeParse({ ...FIGMA, classId: "c1", lessonId: "l1" });
+    const onlyClass = schema.safeParse({ ...FIGMA, classId: "c1" });
+    const none = schema.safeParse(FIGMA);
+
+    if (!withLesson.success || !onlyClass.success || !none.success) throw new Error("invalid");
+    expect(toCreateHourEntryBody(withLesson.data)).toMatchObject({ classId: "c1", lessonId: "l1" });
+    expect(toCreateHourEntryBody(onlyClass.data)).toMatchObject({ classId: "c1" });
+    expect(toCreateHourEntryBody(onlyClass.data)).not.toHaveProperty("lessonId");
+    expect(toCreateHourEntryBody(none.data)).not.toHaveProperty("classId");
   });
 });

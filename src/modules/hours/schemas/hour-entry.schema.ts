@@ -65,6 +65,9 @@ export function logHoursFormSchema(today: () => string) {
       return minutes;
     }),
     notes: z.string().trim().max(logMyHoursBodyNotesMax, "notesTooLong"),
+    // Vínculo (GUS-174): optional, "" is none. With a lesson the API takes the class from it.
+    classId: z.string(),
+    lessonId: z.string(),
   });
 }
 
@@ -73,10 +76,21 @@ export type LogHoursFormValues = z.output<ReturnType<typeof logHoursFormSchema>>
 
 /** What the form starts with: today in Data and everything else empty. */
 export function emptyLogHoursFormInput(today: string): LogHoursFormInput {
-  return { activity: "", category: null, date: today, hours: "", notes: "" };
+  return {
+    activity: "",
+    category: null,
+    date: today,
+    hours: "",
+    notes: "",
+    classId: "",
+    lessonId: "",
+  };
 }
 
-/** The body of `POST /me/hour-entries` and of `POST /members/:id/hour-entries`: blank notes are none, so `null`. */
+/**
+ * The body of `POST /me/hour-entries` and of `POST /members/:id/hour-entries`: blank notes are none,
+ * so `null`. The link goes only when chosen: the class, and the lesson when there is one (GUS-172).
+ */
 export function toCreateHourEntryBody(values: LogHoursFormValues): CreateHourEntryDto {
   return {
     activity: values.activity,
@@ -84,5 +98,7 @@ export function toCreateHourEntryBody(values: LogHoursFormValues): CreateHourEnt
     date: values.date,
     declaredMinutes: values.hours,
     notes: values.notes === "" ? null : values.notes,
+    ...(values.classId ? { classId: values.classId } : {}),
+    ...(values.lessonId ? { lessonId: values.lessonId } : {}),
   };
 }

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { meHandler } from "@modules/auth/__tests__/handlers";
 import { renderRoutes, server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import {
+  linkOptionsHandlers,
   myHourEntriesHandler,
   myHoursSummaryHandler,
 } from "@modules/hours/__tests__/entries-handlers";
@@ -19,7 +20,13 @@ const routes = createPeopleRoutes(peopleRouteSlots);
 
 /** "Meu perfil" with the real slots, the registration and the hours of the API. */
 async function renderProfile() {
-  server.use(meHandler(), myProfileHandler(), myHoursSummaryHandler(), myHourEntriesHandler());
+  server.use(
+    meHandler(),
+    myProfileHandler(),
+    myHoursSummaryHandler(),
+    myHourEntriesHandler(),
+    ...linkOptionsHandlers(),
+  );
   await renderRoutes(routes, { route: "/profile" });
   await screen.findByText("Ana Torres", { selector: "p" });
 }

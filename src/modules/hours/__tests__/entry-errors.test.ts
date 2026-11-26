@@ -31,9 +31,15 @@ describe("toLogHoursError", () => {
     });
   });
 
+  it("puts a VALIDATION_FAILED on classId or lessonId on the field of the link (GUS-174)", () => {
+    expect(
+      toLogHoursError(apiError(400, "VALIDATION_FAILED", [{ field: "lessonId", message: "x" }])),
+    ).toEqual({ kind: "fields", fields: [{ name: "lessonId", message: "serverInvalid" }] });
+  });
+
   it("is unknown when VALIDATION_FAILED points at no field of the form", () => {
     expect(
-      toLogHoursError(apiError(400, "VALIDATION_FAILED", [{ field: "classId", message: "x" }])),
+      toLogHoursError(apiError(400, "VALIDATION_FAILED", [{ field: "personId", message: "x" }])),
     ).toEqual({ kind: "issue", issue: "unknown" });
     expect(toLogHoursError(apiError(400, "VALIDATION_FAILED"))).toEqual({
       kind: "issue",
@@ -157,5 +163,22 @@ describe("toRemoveEntryError", () => {
     expect(isStaleEntry({ kind: "alert", alert: "notFound" })).toBe(true);
     expect(isStaleEntry({ kind: "alert", alert: "network" })).toBe(false);
     expect(isStaleEntry({ kind: "alert", alert: "unknown" })).toBe(false);
+  });
+});
+
+describe("toLogHoursError — the link (GUS-174)", () => {
+  it.each([
+    [{ statusCode: 400, error: "LESSON_NOT_IN_CLASS" }, "lessonId", "lessonNotInClass"],
+    [{ statusCode: 400, error: "LESSON_NOT_FOUND" }, "lessonId", "linkNotFound"],
+    [{ statusCode: 400, error: "CLASS_NOT_FOUND" }, "classId", "linkNotFound"],
+    [{ statusCode: 409, error: "LESSON_CANCELLED" }, "lessonId", "lessonCancelled"],
+    [{ statusCode: 409, error: "CLASS_ARCHIVED" }, "classId", "classArchived"],
+    [
+      { statusCode: 409, error: "CLASS_ARCHIVED", details: [{ field: "lessonId", message: "x" }] },
+      "lessonId",
+      "classArchived",
+    ],
+  ])("puts %o on %s", (error, name, message) => {
+    expect(toLogHoursError(error)).toEqual({ kind: "fields", fields: [{ name, message }] });
   });
 });

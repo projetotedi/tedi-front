@@ -18,6 +18,8 @@ import {
   BEATRIZ_NAME,
   logHoursForMemberHandler,
   logMyHoursHandler,
+  LINK_CLASS_ID,
+  LINK_LESSON_ID,
   type ApiErrorBody,
   type LogCall,
 } from "./entries-handlers";
@@ -156,10 +158,11 @@ describe("LogHoursDialog", () => {
       ).toHaveAttribute("data-required", "true");
     });
 
-    it("has no Vínculo field", async () => {
+    it("has the optional Vínculo, with the lesson off until a class is chosen (GUS-174)", async () => {
       await renderDialog();
 
-      expect(screen.queryByText(/Vínculo/)).not.toBeInTheDocument();
+      expect(within(dialog()).getByRole("button", { name: /Vínculo \(Turma\)/ })).toBeEnabled();
+      expect(within(dialog()).getByRole("button", { name: /Aula — opcional/ })).toBeDisabled();
       expect(within(dialog()).getAllByRole("textbox")).toHaveLength(3);
     });
 
@@ -642,5 +645,82 @@ describe("LogHoursDialog", () => {
       await waitFor(() => expect(focusedIssue()).toHaveFocus());
       expect(submitButton()).toBeDisabled();
     });
+  });
+});
+
+describe("LogHoursDialog — the link to a class and a lesson (GUS-174)", () => {
+  freezeToday();
+
+  const classSelect = () => within(dialog()).getByRole("button", { name: /Vínculo \(Turma\)/ });
+  const lessonSelect = () => within(dialog()).getByRole("button", { name: /Aula — opcional/ });
+
+  async function pickLink(user: UserEvent, withLesson: boolean) {
+    await user.click(classSelect());
+    await user.click(await screen.findByRole("option", { name: "Informática Básica — A" }));
+    if (!withLesson) return;
+    await user.click(lessonSelect());
+    await user.click(await screen.findByRole("option", { name: "10/03 — Teclado e mouse" }));
+  }
+
+  it("offers the lesson only after the class, without the cancelled ones, and sends both", async () => {
+    const onCall = vi.fn<(call: LogCall) => void>();
+    server.use(logMyHoursHandler({ onCall }));
+    const user = userEvent.setup();
+    const { onClose } = await renderDialog();
+
+    expect(lessonSelect()).toBeDisabled();
+    await fill(user, FIGMA_OWN);
+    await user.click(classSelect());
+    await user.click(await screen.findByRole("option", { name: "Informática Básica — A" }));
+    await user.click(lessonSelect());
+    expect(
+      await screen.findByRole("option", { name: "10/03 — Teclado e mouse" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Janelas/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("option", { name: "10/03 — Teclado e mouse" }));
+    await user.click(submitButton());
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onCall.mock.calls[0][0].body).toMatchObject({
+      classId: LINK_CLASS_ID,
+      lessonId: LINK_LESSON_ID,
+    });
+  });
+
+  it("sends only the class when no lesson is chosen", async () => {
+    const onCall = vi.fn<(call: LogCall) => void>();
+    server.use(logMyHoursHandler({ onCall }));
+    const user = userEvent.setup();
+    const { onClose } = await renderDialog();
+
+    await fill(user, FIGMA_OWN);
+    await pickLink(user, false);
+    await user.click(submitButton());
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(onCall.mock.calls[0][0].body).toMatchObject({ classId: LINK_CLASS_ID });
+    expect(onCall.mock.calls[0][0].body).not.toHaveProperty("lessonId");
+  });
+
+  it("shows a 409 LESSON_CANCELLED on the lesson and keeps the dialog open", async () => {
+    const error: ApiErrorBody = {
+      statusCode: 409,
+      error: "LESSON_CANCELLED",
+      details: [{ field: "lessonId", message: "Cancelled." }],
+    };
+    server.use(logMyHoursHandler({ error }));
+    const user = userEvent.setup();
+    const { onClose } = await renderDialog();
+
+    await fill(user, FIGMA_OWN);
+    await pickLink(user, true);
+    await user.click(submitButton());
+
+    expect(
+      await within(dialog()).findByText(
+        "Essa aula foi cancelada. Escolha outra aula ou só a turma.",
+      ),
+    ).toBeInTheDocument();
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

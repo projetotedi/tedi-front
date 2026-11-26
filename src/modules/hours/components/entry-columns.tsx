@@ -6,6 +6,7 @@ import { formatHours } from "@shared/lib/format";
 
 import { formatDayMonth } from "../lib/entry-format";
 import { ENTRY_CATEGORY_LABEL_KEYS } from "../lib/entry-labels";
+import { EntryLinkNote } from "./EntryLinkNote";
 import { EntryStatusTag } from "./EntryStatusTag";
 
 /** The width of each column, as a class (the measures of the Figma over the width of the table). */
@@ -48,6 +49,7 @@ function headerClass(width: string): string {
  * The columns of a list of the person's entries: Data, Atividade, Categoria, Declarado, Validado and
  * Status. The hours are always in the format of the TEDI ("2h30"); a time that was not validated yet
  * is a dash a screen reader reads as "Não informado", and a rejected entry is validated with "0h".
+ * Under the activity goes its link (`EntryLinkNote`, GUS-174), with the tag "Aula cancelada".
  * With `withReviewNote`, the justification of an adjustment or the reason of a rejection goes under
  * the activity, in quotes ("Ajustado pela coordenação: “…”").
  */
@@ -81,6 +83,7 @@ export function entryColumns(
       render: (entry) => (
         <>
           <span className="block">{entry.activity}</span>
+          <EntryLinkNote entry={entry} />
           {reviewNote(entry)}
         </>
       ),
