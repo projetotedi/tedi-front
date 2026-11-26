@@ -7,6 +7,7 @@ import type { RouteHandle } from "@shared/lib/route-handle";
 import { MemberDetailPage } from "./pages/MemberDetailPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { StudentDetailPage } from "./pages/StudentDetailPage";
+import { StudentsPage } from "./pages/StudentsPage";
 
 /**
  * What the screens of `people` take from other modules. `people` never imports another module (a
@@ -40,11 +41,20 @@ export function createPeopleRoutes(slots: PeopleRouteSlots): RouteObject[] {
         />
       ),
     },
-    // Besides the "Alunos" of the prototype ("Em breve", `/students`): there is no list of students
-    // yet, so this one has no menu item. The topbar title is the static "Aluno" on purpose: the name
-    // and the accessibility of the student are health data (LGPD) and must not reach the tab. The
-    // guard is `students.view`, the permission of that menu item, which marks "Alunos" in the
-    // sidebar by the longest matching path.
+    // The list of students (GUS-137), the item "Alunos" of the menu.
+    {
+      path: "students",
+      handle: { title: "common:nav.students" } satisfies RouteHandle,
+      element: (
+        <RequirePermission permission="students.view">
+          <StudentsPage />
+        </RequirePermission>
+      ),
+    },
+    // The record of a student, opened from the list. The topbar title is the static "Aluno" on
+    // purpose: the name and the accessibility of the student are health data (LGPD) and must not
+    // reach the tab. The guard is `students.view`, the permission of "Alunos", which the sidebar
+    // marks by the longest matching path.
     {
       path: "students/:studentId",
       handle: { title: "people:student.routeTitle" } satisfies RouteHandle,

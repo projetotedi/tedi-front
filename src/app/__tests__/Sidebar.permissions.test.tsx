@@ -31,14 +31,19 @@ async function renderSidebar(role: Role) {
             children: [
               {
                 element: <AppLayout />,
-                children: [...prototypeRoutes, ...authProtectedRoutes],
+                // Any screen inside the layout: only the menu is read here.
+                children: [
+                  ...prototypeRoutes,
+                  ...authProtectedRoutes,
+                  { path: "*", element: <p>Tela</p> },
+                ],
               },
             ],
           },
         ],
       },
     ],
-    { initialEntries: ["/students"] },
+    { initialEntries: ["/enrollments"] },
   );
 
   render(

@@ -10,6 +10,7 @@ import { catalogMenuItems } from "@modules/catalog";
 import { classesMenuItems } from "@modules/classes";
 import { hoursMenuItems } from "@modules/hours";
 import { lessonsMenuItems } from "@modules/lessons";
+import { peopleMenuItems } from "@modules/people";
 import type { MenuGroup, MenuItem } from "@shared/lib/menu";
 
 /**
@@ -34,10 +35,9 @@ export const appMenuGroups: MenuGroup[] = [
  * Minhas aulas (GUS-161) nasceu no módulo `assignments`, em `assignmentsMenuItems`.
  * Banco de horas e Validação de horas (GUS-165) são do módulo `hours`, em `hoursMenuItems`.
  * Matrículas (GUS-138) é do módulo `classes`, em `classesMenuItems`.
+ * Alunos (GUS-137) é do módulo `people`, em `peopleMenuItems`.
  */
-export const prototypeMenuItems: MenuItem[] = [
-  { label: "common:nav.students", path: "/students", permission: "students.view", group: "people" },
-];
+export const prototypeMenuItems: MenuItem[] = [];
 
 /**
  * Itens do menu lateral. A ordem dos grupos vem de `appMenuGroups`; dentro de cada grupo vale
@@ -53,6 +53,7 @@ export const appMenuItems: MenuItem[] = [
   ...assignmentsMenuItems,
   ...hoursMenuItems,
   ...prototypeMenuItems,
+  ...peopleMenuItems,
   ...catalogMenuItems,
   ...authMenuItems,
 ];

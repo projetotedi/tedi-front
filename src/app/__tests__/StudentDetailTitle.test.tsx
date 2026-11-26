@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, within } from "@testing-library/react";
+import { http, HttpResponse } from "msw";
 import { createMemoryRouter, Navigate, RouterProvider } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -154,18 +155,21 @@ describe("The student detail inside the app layout", () => {
     expect(hrefs.filter((href) => href?.includes(STUDENT_ID))).toEqual([]);
   });
 
-  it("keeps /students as the Em breve page of the prototype, and does not ask for a student there", async () => {
+  it("opens /students as the list of students (GUS-137), without asking for one student", async () => {
     const onGet = vi.fn();
+    server.use(
+      http.get("*/students", () => HttpResponse.json({ data: [], total: 0, page: 1, limit: 10 })),
+      http.get("*/classes", () => HttpResponse.json({ data: [], total: 0, page: 1, limit: 100 })),
+    );
     const { nav } = await renderApp("/students", { onGet });
 
-    expect(await screen.findByText(/chega em breve/)).toBeInTheDocument();
+    expect(await screen.findByText("Nenhum aluno ainda")).toBeInTheDocument();
     expect(titles()).toEqual(["Alunos", "Alunos · TEDI"]);
     expect(
       within(nav)
         .getAllByRole("link", { current: "page" })
         .map((link) => link.textContent),
     ).toEqual(["Alunos"]);
-    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
     expect(onGet).not.toHaveBeenCalled();
   });
 });
