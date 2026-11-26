@@ -235,6 +235,11 @@ export const LoginBody = zod.object({
 export const LoginResponse = zod.object({
   email: zod.looseObject({}).nullable(),
   id: zod.string(),
+  mustChangePassword: zod
+    .boolean()
+    .describe(
+      "True while the account still has to replace its password (initial coordinator, GUS-93). Until POST /auth/password succeeds, every authenticated route except GET /auth/me and POST /auth/password answers 403 PASSWORD_CHANGE_REQUIRED.",
+    ),
   name: zod.string(),
   permissions: zod
     .object({
@@ -413,6 +418,201 @@ export const LogoutResponse = zod.void();
 export const MeResponse = zod.object({
   email: zod.looseObject({}).nullable(),
   id: zod.string(),
+  mustChangePassword: zod
+    .boolean()
+    .describe(
+      "True while the account still has to replace its password (initial coordinator, GUS-93). Until POST /auth/password succeeds, every authenticated route except GET /auth/me and POST /auth/password answers 403 PASSWORD_CHANGE_REQUIRED.",
+    ),
+  name: zod.string(),
+  permissions: zod
+    .object({
+      "access.manage": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "account.manageOwn": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "assignments.create": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "assignments.manageOwn": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "assignments.review": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "attendance.confirmMember": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "attendance.correct": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "attendance.takeStudents": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "catalog.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "classes.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "classes.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "courses.duplicateArchive": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "courses.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "enrollments.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "hours.export": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "hours.logForOthers": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "hours.review": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "hours.viewOthers": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "invites.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "lessonPlans.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "lessons.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "lessons.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "members.deactivate": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "members.edit": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "members.list": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "members.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+      "students.archive": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "students.manage": zod.enum([
+        "all",
+        "own",
+        "department",
+        "allocated",
+        "lessonTeacher",
+        "none",
+      ]),
+      "students.view": zod.enum(["all", "own", "department", "allocated", "lessonTeacher", "none"]),
+    })
+    .describe(
+      "Scope per permission for the logged-in role (source: PERMISSION_MATRIX, docs/PERMISSIONS.md).",
+    ),
+  ra: zod.looseObject({}).nullable(),
+  role: zod.enum(["member", "director", "coordinator", "superadmin"]),
+});
+
+export const changePasswordBodyNewPasswordMin = 8;
+
+export const ChangePasswordBody = zod.object({
+  newPassword: zod
+    .string()
+    .min(changePasswordBodyNewPasswordMin)
+    .describe("New password. At least 8 characters, and different from the current one."),
+});
+
+export const ChangePasswordResponse = zod.object({
+  email: zod.looseObject({}).nullable(),
+  id: zod.string(),
+  mustChangePassword: zod
+    .boolean()
+    .describe(
+      "True while the account still has to replace its password (initial coordinator, GUS-93). Until POST /auth/password succeeds, every authenticated route except GET /auth/me and POST /auth/password answers 403 PASSWORD_CHANGE_REQUIRED.",
+    ),
   name: zod.string(),
   permissions: zod
     .object({

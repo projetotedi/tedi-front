@@ -13,13 +13,18 @@ export interface StudentByEnrollmentItemResponseDto {
   accessibilityNeed: AccessibilityNeed;
   /** Whole years today in America/Sao_Paulo. */
   age: number;
+  birthDate: string;
+  /** When the person was registered as a student. */
+  createdAt: string;
   /** The classes where the student has an active enrollment, the most recent edition first. */
   currentClasses: EnrollmentClassRefResponseDto[];
+  /** @nullable */
+  email: string | null;
   /** Person id of the student. */
   id: string;
   name: string;
   /**
-   * Digits only.
+   * As it was stored: the API writes digits only, but a phone that came in by an import or by SQL may keep its mask.
    * @nullable
    */
   phone: string | null;
