@@ -396,7 +396,7 @@ describe("EnrolledStudentsCard", () => {
     const link = within(card("Alunos matriculados")).getByRole("link", {
       name: "Ver todos os 12",
     });
-    expect(link).toHaveAttribute("href", `/enrollments?classId=${CLASS_ID}`);
+    expect(link).toHaveAttribute("href", `/classes/${CLASS_ID}/enrollments`);
     expect(link).toHaveTextContent(/^Ver todos os 12\s›$/);
     expect(within(link).getByText(/›/)).toHaveAttribute("aria-hidden", "true");
   });
@@ -408,7 +408,7 @@ describe("EnrolledStudentsCard", () => {
 
     expect(screen.getByRole("link", { name: "Ver o aluno matriculado" })).toHaveAttribute(
       "href",
-      `/enrollments?classId=${CLASS_ID}`,
+      `/classes/${CLASS_ID}/enrollments`,
     );
   });
 

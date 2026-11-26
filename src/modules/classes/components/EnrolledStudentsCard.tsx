@@ -1,13 +1,14 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import type { ClassEnrollmentPreviewItemResponseDto } from "@api/generated/model";
+import { EnrollmentStatus, type ClassEnrollmentPreviewItemResponseDto } from "@api/generated/model";
 import { useCan } from "@modules/auth";
 import { DataTable, type Column } from "@shared/components/DataTable";
-import { Card } from "@shared/ui";
+import { Button, Card } from "@shared/ui";
 
 import { formatInstantDate } from "../lib/format";
+import { ChangeEnrollmentStatusDialog } from "./ChangeEnrollmentStatusDialog";
 import { LINK_CLASSES } from "./link-classes";
 
 /** How many students the card shows. The API sends at most this many in `enrollmentsPreview`. */
@@ -19,6 +20,8 @@ export interface EnrolledStudentsCardProps {
   preview: ClassEnrollmentPreviewItemResponseDto[];
   /** `enrollmentsTotal` of the class: all the active enrollments, not only the ones in `preview`. */
   total: number;
+  /** "Informática Básica — Turma A · INFO-A · 2026.1", shown in "Alterar situação". */
+  classLabel?: string;
 }
 
 /**
@@ -27,15 +30,20 @@ export interface EnrolledStudentsCardProps {
  * the date). "Ver todos os N ›" goes to the enrollment screen of the class (GUS-108, a "Em breve"
  * page until it exists), and only shows for who can manage enrollments and when there is someone
  * enrolled. A class with no enrollment says so, with no table.
+ *
+ * Who manages enrollments also gets "Alterar situação" on each row (GUS-138), which opens the
+ * dialog of the status of that enrollment. The preview has only active enrollments.
  */
 export function EnrolledStudentsCard({
   classId,
   preview,
   total,
+  classLabel = "",
 }: EnrolledStudentsCardProps): ReactElement {
   const { t, i18n } = useTranslation("classes");
   const canManageEnrollments = useCan("enrollments.manage");
   const rows = preview.slice(0, PREVIEW_LIMIT);
+  const [changing, setChanging] = useState<ClassEnrollmentPreviewItemResponseDto | null>(null);
 
   const columns: Column<ClassEnrollmentPreviewItemResponseDto>[] = [
     {
@@ -49,6 +57,25 @@ export function EnrolledStudentsCard({
       cellClassName: "whitespace-nowrap",
       render: (enrollment) => formatInstantDate(enrollment.enrolledAt, i18n.language),
     },
+    ...(canManageEnrollments
+      ? [
+          {
+            header: t("detail.enrollments.actions"),
+            headerClassName: "uppercase",
+            render: (enrollment: ClassEnrollmentPreviewItemResponseDto) => (
+              <Button
+                variant="secondary"
+                aria-label={t("detail.enrollments.changeStatusLabel", {
+                  name: enrollment.student.name,
+                })}
+                onPress={() => setChanging(enrollment)}
+              >
+                {t("detail.enrollments.changeStatus")}
+              </Button>
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (
@@ -56,7 +83,7 @@ export function EnrolledStudentsCard({
       title={t("detail.enrollments.title")}
       aside={
         total > 0 && canManageEnrollments ? (
-          <Link to={`/enrollments?classId=${classId}`} className={LINK_CLASSES}>
+          <Link to={`/classes/${classId}/enrollments`} className={LINK_CLASSES}>
             {t("detail.enrollments.seeAll", { count: total })}
             <span aria-hidden="true">&nbsp;›</span>
           </Link>
@@ -73,6 +100,18 @@ export function EnrolledStudentsCard({
           caption={t("detail.enrollments.caption")}
         />
       )}
+      {changing !== null ? (
+        <ChangeEnrollmentStatusDialog
+          enrollment={{
+            id: changing.id,
+            studentName: changing.student.name,
+            status: EnrollmentStatus.active,
+            enrolledAt: changing.enrolledAt,
+          }}
+          classLabel={classLabel}
+          onClose={() => setChanging(null)}
+        />
+      ) : null}
     </Card>
   );
 }

@@ -3,6 +3,7 @@ import type { RouteHandle } from "@shared/lib/route-handle";
 import { RequirePermission } from "@modules/auth";
 import { ClassesListPage } from "./pages/ClassesListPage";
 import { ClassDetailPage, type ClassDetailSlots } from "./pages/ClassDetailPage";
+import { EnrollmentPage } from "./pages/EnrollmentPage";
 
 /**
  * What the screens of the classes take from other modules. `classes` never imports another module
@@ -16,6 +17,9 @@ import { ClassDetailPage, type ClassDetailSlots } from "./pages/ClassDetailPage"
  *   first day), and `classActions.onEditClass` for the shortcut of Gerar aulas to the form.
  * - `renderClassLessons(classId)`: the card "Aulas da turma" of the screen of the class, which is
  *   the `lessons` module's.
+ *
+ * The enrollment screen (GUS-138) answers on `/enrollments` (the menu, the class is picked there)
+ * and on `/classes/:classId/enrollments`, with `enrollments.manage`.
  */
 export type ClassesRouteSlots = ClassDetailSlots;
 
@@ -39,7 +43,25 @@ export function createClassesRoutes(slots: ClassesRouteSlots): RouteObject[] {
             </RequirePermission>
           ),
         },
+        {
+          path: ":classId/enrollments",
+          handle: { title: "classes:enrollment.routeTitle" } satisfies RouteHandle,
+          element: (
+            <RequirePermission permission="enrollments.manage">
+              <EnrollmentPage />
+            </RequirePermission>
+          ),
+        },
       ],
+    },
+    {
+      path: "enrollments",
+      handle: { title: "classes:enrollment.routeTitle" } satisfies RouteHandle,
+      element: (
+        <RequirePermission permission="enrollments.manage">
+          <EnrollmentPage />
+        </RequirePermission>
+      ),
     },
   ];
 }
