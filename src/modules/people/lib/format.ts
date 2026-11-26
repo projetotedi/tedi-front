@@ -63,3 +63,21 @@ export function formatPhone(digits: string): string {
   }
   return digits;
 }
+
+/**
+ * The phone as the person types it: "(11) 98888-1234" for 11 digits and "(11) 3333-4444" for 10,
+ * built while typing. With a country code (12 or 13 digits) there is no mask, only the digits. The
+ * API strips the formatting, so the form sends what is shown.
+ */
+export function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 13);
+  if (digits.length === 0) return "";
+  if (digits.length > 11) return digits;
+  if (digits.length <= 2) return `(${digits}`;
+
+  const ddd = digits.slice(0, 2);
+  const rest = digits.slice(2);
+  if (rest.length <= 4) return `(${ddd}) ${rest}`;
+  const split = rest.length === 9 ? 5 : 4;
+  return `(${ddd}) ${rest.slice(0, split)}-${rest.slice(split)}`;
+}

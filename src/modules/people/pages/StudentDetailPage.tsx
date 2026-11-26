@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 
@@ -7,13 +7,16 @@ import { useGetStudent } from "@api/generated/people/people";
 import { useCan } from "@modules/auth";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
+import { ArchiveStudentDialog } from "../components/ArchiveStudentDialog";
 import { CourseHistoryCard } from "../components/CourseHistoryCard";
 import { StudentAccessibilityCard } from "../components/StudentAccessibilityCard";
 import { StudentDetailHeader } from "../components/StudentDetailHeader";
 import { StudentEnrollmentsCard } from "../components/StudentEnrollmentsCard";
+import { StudentFormDialog } from "../components/StudentFormDialog";
 import { StudentPersonalCard } from "../components/StudentPersonalCard";
 import { StudentRecordCard } from "../components/StudentRecordCard";
 import { StudentSummaryCard } from "../components/StudentSummaryCard";
+import { UnarchiveStudentDialog } from "../components/UnarchiveStudentDialog";
 import { formatInstantDate } from "../lib/format";
 import { isStudentId, isStudentNotFound } from "../lib/student";
 
@@ -81,29 +84,66 @@ function ArchivedNotice({ archivedAt, archiveReason }: ArchivedNoticeProps): Rea
   );
 }
 
+type OpenDialog = "edit" | "archive" | "unarchive";
+
 /**
  * The student that was loaded: the header, the notice of an archived one and the two columns of
- * cards. The header gets Matricular em turma (GUS-138) for who manages enrollments, while the
- * student is not archived: it opens the enrollment screen with the student selected, where the
- * class is picked. The other actions come with GUS-123; see `StudentDetailHeader`.
+ * cards. The header has the actions, each only with its permission (`useCan`): Editar dados
+ * (`students.manage`, GUS-123), Matricular em turma (`enrollments.manage`, GUS-138: it opens the
+ * enrollment screen with the student selected) and Arquivar aluno or Reativar aluno
+ * (`students.archive`, GUS-123). An archived student keeps Editar dados and Matricular em turma on
+ * the screen, disabled, and gets Reativar aluno.
  */
 function StudentDetailView({ student }: { student: StudentDetailDto }): ReactElement {
   const { t } = useTranslation("people");
   const navigate = useNavigate();
-  const canEnroll = useCan("enrollments.manage") && student.archivedAt === null;
+  const canManage = useCan("students.manage");
+  const canEnroll = useCan("enrollments.manage");
+  const canArchive = useCan("students.archive");
+  const isArchived = student.archivedAt !== null;
+  const [openDialog, setOpenDialog] = useState<OpenDialog | null>(null);
+  const closeDialog = () => setOpenDialog(null);
+  const hasActions = canManage || canEnroll || canArchive;
 
   return (
     <div className="flex flex-col gap-5">
       <StudentDetailHeader
         student={student}
         actions={
-          canEnroll ? (
-            <Button
-              variant="primary"
-              onPress={() => navigate(`/enrollments?studentId=${encodeURIComponent(student.id)}`)}
-            >
-              {t("student.actions.enroll")}
-            </Button>
+          hasActions ? (
+            <>
+              {canManage ? (
+                <Button
+                  variant="secondary"
+                  isDisabled={isArchived}
+                  onPress={() => setOpenDialog("edit")}
+                >
+                  {t("student.actions.edit")}
+                </Button>
+              ) : null}
+              {canEnroll ? (
+                <Button
+                  variant="primary"
+                  isDisabled={isArchived}
+                  onPress={() =>
+                    navigate(`/enrollments?studentId=${encodeURIComponent(student.id)}`)
+                  }
+                >
+                  {t("student.actions.enroll")}
+                </Button>
+              ) : null}
+              {canArchive ? (
+                isArchived ? (
+                  <Button variant="secondary" onPress={() => setOpenDialog("unarchive")}>
+                    {t("student.actions.unarchive")}
+                  </Button>
+                ) : (
+                  <Button variant="danger-soft" onPress={() => setOpenDialog("archive")}>
+                    {t("student.actions.archive")}
+                  </Button>
+                )
+              ) : null}
+            </>
           ) : undefined
         }
       />
@@ -122,6 +162,16 @@ function StudentDetailView({ student }: { student: StudentDetailDto }): ReactEle
           <StudentRecordCard createdBy={student.createdBy} updatedAt={student.updatedAt} />
         </div>
       </div>
+
+      {openDialog === "edit" ? (
+        <StudentFormDialog mode="edit" studentId={student.id} onClose={closeDialog} />
+      ) : null}
+      {openDialog === "archive" ? (
+        <ArchiveStudentDialog studentId={student.id} onClose={closeDialog} />
+      ) : null}
+      {openDialog === "unarchive" ? (
+        <UnarchiveStudentDialog studentId={student.id} onClose={closeDialog} />
+      ) : null}
     </div>
   );
 }

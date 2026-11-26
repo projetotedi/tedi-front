@@ -5,12 +5,15 @@ import { useSearchParams } from "react-router-dom";
 
 import { useListStudentsByEnrollment } from "@api/generated/classes/classes";
 import { useListStudents } from "@api/generated/people/people";
+import { useCan } from "@modules/auth";
 import { ListState } from "@shared/components/ListState";
 import { useDebounce } from "@shared/hooks/useDebounce";
 import { resolveListState } from "@shared/lib/list-state";
-import { Card, Pagination } from "@shared/ui";
+import { Button, Card, Pagination } from "@shared/ui";
 
+import { ArchiveStudentDialog } from "../components/ArchiveStudentDialog";
 import { StudentFilters } from "../components/StudentFilters";
+import { StudentFormDialog } from "../components/StudentFormDialog";
 import { StudentsTable } from "../components/StudentsTable";
 import {
   hasActiveStudentFilters,
@@ -26,6 +29,11 @@ import {
 const PAGE_SIZE = 10;
 const SEARCH_DEBOUNCE_MS = 300;
 
+type OpenDialog =
+  | { kind: "create" }
+  | { kind: "edit"; studentId: string }
+  | { kind: "archive"; studentId: string };
+
 /**
  * Alunos (GUS-137, Figma "Alunos · listagem"): the students, alphabetical, with the search (name,
  * e-mail or phone), the filters and the page in the URL, so a link or a reload brings the same list
@@ -33,7 +41,8 @@ const SEARCH_DEBOUNCE_MS = 300;
  * `listStudentsByEnrollment`, else from `listStudents` (see `usesEnrollmentSource`). Only one of the
  * two queries runs at a time. The row opens the record of the student.
  *
- * + Novo aluno, the pencil and the bin come with GUS-123 (the dialogs of the student).
+ * + Novo aluno and the pencil open the form of GUS-123 (`students.manage`), and the bin Arquivar
+ * aluno (`students.archive`, only the coordination).
  */
 export function StudentsPage(): ReactElement {
   const { t } = useTranslation("people");
@@ -42,6 +51,11 @@ export function StudentsPage(): ReactElement {
   const [searchText, setSearchText] = useState(filters.search);
   const debouncedSearch = useDebounce(searchText, SEARCH_DEBOUNCE_MS);
   const byEnrollment = usesEnrollmentSource(filters);
+  const canManage = useCan("students.manage");
+  const canArchive = useCan("students.archive");
+  const [openDialog, setOpenDialog] = useState<OpenDialog | null>(null);
+  const openCreate = () => setOpenDialog({ kind: "create" });
+  const closeDialog = () => setOpenDialog(null);
 
   useEffect(() => {
     if (debouncedSearch.trim() === (params.get("search") ?? "")) return;
@@ -80,7 +94,10 @@ export function StudentsPage(): ReactElement {
   }
 
   return (
-    <Card title={<span id="students-title">{t("students.title", { count: total })}</span>}>
+    <Card
+      title={<span id="students-title">{t("students.title", { count: total })}</span>}
+      aside={canManage ? <Button onPress={openCreate}>{t("students.create")}</Button> : undefined}
+    >
       <section aria-labelledby="students-title" className="flex flex-col gap-3">
         <StudentFilters
           search={searchText}
@@ -103,7 +120,11 @@ export function StudentsPage(): ReactElement {
             }}
           />
         ) : listState === "empty" ? (
-          <ListState variant="empty" title={t("students.empty")} />
+          <ListState
+            variant="empty"
+            title={t("students.empty")}
+            action={canManage ? { label: t("students.create"), onPress: openCreate } : undefined}
+          />
         ) : listState === "noResults" ? (
           <ListState
             variant="noResults"
@@ -112,7 +133,20 @@ export function StudentsPage(): ReactElement {
           />
         ) : (
           <>
-            <StudentsTable students={students} caption={t("students.title", { count: total })} />
+            <StudentsTable
+              students={students}
+              caption={t("students.title", { count: total })}
+              onEdit={
+                canManage
+                  ? (student) => setOpenDialog({ kind: "edit", studentId: student.id })
+                  : undefined
+              }
+              onArchive={
+                canArchive
+                  ? (student) => setOpenDialog({ kind: "archive", studentId: student.id })
+                  : undefined
+              }
+            />
             <div className="flex flex-wrap items-center justify-between gap-3 pt-3">
               <p className="text-base text-muted">
                 {t("students.summary", { shown: students.length, total })}
@@ -132,6 +166,16 @@ export function StudentsPage(): ReactElement {
           </>
         )}
       </section>
+
+      {openDialog?.kind === "create" ? (
+        <StudentFormDialog mode="create" onClose={closeDialog} />
+      ) : null}
+      {openDialog?.kind === "edit" ? (
+        <StudentFormDialog mode="edit" studentId={openDialog.studentId} onClose={closeDialog} />
+      ) : null}
+      {openDialog?.kind === "archive" ? (
+        <ArchiveStudentDialog studentId={openDialog.studentId} onClose={closeDialog} />
+      ) : null}
     </Card>
   );
 }

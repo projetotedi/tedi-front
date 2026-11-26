@@ -435,22 +435,39 @@ describe("StudentDetailPage", () => {
       },
     );
 
-    it("has no Matricular em turma for an archived student", async () => {
+    it("disables Editar dados and Matricular em turma and offers Reativar aluno for an archived student", async () => {
       await renderPage({ student: buildStudentDetail({ archivedAt: "2026-10-10T13:00:00.000Z" }) });
 
-      expect(screen.queryByRole("button", { name: "Matricular em turma" })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Matricular em turma" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Editar dados" })).toBeDisabled();
+      expect(screen.getByRole("button", { name: "Reativar aluno" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Arquivar aluno" })).not.toBeInTheDocument();
     });
 
-    it.each([
-      ["coordinator", Role.coordinator],
-      ["director", Role.director],
-      ["member", Role.member],
-    ])("has none of the actions of GUS-123 for the %s", async (_label, role) => {
-      await renderPage({ role });
+    it("gives the coordinator Editar dados and Arquivar aluno", async () => {
+      await renderPage({ role: Role.coordinator });
 
-      for (const name of ["Editar dados", "Arquivar aluno", "Reativar aluno"]) {
+      expect(screen.getByRole("button", { name: "Editar dados" })).toBeEnabled();
+      expect(screen.getByRole("button", { name: "Arquivar aluno" })).toBeInTheDocument();
+    });
+
+    it("gives the director Editar dados, but not Arquivar aluno", async () => {
+      await renderPage({ role: Role.director });
+
+      expect(screen.getByRole("button", { name: "Editar dados" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Arquivar aluno" })).not.toBeInTheDocument();
+    });
+
+    it("has none of the actions for a member", async () => {
+      await renderPage({ role: Role.member });
+
+      for (const name of [
+        "Editar dados",
+        "Arquivar aluno",
+        "Reativar aluno",
+        "Matricular em turma",
+      ]) {
         expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
-        expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
       }
     });
   });
