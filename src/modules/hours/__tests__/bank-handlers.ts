@@ -5,13 +5,17 @@ import {
   HourEntryStatus,
   type AdjustHourEntryDto,
   type ApiFieldErrorDto,
+  type HourCategoryNoteResponseDto,
+  type HourEntryCategory,
   type HourEntryEventResponseDto,
   type HoursMemberTotalDto,
   type HoursSummaryResponseDto,
   type MemberHourEntryResponseDto,
   type RejectHourEntryDto,
+  type SetHourCategoryNoteDto,
   type ValidateHourEntriesDto,
 } from "@api/generated/model";
+import { setNoteBodyNoteMax } from "@api/generated/zod/hours/hours";
 
 import {
   ANA_ID,
@@ -30,7 +34,9 @@ import {
  * MSW handlers of the bank of hours over a store with state: a review (validate, adjust, reject)
  * takes the entry out of the queue and moves its minutes in the summary of everyone, in the summary
  * of the member and in the list of members, the way the API does, so a screen that reads again shows
- * the new totals. The errors follow the contract (`ApiErrorDto`, the code in `error`).
+ * the new totals. The same goes for the observation of a category (`PUT /members/:id/hours/notes`):
+ * it is written in the summary of the member, which comes back with it. The errors follow the
+ * contract (`ApiErrorDto`, the code in `error`).
  */
 
 export interface BankStore {
@@ -109,6 +115,29 @@ export function createBankStore(scope: "all" | "department" = "all"): BankStore 
   };
 }
 
+/**
+ * `store` with `note` already written on `category` of the member, as if the coordination had
+ * written it before the screen opened. The fixtures the tests share keep `note: null`, so a test that
+ * needs an observation asks for it here.
+ */
+export function withNote(
+  store: BankStore,
+  personId: string,
+  category: HourEntryCategory,
+  note: string,
+): BankStore {
+  const summary = store.memberSummaries.get(personId);
+  if (summary === undefined) throw new Error(`The store has no summary of the member ${personId}`);
+
+  store.memberSummaries.set(personId, {
+    ...summary,
+    byCategory: summary.byCategory.map((total) =>
+      total.category === category ? { ...total, note } : total,
+    ),
+  });
+  return store;
+}
+
 /** An error of the API, in the shape of the contract. */
 export function apiError(
   statusCode: number,
@@ -117,6 +146,9 @@ export function apiError(
 ): Response {
   return HttpResponse.json({ statusCode, message: error, error, details }, { status: statusCode });
 }
+
+/** When the coordination writes an observation, on the day the suite freezes. */
+const NOTE_UPDATED_AT = "2026-03-16T15:00:00.000Z";
 
 const REVIEWED_AT = {
   [HourEntryStatus.approved]: "2026-03-16T13:00:00.000Z",
@@ -274,6 +306,32 @@ export function bankHandlers(store: BankStore, spies: BankSpies = createBankSpie
         summary,
         entries: { ...paginate(entries, url), total: entries.length },
       });
+    }),
+
+    http.put("*/members/:id/hours/notes", async ({ request, params }) => {
+      await record(request);
+      const personId = String(params.id);
+      const summary = store.memberSummaries.get(personId);
+      if (summary === undefined) return apiError(404, "MEMBER_NOT_FOUND");
+
+      const body = (await request.json()) as SetHourCategoryNoteDto;
+      const text = body.note?.trim() ?? "";
+      if (text.length > setNoteBodyNoteMax) {
+        return apiError(400, "VALIDATION_FAILED", [{ field: "note", message: "too long" }]);
+      }
+      const note = text === "" ? null : text;
+      for (const total of summary.byCategory) {
+        if (total.category === body.category) total.note = note;
+      }
+
+      const saved: HourCategoryNoteResponseDto = {
+        personId,
+        category: body.category,
+        note,
+        updatedById: ANA_ID,
+        updatedAt: NOTE_UPDATED_AT,
+      };
+      return HttpResponse.json(saved);
     }),
 
     http.get("*/hour-entries", async ({ request }) => {

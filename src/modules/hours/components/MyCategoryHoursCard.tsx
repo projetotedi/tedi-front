@@ -14,17 +14,23 @@ import {
   ENTRY_TAG_SHAPE,
 } from "../lib/entry-labels";
 import { categoryRows } from "../lib/my-hours-summary";
+import { CategoryNoteText } from "./CategoryNoteText";
 
-/** The widths of the Figma (Categoria 180, Horas 110): Pendentes takes the rest. */
-const CATEGORY_WIDTHS = { category: "w-[22%]", hours: "w-[14%]" } as const;
+/**
+ * The widths of the Figma for Categoria (180) and Horas (110); Pendentes has a fixed width too, and
+ * Observação takes the rest.
+ */
+const CATEGORY_WIDTHS = { category: "w-[22%]", hours: "w-[14%]", pending: "w-[16%]" } as const;
 
 /**
  * "Horas por categoria" of "Meu perfil", for the current month (the month of the machine of the
  * person, from its first to its last day, shown next to the title): one row per category with
- * entries in the month, the most hours first. Horas is what counts (validated plus waiting for
- * validation); Pendentes is a yellow tag with the hours waiting, read in words by a screen reader, or
- * a dash read as "Sem pendência". The column Observação of the Figma is not drawn: the API has no text
- * for it (GUS-173).
+ * entries in the month, or with an observation of the coordination, the most hours first. Horas is
+ * what counts (validated plus waiting for validation); Pendentes is a yellow tag with the hours
+ * waiting, read in words by a screen reader, or a dash read as "Sem pendência". Observação is the
+ * text the coordination wrote on the category, only to be read (the member gets no notification of
+ * it), or a dash read as "Sem observação". The observation is not tied to the month, so a category
+ * with one and no entry in the month stays, with 0h (GUS-191, D2).
  *
  * Only for who manages her own account (`account.manageOwn`): without it nothing is drawn and nothing
  * is asked. Loading, failure and an empty month have their own states; the summary leaves the cache
@@ -112,7 +118,7 @@ export function MyCategoryHoursCard(): ReactElement | null {
           },
           {
             header: t("entries.byCategory.columns.pending"),
-            headerClassName: "uppercase",
+            headerClassName: `uppercase ${CATEGORY_WIDTHS.pending}`,
             render: (row) =>
               Math.round(row.pendingMinutes) > 0 ? (
                 <span className={`${ENTRY_TAG_SHAPE} ${ENTRY_STATUS_TAG_CLASSES.pending}`}>
@@ -125,6 +131,11 @@ export function MyCategoryHoursCard(): ReactElement | null {
                   <span className="sr-only">{t("entries.byCategory.noPending")}</span>
                 </span>
               ),
+          },
+          {
+            header: t("entries.byCategory.columns.note"),
+            headerClassName: "uppercase",
+            render: (row) => <CategoryNoteText note={row.note} />,
           },
         ]}
       />

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { getGetMyHoursSummaryQueryKey } from "@api/generated/hours/hours";
+import type { HoursCategoryTotalDto } from "@api/generated/model";
 
 import { MyCategoryHoursCard } from "../components/MyCategoryHoursCard";
 import { buildSummary, myHoursSummaryHandler, type SummaryCall } from "./entries-handlers";
@@ -26,6 +27,27 @@ const table = (name = "Horas por categoria") => screen.getByRole("table", { name
 /** The cells of the row whose accessible name (the text of the row) matches `name`. */
 function cellsOfRow(name: RegExp): HTMLElement[] {
   return within(within(table()).getByRole("row", { name })).getAllByRole("cell");
+}
+
+/** A category total of the summary: one entry of 2h in the bank and no note, unless `overrides` say otherwise. */
+function totalOf(
+  overrides: Partial<HoursCategoryTotalDto> & Pick<HoursCategoryTotalDto, "category">,
+): HoursCategoryTotalDto {
+  return {
+    entries: 1,
+    declaredMinutes: 120,
+    bankMinutes: 120,
+    pendingMinutes: 0,
+    note: null,
+    ...overrides,
+  };
+}
+
+/** A month with the categories `byCategory`; returns once its table is drawn. */
+async function renderCategories(byCategory: HoursCategoryTotalDto[], language: Language = "pt-BR") {
+  server.use(myHoursSummaryHandler({ month: buildSummary({ byCategory }) }));
+  await renderWithProviders(<MyCategoryHoursCard />, { language });
+  await screen.findByRole("table");
 }
 
 /** A month with one row, Planejamento, with `pendingMinutes` waiting; returns its cell Pendentes. */
@@ -99,7 +121,7 @@ describe("MyCategoryHoursCard", () => {
     expect(screen.getByText("Março/2026")).toBeInTheDocument();
   });
 
-  it("lists Aula 28h, Gestão 20h, Planejamento 8h and Evento 2h, in this order, with three columns and no Observação", async () => {
+  it("lists Aula 28h, Gestão 20h, Planejamento 8h and Evento 2h, in this order, with the columns Categoria, Horas, Pendentes and Observação", async () => {
     server.use(myHoursSummaryHandler());
     await renderWithProviders(<MyCategoryHoursCard />);
     await screen.findByRole("table", { name: "Horas por categoria" });
@@ -108,8 +130,7 @@ describe("MyCategoryHoursCard", () => {
       within(table())
         .getAllByRole("columnheader")
         .map((header) => header.textContent),
-    ).toEqual(["Categoria", "Horas", "Pendentes"]);
-    expect(screen.queryByText(/Observação/)).not.toBeInTheDocument();
+    ).toEqual(["Categoria", "Horas", "Pendentes", "Observação"]);
 
     const rows = within(table())
       .getAllByRole("row")
@@ -130,6 +151,80 @@ describe("MyCategoryHoursCard", () => {
     const planning = cellsOfRow(/^Planejamento/);
     expect(within(planning[2]).getByText("8h")).toHaveAttribute("aria-hidden", "true");
     expect(within(planning[2]).getByText("8 horas pendentes")).toBeInTheDocument();
+  });
+
+  it("shows the note of the coordination in the row of its category", async () => {
+    await renderCategories([
+      totalOf({ category: "lesson" }),
+      totalOf({ category: "planning", note: "Ajuste de 2h por lançamento duplicado" }),
+    ]);
+
+    expect(cellsOfRow(/^Planejamento/)[3]).toHaveTextContent(
+      /^Ajuste de 2h por lançamento duplicado$/,
+    );
+    expect(screen.getAllByText("Ajuste de 2h por lançamento duplicado")).toHaveLength(1);
+    expect(cellsOfRow(/^Aula/)[3]).toHaveTextContent(/^—Sem observação$/);
+  });
+
+  it("shows the dash, read as Sem observação, when a category has no note", async () => {
+    server.use(myHoursSummaryHandler());
+    await renderWithProviders(<MyCategoryHoursCard />);
+    await screen.findByRole("table", { name: "Horas por categoria" });
+
+    for (const name of [/^Aula/, /^Gestão/, /^Planejamento/, /^Evento/]) {
+      const cell = cellsOfRow(name)[3];
+
+      expect(within(cell).getByText("—")).toHaveAttribute("aria-hidden", "true");
+      expect(within(cell).getByText("Sem observação")).toBeInTheDocument();
+    }
+  });
+
+  it("keeps a category with a note and no hours in the month, with 0h", async () => {
+    await renderCategories([
+      totalOf({ category: "lesson" }),
+      totalOf({
+        category: "meeting",
+        entries: 0,
+        declaredMinutes: 0,
+        bankMinutes: 0,
+        note: "Reuniões do semestre lançadas na planilha",
+      }),
+      totalOf({ category: "support", entries: 0, declaredMinutes: 0, bankMinutes: 0 }),
+    ]);
+
+    const meeting = cellsOfRow(/^Reunião/);
+
+    expect(meeting[1]).toHaveTextContent(/^0h$/);
+    expect(within(meeting[2]).getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(within(meeting[2]).getByText("Sem pendência")).toBeInTheDocument();
+    expect(meeting[3]).toHaveTextContent("Reuniões do semestre lançadas na planilha");
+    expect(within(table()).queryByRole("row", { name: /^Atendimento/ })).not.toBeInTheDocument();
+    expect(within(table()).getAllByRole("row")).toHaveLength(3);
+  });
+
+  it.each([
+    { language: "pt-BR" as const, header: "Observação", none: "Sem observação" },
+    { language: "en-US" as const, header: "Note", none: "No note" },
+  ])("names the note column and the empty cell in both languages ($language)", async (options) => {
+    await renderCategories([totalOf({ category: "planning" })], options.language);
+
+    expect(screen.getByRole("columnheader", { name: options.header })).toBeInTheDocument();
+    const cell = within(screen.getByRole("table")).getAllByRole("cell")[3];
+    expect(within(cell).getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(within(cell).getByText(options.none)).toBeInTheDocument();
+  });
+
+  it("keeps the line breaks of a long note", async () => {
+    const note = Array.from(
+      { length: 4 },
+      (_, index) => `Linha ${index + 1}: ${"ajuste da coordenação ".repeat(6).trim()}`,
+    ).join("\n");
+    await renderCategories([totalOf({ category: "planning", note })]);
+
+    const text = within(cellsOfRow(/^Planejamento/)[3]).getByText(/^Linha 1:/);
+
+    expect(text.textContent).toBe(note);
+    expect(text).toHaveClass("whitespace-pre-line");
   });
 
   it.each(PENDING_CASES)(

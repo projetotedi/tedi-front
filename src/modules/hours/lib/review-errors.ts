@@ -14,7 +14,7 @@ interface ApiErrorFields {
 }
 
 /** What the error says, read without importing the HTTP client (the API error is an object with these fields). */
-function readApiError(error: unknown): ApiErrorFields {
+export function readApiError(error: unknown): ApiErrorFields {
   if (typeof error !== "object" || error === null) {
     return { statusCode: undefined, code: undefined, details: undefined };
   }

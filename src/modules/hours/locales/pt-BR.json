@@ -47,7 +47,8 @@
       "columns": {
         "category": "Categoria",
         "hours": "Horas",
-        "pending": "Pendentes"
+        "pending": "Pendentes",
+        "note": "Observação"
       },
       "noPending": "Sem pendência",
       "pendingLabel": {
@@ -216,10 +217,15 @@
     },
     "categories": {
       "title": "Horas por categoria do membro",
-      "caption": "Horas do membro por categoria, com as pendentes",
+      "caption": "Horas do membro por categoria, com as pendentes e a observação da coordenação",
       "category": "Categoria",
       "hours": "Horas",
       "pending": "Pendentes",
+      "note": "Observação",
+      "addNote": "Adicionar",
+      "editNote": "Editar",
+      "addNoteLabel": "Adicionar observação em {{category}}",
+      "editNoteLabel": "Editar a observação de {{category}}",
       "loading": "Carregando categorias…",
       "empty": "Nenhum lançamento deste membro no período",
       "labels": {
@@ -369,5 +375,24 @@
     "loading": "Carregando o histórico…",
     "loadError": "Não foi possível carregar o histórico.",
     "retry": "Tentar de novo"
+  },
+  "categoryNote": {
+    "none": "Sem observação",
+    "title": "Observação de {{category}}",
+    "description": "{{name}} vê esta observação no Meu perfil.",
+    "label": "Observação",
+    "help": "Até {{max}} caracteres. Deixe em branco para remover.",
+    "cancel": "Cancelar",
+    "submit": "Salvar",
+    "close": "Fechar",
+    "saved": "Observação salva",
+    "cleared": "Observação removida",
+    "errors": {
+      "tooLong": "Use até {{max}} caracteres.",
+      "invalid": "A observação não foi aceita. Revise o texto.",
+      "forbidden": "Você não tem permissão para editar a observação deste membro.",
+      "memberNotFound": "Este membro não foi encontrado.",
+      "generic": "Não foi possível salvar a observação. Tente de novo."
+    }
   }
 }

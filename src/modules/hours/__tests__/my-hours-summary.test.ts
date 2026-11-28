@@ -51,10 +51,10 @@ describe("summaryTotals", () => {
 describe("categoryRows", () => {
   it("lists only the categories with entries, by hours, as the Figma: Aula 28h, Gestão 20h, Planejamento 8h, Evento 2h", () => {
     expect(categoryRows(SUMMARY_MONTH)).toEqual([
-      { category: "lesson", hoursMinutes: 1680, pendingMinutes: 0 },
-      { category: "management", hoursMinutes: 1200, pendingMinutes: 0 },
-      { category: "planning", hoursMinutes: 480, pendingMinutes: 480 },
-      { category: "event", hoursMinutes: 120, pendingMinutes: 0 },
+      { category: "lesson", hoursMinutes: 1680, pendingMinutes: 0, note: null },
+      { category: "management", hoursMinutes: 1200, pendingMinutes: 0, note: null },
+      { category: "planning", hoursMinutes: 480, pendingMinutes: 480, note: null },
+      { category: "event", hoursMinutes: 120, pendingMinutes: 0, note: null },
     ]);
   });
 
@@ -81,7 +81,7 @@ describe("categoryRows", () => {
     });
 
     expect(categoryRows(summary)).toEqual([
-      { category: "other", hoursMinutes: 0, pendingMinutes: 0 },
+      { category: "other", hoursMinutes: 0, pendingMinutes: 0, note: null },
     ]);
   });
 
@@ -129,5 +129,105 @@ describe("categoryRows", () => {
       "support",
       "other",
     ]);
+  });
+
+  it("keeps the note of each category in its row", () => {
+    const summary = buildSummary({
+      byCategory: [
+        {
+          category: "lesson",
+          entries: 2,
+          declaredMinutes: 240,
+          bankMinutes: 240,
+          pendingMinutes: 0,
+          note: null,
+        },
+        {
+          category: "planning",
+          entries: 1,
+          declaredMinutes: 120,
+          bankMinutes: 60,
+          pendingMinutes: 0,
+          note: "Ajuste de 1h por lançamento duplicado",
+        },
+      ],
+    });
+
+    expect(categoryRows(summary)).toEqual([
+      { category: "lesson", hoursMinutes: 240, pendingMinutes: 0, note: null },
+      {
+        category: "planning",
+        hoursMinutes: 60,
+        pendingMinutes: 0,
+        note: "Ajuste de 1h por lançamento duplicado",
+      },
+    ]);
+  });
+
+  it("keeps a category with a note and no entries, with 0h, in the order of the hours", () => {
+    const summary = buildSummary({
+      byCategory: [
+        {
+          category: "lesson",
+          entries: 1,
+          declaredMinutes: 120,
+          bankMinutes: 120,
+          pendingMinutes: 0,
+          note: null,
+        },
+        {
+          category: "planning",
+          entries: 0,
+          declaredMinutes: 0,
+          bankMinutes: 0,
+          pendingMinutes: 0,
+          note: "Horas de planejamento lançadas na planilha",
+        },
+        {
+          category: "event",
+          entries: 1,
+          declaredMinutes: 60,
+          bankMinutes: 60,
+          pendingMinutes: 0,
+          note: null,
+        },
+      ],
+    });
+
+    expect(categoryRows(summary)).toEqual([
+      { category: "lesson", hoursMinutes: 120, pendingMinutes: 0, note: null },
+      { category: "event", hoursMinutes: 60, pendingMinutes: 0, note: null },
+      {
+        category: "planning",
+        hoursMinutes: 0,
+        pendingMinutes: 0,
+        note: "Horas de planejamento lançadas na planilha",
+      },
+    ]);
+  });
+
+  it("leaves out a category with neither entries nor note", () => {
+    const summary = buildSummary({
+      byCategory: [
+        {
+          category: "lesson",
+          entries: 1,
+          declaredMinutes: 60,
+          bankMinutes: 60,
+          pendingMinutes: 0,
+          note: null,
+        },
+        {
+          category: "meeting",
+          entries: 0,
+          declaredMinutes: 0,
+          bankMinutes: 0,
+          pendingMinutes: 0,
+          note: null,
+        },
+      ],
+    });
+
+    expect(categoryRows(summary).map((row) => row.category)).toEqual(["lesson"]);
   });
 });
