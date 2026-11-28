@@ -520,6 +520,12 @@ describe("EditCategoryNoteDialog", () => {
     await waitFor(() => expect(save(dialog)).toHaveAttribute("aria-disabled", "true"));
     expect(screen.getByRole("dialog", { name: "Observação de Planejamento" })).toBeInTheDocument();
     expect(screen.queryByText("Observação salva")).not.toBeInTheDocument();
+    // While it saves, nothing leaves the dialog: not Cancelar, not Fechar, not Escape.
+    expect(within(dialog).getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Fechar" })).toBeDisabled();
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog", { name: "Observação de Planejamento" })).toBeInTheDocument();
     await user.click(save(dialog));
     expect(noteBodies(spies)).toHaveLength(1);
 
