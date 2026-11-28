@@ -41,6 +41,7 @@ import {
   toUpdateStudentBody,
   type StudentFormValues,
 } from "../schemas/student.schema";
+import { RequiredLabel } from "./RequiredLabel";
 
 /** The phone of the Figma: below 768px the form takes the whole screen, in one column. */
 const MOBILE_QUERY = "(max-width: 47.99rem)";
@@ -59,17 +60,6 @@ export type StudentFormDialogProps = {
   onClose: () => void;
   onSaved?: () => void;
 } & ({ mode: "create" } | { mode: "edit"; studentId: string });
-
-function RequiredLabel({ children }: { children: ReactNode }): ReactElement {
-  return (
-    <>
-      {children}
-      <span className="ms-0.5 text-danger" aria-hidden="true">
-        *
-      </span>
-    </>
-  );
-}
 
 /** A group of the form. The title shows on the phone, as in the Figma; on the desktop only the screen reader reads it. */
 function Section({

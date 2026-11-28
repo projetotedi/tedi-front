@@ -1,13 +1,14 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { assignmentsRoutes } from "@modules/assignments";
-import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
+import { authRoutes, AuthProvider, createAuthProtectedRoutes, RequireRole } from "@modules/auth";
 import { createCatalogRoutes } from "@modules/catalog";
 import { createPeopleRoutes } from "@modules/people";
 import { createClassesRoutes } from "@modules/classes";
 import { hoursRoutes } from "@modules/hours";
 import { createLessonsRoutes } from "@modules/lessons";
 
+import { authRouteSlots } from "./auth-slots";
 import { catalogRouteSlots } from "./catalog-slots";
 import { classesRouteSlots } from "./classes-slots";
 import { lessonsRouteSlots } from "./lessons-slots";
@@ -21,12 +22,13 @@ import { prototypeRoutes } from "./prototype-routes";
  *
  * Cada módulo em src/modules/<modulo>/ exporta suas rotas em `routes.tsx`
  * (re-exportadas pelo index.ts do módulo). Aqui elas só são concatenadas, e o item de
- * menu de cada uma entra em `app/menu.ts`. O `catalog`, o `classes`, o `lessons` e o `people` são a exceção: cada
- * um exporta uma fábrica (`createCatalogRoutes`, `createClassesRoutes`, `createLessonsRoutes`, `createPeopleRoutes`) que
- * recebe os slots com o que as telas dele pedem a outros módulos (`catalog-slots.tsx`, hoje o card
- * "Turmas deste curso" do `classes`; `classes-slots.tsx`, hoje o "+ Nova aula" do `lessons`;
+ * menu de cada uma entra em `app/menu.ts`. O `catalog`, o `classes`, o `lessons`, o `people` e o `auth` são a exceção: cada
+ * um exporta uma fábrica (`createCatalogRoutes`, `createClassesRoutes`, `createLessonsRoutes`, `createPeopleRoutes`,
+ * `createAuthProtectedRoutes`) que recebe os slots com o que as telas dele pedem a outros módulos (`catalog-slots.tsx`,
+ * hoje o card "Turmas deste curso" do `classes`; `classes-slots.tsx`, hoje o "+ Nova aula" do `lessons`;
  * `lessons-slots.tsx`, hoje a chamada do `attendance`;
- * `people-slots.tsx`, hoje as horas do Meu perfil, do `hours`).
+ * `people-slots.tsx`, hoje as horas do Meu perfil, do `hours`; `auth-slots.tsx`, hoje Editar membro e
+ * Inativar membro, do `people`, na lista de Membros).
  *
  * Rotas públicas (login, formulário de pré-inscrição) ficam sob PublicLayout;
  * o restante sob AppLayout, atrás de RequireRole (só exige sessão ativa; cada rota que
@@ -61,7 +63,7 @@ export const router = createBrowserRouter([
               ...assignmentsRoutes,
               ...hoursRoutes,
               ...prototypeRoutes,
-              ...authProtectedRoutes,
+              ...createAuthProtectedRoutes(authRouteSlots),
               { path: "*", element: <Navigate to="/" replace /> },
             ],
           },

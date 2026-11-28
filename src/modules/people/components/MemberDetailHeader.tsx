@@ -27,10 +27,10 @@ export interface MemberDetailHeaderProps {
  * The "42h30 aprovadas" tag of the Figma comes with the hours bank (GUS-165), and not before.
  *
  * The actions go on the right of this row, in the order of the Figma: Inativar (`danger`,
- * `members.deactivate`, GUS-149), Editar membro (`secondary`, `members.edit`, the modal of
- * GUS-148), + Lançar horas (`secondary`, `hours.logForOthers`, GUS-163) and + Nova alocação
- * (`primary`, `assignments.create`, the allocation of E5, GUS-159). None of them exists yet, so the
- * page passes none; each one is shown only with `useCan`, never by comparing the profile.
+ * `members.deactivate`) and Editar membro (`secondary`, `members.edit`), both of GUS-194, then
+ * + Lançar horas (`secondary`, `hours.logForOthers`, GUS-163) and + Nova alocação (`primary`,
+ * `assignments.create`, the allocation of E5, GUS-159), which do not exist on this page yet. Each
+ * one is shown only with `useCan`, never by comparing the profile.
  */
 export function MemberDetailHeader({ member, actions }: MemberDetailHeaderProps): ReactElement {
   const { t } = useTranslation(["people", "common"]);

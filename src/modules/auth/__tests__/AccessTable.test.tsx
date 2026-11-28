@@ -188,13 +188,53 @@ describe("AccessTable", () => {
       const onDeactivateMember = vi.fn<(row: MemberListItemResponseDto) => void>();
       await renderTable({ onDeactivateMember });
 
-      for (const name of ["Ana Torres", "Beto Nunes", "Caio Lopes"]) {
+      for (const name of ["Ana Torres", "Caio Lopes"]) {
         const row = screen.getByRole("row", { name: new RegExp(name) });
         expect(within(row).getByRole("button", { name: `Inativar ${name}` })).toBeInTheDocument();
       }
 
       await user.click(screen.getByRole("button", { name: "Inativar Caio Lopes" }));
       expect(onDeactivateMember).toHaveBeenCalledWith(ROWS[2]);
+    });
+
+    it("shows no trash on an inactive member nor on a registration that was not approved", async () => {
+      await renderTable({ rows: [...ROWS, PENDING, REJECTED], onDeactivateMember: vi.fn() });
+
+      for (const name of ["Beto Nunes", "Lucas Souza", "Rita Lima"]) {
+        const row = screen.getByRole("row", { name: new RegExp(name) });
+        expect(within(row).queryByRole("button", { name: /Inativar/ })).not.toBeInTheDocument();
+      }
+    });
+
+    it("shows no trash on the row of the person signed in", async () => {
+      const own = buildMember({ id: COORDINATOR.id, name: COORDINATOR.name });
+      await renderTable({ rows: [own, ROWS[2]], onDeactivateMember: vi.fn() });
+
+      expect(
+        screen.queryByRole("button", { name: `Inativar ${COORDINATOR.name}` }),
+      ).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Inativar Caio Lopes" })).toBeInTheDocument();
+    });
+
+    it("coordinator also sees the pencil on inactive members and on registrations, for their access", async () => {
+      await renderTable({ rows: [ROWS[1], PENDING, REJECTED] });
+
+      for (const name of ["Beto Nunes", "Lucas Souza", "Rita Lima"]) {
+        expect(screen.getByRole("button", { name: `Editar ${name}` })).toBeInTheDocument();
+      }
+    });
+
+    it("who edits any member but does not manage access sees the pencil only on approved members still in the project", async () => {
+      const editorOnly = buildMeUser({
+        role: Role.coordinator,
+        permissions: { ...COORDINATOR.permissions, "access.manage": "none" },
+      });
+      await renderTable({ rows: [...ROWS, PENDING], me: editorOnly });
+
+      expect(screen.getByRole("button", { name: "Editar Ana Torres" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Editar Caio Lopes" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Editar Beto Nunes" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Editar Lucas Souza" })).not.toBeInTheDocument();
     });
 
     it("director sees no trash even when onDeactivateMember is wired", async () => {
@@ -283,7 +323,7 @@ describe("AccessTable", () => {
       const onDeactivateMember = vi.fn();
       await renderTable({ onRowClick, onDeactivateMember });
 
-      await user.click(screen.getByRole("button", { name: "Inativar Beto Nunes" }));
+      await user.click(screen.getByRole("button", { name: "Inativar Caio Lopes" }));
 
       expect(onDeactivateMember).toHaveBeenCalledTimes(1);
       expect(onRowClick).not.toHaveBeenCalled();

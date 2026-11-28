@@ -2,12 +2,17 @@ import type { ReactElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
-import type { MemberListItemResponseDto } from "@api/generated/model";
+import {
+  MemberRegistrationStatus,
+  MemberStatus,
+  type MemberListItemResponseDto,
+} from "@api/generated/model";
 import pencilIcon from "@shared/assets/icons/pencil.svg";
 import trashBinIcon from "@shared/assets/icons/trash-bin.svg";
 import { DataTable, type Column } from "@shared/components/DataTable";
 import { Badge, Button, Tooltip } from "@shared/ui";
 
+import { useAuth } from "../hooks/useAuth";
 import { useCan } from "../hooks/useCan";
 import { memberDetailPath } from "../lib/member-path";
 import { MEMBER_ROW_STATUS_TONE, memberRowStatus } from "../lib/member-status";
@@ -15,12 +20,10 @@ import { roleBadgeTone } from "../lib/role-label";
 
 export interface AccessTableProps {
   rows: MemberListItemResponseDto[];
-  /** Opens "Editar membro" for the row. */
+  /** Opens "Editar membro" for the row (its pencil). */
   onEditMember: (row: MemberListItemResponseDto) => void;
   /**
-   * Opens "Inativar membro" (GUS-149 and GUS-147). While the screen does not pass this, the trash
-   * icon is hidden: deactivating a member is different from disabling login access and has no modal
-   * or route yet.
+   * Opens "Inativar membro" for the row (its bin, GUS-194). Without it the bin is never shown.
    */
   onDeactivateMember?: (row: MemberListItemResponseDto) => void;
   /**
@@ -40,6 +43,13 @@ export interface AccessTableProps {
 const CLICKABLE_ROW_CLASS =
   "hover:shadow-[inset_3px_0_0_var(--accent)] focus-within:shadow-[inset_3px_0_0_var(--accent)]";
 
+function isActiveApproved(row: MemberListItemResponseDto): boolean {
+  return (
+    row.status === MemberStatus.active &&
+    row.registrationStatus === MemberRegistrationStatus.approved
+  );
+}
+
 /**
  * The table of the list of members, with the six columns of the Figma: Membro, Papel, Departamento,
  * Função principal, Status and Ações. Department and main function come from the API; a missing one
@@ -55,10 +65,28 @@ export function AccessTable({
   onRowClick,
 }: AccessTableProps): ReactElement {
   const { t } = useTranslation(["auth", "common"]);
-  // `MemberListItemResponseDto` does not carry a per-row `canEdit` flag yet: without it the
-  // director ("department" scope) sees no pencil, and the coordinator ("all" scope) sees it on all.
-  const canEdit = useCan("members.edit", { serverGrant: false });
+  const { user } = useAuth();
+  // `MemberListItemResponseDto` does not carry a per-row `canEdit` flag: without it a director
+  // ("department" scope) sees no pencil, and who edits any member ("all" scope) sees it.
+  const canEditAnyMember = useCan("members.edit", { serverGrant: false });
+  const canManageAccess = useCan("access.manage");
   const canDeactivate = useCan("members.deactivate");
+
+  /**
+   * The pencil: the data of an approved member still in the project can be edited, and the access
+   * of anyone with a row (the card "Acesso ao sistema" of the dialog) can be managed.
+   */
+  function canEditRow(row: MemberListItemResponseDto): boolean {
+    return canManageAccess || (canEditAnyMember && isActiveApproved(row));
+  }
+
+  /**
+   * The bin: only an approved member still in the project can be deactivated, and never the person
+   * signed in (the API answers 403 OWN_ACCOUNT).
+   */
+  function canDeactivateRow(row: MemberListItemResponseDto): boolean {
+    return canDeactivate && isActiveApproved(row) && row.id !== user?.id;
+  }
 
   function renderOptionalText(value: string | null | undefined): ReactNode {
     if (value) return value;
@@ -129,7 +157,7 @@ export function AccessTable({
               {t("access.people.validate")}
             </Button>
           ) : null}
-          {canEdit ? (
+          {canEditRow(row) ? (
             <Tooltip content={t("access.people.actions.editTooltip")}>
               <Button
                 isIconOnly
@@ -141,7 +169,7 @@ export function AccessTable({
               </Button>
             </Tooltip>
           ) : null}
-          {canDeactivate && onDeactivateMember ? (
+          {onDeactivateMember && canDeactivateRow(row) ? (
             <Tooltip content={t("access.people.actions.deactivateTooltip")}>
               <Button
                 isIconOnly
