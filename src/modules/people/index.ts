@@ -6,6 +6,13 @@ import ptBR from "./locales/pt-BR.json";
 
 registerModuleLocales("people", { "pt-BR": ptBR, "en-US": enUS });
 
+export { DeactivateMemberDialog } from "./components/DeactivateMemberDialog";
+export { EditMemberDialog } from "./components/EditMemberDialog";
 export { createPeopleRoutes } from "./routes";
 export { peopleMenuItems } from "./menu";
+export type {
+  DeactivateMemberDialogProps,
+  DeactivateMemberTarget,
+} from "./components/DeactivateMemberDialog";
+export type { EditMemberDialogProps } from "./components/EditMemberDialog";
 export type { PeopleRouteSlots } from "./routes";

@@ -5,7 +5,7 @@ import { createMemoryRouter, Navigate, RouterProvider } from "react-router-dom";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import type { MemberDetailResponseDto } from "@api/generated/model";
-import { authProtectedRoutes, AuthProvider, RequireRole } from "@modules/auth";
+import { AuthProvider, RequireRole } from "@modules/auth";
 import {
   buildMember,
   buildMeUser,
@@ -14,6 +14,7 @@ import {
   meHandler,
 } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
+import { authProtectedRoutes } from "@modules/auth/__tests__/test-routes";
 import { getMemberHandler, MEMBER_ID, MEMBER_NAME } from "@modules/people/__tests__/handlers";
 import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";

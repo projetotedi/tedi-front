@@ -9,6 +9,7 @@ import {
 } from "@api/generated/model";
 import { getGetMemberQueryKey } from "@api/generated/people/people";
 import { buildMeUser, meHandler } from "@modules/auth/__tests__/handlers";
+import { listDepartmentsHandler } from "@modules/auth/__tests__/member-registration-handlers";
 import { renderRoutes, server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
 import { Role } from "@shared/lib/role";
 
@@ -17,11 +18,13 @@ import "../index";
 import {
   buildMemberDetail,
   buildSeedMemberDetail,
+  deactivateMemberHandler,
   FORBIDDEN_SCOPE_ERROR,
   getMemberHandler,
   MEMBER_ID,
   MEMBER_NAME,
   MEMBER_NOT_FOUND_ERROR,
+  updateMemberHandler,
 } from "./handlers";
 import { peopleRoutes } from "./test-routes";
 
@@ -189,12 +192,11 @@ describe("MemberDetailPage", () => {
       ["coordinator", Role.coordinator],
       ["director", Role.director],
     ])(
-      "has no action button in the header, for the %s: they come with GUS-148, GUS-149, GUS-163 and E5",
+      "has no + Lançar horas nor + Nova alocação in the header, for the %s: they come with GUS-163 and E5",
       async (_label, role) => {
         await renderPage({ role });
 
-        expect(screen.queryAllByRole("button")).toHaveLength(0);
-        for (const name of ["Inativar", "Editar membro", "+ Lançar horas", "+ Nova alocação"]) {
+        for (const name of ["+ Lançar horas", "+ Nova alocação"]) {
           expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
           expect(screen.queryByRole("link", { name })).not.toBeInTheDocument();
         }
@@ -205,6 +207,119 @@ describe("MemberDetailPage", () => {
       await renderPage();
 
       expect(screen.queryByText(/aprovadas/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("the actions of the header", () => {
+    const actionsOf = () =>
+      within(header())
+        .queryAllByRole("button")
+        .map((button) => button.textContent);
+
+    it("gives the coordination Inativar and Editar membro, in the order of the Figma", async () => {
+      await renderPage();
+
+      expect(actionsOf()).toEqual(["Inativar", "Editar membro"]);
+    });
+
+    it("gives a director Editar membro but not Inativar", async () => {
+      await renderPage({ role: Role.director });
+
+      expect(actionsOf()).toEqual(["Editar membro"]);
+    });
+
+    it("gives a member no action at all", async () => {
+      server.use(
+        meHandler({
+          user: buildMeUser({
+            role: Role.coordinator,
+            permissions: {
+              ...buildMeUser({ role: Role.member }).permissions,
+              "members.view": "all",
+            },
+          }),
+        }),
+        getMemberHandler(),
+      );
+      await renderRoutes(peopleRoutes, { route: MEMBER_ROUTE });
+      await screen.findByRole("heading", { level: 2, name: MEMBER_NAME });
+
+      expect(actionsOf()).toEqual([]);
+    });
+
+    it.each([
+      ["an inactive member", buildMemberDetail({ status: MemberStatus.inactive })],
+      [
+        "a registration waiting for validation",
+        buildMemberDetail({ registrationStatus: MemberRegistrationStatus.pending, role: null }),
+      ],
+    ])(
+      "offers no Inativar for %s, and Editar membro only for the access",
+      async (_case, member) => {
+        await renderPage({ member });
+        expect(actionsOf()).toEqual(["Editar membro"]);
+      },
+    );
+
+    it("hides both from a director when the member cannot be edited", async () => {
+      await renderPage({
+        role: Role.director,
+        member: buildMemberDetail({ status: MemberStatus.inactive }),
+      });
+
+      expect(actionsOf()).toEqual([]);
+    });
+
+    it("offers no Inativar on the own record", async () => {
+      const me = buildMeUser({ role: Role.coordinator });
+      await renderPage({ member: buildMemberDetail({ id: me.id }) });
+
+      expect(actionsOf()).toEqual(["Editar membro"]);
+    });
+
+    it("Editar membro opens the edition, and the header shows the saved name", async () => {
+      const renamed = buildMemberDetail({ name: "Beatriz Nunes" });
+      server.use(
+        listDepartmentsHandler(),
+        updateMemberHandler({ onCall: () => server.use(getMemberHandler({ member: renamed })) }),
+      );
+      const user = userEvent.setup();
+      await renderPage();
+
+      await user.click(within(header()).getByRole("button", { name: "Editar membro" }));
+      const dialog = await screen.findByRole("dialog", { name: "Editar membro" });
+      const name = await within(dialog).findByRole("textbox", { name: /^Nome completo/ });
+      await user.clear(name);
+      await user.type(name, "Beatriz Nunes");
+      await user.click(within(dialog).getByRole("button", { name: "Salvar alterações" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(
+        await screen.findByRole("heading", { level: 2, name: "Beatriz Nunes" }),
+      ).toBeInTheDocument();
+    });
+
+    it("Inativar deactivates the member: the header says Inativa and stops offering Inativar", async () => {
+      const inactive = buildMemberDetail({ status: MemberStatus.inactive, accessEnabled: false });
+      server.use(
+        deactivateMemberHandler({
+          onCall: () => server.use(getMemberHandler({ member: inactive })),
+        }),
+      );
+      const user = userEvent.setup();
+      await renderPage();
+
+      await user.click(within(header()).getByRole("button", { name: "Inativar" }));
+      const dialog = await screen.findByRole("dialog", { name: "Inativar membro" });
+      await user.type(
+        within(dialog).getByRole("textbox", { name: /^Motivo da saída/ }),
+        "Formou-se.",
+      );
+      await user.click(within(dialog).getByRole("button", { name: "Inativar membro" }));
+
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      await waitFor(() => expect(tags(header())).toContain("Inativa"));
+      expect(actionsOf()).toEqual(["Editar membro"]);
     });
   });
 

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactElement } from "react";
+import { useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -14,7 +14,6 @@ import personsIcon from "../../../assets/icons/persons.svg";
 import { AccessFilters } from "../components/AccessFilters";
 import { AccessTable } from "../components/AccessTable";
 import { CreateInviteDialog } from "../components/CreateInviteDialog";
-import { EditMemberDialog } from "../components/EditMemberDialog";
 import { PendingInvitesButton } from "../components/PendingInvitesButton";
 import { ValidateRegistrationDialog } from "../components/ValidateRegistrationDialog";
 import { useCan } from "../hooks/useCan";
@@ -29,6 +28,21 @@ import {
 } from "../lib/member-filters";
 import { memberDetailPath } from "../lib/member-path";
 
+/** What a dialog of another module gets to act on a row of the list. */
+export interface MemberRowDialogProps {
+  member: MemberListItemResponseDto;
+  onClose: () => void;
+}
+
+export interface AccessPageProps {
+  /** Editar membro (`people`), opened by the pencil of a row; the page passes it by slot. */
+  renderEditMemberDialog: (props: MemberRowDialogProps) => ReactNode;
+  /** Inativar membro (`people`), opened by the bin of a row; the page passes it by slot. */
+  renderDeactivateMemberDialog: (
+    props: MemberRowDialogProps & { onDeactivated: () => void },
+  ) => ReactNode;
+}
+
 /**
  * Membros (GUS-87, GUS-150): the members of the project from `listMembers`, with their department,
  * main function and status ("A validar" for a registration waiting for validation). The search, the
@@ -39,13 +53,18 @@ import { memberDetailPath } from "../lib/member-path";
  * Whoever has `members.list` sees the list (the route asks for it); the invite buttons and Validar
  * are only for who manages invites (`invites.manage`). Validar, on a registration waiting for
  * validation, opens the modal of GUS-125 over the list, and the list stays where it was: deciding
- * refreshes it (the modal invalidates `/members`).
+ * refreshes it (the modal invalidates `/members`). The pencil and the bin of a row open Editar
+ * membro and Inativar membro (GUS-194), which belong to `people` and come by slot
+ * (`AuthRouteSlots`, filled in `app/auth-slots.tsx`); who sees each one is for the table to say.
  *
  * The title of the page (h1) and the title of the tab come from the AppLayout through the
  * `handle.title` of the route (GUS-86); this page neither calls `useDocumentTitle` nor renders an
  * `<h1>` of its own.
  */
-export function AccessPage(): ReactElement {
+export function AccessPage({
+  renderEditMemberDialog,
+  renderDeactivateMemberDialog,
+}: AccessPageProps): ReactElement {
   const { t } = useTranslation("auth");
   const titleId = useId();
   const titleRef = useRef<HTMLSpanElement>(null);
@@ -55,21 +74,36 @@ export function AccessPage(): ReactElement {
   const canValidate = useCan("invites.manage");
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<MemberListItemResponseDto | null>(null);
+  const [deactivatingMember, setDeactivatingMember] = useState<MemberListItemResponseDto | null>(
+    null,
+  );
   // The id of the registration being validated (the id of the person); the modal exists only while
   // there is one.
   const [validatingId, setValidatingId] = useState<string | null>(null);
-  // Set by the modal when it reports a decision (approved or rejected).
-  const hasReviewedRef = useRef(false);
+  // Set by a modal whose action takes away the button that opened it: a decision on a registration
+  // (approved or rejected) or a deactivation. Opening the next modal of a row clears it.
+  const [hasRemovedTrigger, setHasRemovedTrigger] = useState(false);
+  const markTriggerRemoved = () => setHasRemovedTrigger(true);
 
-  // After the modal is unmounted. The decision takes the row out of "A validar", so the Validar
-  // button that opened the modal goes away, and the focus that the modal gives back on closing only
-  // acts when the focus was lost, not when it was moved on purpose: it goes to the title of the
-  // list, which stays. Closing with Voltar or Esc keeps the default: the focus returns to the button.
+  function openValidation(row: MemberListItemResponseDto) {
+    setHasRemovedTrigger(false);
+    setValidatingId(row.id);
+  }
+
+  function openDeactivation(row: MemberListItemResponseDto) {
+    setHasRemovedTrigger(false);
+    setDeactivatingMember(row);
+  }
+
+  // After the modal is unmounted. The decision takes the row out of "A validar" and the
+  // deactivation makes the member inactive, so the Validar or the bin button that opened the modal
+  // goes away, and the focus that the modal gives back on closing only acts when the focus was
+  // lost, not when it was moved on purpose: it goes to the title of the list, which stays. Closing
+  // with Voltar or Esc keeps the default: the focus returns to the button.
+  const isRowDialogOpen = validatingId !== null || deactivatingMember !== null;
   useEffect(() => {
-    if (validatingId !== null || !hasReviewedRef.current) return;
-    hasReviewedRef.current = false;
-    titleRef.current?.focus();
-  }, [validatingId]);
+    if (!isRowDialogOpen && hasRemovedTrigger) titleRef.current?.focus();
+  }, [isRowDialogOpen, hasRemovedTrigger]);
 
   const [params, setParams] = useSearchParams();
   const filters = readMemberFilters(params);
@@ -255,8 +289,9 @@ export function AccessPage(): ReactElement {
           <AccessTable
             rows={query.data?.data ?? []}
             onEditMember={setEditingMember}
+            onDeactivateMember={openDeactivation}
             onRowClick={(row) => navigate(memberDetailPath(row.id))}
-            onValidate={canValidate ? (row) => setValidatingId(row.id) : undefined}
+            onValidate={canValidate ? openValidation : undefined}
           />
           {renderListState()}
         </div>
@@ -286,20 +321,25 @@ export function AccessPage(): ReactElement {
         ) : null}
       </Card>
 
-      {editingMember ? (
-        <EditMemberDialog
-          key={editingMember.id}
-          member={editingMember}
-          onClose={() => setEditingMember(null)}
-        />
-      ) : null}
+      {editingMember
+        ? renderEditMemberDialog({
+            member: editingMember,
+            onClose: () => setEditingMember(null),
+          })
+        : null}
+
+      {deactivatingMember
+        ? renderDeactivateMemberDialog({
+            member: deactivatingMember,
+            onDeactivated: markTriggerRemoved,
+            onClose: () => setDeactivatingMember(null),
+          })
+        : null}
 
       {validatingId !== null ? (
         <ValidateRegistrationDialog
           registrationId={validatingId}
-          onReviewed={() => {
-            hasReviewedRef.current = true;
-          }}
+          onReviewed={markTriggerRemoved}
           onClose={() => setValidatingId(null)}
         />
       ) : null}

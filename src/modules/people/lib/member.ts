@@ -1,3 +1,8 @@
+import {
+  MemberRegistrationStatus,
+  MemberStatus,
+  type MemberDetailResponseDto,
+} from "@api/generated/model";
 import { GetMemberParams } from "@api/generated/zod/people/people";
 
 const MEMBER_NOT_FOUND = "MEMBER_NOT_FOUND";
@@ -43,4 +48,18 @@ export function isMemberForbidden(error: unknown): boolean {
   const { statusCode, error: code } = readApiError(error);
 
   return statusCode === 403 && FORBIDDEN_CODES.includes(code);
+}
+
+/**
+ * Whether the data of the member can be edited and the member deactivated: the API takes both only
+ * for an approved registration of someone still in the project (409 `REGISTRATION_NOT_APPROVED`
+ * and `MEMBER_INACTIVE` otherwise). The seeded coordinator has no registration at all.
+ */
+export function isActiveApprovedMember(
+  member: Pick<MemberDetailResponseDto, "status" | "registrationStatus">,
+): boolean {
+  return (
+    member.status === MemberStatus.active &&
+    member.registrationStatus === MemberRegistrationStatus.approved
+  );
 }

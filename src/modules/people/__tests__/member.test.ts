@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { isMemberForbidden, isMemberId, isMemberNotFound } from "../lib/member";
+import { MemberRegistrationStatus, MemberStatus } from "@api/generated/model";
+
+import {
+  isActiveApprovedMember,
+  isMemberForbidden,
+  isMemberId,
+  isMemberNotFound,
+} from "../lib/member";
 import { MEMBER_ID } from "./handlers";
 
 function apiError(statusCode: number, error?: string) {
@@ -71,5 +78,29 @@ describe("isMemberForbidden", () => {
     ["an empty object", {}],
   ])("is false for %s", (_label, error) => {
     expect(isMemberForbidden(error)).toBe(false);
+  });
+});
+
+describe("isActiveApprovedMember", () => {
+  it("is true for an approved registration of someone still in the project", () => {
+    expect(
+      isActiveApprovedMember({
+        status: MemberStatus.active,
+        registrationStatus: MemberRegistrationStatus.approved,
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    ["an inactive member", MemberStatus.inactive, MemberRegistrationStatus.approved],
+    [
+      "a registration waiting for validation",
+      MemberStatus.active,
+      MemberRegistrationStatus.pending,
+    ],
+    ["a refused registration", MemberStatus.active, MemberRegistrationStatus.rejected],
+    ["a person with no registration (the seeded coordinator)", MemberStatus.active, null],
+  ])("is false for %s", (_label, status, registrationStatus) => {
+    expect(isActiveApprovedMember({ status, registrationStatus })).toBe(false);
   });
 });

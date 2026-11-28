@@ -4,9 +4,10 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, Navigate, RouterProvider } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
-import { authProtectedRoutes, authRoutes, AuthProvider, RequireRole } from "@modules/auth";
+import { authRoutes, AuthProvider, RequireRole } from "@modules/auth";
 import { buildMeUser, loginHandler, meHandler } from "@modules/auth/__tests__/handlers";
 import { server, setupAuthTestServer } from "@modules/auth/__tests__/test-utils";
+import { authProtectedRoutes } from "@modules/auth/__tests__/test-routes";
 import { myProfileHandler } from "@modules/people/__tests__/handlers";
 import { peopleRoutes } from "@modules/people/__tests__/test-routes";
 import i18n from "@shared/i18n";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { authMenuItems } from "../menu";
-import { authProtectedRoutes } from "../routes";
+import { authProtectedRoutes } from "./test-routes";
 
 describe("authMenuItems", () => {
   it("points every item to a declared protected route", () => {

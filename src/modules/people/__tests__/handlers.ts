@@ -395,3 +395,83 @@ export function unarchiveStudentHandler({ error, onCall }: StudentWriteHandlerOp
     return studentWriteResponse(error);
   });
 }
+
+interface MemberWriteHandlerOptions {
+  /** The member before the change; the answer is it with the fields of the body applied. */
+  member?: MemberDetailResponseDto;
+  error?: ApiErrorOptions & { details?: { field: string; message: string }[] };
+  networkError?: boolean;
+  /** Holds the response until the promise settles. */
+  delay?: Promise<void>;
+  /** Called with the id of the path and the body of every request. */
+  onCall?: (call: { id: string; body: Record<string, unknown> }) => void;
+}
+
+function memberErrorResponse(error: NonNullable<MemberWriteHandlerOptions["error"]>) {
+  return HttpResponse.json(
+    {
+      statusCode: error.statusCode,
+      error: error.error,
+      message: error.message ?? error.error,
+      ...(error.details ? { details: error.details } : {}),
+    },
+    { status: error.statusCode },
+  );
+}
+
+/**
+ * `PATCH /members/:id` (Editar membro). It answers the member with what the body changed, as the
+ * API does: the CPF comes back only masked and the department only by its id here.
+ */
+export function updateMemberHandler({
+  member = buildMemberDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: MemberWriteHandlerOptions = {}) {
+  return http.patch("*/members/:id", async ({ request, params }) => {
+    const body = ((await readBody(request)) ?? {}) as Record<string, unknown>;
+    onCall?.({ id: String(params.id), body });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return memberErrorResponse(error);
+    const { cpf, departmentId, ...fields } = body;
+    return HttpResponse.json({
+      ...member,
+      ...fields,
+      ...(typeof cpf === "string"
+        ? { cpfMasked: `***.***.${cpf.slice(6, 9)}-${cpf.slice(9)}` }
+        : {}),
+      ...(typeof departmentId === "string"
+        ? { department: { id: departmentId, name: "Departamento novo" } }
+        : {}),
+    });
+  });
+}
+
+/** `PATCH /members/:id/deactivate` (Inativar membro). It answers the member inactive. */
+export function deactivateMemberHandler({
+  member = buildMemberDetail(),
+  error,
+  networkError = false,
+  delay,
+  onCall,
+}: MemberWriteHandlerOptions = {}) {
+  return http.patch("*/members/:id/deactivate", async ({ request, params }) => {
+    const body = ((await readBody(request)) ?? {}) as Record<string, unknown>;
+    onCall?.({ id: String(params.id), body });
+    if (delay) await delay;
+
+    if (networkError) return HttpResponse.error();
+    if (error) return memberErrorResponse(error);
+    return HttpResponse.json({
+      ...member,
+      status: MemberStatus.inactive,
+      accessEnabled: false,
+      exitDate: body.exitDate,
+      exitReason: body.reason,
+    });
+  });
+}

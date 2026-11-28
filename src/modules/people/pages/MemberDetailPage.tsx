@@ -1,12 +1,14 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router-dom";
 
 import type { MemberDetailResponseDto } from "@api/generated/model";
 import { useGetMember } from "@api/generated/people/people";
-import { ForbiddenPage, useCan } from "@modules/auth";
+import { ForbiddenPage, useAuth, useCan } from "@modules/auth";
 import { Alert, Button, Card, Skeleton } from "@shared/ui";
 
+import { DeactivateMemberDialog } from "../components/DeactivateMemberDialog";
+import { EditMemberDialog } from "../components/EditMemberDialog";
 import { LINK_CLASSES } from "../components/link-classes";
 import { MemberAssignmentsCard } from "../components/MemberAssignmentsCard";
 import { MemberAttendanceCard } from "../components/MemberAttendanceCard";
@@ -16,7 +18,12 @@ import { MemberDetailHeader } from "../components/MemberDetailHeader";
 import { MemberEntriesCard } from "../components/MemberEntriesCard";
 import { MemberHoursBankCard } from "../components/MemberHoursBankCard";
 import { MemberRecordCard } from "../components/MemberRecordCard";
-import { isMemberForbidden, isMemberId, isMemberNotFound } from "../lib/member";
+import {
+  isActiveApprovedMember,
+  isMemberForbidden,
+  isMemberId,
+  isMemberNotFound,
+} from "../lib/member";
 
 /**
  * The two columns start at 90rem (1440px, the width of the Figma). The main column holds a card of
@@ -70,15 +77,52 @@ function MemberNotFound(): ReactElement {
   );
 }
 
+type OpenDialog = "edit" | "deactivate";
+
 /**
- * The member that was loaded: the trail, the header and the two columns of cards. No action is
- * passed to the header yet; see `MemberDetailHeader`.
+ * The member that was loaded: the trail, the header and the two columns of cards. The header has
+ * the actions of the record, each only with its permission (`useCan`) and in the order of the
+ * Figma: Inativar (`members.deactivate`), for an approved member still in the project who is not
+ * the person signed in (the API answers 403 OWN_ACCOUNT), and Editar membro (GUS-194). Editar
+ * membro is for who edits the data of this member (`members.edit`, the record of an approved
+ * member still in the project) or manages its access (`access.manage`, any record): the same rule
+ * as the pencil of the list.
  */
 function MemberDetailView({ member }: { member: MemberDetailResponseDto }): ReactElement {
+  const { t } = useTranslation("people");
+  const { user } = useAuth();
+  const canEditData = useCan("members.edit");
+  const canManageAccess = useCan("access.manage");
+  const canDeactivate = useCan("members.deactivate");
+  const [openDialog, setOpenDialog] = useState<OpenDialog | null>(null);
+  const closeDialog = () => setOpenDialog(null);
+
+  const isActiveApproved = isActiveApprovedMember(member);
+  const showDeactivate = canDeactivate && isActiveApproved && member.id !== user?.id;
+  const showEdit = canManageAccess || (canEditData && isActiveApproved);
+
   return (
     <div className="flex flex-col gap-5">
       <MemberBreadcrumb name={member.name} />
-      <MemberDetailHeader member={member} />
+      <MemberDetailHeader
+        member={member}
+        actions={
+          showDeactivate || showEdit ? (
+            <>
+              {showDeactivate ? (
+                <Button variant="danger" onPress={() => setOpenDialog("deactivate")}>
+                  {t("member.actions.deactivate")}
+                </Button>
+              ) : null}
+              {showEdit ? (
+                <Button variant="secondary" onPress={() => setOpenDialog("edit")}>
+                  {t("member.actions.edit")}
+                </Button>
+              ) : null}
+            </>
+          ) : undefined
+        }
+      />
       <div className={TWO_COLUMNS}>
         <div className="flex min-w-0 flex-col gap-5">
           <MemberDataCard member={member} />
@@ -95,6 +139,13 @@ function MemberDetailView({ member }: { member: MemberDetailResponseDto }): Reac
           />
         </div>
       </div>
+
+      {openDialog === "edit" ? (
+        <EditMemberDialog memberId={member.id} onClose={closeDialog} />
+      ) : null}
+      {openDialog === "deactivate" ? (
+        <DeactivateMemberDialog member={member} onClose={closeDialog} />
+      ) : null}
     </div>
   );
 }

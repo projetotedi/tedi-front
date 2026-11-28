@@ -338,19 +338,6 @@
       "copyFallback": "Não foi possível copiar automaticamente. O link foi selecionado: use Ctrl+C (ou Cmd+C) para copiar.",
       "done": "Concluir"
     },
-    "editMember": {
-      "title": "Editar membro",
-      "close": "Fechar",
-      "cancel": "Cancelar",
-      "save": "Salvar alterações",
-      "saving": "Salvando…",
-      "dataTitle": "Dados do membro",
-      "summary": {
-        "name": "Nome",
-        "ra": "RA",
-        "email": "E-mail"
-      }
-    },
     "memberAccess": {
       "title": "Acesso ao sistema",
       "role": {
