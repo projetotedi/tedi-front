@@ -199,6 +199,7 @@ export interface ApiErrorOptions {
   statusCode: number;
   error: string;
   message?: string;
+  details?: Array<{ field: string; message: string }>;
 }
 
 export const COURSE_NOT_FOUND_ERROR: ApiErrorOptions = {
@@ -213,9 +214,14 @@ export const CLASS_NOT_FOUND_ERROR: ApiErrorOptions = {
   message: "Class not found.",
 };
 
-function apiErrorResponse({ statusCode, error, message }: ApiErrorOptions) {
+function apiErrorResponse({ statusCode, error, message, details }: ApiErrorOptions) {
   return HttpResponse.json(
-    { statusCode, error, message: message ?? error },
+    {
+      statusCode,
+      error,
+      message: message ?? error,
+      ...(details !== undefined ? { details } : {}),
+    },
     { status: statusCode },
   );
 }
