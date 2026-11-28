@@ -195,6 +195,9 @@
     "archived": "This class is archived and cannot be changed.",
     "notFound": "Class not found. It may have been removed.",
     "hasActiveEnrollments": "This class still has enrolled students. End or remove the enrollments before archiving.",
+    "lessonsOutsidePeriod_one": "There is {{count}} lesson outside the new period. Reschedule or cancel that lesson before changing the dates.",
+    "lessonsOutsidePeriod_other": "There are {{count}} lessons outside the new period. Reschedule or cancel those lessons before changing the dates.",
+    "lessonsOutsidePeriodUnknown": "There are lessons outside the new period. Reschedule or cancel those lessons before changing the dates.",
     "network": "Could not connect. Check your connection and try again.",
     "unknown": "Could not complete the action. Try again."
   },

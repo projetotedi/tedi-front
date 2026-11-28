@@ -332,5 +332,50 @@ describe("ClassFormDialog", () => {
       ).toBeInTheDocument();
       expect(capacityField()).toHaveFocus();
     });
+
+    it.each([
+      [
+        {
+          statusCode: 409,
+          error: "CLASS_HAS_LESSONS_OUTSIDE_PERIOD",
+          message: "There is 1 lesson outside the new period.",
+          details: [{ field: "lessonsOutsidePeriod", message: "1" }],
+        },
+        "Há 1 aula fora do novo período. Remarque ou cancele essa aula antes de mudar as datas.",
+      ],
+      [
+        {
+          statusCode: 409,
+          error: "CLASS_HAS_LESSONS_OUTSIDE_PERIOD",
+          message: "There are 2 lessons outside the new period.",
+          details: [{ field: "lessonsOutsidePeriod", message: "2" }],
+        },
+        "Há 2 aulas fora do novo período. Remarque ou cancele essas aulas antes de mudar as datas.",
+      ],
+      [
+        {
+          statusCode: 409,
+          error: "CLASS_HAS_LESSONS_OUTSIDE_PERIOD",
+          message: "Lessons outside period.",
+        },
+        "Há aulas fora do novo período. Remarque ou cancele essas aulas antes de mudar as datas.",
+      ],
+    ])(
+      "shows the alert above the buttons and focuses it when shortening leaves lessons outside (%#)",
+      async (error, text) => {
+        server.use(updateClassHandler({ error }));
+        const user = userEvent.setup();
+        const { onClose } = await renderDialog({ classId: CLASS_ID });
+        await screen.findByDisplayValue("INFO-A");
+
+        await typeDate(user, "Data de término", "01062026");
+        await submit(user, "Salvar alterações");
+
+        const alert = await screen.findByRole("alert");
+        expect(alert).toHaveTextContent(text);
+        expect(document.activeElement).toContainElement(alert);
+        expect(onClose).not.toHaveBeenCalled();
+      },
+    );
   });
 });

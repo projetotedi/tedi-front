@@ -10,6 +10,29 @@ const apiError = (statusCode: number, error: string, details?: unknown) => ({
 
 describe("class-errors", () => {
   it.each([
+    [
+      apiError(409, "CLASS_HAS_LESSONS_OUTSIDE_PERIOD", [
+        { field: "lessonsOutsidePeriod", message: "1" },
+      ]),
+      { kind: "lessonsOutsidePeriod", count: 1 },
+    ],
+    [
+      apiError(409, "CLASS_HAS_LESSONS_OUTSIDE_PERIOD", [
+        { field: "other", message: "7" },
+        { field: "lessonsOutsidePeriod", message: "3" },
+      ]),
+      { kind: "lessonsOutsidePeriod", count: 3 },
+    ],
+    [
+      apiError(409, "CLASS_HAS_LESSONS_OUTSIDE_PERIOD", [
+        { field: "lessonsOutsidePeriod", message: "0" },
+      ]),
+      { kind: "lessonsOutsidePeriod", count: null },
+    ],
+    [
+      apiError(409, "CLASS_HAS_LESSONS_OUTSIDE_PERIOD"),
+      { kind: "lessonsOutsidePeriod", count: null },
+    ],
     [apiError(409, "CLASS_CODE_TAKEN"), { kind: "field", name: "code", message: "codeTaken" }],
     [apiError(400, "INVALID_PERIOD"), { kind: "field", name: "end", message: "invalidPeriod" }],
     [

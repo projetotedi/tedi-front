@@ -162,6 +162,14 @@ function ClassForm({
       setAlertMessage(t(`actionErrors.${result.error}`));
       return;
     }
+    if (result.kind === "lessonsOutsidePeriod") {
+      setAlertMessage(
+        result.count !== null
+          ? t("actionErrors.lessonsOutsidePeriod", { count: result.count })
+          : t("actionErrors.lessonsOutsidePeriodUnknown"),
+      );
+      return;
+    }
     if (result.name === "courseId" && isCourseLocked) {
       // A field that is off cannot take the focus, so the alert above the buttons says it.
       setAlertMessage(fieldError(result.message) ?? null);
