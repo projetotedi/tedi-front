@@ -28,7 +28,12 @@ export interface EditCategoryNoteDialogProps {
   category: HourEntryCategory;
   /** The observation as it is now: `null` when there is none, and then the dialog adds one. */
   note: string | null;
-  onClose: () => void;
+  /**
+   * The dialog is done. `savedNote` is the observation the API kept when it was saved (`null`: it was
+   * removed) and `undefined` when the dialog closed without saving, by Cancelar, Fechar, Escape or
+   * because the text did not change. It lets the table tell where the focus goes next.
+   */
+  onClose: (savedNote?: string | null) => void;
 }
 
 /** The refusals shown as an alert: a refusal of the text itself goes on its field. */
@@ -101,7 +106,7 @@ export function EditCategoryNoteDialog({
       {
         onSuccess: (saved) => {
           toast.success(t(saved.note === null ? "categoryNote.cleared" : "categoryNote.saved"));
-          onClose();
+          onClose(saved.note);
         },
         onError: handleError,
         onSettled: () => {
@@ -129,7 +134,7 @@ export function EditCategoryNoteDialog({
       isDismissable={!isPending}
       footer={
         <>
-          <Button variant="secondary" isDisabled={isPending} onPress={onClose}>
+          <Button variant="secondary" isDisabled={isPending} onPress={() => onClose()}>
             {t("categoryNote.cancel")}
           </Button>
           <Button variant="primary" type="submit" form={formId} isLoading={isPending}>

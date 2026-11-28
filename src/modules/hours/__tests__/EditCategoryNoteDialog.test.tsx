@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { buildMeUser } from "@modules/auth/__tests__/handlers";
 import { Role } from "@shared/lib/role";
 
-import { BEATRIZ_ID, director } from "./bank-fixtures";
+import { BEATRIZ_ID, buildBeatrizSummary, director } from "./bank-fixtures";
 import {
   apiError,
   createBankSpies,
@@ -14,6 +14,7 @@ import {
   requestsTo,
   withNote,
   type BankSpies,
+  type BankStore,
 } from "./bank-handlers";
 import {
   createDeferred,
@@ -41,12 +42,37 @@ function pressTwiceAtOnce(element: HTMLElement) {
   });
 }
 
-/** The bank in the view of Beatriz, with the table of her hours by category on the screen. */
-async function renderMemberView(options: BankRenderOptions = {}) {
+/**
+ * The bank in the view of Beatriz, with the table of her hours by category on the screen once the
+ * row `firstRow` is in it.
+ */
+async function renderMemberView(options: BankRenderOptions = {}, firstRow = "Aula") {
   const view = await renderBankRoutes({ route: BEATRIZ_VIEW, ...options });
   const table = await screen.findByRole("table", { name: /^Horas do membro por categoria/ });
-  await within(table).findByText("Aula");
+  await within(table).findByText(firstRow);
   return { ...view, table };
+}
+
+/** The store where Beatriz has no entry in any category: only a note keeps a row in her table. */
+function storeWithoutEntries(): BankStore {
+  const store = createBankStore();
+  const summary = buildBeatrizSummary();
+  store.memberSummaries.set(BEATRIZ_ID, {
+    ...summary,
+    byCategory: summary.byCategory.map((total) => ({
+      ...total,
+      entries: 0,
+      declaredMinutes: 0,
+      pendingMinutes: 0,
+      bankMinutes: 0,
+    })),
+  });
+  return store;
+}
+
+/** The title of the card of the hours by category, which is where the focus goes when a row leaves. */
+function categoriesTitle(): HTMLElement {
+  return screen.getByText("Horas por categoria do membro");
 }
 
 /** The cell Observação of the row of the category, by its label ("Planejamento"). */
@@ -578,6 +604,119 @@ describe("EditCategoryNoteDialog", () => {
     await waitFor(() => expect(button).toHaveFocus());
     expect(within(noteCell(table, "Planejamento")).queryByText(NOTE)).not.toBeInTheDocument();
   });
+
+  it("sends the focus to the title when the row of the cleared note leaves the table", async () => {
+    const user = userEvent.setup();
+    const store = withNote(createBankStore(), BEATRIZ_ID, "meeting", NOTE);
+    const { table } = await renderMemberView({ store });
+    const dialog = await openDialog(user, table, "Editar a observação de Reunião", "Reunião");
+
+    await user.clear(noteField(dialog));
+    await user.click(save(dialog));
+
+    expect(await screen.findByText("Observação removida")).toBeInTheDocument();
+    await expectDialogGone();
+    await waitFor(() =>
+      expect(within(table).queryByRole("row", { name: /^Reunião/ })).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(categoriesTitle()).toHaveFocus());
+    expect(within(table).getByRole("row", { name: /^Aula/ })).toBeInTheDocument();
+  });
+
+  it("sends the focus to the title when the cleared note was the last row and the table is left empty", async () => {
+    const user = userEvent.setup();
+    const store = withNote(storeWithoutEntries(), BEATRIZ_ID, "meeting", NOTE);
+    const { table } = await renderMemberView({ store }, "Reunião");
+    expect(within(table).getAllByRole("row")).toHaveLength(2);
+    const dialog = await openDialog(user, table, "Editar a observação de Reunião", "Reunião");
+
+    await user.clear(noteField(dialog));
+    await user.click(save(dialog));
+
+    expect(await screen.findByText("Observação removida")).toBeInTheDocument();
+    await expectDialogGone();
+    expect(
+      await screen.findByText("Nenhum lançamento deste membro no período"),
+    ).toBeInTheDocument();
+    expect(within(table).getAllByRole("row")).toHaveLength(1);
+    await waitFor(() => expect(categoriesTitle()).toHaveFocus());
+  });
+
+  it("gives the focus back to the button when the cleared note leaves its row in the table", async () => {
+    const user = userEvent.setup();
+    const store = withNote(createBankStore(), BEATRIZ_ID, "planning", NOTE);
+    const { table } = await renderMemberView({ store });
+    const dialog = await openDialog(
+      user,
+      table,
+      "Editar a observação de Planejamento",
+      "Planejamento",
+    );
+
+    await user.clear(noteField(dialog));
+    await user.click(save(dialog));
+
+    expect(await screen.findByText("Observação removida")).toBeInTheDocument();
+    await expectDialogGone();
+    await waitFor(() =>
+      expect(
+        within(noteCell(table, "Planejamento")).getByRole("button", {
+          name: "Adicionar observação em Planejamento",
+        }),
+      ).toHaveFocus(),
+    );
+    expect(categoriesTitle()).not.toHaveFocus();
+  });
+
+  it.each([
+    {
+      how: "Cancelar",
+      close: async (user: User, dialog: HTMLElement) => {
+        await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+      },
+    },
+    {
+      how: "Escape",
+      close: async (user: User) => {
+        await user.keyboard("{Escape}");
+      },
+    },
+    {
+      how: "Salvar with the text unchanged",
+      close: async (user: User, dialog: HTMLElement) => {
+        await user.click(save(dialog));
+      },
+    },
+    {
+      how: "Salvar with another text",
+      close: async (user: User, dialog: HTMLElement) => {
+        await user.clear(noteField(dialog));
+        await user.type(noteField(dialog), OTHER_NOTE);
+        await user.click(save(dialog));
+        await screen.findByText("Observação salva");
+      },
+    },
+  ])(
+    "gives the focus back to the button of a category with no entries when the dialog closes by $how",
+    async ({ close }) => {
+      const user = userEvent.setup();
+      const store = withNote(createBankStore(), BEATRIZ_ID, "meeting", NOTE);
+      const { table } = await renderMemberView({ store });
+      const dialog = await openDialog(user, table, "Editar a observação de Reunião", "Reunião");
+
+      await close(user, dialog);
+
+      await expectDialogGone();
+      await waitFor(() =>
+        expect(
+          within(noteCell(table, "Reunião")).getByRole("button", {
+            name: "Editar a observação de Reunião",
+          }),
+        ).toHaveFocus(),
+      );
+      expect(categoriesTitle()).not.toHaveFocus();
+    },
+  );
 
   it("names the dialog by the category of the row it was opened from", async () => {
     const user = userEvent.setup();
