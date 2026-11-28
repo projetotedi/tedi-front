@@ -47,7 +47,8 @@
       "columns": {
         "category": "Category",
         "hours": "Hours",
-        "pending": "Pending"
+        "pending": "Pending",
+        "note": "Note"
       },
       "noPending": "Nothing pending",
       "pendingLabel": {
@@ -212,10 +213,15 @@
     },
     "categories": {
       "title": "Hours of the member by category",
-      "caption": "Hours of the member by category, with the pending ones",
+      "caption": "Hours of the member by category, with the pending ones and the note of the coordination",
       "category": "Category",
       "hours": "Hours",
       "pending": "Pending",
+      "note": "Note",
+      "addNote": "Add",
+      "editNote": "Edit",
+      "addNoteLabel": "Add a note to {{category}}",
+      "editNoteLabel": "Edit the note of {{category}}",
       "loading": "Loading categories…",
       "empty": "No entries of this member in the period",
       "labels": {
@@ -365,5 +371,24 @@
     "loading": "Loading the history…",
     "loadError": "The history could not be loaded.",
     "retry": "Try again"
+  },
+  "categoryNote": {
+    "none": "No note",
+    "title": "Note on {{category}}",
+    "description": "{{name}} sees this note in My profile.",
+    "label": "Note",
+    "help": "Up to {{max}} characters. Leave it blank to remove it.",
+    "cancel": "Cancel",
+    "submit": "Save",
+    "close": "Close",
+    "saved": "Note saved",
+    "cleared": "Note removed",
+    "errors": {
+      "tooLong": "Use up to {{max}} characters.",
+      "invalid": "The note was not accepted. Check the text.",
+      "forbidden": "You are not allowed to edit the note of this member.",
+      "memberNotFound": "This member was not found.",
+      "generic": "The note could not be saved. Try again."
+    }
   }
 }
