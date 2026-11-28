@@ -117,6 +117,8 @@ export function HoursPage(): ReactElement {
           summary={member.data?.summary}
           isLoading={member.isPending}
           titleRef={titleRef}
+          memberId={personId}
+          memberName={member.data?.member.name}
         />
         <PendingEntriesTable key={`${from}|${to}|${personId}`} filter={{ from, to, personId }} />
       </>

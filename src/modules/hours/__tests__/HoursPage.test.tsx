@@ -19,6 +19,7 @@ import {
   createBankStore,
   queueRequests,
   requestsTo,
+  withNote,
 } from "./bank-handlers";
 import {
   createDeferred,
@@ -377,7 +378,7 @@ describe("HoursPage", () => {
     expect(screen.queryByRole("table", { name: /^Horas por membro/ })).not.toBeInTheDocument();
   });
 
-  it("shows the hours by category of the member, only the categories with entries, without Observação", async () => {
+  it("shows the hours by category of the member, only the categories with entries, with the column Observação", async () => {
     await renderHoursPage({ route: BEATRIZ_VIEW });
 
     const table = await categoriesTable();
@@ -386,25 +387,122 @@ describe("HoursPage", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Categoria", "Horas", "Pendentes"]);
-    expect(bodyRows(table)).toEqual([
+    ).toEqual(["Categoria", "Horas", "Pendentes", "Observação"]);
+    expect(bodyRows(table).map((cells) => cells.slice(0, 3))).toEqual([
       ["Aula", "28h", "—Sem pendência"],
       ["Planejamento", "8h", "8h"],
       ["Evento", "4h", "—Sem pendência"],
       ["Gestão", "4h", "—Sem pendência"],
       ["Outros", "2h", "—Sem pendência"],
     ]);
-    expect(screen.queryByText(/Observação/i)).not.toBeInTheDocument();
+    // The coordination, who has Adicionar in every cell: the dash first, read as Sem observação.
+    expect(bodyRows(table).map((cells) => cells[3])).toEqual(
+      Array.from({ length: 5 }, () => "—Sem observaçãoAdicionar"),
+    );
   });
 
-  it("draws the rows of the categories 56px tall, as in the Figma", async () => {
-    await renderHoursPage({ route: BEATRIZ_VIEW });
+  it("shows the note of a category and the dash, read as Sem observação, without one", async () => {
+    const store = withNote(
+      createBankStore(),
+      BEATRIZ_ID,
+      "planning",
+      "Ajuste de 2h por lançamento duplicado",
+    );
+    await renderHoursPage({ route: BEATRIZ_VIEW, store });
+
+    const table = await categoriesTable();
+    await within(table).findByText("Aula");
+    const planning = within(within(table).getByRole("row", { name: /^Planejamento/ })).getAllByRole(
+      "cell",
+    )[3];
+    const lesson = within(within(table).getByRole("row", { name: /^Aula/ })).getAllByRole(
+      "cell",
+    )[3];
+
+    expect(within(planning).getByText("Ajuste de 2h por lançamento duplicado")).toBeInTheDocument();
+    expect(
+      within(planning).getByRole("button", { name: "Editar a observação de Planejamento" }),
+    ).toHaveTextContent("Editar");
+    expect(within(lesson).getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(within(lesson).getByText("Sem observação")).toBeInTheDocument();
+    expect(
+      within(lesson).getByRole("button", { name: "Adicionar observação em Aula" }),
+    ).toHaveTextContent("Adicionar");
+    expect(screen.getAllByText("Ajuste de 2h por lançamento duplicado")).toHaveLength(1);
+  });
+
+  it("shows a category with a note and no entries in the period, with 0h, in the order of the contract", async () => {
+    const store = withNote(
+      createBankStore(),
+      BEATRIZ_ID,
+      "meeting",
+      "Reuniões do semestre lançadas na planilha",
+    );
+    await renderHoursPage({ route: BEATRIZ_VIEW, store });
 
     const table = await categoriesTable();
     await within(table).findByText("Aula");
 
-    for (const cell of within(table).getAllByRole("cell")) {
-      expect(cell).toHaveClass("py-4");
+    expect(bodyRows(table).map((cells) => cells.slice(0, 3))).toEqual([
+      ["Aula", "28h", "—Sem pendência"],
+      ["Planejamento", "8h", "8h"],
+      ["Evento", "4h", "—Sem pendência"],
+      ["Gestão", "4h", "—Sem pendência"],
+      ["Reunião", "0h", "—Sem pendência"],
+      ["Outros", "2h", "—Sem pendência"],
+    ]);
+    expect(
+      within(within(table).getByRole("row", { name: /^Reunião/ })).getByText(
+        "Reuniões do semestre lançadas na planilha",
+      ),
+    ).toBeInTheDocument();
+    expect(within(table).queryByRole("row", { name: /^Atendimento/ })).not.toBeInTheDocument();
+  });
+
+  it("shows the director the column Observação to read, with no button", async () => {
+    const store = withNote(
+      createBankStore("department"),
+      BEATRIZ_ID,
+      "planning",
+      "Ajuste de 2h por lançamento duplicado",
+    );
+    await renderHoursPage({ route: BEATRIZ_VIEW, user: director(), store });
+
+    const table = await categoriesTable();
+    await within(table).findByText("Aula");
+
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .map((cell) => cell.textContent),
+    ).toEqual(["Categoria", "Horas", "Pendentes", "Observação"]);
+    expect(bodyRows(table).map((cells) => cells[3])).toEqual([
+      "—Sem observação",
+      "Ajuste de 2h por lançamento duplicado",
+      "—Sem observação",
+      "—Sem observação",
+      "—Sem observação",
+    ]);
+    expect(within(table).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it.each([
+    {
+      who: "the director, who has no button",
+      options: { user: director(), store: createBankStore("department") },
+      padding: "py-4",
+    },
+    { who: "the coordination, who has the button", options: {}, padding: "py-1.5!" },
+  ])("draws the rows of the categories 56px tall, with $padding for $who", async (the) => {
+    await renderHoursPage({ route: BEATRIZ_VIEW, ...the.options });
+
+    const table = await categoriesTable();
+    await within(table).findByText("Aula");
+
+    const cells = within(table).getAllByRole("cell");
+    expect(cells).toHaveLength(20);
+    for (const cell of cells) {
+      expect(cell).toHaveClass(the.padding);
     }
   });
 
