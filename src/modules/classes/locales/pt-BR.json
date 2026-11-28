@@ -195,6 +195,9 @@
     "archived": "Esta turma está arquivada e não pode ser alterada.",
     "notFound": "Turma não encontrada. Ela pode ter sido removida.",
     "hasActiveEnrollments": "Esta turma ainda tem alunos matriculados. Encerre ou remova as matrículas antes de arquivar.",
+    "lessonsOutsidePeriod_one": "Há {{count}} aula fora do novo período. Remarque ou cancele essa aula antes de mudar as datas.",
+    "lessonsOutsidePeriod_other": "Há {{count}} aulas fora do novo período. Remarque ou cancele essas aulas antes de mudar as datas.",
+    "lessonsOutsidePeriodUnknown": "Há aulas fora do novo período. Remarque ou cancele essas aulas antes de mudar as datas.",
     "network": "Não foi possível conectar. Verifique sua conexão e tente novamente.",
     "unknown": "Não foi possível concluir a ação. Tente novamente."
   },
