@@ -50,20 +50,26 @@ export interface CategoryRow {
   hoursMinutes: number;
   /** The declared minutes of the pending entries. */
   pendingMinutes: number;
+  /** The observation of the coordination on the category, whatever the period; `null` when there is none. */
+  note: string | null;
 }
 
 /**
- * The rows of "Horas por categoria": only the categories that have entries in the summary (the API
- * always answers the seven), the most hours first, a tie in the order of the contract. A category
- * whose entries were all rejected stays, with 0h: there were entries, and they did not count.
+ * The rows of "Horas por categoria": only the categories that have entries in the summary or an
+ * observation of the coordination (the API always answers the seven), the most hours first, a tie
+ * in the order of the contract. A category whose entries were all rejected stays, with 0h: there
+ * were entries, and they did not count. So does a category with an observation and no entry in the
+ * month, with 0h: the observation is not tied to the period, and it would vanish from the screen of
+ * the member otherwise (GUS-191, D2).
  */
 export function categoryRows(summary: HoursSummaryResponseDto): CategoryRow[] {
   return summary.byCategory
-    .filter((item) => item.entries > 0)
+    .filter((item) => item.entries > 0 || item.note !== null)
     .map((item) => ({
       category: item.category,
       hoursMinutes: item.bankMinutes + item.pendingMinutes,
       pendingMinutes: item.pendingMinutes,
+      note: item.note,
     }))
     .sort(
       (first, second) =>
